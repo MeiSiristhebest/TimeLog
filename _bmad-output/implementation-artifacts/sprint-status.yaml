@@ -1,0 +1,95 @@
+# generated: 2026-01-09
+# project: TimeLog
+# project_key: timelog
+# tracking_system: file-system
+# story_location: "_bmad-output/implementation-artifacts"
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-01-09
+project: TimeLog
+project_key: timelog
+tracking_system: file-system
+story_location: '_bmad-output/implementation-artifacts'
+
+development_status:
+  # Epic 0: Foundation (技术基础)
+  epic-0: in-progress
+  0-1-init-expo-project: done
+  0-2-configure-nativewind: done
+  0-3-bottom-tab-navigation: done
+  0-4-integrate-sentry: done
+  epic-0-retrospective: optional
+
+  # Epic 1: 认证与设备绑定
+  epic-1: done
+  1-1-configure-supabase-auth: done
+  1-2-family-magic-link-login: done
+  1-3-manage-senior-device-code: done
+  1-4-senior-device-code-login: done
+  1-5-auto-login-splash-screen: done
+  1-6-invite-family-members: done
+  epic-1-retrospective: optional
+
+  # Epic 2: 语音录音、本地存储与同步
+  epic-2: in-progress
+  2-1-basic-recording-stream-to-disk: in-progress
+  2-2-recording-waveform-visualization: backlog
+  2-3-ai-voice-guidance-tts: backlog
+  2-4-local-first-storage-sound-cue: backlog
+  2-5-sync-engine-resumable-upload: backlog
+  2-6-sync-status-indicator: backlog
+  2-7-interruption-handling-background: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: 故事画廊与回放
+  epic-3: backlog
+  3-1-story-list-timeline-view: backlog
+  3-2-hybrid-player: backlog
+  3-3-soft-delete-undo: backlog
+  3-4-topic-discovery-card: backlog
+  3-5-edit-story-info: backlog
+  3-6-offline-access-strategy: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: 家人收听与互动
+  epic-4: backlog
+  4-1-family-story-list: backlog
+  4-2-secure-streaming-player: backlog
+  4-3-realtime-comment-system: backlog
+  4-4-push-notification-deep-link: backlog
+  4-5-senior-interaction-feedback: backlog
+  4-6-quick-reactions: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: 通知与参与度
+  epic-5: backlog
+  5-1-home-contextual-insights: backlog
+  5-2-smart-notification-engine: backlog
+  5-3-gentle-nudge: backlog
+  5-4-family-prompts-inspiration: backlog
+  5-5-personalized-topic-recommendation: backlog
+  epic-5-retrospective: optional
