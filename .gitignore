@@ -26,10 +26,10 @@ coverage/
 .jest-cache/
 
 # AI Agent state (ephemeral)
-.agent/
-.agentvibes/
-.claude/
-.codex/
+# .agent/
+# .agentvibes/
+# .claude/
+# .codex/
 
 # macOS
 .DS_Store
