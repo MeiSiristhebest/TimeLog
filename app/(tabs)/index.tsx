@@ -14,19 +14,25 @@ export default function HomeTab() {
   const [recordingHandle, setRecordingHandle] = useState<RecordingHandle | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [silenceNotice, setSilenceNotice] = useState<string | null>(null);
 
   const handleStart = async () => {
     setIsBusy(true);
     try {
-      const handle = await startRecordingStream();
+      setSilenceNotice(null);
+      const handle = await startRecordingStream({
+        onSilence: () => {
+          setSilenceNotice('Silence detected, but still recording. Keep speaking.');
+        },
+      });
       setRecordingHandle(handle);
       setLastSaved(null);
     } catch (error) {
       if (error instanceof InsufficientStorageError) {
-        Alert.alert('存储空间不足', error.message);
+        Alert.alert('Insufficient Storage', error.message);
       } else {
-        const message = error instanceof Error ? error.message : '无法开始录音，请稍后重试。';
-        Alert.alert('录音失败', message);
+        const message = error instanceof Error ? error.message : 'Failed to start recording. Please try again.';
+        Alert.alert('Recording Failed', message);
       }
     } finally {
       setIsBusy(false);
@@ -40,10 +46,11 @@ export default function HomeTab() {
       const finalized = await recordingHandle.stop();
       setLastSaved(finalized.filePath);
     } catch (error) {
-      const message = error instanceof Error ? error.message : '停止录音失败，请稍后重试。';
-      Alert.alert('停止录音失败', message);
+      const message = error instanceof Error ? error.message : 'Failed to stop recording. Please try again.';
+      Alert.alert('Stop Failed', message);
     } finally {
       setRecordingHandle(null);
+      setSilenceNotice(null);
       setIsBusy(false);
     }
   };
@@ -82,6 +89,9 @@ export default function HomeTab() {
               {recordingHandle ? 'Recording in progress…' : 'Tap start to record WAV to disk.'}
             </Text>
           )}
+          {recordingHandle && silenceNotice ? (
+            <Text className="text-body text-onSurface/80">{silenceNotice}</Text>
+          ) : null}
         </View>
       </View>
     </Container>

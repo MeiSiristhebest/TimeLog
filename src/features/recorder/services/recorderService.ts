@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
+import { ELDERLY_VAD_CONFIG, isSilentMetering } from './vadConfig';
 
 const MIN_FREE_DISK_BYTES = 500 * 1024 * 1024; // 500MB safeguard
 const getRecordingsDir = () => {
@@ -32,6 +33,13 @@ export type RecordingHandle = {
   pause: () => Promise<void>;
   resume: () => Promise<void>;
   stop: () => Promise<RecordingMetadata>;
+};
+
+type RecordingStreamOptions = {
+  topicId?: string;
+  userId?: string;
+  deviceId?: string;
+  onSilence?: (silenceDurationMs: number) => void;
 };
 
 export class InsufficientStorageError extends Error {
@@ -72,6 +80,40 @@ const ensureRecordingsDir = async () => {
   if (!info.exists) {
     await FileSystem.makeDirectoryAsync(recordingsDir, { intermediates: true });
   }
+};
+
+const createSilenceTracker = (onSilence?: (silenceDurationMs: number) => void) => {
+  let silenceStartMs: number | null = null;
+  let hasNotified = false;
+
+  return (status: Audio.RecordingStatus) => {
+    if (!status.isRecording) {
+      silenceStartMs = null;
+      hasNotified = false;
+      return;
+    }
+
+    const durationMs = status.durationMillis;
+    if (typeof durationMs !== 'number') return;
+
+    const metering = (status as { metering?: number }).metering;
+    if (!isSilentMetering(metering)) {
+      silenceStartMs = null;
+      hasNotified = false;
+      return;
+    }
+
+    if (silenceStartMs === null) {
+      silenceStartMs = durationMs;
+      return;
+    }
+
+    const silenceDurationMs = Math.max(0, durationMs - silenceStartMs);
+    if (!hasNotified && silenceDurationMs >= ELDERLY_VAD_CONFIG.silenceThresholdMs) {
+      hasNotified = true;
+      onSilence?.(silenceDurationMs);
+    }
+  };
 };
 
 export const ensureSufficientDisk = async () => {
@@ -122,9 +164,12 @@ export const insertRecordingMetadata = async (metadata: RecordingMetadata) => {
 export const finalizeRecordingMetadata = async (metadata: RecordingMetadata) => {
   const info = await FileSystem.getInfoAsync(metadata.filePath, { md5: true });
   const endedAt = metadata.endedAt ?? new Date();
-  const durationMs = metadata.durationMs ?? Math.max(0, endedAt.getTime() - metadata.startedAt.getTime());
-  const sizeBytes = metadata.sizeBytes ?? (info.exists ? info.size ?? 0 : 0);
-  const checksumMd5 = metadata.checksumMd5 ?? (info.exists ? (info as FileSystem.FileInfo & { md5?: string }).md5 ?? null : null);
+  const durationMs =
+    metadata.durationMs ?? Math.max(0, endedAt.getTime() - metadata.startedAt.getTime());
+  const sizeBytes = metadata.sizeBytes ?? (info.exists ? (info.size ?? 0) : 0);
+  const checksumMd5 =
+    metadata.checksumMd5 ??
+    (info.exists ? ((info as FileSystem.FileInfo & { md5?: string }).md5 ?? null) : null);
 
   await db
     .update(audioRecordings)
@@ -139,11 +184,9 @@ export const finalizeRecordingMetadata = async (metadata: RecordingMetadata) => 
   return { ...metadata, endedAt, durationMs, sizeBytes, checksumMd5 };
 };
 
-export const startRecordingStream = async (params?: {
-  topicId?: string;
-  userId?: string;
-  deviceId?: string;
-}): Promise<RecordingHandle> => {
+export const startRecordingStream = async (
+  params?: RecordingStreamOptions
+): Promise<RecordingHandle> => {
   await ensureRecordingPermission();
   const startedAt = new Date();
   const metadata = { ...(await prepareRecordingTarget(params)), startedAt };
@@ -160,6 +203,13 @@ export const startRecordingStream = async (params?: {
 
   // Use expo-av Recording for SDK 54 compatibility
   const recording = new Audio.Recording();
+  try {
+    // Safety check: ensure no previous recording is active
+    await recording.stopAndUnloadAsync();
+  } catch (e) {
+    // Ignore error if not loaded
+  }
+
   await recording.prepareToRecordAsync({
     isMeteringEnabled: true,
     android: {
@@ -186,6 +236,9 @@ export const startRecordingStream = async (params?: {
       bitsPerSecond: 256000,
     },
   });
+  const silenceTracker = createSilenceTracker(params?.onSilence);
+  recording.setProgressUpdateInterval(250);
+  recording.setOnRecordingStatusUpdate(silenceTracker);
   await recording.startAsync();
 
   await insertRecordingMetadata(metadata);

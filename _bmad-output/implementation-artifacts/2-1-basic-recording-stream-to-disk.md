@@ -1,6 +1,6 @@
 # Story 2.1: 基础录音与权限管理 (Stream-to-Disk)
 
-Status: in-progress
+Status: review
 
 ## Story
 
@@ -34,8 +34,8 @@ So that I can capture my voice without technical friction.
   - [x] 2.2: 抽象录音控制器（start/stop/pause/resume）供 UI 调用，返回文件路径与元数据。
 
 - [x] Task 3: Elderly VAD 配置（AC: 3）
-  - [x] 3.1: 配置 Silero VAD（或库内置 VAD）为 3–5s 静音容忍度，避免过度剪切。
-  - [ ] 3.2: 在录音过程中确保静音不自动停止录音，仅用于后续分段/提示。
+  - [x] 3.1: 配置 Silero VAD（或库内置 VAD）为 3–5s 静音容忍度，避免过度剪切。  
+  - [x] 3.2: 在录音过程中确保静音不自动停止录音，仅用于后续分段/提示。
 
 - [x] Task 4: 本地元数据写入（AC: 4）
   - [x] 4.1: 扩展 Drizzle schema：`audio_recordings`（id uuid_v7 PK, file_path, duration_ms, size_bytes, started_at, ended_at, is_synced, checksum_md5, topic_id?, user_id?, device_id?）。
@@ -73,6 +73,45 @@ So that I can capture my voice without technical friction.
 - `project-context.md#Audio & Hardware Safeguards`
 
 ## Dev Agent Record
+### Agent Model Used
 
-- Current model: Codex CLI (GPT-5)
-- Notes: Story initiated; implementation pending tasks above.
+Codex CLI (GPT-5)
+
+### Debug Log References
+
+- `npm test`
+- `npx prettier --write app.json drizzle/meta/_journal.json drizzle/meta/0001_snapshot.json drizzle/migrations.js jest-setup.js jest.config.js src/features/auth/hooks/useDeepLinkHandler.ts src/features/auth/services/authService.test.ts src/features/recorder/services/recorderService.test.ts src/features/recorder/services/recorderService.ts src/lib/supabase.test.ts src/lib/sync-engine/queue.ts src/lib/sync-engine/transport.ts test-utils/css-interop-mock.js`
+- `npm run lint`
+
+### Completion Notes List
+
+- Added metering-based silence tracking that triggers after the elderly VAD window without stopping the recording.
+- Wired silence tracking into the recorder service to keep recordings active while enabling future segmentation hints.
+- Added unit coverage for sustained-silence notification and confirmed recording is not auto-stopped.
+- Wired the recorder screen to show a gentle silence notice while recording.
+- Formatted 14 files to satisfy Prettier check; lint now passes.
+
+### File List
+
+- app.json
+- jest-setup.js
+- jest.config.js
+- app/(tabs)/index.tsx
+- drizzle/meta/_journal.json
+- drizzle/meta/0001_snapshot.json
+- drizzle/migrations.js
+- src/features/auth/hooks/useDeepLinkHandler.ts
+- src/features/auth/services/authService.test.ts
+- src/features/recorder/services/recorderService.test.ts
+- src/features/recorder/services/recorderService.ts
+- src/features/recorder/services/vadConfig.ts
+- src/lib/supabase.test.ts
+- src/lib/sync-engine/queue.ts
+- src/lib/sync-engine/transport.ts
+- test-utils/css-interop-mock.js
+
+### Change Log
+
+- 2026-01-13: Added silence tracking that preserves recording continuity and tests for the elderly VAD tolerance window.
+- 2026-01-13: Added a UI silence hint on the recorder screen using the onSilence callback.
+- 2026-01-13: Formatted files to satisfy Prettier linting checks.

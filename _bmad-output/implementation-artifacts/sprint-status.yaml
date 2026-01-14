@@ -56,7 +56,7 @@ development_status:
 
   # Epic 2: 语音录音、本地存储与同步
   epic-2: in-progress
-  2-1-basic-recording-stream-to-disk: in-progress
+  2-1-basic-recording-stream-to-disk: review
   2-2-recording-waveform-visualization: backlog
   2-3-ai-voice-guidance-tts: backlog
   2-4-local-first-storage-sound-cue: backlog

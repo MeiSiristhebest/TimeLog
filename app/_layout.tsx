@@ -1,12 +1,32 @@
 import '../global.css';
 
 import '@/lib/logger';
+import { useDbMigrations } from '@/db/useMigrations';
 import { Stack } from 'expo-router';
 import { useDeepLinkHandler } from '@/features/auth/hooks/useDeepLinkHandler';
+import { Text, View } from 'react-native';
 
 export default function RootLayout() {
+  const { success, error } = useDbMigrations();
+
   // Deep link and clipboard "TaoKouLing" handling extracted to hook
   useDeepLinkHandler();
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Migration Error: {error.message}</Text>
+      </View>
+    );
+  }
+
+  if (!success) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Migrating database...</Text>
+      </View>
+    );
+  }
 
   return (
     <Stack>
