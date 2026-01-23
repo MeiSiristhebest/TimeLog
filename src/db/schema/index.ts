@@ -8,3 +8,7 @@ export const appSettings = sqliteTable('app_settings', {
 });
 
 export * from './audioRecordings';
+export * from './syncQueue';
+export * from './activityEvents';
+export * from './storyReactions';
+export * from './familyQuestions';
