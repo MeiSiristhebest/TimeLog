@@ -7,5 +7,18 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     'react-native-css-interop/jsx-runtime': '<rootDir>/test-utils/css-interop-mock.js',
+    'react-native-css-interop': '<rootDir>/test-utils/css-interop-module-mock.js',
+    '\\.(wav|mp3|m4a)$': '<rootDir>/test-utils/audio-mock.js',
+  },
+  // Override babel to use standard React JSX instead of nativewind's custom runtime
+  transform: {
+    '^.+\\.(js|jsx|ts|tsx)$': [
+      'babel-jest',
+      {
+        presets: [
+          ['babel-preset-expo', { jsxRuntime: 'automatic' }],
+        ],
+      },
+    ],
   },
 };

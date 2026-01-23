@@ -1,5 +1,6 @@
 /* global jest */
 // Jest setup file
+
 import 'react-native-gesture-handler/jestSetup';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
@@ -89,6 +90,8 @@ jest.mock('@supabase/supabase-js', () => ({
 // Mock expo-glue (if any)
 jest.mock('expo-router', () => ({
   useRouter: jest.fn(),
+  useLocalSearchParams: jest.fn(() => ({})),
+  Link: ({ children }) => children ?? null,
 }));
 
 // Mock expo-sqlite
@@ -99,6 +102,20 @@ jest.mock('expo-sqlite', () => ({
     closeAsync: jest.fn(),
   })),
 }));
+
+// Mock react-native-safe-area-context
+jest.mock('react-native-safe-area-context', () => {
+  const SafeAreaView = ({ children }) => children ?? null;
+  SafeAreaView.displayName = 'SafeAreaView';
+
+  const SafeAreaProvider = ({ children }) => children ?? null;
+
+  return {
+    SafeAreaView,
+    SafeAreaProvider,
+    useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  };
+});
 
 // Mock drizzle-orm/expo-sqlite
 jest.mock('drizzle-orm/expo-sqlite', () => ({
@@ -111,22 +128,58 @@ jest.mock('drizzle-orm/expo-sqlite', () => ({
 }));
 
 // Mock Drizzle Core
-jest.mock('drizzle-orm/sqlite-core', () => ({
-  integer: jest.fn(() => ({
-    notNull: jest.fn(() => ({ default: jest.fn() })),
-    references: jest.fn(),
-  })),
-  text: jest.fn(() => ({
-    primaryKey: jest.fn(),
-    notNull: jest.fn(),
-    default: jest.fn(),
-    references: jest.fn(),
-  })),
-  boolean: jest.fn(() => ({ notNull: jest.fn(() => ({ default: jest.fn() })) })),
-  sqliteTable: jest.fn(() => ({})),
-}));
+jest.mock('drizzle-orm/sqlite-core', () => {
+  const createChainableColumn = () => {
+    const column = {};
+    column.primaryKey = jest.fn(() => column);
+    column.notNull = jest.fn(() => column);
+    column.default = jest.fn(() => column);
+    column.references = jest.fn(() => column);
+    column.$type = jest.fn(() => column);
+    return column;
+  };
+
+  return {
+    integer: jest.fn(() => createChainableColumn()),
+    text: jest.fn(() => createChainableColumn()),
+    boolean: jest.fn(() => createChainableColumn()),
+    sqliteTable: jest.fn(() => ({})),
+  };
+});
 
 // Mock Drizzle ORM
 jest.mock('drizzle-orm', () => ({
   eq: jest.fn(),
 }));
+
+// Mock @siteed/expo-audio-studio
+let mockAudioAnalysisCallback = null;
+jest.mock('@siteed/expo-audio-studio', () => ({
+  ExpoAudioStreamModule: {
+    getPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true })),
+    requestPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true })),
+    startRecording: jest.fn(() => Promise.resolve()),
+    stopRecording: jest.fn(() => Promise.resolve({
+      fileUri: 'file:///test/doc-dir/recordings/rec_test.wav',
+      durationMs: 5000,
+      size: 160000,
+    })),
+    pauseRecording: jest.fn(() => Promise.resolve()),
+    resumeRecording: jest.fn(() => Promise.resolve()),
+  },
+  addAudioAnalysisListener: jest.fn((callback) => {
+    mockAudioAnalysisCallback = callback;
+    return { remove: jest.fn() };
+  }),
+  // Export the callback getter for tests
+  __getAudioAnalysisCallback: () => mockAudioAnalysisCallback,
+  __resetAudioAnalysisCallback: () => { mockAudioAnalysisCallback = null; },
+}));
+
+// Mock uuid
+jest.mock('uuid', () => ({
+  v7: jest.fn(() => '01234567-89ab-cdef-0123-456789abcdef'),
+}));
+
+// Mock react-native-get-random-values (polyfill, no-op for tests)
+jest.mock('react-native-get-random-values', () => {});
