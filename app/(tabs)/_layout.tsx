@@ -1,73 +1,95 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { Platform } from 'react-native';
+import { HeritageTabBar } from '@/components/ui/heritage/HeritageTabBar';
+import { useHeritageTheme } from '@/theme/heritage';
 
-const TAB_COLORS = {
-  active: '#C26B4A',
-  inactive: '#8C7A6C',
-  background: '#FFFAF5',
-  border: '#E6DAD0',
-  headerText: '#2C2C2C',
-};
+/**
+ * Heritage Memoir Tab Bar Design
+ * - 3 tabs only (Record, Stories, Settings)
+ * - Custom animated tab bar with sliding indicator
+ * - Icons: 28dp for better visibility
+ * - Labels: 14pt Bold for readability
+ */
+
+// Larger icon size for elderly users
+const ICON_SIZE = 28;
 
 export default function TabsLayout() {
+  const theme = useHeritageTheme();
+
   return (
     <Tabs
+      tabBar={(props) => <HeritageTabBar {...props} />}
       screenOptions={{
-        tabBarActiveTintColor: TAB_COLORS.active,
-        tabBarInactiveTintColor: TAB_COLORS.inactive,
-        tabBarStyle: {
-          backgroundColor: TAB_COLORS.background,
-          borderTopColor: TAB_COLORS.border,
-          height: 68,
-          paddingVertical: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 16,
-          fontWeight: '600',
-        },
-        tabBarItemStyle: {
-          paddingVertical: 6,
-        },
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.handle,
         headerStyle: {
-          backgroundColor: TAB_COLORS.background,
+          backgroundColor: theme.colors.surfaceDim, // Use Surface Dim for header
+          shadowColor: 'transparent',
+          elevation: 0,
         },
         headerTitleStyle: {
-          color: TAB_COLORS.headerText,
+          color: theme.colors.onSurface,
           fontSize: 20,
-          fontWeight: '700',
+          fontFamily: 'Fraunces_700Bold', // Use Heritage Font
         },
-        headerTintColor: TAB_COLORS.headerText,
+        headerTintColor: theme.colors.onSurface,
       }}>
+      {/* Tab 1: Record (Home - Core Function) */}
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="gallery"
-        options={{
-          title: 'Gallery',
-          tabBarIcon: ({ color, size }) => <Ionicons name="images" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="topics"
-        options={{
-          title: 'Topics',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubbles" size={size} color={color} />
+          title: 'Record',
+          headerShown: false,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="mic" size={ICON_SIZE} color={color} />
           ),
         }}
       />
+
+      {/* Tab 2: Listen (Gallery) */}
+      <Tabs.Screen
+        name="gallery"
+        options={{
+          title: 'Listen',
+          headerShown: false, // Use custom header inside gallery.tsx
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="headset" size={ICON_SIZE} color={color} />
+          ),
+        }}
+      />
+
+      {/* Tab 3: Me (Settings) */}
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
-          tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
+          title: 'Me',
+          headerShown: false,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person" size={ICON_SIZE} color={color} />
+          ),
+        }}
+      />
+
+      {/* Hidden routes - not shown in tab bar */}
+      <Tabs.Screen
+        name="topics"
+        options={{
+          href: null,
+          headerShown: true,
+          title: 'Topics',
+        }}
+      />
+      <Tabs.Screen
+        name="family"
+        options={{
+          href: null,
+          headerShown: false,
         }}
       />
     </Tabs>
   );
 }
+
+

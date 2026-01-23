@@ -18,7 +18,7 @@ export default function Index() {
         router.replace('/splash');
         return;
       }
-      router.replace('/role');
+      router.replace('/welcome');
     };
     bootstrap().finally(() => setLoading(false));
   }, []);

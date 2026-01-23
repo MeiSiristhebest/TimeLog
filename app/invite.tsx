@@ -1,16 +1,29 @@
 import { useState } from 'react';
-import { Alert, ScrollView, Share, Text, TextInput, View } from 'react-native';
+import { View, Text, Share } from 'react-native';
 import * as Linking from 'expo-linking';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 
-import { Button } from '@/components/ui/Button';
-import { Container } from '@/components/ui/Container';
 import { createFamilyInvite } from '@/features/family/services/inviteService';
+import { HeritageAlert } from '@/components/ui/HeritageAlert';
+import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
+import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
+import { HeritageInput } from '@/components/ui/heritage/HeritageInput';
+import { useHeritageTheme } from '@/theme/heritage';
 
 export default function InviteScreen() {
+  const theme = useHeritageTheme();
   const [email, setEmail] = useState('');
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
 
   const handleCreateInvite = async () => {
     setLoading(true);
@@ -18,7 +31,11 @@ export default function InviteScreen() {
     try {
       const result = await createFamilyInvite(email);
       setInviteLink(result.inviteLink ?? null);
-      Alert.alert('Invite ready', 'Tap "Share link" to send it to family.');
+      HeritageAlert.show({
+        title: 'Invite Ready!',
+        message: 'Tap "Share link" to send it to your family member.',
+        variant: 'success',
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to create invite right now.';
       setError(message);
@@ -45,74 +62,143 @@ export default function InviteScreen() {
       await Linking.openURL(inviteLink);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to open the invite link.';
-      Alert.alert('Open failed', message);
+      HeritageAlert.show({
+        title: 'Could Not Open',
+        message: message,
+        variant: 'error',
+      });
     }
   };
 
   const isSubmitDisabled = !email.trim() || loading;
 
   return (
-    <Container>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-2">
+    <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
+      <HeritageHeader
+        title="Invite Family"
+        showBack
+        scrollY={scrollY}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }}
+      />
+
+      <Animated.ScrollView
+        className="flex-1"
+        contentContainerStyle={{ padding: 24, paddingTop: 100 }}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+      >
         <View className="flex-1 justify-center gap-8 lg:max-w-xl lg:self-center">
           <View className="gap-3">
-            <Text className="text-center text-display font-semibold text-onSurface">
+            <Text
+              className="text-center font-semibold"
+              style={{
+                fontSize: 28,
+                color: theme.colors.onSurface,
+                fontFamily: 'Fraunces_600SemiBold',
+              }}
+            >
               Invite a family member
             </Text>
-            <Text className="text-center text-body leading-relaxed text-onSurface/80">
+            <Text
+              className="text-center text-base leading-relaxed"
+              style={{ color: `${theme.colors.onSurface}99` }}
+            >
               Enter their email to generate a shareable link. They will join your family account
               after accepting the invite.
             </Text>
           </View>
 
-          <View className="gap-4">
-            <View className="gap-2">
-              <Text className="ml-1 text-body font-medium text-onSurface">Email</Text>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                placeholder="sibling@example.com"
-                placeholderTextColor="#C26B4A"
-                className="min-h-[56px] w-full rounded-2xl border border-primary/20 bg-white/90 px-5 py-3 text-body text-onSurface"
-              />
-            </View>
+          <View className="gap-6">
+            <HeritageInput
+              label="Email Address"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              placeholder="sibling@example.com"
+              leftIcon="mail-outline"
+            />
 
-            {error ? <Text className="text-body font-medium text-error">{error}</Text> : null}
+            {error ? (
+              <View
+                className="p-3 rounded-lg flex-row items-center"
+                style={{ backgroundColor: `${theme.colors.error}15` }}
+              >
+                <Ionicons name="alert-circle" size={20} color={theme.colors.error} />
+                <Text className="ml-2 flex-1" style={{ color: theme.colors.error }}>
+                  {error}
+                </Text>
+              </View>
+            ) : null}
 
-            <Button
-              title={loading ? 'Generating…' : 'Generate invite'}
+            <HeritageButton
+              title={loading ? 'Generating...' : 'Generate Invite'}
               onPress={handleCreateInvite}
               disabled={isSubmitDisabled}
-              className="h-14 rounded-full"
+              loading={loading}
+              variant="primary"
             />
           </View>
 
           {inviteLink ? (
-            <View className="gap-3 rounded-3xl border border-primary/10 bg-white/90 p-5 shadow-sm">
-              <Text className="text-body font-semibold text-onSurface">Invite link</Text>
-              <Text selectable className="break-words text-body text-onSurface/90">
-                {inviteLink}
+            <View
+              className="gap-4 rounded-3xl p-5 border shadow-sm"
+              style={{
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+                shadowColor: theme.colors.shadow,
+                shadowOpacity: 0.1,
+                shadowRadius: 10,
+              }}
+            >
+              <Text
+                className="font-semibold text-lg"
+                style={{ color: theme.colors.onSurface, fontFamily: 'Fraunces_600SemiBold' }}
+              >
+                Invite Ready
               </Text>
+
+              <View
+                className="p-4 rounded-xl border"
+                style={{
+                  backgroundColor: `${theme.colors.primary}08`,
+                  borderColor: `${theme.colors.primary}20`,
+                }}
+              >
+                <Text
+                  selectable
+                  className="font-mono text-sm"
+                  style={{ color: theme.colors.onSurface }}
+                >
+                  {inviteLink}
+                </Text>
+              </View>
+
               {__DEV__ ? (
-                <Text className="text-body text-onSurface/60">
+                <Text className="text-xs text-center" style={{ color: `${theme.colors.onSurface}60` }}>
                   Dev builds use the exp+timelog scheme. Open the link from another device or tap
                   “Open link” to test.
                 </Text>
               ) : null}
+
               <View className="gap-3">
-                <Button title="Share link" onPress={handleShare} />
-                <Button
-                  title="Open link"
+                <HeritageButton
+                  title="Share Link"
+                  onPress={handleShare}
+                  variant="primary"
+                  icon="share-outline"
+                />
+                <HeritageButton
+                  title="Open Link"
                   onPress={handleOpen}
-                  className="bg-onSurface/10 text-onSurface"
+                  variant="outline"
+                  icon="open-outline"
                 />
               </View>
             </View>
           ) : null}
         </View>
-      </ScrollView>
-    </Container>
+      </Animated.ScrollView>
+    </View>
   );
 }
