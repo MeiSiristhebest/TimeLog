@@ -2,6 +2,12 @@ import * as Linking from 'expo-linking';
 
 import { supabase } from '@/lib/supabase';
 
+/**
+ * Response type from create_family_invite RPC.
+ * Can return single object or array depending on Supabase version.
+ */
+type InviteResponse = { invite_token: string } | { invite_token: string }[] | string;
+
 export const createFamilyInvite = async (email: string) => {
   const normalized = email.trim().toLowerCase();
   if (!normalized) {
@@ -20,9 +26,20 @@ export const createFamilyInvite = async (email: string) => {
     throw new Error(error.message);
   }
 
-  const token = Array.isArray(data) ? data[0]?.invite_token : ((data as any)?.invite_token ?? data);
-  const inviteLink = token ? buildInviteLink(String(token)) : undefined;
-  return { token: token as string | undefined, inviteLink };
+  // Handle various response formats from Supabase RPC
+  let token: string | undefined;
+  const response = data as InviteResponse;
+  
+  if (Array.isArray(response)) {
+    token = response[0]?.invite_token;
+  } else if (typeof response === 'object' && response !== null) {
+    token = response.invite_token;
+  } else if (typeof response === 'string') {
+    token = response;
+  }
+
+  const inviteLink = token ? buildInviteLink(token) : undefined;
+  return { token, inviteLink };
 };
 
 export const acceptFamilyInvite = async (token: string) => {

@@ -3,6 +3,7 @@ import { AppState, AppStateStatus, Alert } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
+import { devLog } from '@/lib/devLogger';
 
 /**
  * Hook that handles deep linking and clipboard "TaoKouLing" detection for family invites.
@@ -13,43 +14,31 @@ export const useDeepLinkHandler = () => {
   const lastHandledToken = useRef<string | null>(null);
 
   useEffect(() => {
+    // NOTE: We rely on Expo Router for standard deep linking handling.
+    // We only implement Clipboard sniffing ("TaoKouLing") here.
+
+    // Helper to handle manual navigation if needed (for clipboard)
     const handleUrl = (url?: string | null) => {
       if (!url) return false;
 
-      console.log('[DeepLink] Processing URL:', url);
+      devLog.info('[DeepLink] Processing URL from Clipboard:', url);
 
       const parsed = Linking.parse(url);
       const { path, hostname, queryParams } = parsed;
       const normalizedPath = (path || hostname || '').replace(/^\/+/, '').replace(/\/+$/, '');
-      // Handle expo dev client prefix --/
       const cleanedPath = normalizedPath.startsWith('--/')
         ? normalizedPath.slice(3)
         : normalizedPath;
       const token = queryParams?.token;
 
-      console.log('[DeepLink] Cleaned path:', cleanedPath, 'Token:', token);
-
       if (cleanedPath === 'accept-invite' && typeof token === 'string' && token.length > 0) {
-        if (lastHandledToken.current === token) return true; // Prevent duplicate handling
+        if (lastHandledToken.current === token) return true;
         lastHandledToken.current = token;
-        console.log('[DeepLink] Navigating to accept-invite');
         router.replace(`/accept-invite?token=${encodeURIComponent(token)}`);
         return true;
       }
       return false;
     };
-
-    // Handle cold start
-    Linking.getInitialURL().then((url) => {
-      console.log('[DeepLink] Initial URL:', url);
-      handleUrl(url);
-    });
-
-    // Handle warm start (app in background)
-    const linkSub = Linking.addEventListener('url', ({ url }) => {
-      console.log('[DeepLink] Event URL:', url);
-      handleUrl(url);
-    });
 
     // "TaoKouLing" (Clipboard Sniffing) Logic
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
@@ -84,7 +73,7 @@ export const useDeepLinkHandler = () => {
             ]);
           }
         } catch (e) {
-          console.log('[Clipboard] Error reading clipboard', e);
+          devLog.info('[Clipboard] Error reading clipboard', e);
         }
       }
     };
@@ -92,7 +81,6 @@ export const useDeepLinkHandler = () => {
     const appStateSub = AppState.addEventListener('change', handleAppStateChange);
 
     return () => {
-      linkSub.remove();
       appStateSub.remove();
     };
   }, [router]);
