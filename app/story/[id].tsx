@@ -1,10 +1,11 @@
+import { AppText } from '@/components/ui/AppText';
 import React from 'react';
-import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { useStory } from '@/features/story-gallery/hooks/useStory';
-import { useStoryComments } from '@/features/story-gallery/hooks/useStoryComments';
-import { AudioPlayer } from '@/features/story-gallery/components/AudioPlayer';
+import { useStoryCommentCount } from '@/features/story-gallery/hooks/useStoryCommentCount';
+import { LazyStoryPlayer } from '@/lib/lazyComponents';
 import type { SyncStatus } from '@/types/entities';
 
 import { SyncStatusBadge } from '@/features/story-gallery/components/SyncStatusBadge';
@@ -20,14 +21,16 @@ import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import Animated, { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
-export default function StoryDetailScreen() {
+type HeritageTheme = ReturnType<typeof useHeritageTheme>;
+
+export default function StoryDetailScreen(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { story, isLoading, error } = useStory(id);
   const theme = useHeritageTheme();
 
   // Story 4.5: Fetch comments for this story
-  const { commentCount } = useStoryComments(id);
+  const { count: commentCount } = useStoryCommentCount(id);
 
   // Edit Title Sheet state
   const [isEditing, setIsEditing] = React.useState(false);
@@ -44,21 +47,46 @@ export default function StoryDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.surface }}>
-        <Text style={{ color: theme.colors.textMuted, fontSize: 20, fontFamily: 'Fraunces_600SemiBold' }}>Loading…</Text>
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: theme.colors.surface,
+        }}>
+        <AppText
+          style={{
+            color: theme.colors.textMuted,
+            fontSize: 20,
+            fontFamily: 'Fraunces_600SemiBold',
+          }}>
+          Loading…
+        </AppText>
       </View>
     );
   }
 
   if (error || !story) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: theme.colors.surface }}>
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+          backgroundColor: theme.colors.surface,
+        }}>
         <Ionicons name="alert-circle-outline" size={64} color={theme.colors.primary} />
-        <Text
-          style={{ fontSize: 24, color: theme.colors.onSurface, fontFamily: 'Fraunces_600SemiBold', textAlign: 'center', marginTop: 16 }}
-        >
+        <AppText
+          style={{
+            fontSize: 24,
+            color: theme.colors.onSurface,
+            fontFamily: 'Fraunces_600SemiBold',
+            textAlign: 'center',
+            marginTop: 16,
+          }}>
           Story not found
-        </Text>
+        </AppText>
         <HeritageButton
           title="Go Back"
           onPress={() => router.back()}
@@ -81,7 +109,7 @@ export default function StoryDetailScreen() {
       await softDeleteStory(id);
       setDeleteModalVisible(false);
       setUndoToastVisible(true);
-    } catch (error) {
+    } catch {
       showErrorToast('Delete failed, please try again');
     }
   };
@@ -90,7 +118,7 @@ export default function StoryDetailScreen() {
     try {
       await restoreStory(id);
       setUndoToastVisible(false);
-    } catch (error) {
+    } catch {
       showErrorToast('Restore failed, please try again');
     }
   };
@@ -112,27 +140,32 @@ export default function StoryDetailScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* 1. Header (Custom) */}
-      <View style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingTop: 60, // Safe area
-        paddingBottom: 16,
-        paddingHorizontal: 20,
-        zIndex: 10,
-      }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingTop: 60, // Safe area
+          paddingBottom: 16,
+          paddingHorizontal: 20,
+          zIndex: 10,
+        }}>
         <TouchableOpacity
           onPress={() => router.back()}
-          style={{ flexDirection: 'row', alignItems: 'center', padding: 4 }}
-        >
+          style={{ flexDirection: 'row', alignItems: 'center', padding: 4 }}>
           <Ionicons name="chevron-back" size={28} color={`${theme.colors.primary}CC`} />
-          <Text style={{ fontSize: 18, fontWeight: '600', color: `${theme.colors.primary}CC`, marginLeft: -4 }}>Back</Text>
+          <AppText
+            style={{
+              fontSize: 18,
+              fontWeight: '600',
+              color: `${theme.colors.primary}CC`,
+              marginLeft: -4,
+            }}>
+            Back
+          </AppText>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => setDeleteModalVisible(true)}
-          style={{ padding: 8 }}
-        >
+        <TouchableOpacity onPress={() => setDeleteModalVisible(true)} style={{ padding: 8 }}>
           <Ionicons name="ellipsis-horizontal" size={24} color={theme.colors.textMuted} />
         </TouchableOpacity>
       </View>
@@ -140,11 +173,11 @@ export default function StoryDetailScreen() {
       {/* 2. Content (Transcript) */}
       <View style={{ flex: 1, position: 'relative' }}>
         <Animated.ScrollView
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={{ paddingHorizontal: 32, paddingBottom: 120 }}
           onScroll={scrollHandler}
           scrollEventThrottle={16}
-          showsVerticalScrollIndicator={false}
-        >
+          showsVerticalScrollIndicator={false}>
           {/* Metadata */}
           <View style={{ marginBottom: 24 }}>
             {/* Sync Status Badge */}
@@ -152,52 +185,60 @@ export default function StoryDetailScreen() {
               <SyncStatusBadge status={syncStatus} />
             </View>
 
-            <Text style={{
-              fontSize: 32,
-              fontFamily: 'Fraunces_600SemiBold',
-              color: theme.colors.onSurface,
-              lineHeight: 40,
-              marginBottom: 8
-            }}>
+            <AppText
+              style={{
+                fontSize: 32,
+                fontFamily: 'Fraunces_600SemiBold',
+                color: theme.colors.onSurface,
+                lineHeight: 40,
+                marginBottom: 8,
+              }}>
               {story.title || 'Untitled Story'}
-            </Text>
-            <Text style={{ color: theme.colors.textMuted, fontSize: 18, fontWeight: '500' }}>
+            </AppText>
+            <AppText style={{ color: theme.colors.textMuted, fontSize: 18, fontWeight: '500' }}>
               {formattedDate}
-            </Text>
+            </AppText>
           </View>
 
           {/* Transcript Placeholder - Will be replaced when transcription is implemented */}
           {/* Transcript Visualization */}
           <View style={{ position: 'relative', paddingBottom: 60 }}>
             {/* Simulated Content */}
-            <Text style={{
-              fontSize: 22,
-              fontFamily: 'System', // Use system sans-serif for readability
-              lineHeight: 34,
-              color: `${theme.colors.onSurface}E6`, // 90% opacity
-              marginBottom: 24,
-            }}>
-              That summer, a truck came to the village. I remember it very clearly; the sun was very hot that day, and the cinadas were buzzing incessantly in the trees...
-            </Text>
+            <AppText
+              style={{
+                fontSize: 22,
+                fontFamily: 'System', // Use system sans-serif for readability
+                lineHeight: 34,
+                color: `${theme.colors.onSurface}E6`, // 90% opacity
+                marginBottom: 24,
+              }}>
+              That summer, a truck came to the village. I remember it very clearly; the sun was very
+              hot that day, and the cinadas were buzzing incessantly in the trees...
+            </AppText>
 
-            <Text style={{
-              fontSize: 22,
-              fontFamily: 'System',
-              lineHeight: 34,
-              color: `${theme.colors.onSurface}E6`,
-              marginBottom: 24,
-            }}>
-              The truck parked under the large banyan tree at the village entrance, kicking up a cloud of yellow dust. We all ran out to see what was happening. It was the first time I saw such a vivid red color.
-            </Text>
+            <AppText
+              style={{
+                fontSize: 22,
+                fontFamily: 'System',
+                lineHeight: 34,
+                color: `${theme.colors.onSurface}E6`,
+                marginBottom: 24,
+              }}>
+              The truck parked under the large banyan tree at the village entrance, kicking up a
+              cloud of yellow dust. We all ran out to see what was happening. It was the first time
+              I saw such a vivid red color.
+            </AppText>
 
-            <Text style={{
-              fontSize: 22,
-              fontFamily: 'System',
-              lineHeight: 34,
-              color: `${theme.colors.onSurface}E6`,
-            }}>
-              My father walked towards the driver, wiping sweat from his forehead. I hid behind my mother's skirt, peeking out with curiosity...
-            </Text>
+            <AppText
+              style={{
+                fontSize: 22,
+                fontFamily: 'System',
+                lineHeight: 34,
+                color: `${theme.colors.onSurface}E6`,
+              }}>
+              My father walked towards the driver, wiping sweat from his forehead. I hid behind my{' '}
+              {"mother's"} skirt, peeking out with curiosity...
+            </AppText>
 
             {/* Gradient Fade at bottom of text area */}
             <LinearGradient
@@ -214,18 +255,35 @@ export default function StoryDetailScreen() {
           </View>
 
           {/* Story Details Card */}
-          <View style={{
-            marginTop: 24,
-            backgroundColor: theme.colors.surface,
-            padding: 20,
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: `${theme.colors.primary}15`,
-          }}>
-            <Text style={{ color: theme.colors.onSurface, fontSize: 16, fontFamily: 'Fraunces_600SemiBold', marginBottom: 12 }}>Story Details</Text>
+          <View
+            style={{
+              marginTop: 24,
+              backgroundColor: theme.colors.surface,
+              padding: 20,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: `${theme.colors.primary}15`,
+            }}>
+            <AppText
+              style={{
+                color: theme.colors.onSurface,
+                fontSize: 16,
+                fontFamily: 'Fraunces_600SemiBold',
+                marginBottom: 12,
+              }}>
+              Story Details
+            </AppText>
             <View style={{ gap: 8 }}>
-              <DetailRow label="Duration" value={`${Math.round(story.durationMs / 1000)} seconds`} theme={theme} />
-              <DetailRow label="File Size" value={`${(story.sizeBytes / 1024).toFixed(1)} KB`} theme={theme} />
+              <DetailRow
+                label="Duration"
+                value={`${Math.round(story.durationMs / 1000)} seconds`}
+                theme={theme}
+              />
+              <DetailRow
+                label="File Size"
+                value={`${(story.sizeBytes / 1024).toFixed(1)} KB`}
+                theme={theme}
+              />
               <DetailRow
                 label="Backup"
                 value={syncStatus === 'synced' ? 'Cloud saved ✓' : 'Local only'}
@@ -236,29 +294,28 @@ export default function StoryDetailScreen() {
 
           <View style={{ height: 40 }} />
         </Animated.ScrollView>
-
-
       </View>
 
       {/* 3. Footer (Player + Actions) */}
-      <View style={{
-        backgroundColor: `${theme.colors.surface}F2`, // Transparent/blur effect
-        borderTopLeftRadius: 32,
-        borderTopRightRadius: 32,
-        borderTopWidth: 1,
-        borderColor: `${theme.colors.primary}10`,
-        paddingHorizontal: 24,
-        paddingTop: 24,
-        paddingBottom: 40,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 20,
-        elevation: 10,
-      }}>
+      <View
+        style={{
+          backgroundColor: `${theme.colors.surface}F2`, // Transparent/blur effect
+          borderTopLeftRadius: 32,
+          borderTopRightRadius: 32,
+          borderTopWidth: 1,
+          borderColor: `${theme.colors.primary}10`,
+          paddingHorizontal: 24,
+          paddingTop: 24,
+          paddingBottom: 40,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.05,
+          shadowRadius: 20,
+          elevation: 10,
+        }}>
         {/* Audio Player */}
         <View style={{ marginBottom: 24 }}>
-          <AudioPlayer uri={story.filePath} />
+          <LazyStoryPlayer uri={story.filePath} />
         </View>
 
         {/* Action Buttons */}
@@ -266,21 +323,28 @@ export default function StoryDetailScreen() {
           {/* Comments - with real count */}
           <TouchableOpacity
             onPress={handleViewComments}
-            style={[styles.actionButton, { backgroundColor: theme.colors.surface, borderColor: `${theme.colors.primary}20`, borderWidth: 2 }]}
-          >
+            style={[
+              styles.actionButton,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: `${theme.colors.primary}20`,
+                borderWidth: 2,
+              },
+            ]}>
             <Ionicons name="chatbubble-outline" size={24} color={theme.colors.primary} />
-            <Text style={[styles.actionText, { color: theme.colors.primary }]}>
+            <AppText style={[styles.actionText, { color: theme.colors.primary }]}>
               Comments {commentCount > 0 ? `(${commentCount})` : ''}
-            </Text>
+            </AppText>
           </TouchableOpacity>
 
           {/* Edit - opens EditTitleSheet */}
           <TouchableOpacity
             onPress={handleEditStory}
-            style={[styles.actionButton, { backgroundColor: theme.colors.primary }]}
-          >
+            style={[styles.actionButton, { backgroundColor: theme.colors.primary }]}>
             <Ionicons name="pencil" size={24} color={theme.colors.onPrimary} />
-            <Text style={[styles.actionText, { color: theme.colors.onPrimary }]}>Edit Story</Text>
+            <AppText style={[styles.actionText, { color: theme.colors.onPrimary }]}>
+              Edit Story
+            </AppText>
           </TouchableOpacity>
         </View>
       </View>
@@ -314,11 +378,21 @@ export default function StoryDetailScreen() {
   );
 }
 
-function DetailRow({ label, value, theme }: { label: string; value: string; theme: any }) {
+function DetailRow({
+  label,
+  value,
+  theme,
+}: {
+  label: string;
+  value: string;
+  theme: HeritageTheme;
+}): JSX.Element {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Text style={{ color: theme.colors.textMuted, fontSize: 14 }}>{label}</Text>
-      <Text style={{ color: theme.colors.onSurface, fontSize: 14, fontWeight: '500' }}>{value}</Text>
+      <AppText style={{ color: theme.colors.textMuted, fontSize: 14 }}>{label}</AppText>
+      <AppText style={{ color: theme.colors.onSurface, fontSize: 14, fontWeight: '500' }}>
+        {value}
+      </AppText>
     </View>
   );
 }
@@ -336,5 +410,5 @@ const styles = {
   actionText: {
     fontSize: 16,
     fontWeight: '700' as const,
-  }
+  },
 };

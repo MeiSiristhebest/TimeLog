@@ -27,13 +27,15 @@ Sentry.init({
   },
 });
 
-export const captureError = (error: unknown, context?: Record<string, unknown>) => {
+export function captureError(error: unknown, context?: Record<string, unknown>): void {
   if (!error) return;
   Sentry.captureException(error, context ? { extra: context } : undefined);
-};
+}
 
-export const captureMessage = (message: string, level: Sentry.SeverityLevel = 'info') => {
+export function captureMessage(message: string, level: Sentry.SeverityLevel = 'info'): void {
   Sentry.captureMessage(message, level);
-};
+}
 
-export const isSentryEnabled = () => SENTRY_ENABLED;
+export function isSentryEnabled(): boolean {
+  return SENTRY_ENABLED;
+}

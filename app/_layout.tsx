@@ -1,7 +1,10 @@
+import { AppText } from '@/components/ui/AppText';
 import { useEffect } from 'react';
+
 import { Text, View, TextProps } from 'react-native';
 import { Stack } from 'expo-router';
 import { useFonts, Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
+import { Caveat_700Bold } from '@expo-google-fonts/caveat';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -10,16 +13,26 @@ import '@/lib/logger';
 import { useDbMigrations } from '@/db/useMigrations';
 import { useDeepLinkHandler } from '@/features/auth/hooks/useDeepLinkHandler';
 import { useSyncStore } from '@/lib/sync-engine/store';
+import { registerSyncSoundCues } from '@/lib/sync-engine/soundCues';
 import { ToastProvider } from '@/components/ui/feedback/ToastProvider';
 import { OfflineBanner } from '@/components/ui/feedback/OfflineBanner';
 import { useNotifications, NotificationBanner } from '@/features/family-listener';
-import { HeritageAlertProvider, setGlobalAlertRef, useHeritageAlert } from '@/components/ui/HeritageAlert';
-import { PALETTE } from '@/theme/heritage';
+import {
+  HeritageAlertProvider,
+  setGlobalAlertRef,
+  useHeritageAlert,
+} from '@/components/ui/HeritageAlert';
+import { useHeritageTheme } from '@/theme/heritage';
+import { setBackgroundColorAsync } from 'expo-system-ui';
+import { playOfflineCue, playOnlineCue } from '@/features/recorder/services/soundCueService';
+import { initializeOnlineManager, cleanupOnlineManager } from '@/lib/react-query/onlineManager';
 
 // Mobile UX: Enable Dynamic Type for accessibility (iOS system font scaling)
 // maxFontSizeMultiplier prevents extreme scaling from breaking layouts
-(Text as any).defaultProps = {
-  ...((Text as any).defaultProps || {}),
+type TextWithDefaultProps = typeof Text & { defaultProps?: Partial<TextProps> };
+const TextWithDefaults = Text as TextWithDefaultProps;
+TextWithDefaults.defaultProps = {
+  ...(TextWithDefaults.defaultProps ?? {}),
   allowFontScaling: true,
   maxFontSizeMultiplier: 1.5,
 };
@@ -27,7 +40,7 @@ import { PALETTE } from '@/theme/heritage';
 const queryClient = new QueryClient();
 
 // Inner component to access HeritageAlert context
-function AppContent() {
+function AppContent(): JSX.Element | null {
   const alertContext = useHeritageAlert();
 
   // Set global alert ref for imperative usage
@@ -38,27 +51,38 @@ function AppContent() {
   return null;
 }
 
-export default function RootLayout() {
+export default function RootLayout(): JSX.Element {
+  const theme = useHeritageTheme();
+  const { colors } = theme;
   const { success, error } = useDbMigrations();
   const [fontsLoaded, fontError] = useFonts({
     Fraunces_600SemiBold,
+    Caveat_700Bold,
   });
 
   // Push notification handling
-  const {
-    foregroundNotification,
-    dismissForegroundNotification,
-    navigateToNotification,
-  } = useNotifications();
+  const { foregroundNotification, dismissForegroundNotification, navigateToNotification } =
+    useNotifications();
 
   // Initialize Sync Engine listeners
   useEffect(() => {
+    registerSyncSoundCues({ playOnlineCue, playOfflineCue });
+
     const initializeListeners = useSyncStore.getState().initializeListeners;
     const cleanupListeners = useSyncStore.getState().cleanupListeners;
 
     initializeListeners();
-    return () => cleanupListeners();
+    initializeOnlineManager();
+    return () => {
+      cleanupListeners();
+      registerSyncSoundCues(null);
+      cleanupOnlineManager();
+    };
   }, []);
+
+  useEffect(() => {
+    void setBackgroundColorAsync(colors.surfaceDim);
+  }, [colors.surfaceDim]);
 
   // Deep link and clipboard "TaoKouLing" handling extracted to hook
   useDeepLinkHandler();
@@ -66,7 +90,7 @@ export default function RootLayout() {
   if (error || fontError) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Initialization Error: {error?.message || fontError?.message}</Text>
+        <AppText>Initialization Error: {error?.message || fontError?.message}</AppText>
       </View>
     );
   }
@@ -74,27 +98,28 @@ export default function RootLayout() {
   if (!success || !fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Initializing...</Text>
+        <AppText>Initializing...</AppText>
       </View>
     );
   }
 
   return (
-    <HeritageAlertProvider>
-      <AppContent />
-      <ToastProvider>
-        <OfflineBanner />
-        {/* Foreground notification banner */}
-        {foregroundNotification && (
-          <NotificationBanner
-            title={foregroundNotification.title}
-            body={foregroundNotification.body}
-            data={foregroundNotification.data}
-            onPress={navigateToNotification}
-            onDismiss={dismissForegroundNotification}
-          />
-        )}
-        <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <HeritageAlertProvider>
+        <AppContent />
+        <ToastProvider>
+          <OfflineBanner />
+          {/* Foreground notification banner */}
+          {foregroundNotification && (
+            <NotificationBanner
+              title={foregroundNotification.title}
+              body={foregroundNotification.body}
+              data={foregroundNotification.data}
+              onPress={navigateToNotification}
+              onDismiss={dismissForegroundNotification}
+            />
+          )}
+
           <Stack
             screenOptions={{
               // Heritage custom transitions
@@ -104,21 +129,20 @@ export default function RootLayout() {
               gestureDirection: 'horizontal',
               // Heritage header styling - using theme colors
               headerStyle: {
-                backgroundColor: PALETTE.surfaceDim,
+                backgroundColor: colors.surfaceDim,
               },
-              headerTintColor: PALETTE.primary,
+              headerTintColor: colors.primary,
               headerTitleStyle: {
-                color: PALETTE.onSurface,
+                color: colors.onSurface,
                 fontWeight: '600',
                 fontSize: 18,
               },
               headerShadowVisible: false,
               // Content styling
               contentStyle: {
-                backgroundColor: PALETTE.surfaceDim,
+                backgroundColor: colors.surfaceDim,
               },
-            }}
-          >
+            }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen
               name="details"
@@ -154,8 +178,8 @@ export default function RootLayout() {
               }}
             />
           </Stack>
-        </QueryClientProvider>
-      </ToastProvider>
-    </HeritageAlertProvider>
+        </ToastProvider>
+      </HeritageAlertProvider>
+    </QueryClientProvider>
   );
 }

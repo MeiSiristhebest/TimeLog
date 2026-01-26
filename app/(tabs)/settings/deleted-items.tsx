@@ -1,7 +1,6 @@
+import { AppText } from '@/components/ui/AppText';
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { Container } from '@/components/ui/Container';
+import { View, StyleSheet } from 'react-native';
 import { DeletedItemsList } from '@/features/story-gallery/components/DeletedItemsList';
 import { useStories } from '@/features/story-gallery/hooks/useStories';
 import { restoreStory } from '@/features/story-gallery/services/storyService';
@@ -9,9 +8,9 @@ import { showSuccessToast } from '@/components/ui/feedback/toast';
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { useHeritageTheme } from '@/theme/heritage';
+import { devLog } from '@/lib/devLogger';
 
-export default function DeletedItemsScreen() {
-  const router = useRouter();
+export default function DeletedItemsScreen(): JSX.Element {
   const { stories, isLoading } = useStories({ onlyDeleted: true });
   const { colors } = useHeritageTheme();
 
@@ -20,7 +19,7 @@ export default function DeletedItemsScreen() {
       await restoreStory(id);
       showSuccessToast('Story restored to gallery');
     } catch (error) {
-      console.error('Failed to restore story:', error);
+      devLog.error('[DeletedItemsScreen] Failed to restore story:', error);
       HeritageAlert.show({
         title: 'Error',
         message: 'Failed to restore story. Please try again.',
@@ -35,20 +34,18 @@ export default function DeletedItemsScreen() {
 
       <View style={styles.container}>
         <View
-          style={[styles.notice, {
-            backgroundColor: `${colors.primary}10`,
-            borderColor: `${colors.primary}20`,
-          }]}
-        >
-          <Text style={[styles.noticeText, { color: colors.onSurface }]}>
+          style={[
+            styles.notice,
+            {
+              backgroundColor: `${colors.primary}10`,
+              borderColor: `${colors.primary}20`,
+            },
+          ]}>
+          <AppText style={[styles.noticeText, { color: colors.onSurface }]}>
             Items are permanently deleted after 30 days.
-          </Text>
+          </AppText>
         </View>
-        <DeletedItemsList
-          items={stories}
-          onRestore={handleRestore}
-          isLoading={isLoading}
-        />
+        <DeletedItemsList items={stories} onRestore={handleRestore} isLoading={isLoading} />
       </View>
     </View>
   );
@@ -67,4 +64,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-

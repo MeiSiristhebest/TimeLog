@@ -7,10 +7,11 @@
  * Story 4.3: Realtime Comment System (AC: 5)
  */
 
+import { AppText } from '@/components/ui/AppText';
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { Container } from '@/components/ui/Container';
 import { CommentSection } from '@/features/family-listener/components/CommentSection';
@@ -36,7 +37,7 @@ async function fetchSeniorStory(storyId: string) {
   };
 }
 
-export default function StoryCommentsScreen() {
+export default function StoryCommentsScreen(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<string | undefined>();
@@ -71,9 +72,7 @@ export default function StoryCommentsScreen() {
       <Container>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.onSurface }]}>
-            Loading...
-          </Text>
+          <AppText style={[styles.loadingText, { color: colors.onSurface }]}>Loading...</AppText>
         </View>
       </Container>
     );
@@ -85,18 +84,15 @@ export default function StoryCommentsScreen() {
       <Container>
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={64} color={colors.error} />
-          <Text style={[styles.errorTitle, { color: colors.onSurface }]}>
+          <AppText style={[styles.errorTitle, { color: colors.onSurface }]}>
             Cannot load story
-          </Text>
+          </AppText>
           <TouchableOpacity
             onPress={handleBack}
             style={[styles.button, { backgroundColor: colors.primary }]}
             accessibilityRole="button"
-            accessibilityLabel="Back"
-          >
-            <Text style={[styles.buttonText, { color: colors.onPrimary }]}>
-              Back
-            </Text>
+            accessibilityLabel="Back">
+            <AppText style={[styles.buttonText, { color: colors.onPrimary }]}>Back</AppText>
           </TouchableOpacity>
         </View>
       </Container>
@@ -107,38 +103,26 @@ export default function StoryCommentsScreen() {
     <Container>
       {/* Header */}
       <View
-        style={[styles.header, { borderColor: colors.border, backgroundColor: colors.surface }]}
-      >
+        style={[styles.header, { borderColor: colors.border, backgroundColor: colors.surface }]}>
         <TouchableOpacity
           onPress={handleBack}
           style={[styles.backButton, { backgroundColor: `${colors.onSurface}10` }]}
           accessibilityRole="button"
-          accessibilityLabel="Back"
-        >
+          accessibilityLabel="Back">
           <Ionicons name="arrow-back" size={24} color={colors.onSurface} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text
-            style={[styles.headerTitle, { color: colors.onSurface }]}
-            numberOfLines={1}
-          >
+          <AppText style={[styles.headerTitle, { color: colors.onSurface }]} numberOfLines={1}>
             {story.title ?? 'Untitled Story'}
-          </Text>
-          <Text
-            style={[styles.headerSubtitle, { color: colors.textMuted }]}
-          >
+          </AppText>
+          <AppText style={[styles.headerSubtitle, { color: colors.textMuted }]}>
             Family Comments
-          </Text>
+          </AppText>
         </View>
       </View>
 
       {/* Comment section (read-only for seniors) */}
-      <CommentSection
-        storyId={id!}
-        currentUserId={currentUserId}
-        readOnly={true}
-        header={null}
-      />
+      <CommentSection storyId={id!} currentUserId={currentUserId} readOnly={true} header={null} />
     </Container>
   );
 }
@@ -198,4 +182,3 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-

@@ -55,7 +55,7 @@ export const triggerHaptic = {
       // Ignore
     }
   },
-  
+
   /**
    * Rigid impact for UI boundaries or locking.
    */

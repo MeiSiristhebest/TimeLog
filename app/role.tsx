@@ -1,58 +1,31 @@
-import { useEffect, useState } from 'react';
-import { Text, View, Pressable, StyleSheet, ScrollView } from 'react-native';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '@/components/ui/AppText';
+import { View, Pressable, StyleSheet, ScrollView } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Ionicons } from '@/components/ui/Icon';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getStoredRole, setStoredRole } from '@/features/auth/services/roleStorage';
-import { useHeritageTheme } from '@/theme/heritage';
-import { PALETTE } from '@/theme/heritage';
+import { useHeritageTheme, PALETTE } from '@/theme/heritage';
+import { useRoleLogic } from '@/features/auth/hooks/useAuthLogic';
+import { AUTH_STRINGS } from '@/features/auth/data/mockAuthData';
 
-const ROLE_STORYTELLER = 'storyteller';
-const ROLE_FAMILY = 'family';
+export default function RoleScreen(): JSX.Element {
+  const { colors } = useHeritageTheme();
 
-export default function RoleScreen() {
-  const [loading, setLoading] = useState(true);
-  const { colors, spacing } = useHeritageTheme();
-
-  useEffect(() => {
-    getStoredRole()
-      .then((role) => {
-        if (role === ROLE_STORYTELLER) {
-          router.replace('/device-code');
-          return;
-        }
-        if (role === ROLE_FAMILY) {
-          router.replace('/(tabs)');
-          return;
-        }
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const handleSelect = async (role: string) => {
-    await setStoredRole(role);
-    if (role === ROLE_STORYTELLER) {
-      router.replace('/device-code');
-    } else {
-      router.replace('/(tabs)');
-    }
-  };
-
-  const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      // Fallback if accessed directly (though unlikely in this flow)
-      router.replace('/welcome');
-    }
-  };
+  // Logic Separation
+  const { state, actions, constants } = useRoleLogic();
+  const { loading } = state;
+  const { handleSelect, handleBack } = actions;
+  const { ROLE_STORYTELLER, ROLE_FAMILY } = constants;
+  const STRINGS = AUTH_STRINGS.role;
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ fontSize: 16, color: colors.textMuted }}>Loading…</Text>
+      <SafeAreaView
+        style={[
+          styles.container,
+          { backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' },
+        ]}>
+        <AppText style={{ fontSize: 16, color: colors.textMuted }}>{STRINGS.loading}</AppText>
       </SafeAreaView>
     );
   }
@@ -63,23 +36,20 @@ export default function RoleScreen() {
       <View style={styles.header}>
         <Pressable
           onPress={handleBack}
-          style={({ pressed }) => [
-            styles.backButton,
-            pressed && styles.backButtonPressed
-          ]}
+          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
+          accessibilityLabel={STRINGS.backAccessibility}>
           <Ionicons name="arrow-back" size={28} color={colors.onSurface} />
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
         {/* Title Section */}
         <Animated.View entering={FadeInDown.duration(600)} style={styles.titleContainer}>
-          <Text style={[styles.title, { color: colors.onSurface }]}>
-            Who is using{'\n'}this phone?
-          </Text>
+          <AppText style={[styles.title, { color: colors.onSurface }]}>{STRINGS.title}</AppText>
         </Animated.View>
 
         {/* Role Cards */}
@@ -91,20 +61,22 @@ export default function RoleScreen() {
               style={({ pressed }) => [
                 styles.card,
                 { backgroundColor: colors.surface, borderColor: colors.border },
-                pressed && [styles.cardPressed, { backgroundColor: colors.surfaceDim, borderColor: colors.primary }]
+                pressed && [
+                  styles.cardPressed,
+                  { backgroundColor: colors.surfaceDim, borderColor: colors.primary },
+                ],
               ]}
               accessibilityRole="button"
-              accessibilityLabel="I am a Storyteller"
-            >
+              accessibilityLabel={STRINGS.storyteller.accessibilityLabel}>
               <View style={styles.iconContainer}>
                 <Ionicons name="mic" size={84} color={colors.primary} />
               </View>
-              <Text style={[styles.cardTitle, { color: colors.onSurface }]}>
-                I am a Storyteller
-              </Text>
-              <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>
-                I want to record memories
-              </Text>
+              <AppText style={[styles.cardTitle, { color: colors.onSurface }]}>
+                {STRINGS.storyteller.title}
+              </AppText>
+              <AppText style={[styles.cardSubtitle, { color: colors.textMuted }]}>
+                {STRINGS.storyteller.subtitle}
+              </AppText>
             </Pressable>
           </Animated.View>
 
@@ -115,21 +87,23 @@ export default function RoleScreen() {
               style={({ pressed }) => [
                 styles.card,
                 { backgroundColor: colors.surface, borderColor: colors.border },
-                pressed && [styles.cardPressed, { backgroundColor: colors.surfaceDim, borderColor: colors.primary }]
+                pressed && [
+                  styles.cardPressed,
+                  { backgroundColor: colors.surfaceDim, borderColor: colors.primary },
+                ],
               ]}
               accessibilityRole="button"
-              accessibilityLabel="I am a Listener"
-            >
+              accessibilityLabel={STRINGS.listener.accessibilityLabel}>
               <View style={styles.iconContainer}>
                 {/* Using headset as equivalent to standard headphones */}
                 <Ionicons name="headset" size={84} color={colors.primary} />
               </View>
-              <Text style={[styles.cardTitle, { color: colors.onSurface }]}>
-                I am a Listener
-              </Text>
-              <Text style={[styles.cardSubtitle, { color: colors.textMuted }]}>
-                I want to hear stories
-              </Text>
+              <AppText style={[styles.cardTitle, { color: colors.onSurface }]}>
+                {STRINGS.listener.title}
+              </AppText>
+              <AppText style={[styles.cardSubtitle, { color: colors.textMuted }]}>
+                {STRINGS.listener.subtitle}
+              </AppText>
             </Pressable>
           </Animated.View>
         </View>
@@ -197,7 +171,7 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     marginBottom: 24,
-    // Add optional hover/scale effect logic here if using Reanimated, 
+    // Add optional hover/scale effect logic here if using Reanimated,
     // but simple press scale on parent is usually enough for native feels.
   },
   cardTitle: {
@@ -213,5 +187,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontWeight: '500',
     textAlign: 'center',
-  }
+  },
 });

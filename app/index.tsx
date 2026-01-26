@@ -1,5 +1,6 @@
+import { AppText } from '@/components/ui/AppText';
 import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 
 import { Container } from '@/components/ui/Container';
@@ -8,7 +9,7 @@ import { getStoredRole, setStoredRole } from '@/features/auth/services/roleStora
 const ROLE_STORYTELLER = 'storyteller';
 const ROLE_FAMILY = 'family';
 
-export default function Index() {
+export default function Index(): JSX.Element {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function Index() {
     return (
       <Container>
         <View className="flex-1 items-center justify-center">
-          <Text className="text-body text-onSurface">Loading…</Text>
+          <AppText className="text-body text-onSurface">Loading…</AppText>
         </View>
       </Container>
     );
@@ -46,18 +47,18 @@ export default function Index() {
   return (
     <Container>
       <View className="flex-1 items-center justify-center gap-4">
-        <Text className="text-headline font-bold text-onSurface">Redirecting…</Text>
+        <AppText className="text-headline text-onSurface font-bold">Redirecting…</AppText>
         <View className="flex-row gap-2">
-          <Text
+          <AppText
             className="text-body text-onSurface/60"
             onPress={() => setRoleAndRoute(ROLE_STORYTELLER)}>
             (Dev) Storyteller
-          </Text>
-          <Text
+          </AppText>
+          <AppText
             className="text-body text-onSurface/60"
             onPress={() => setRoleAndRoute(ROLE_FAMILY)}>
             (Dev) Family
-          </Text>
+          </AppText>
         </View>
       </View>
     </Container>

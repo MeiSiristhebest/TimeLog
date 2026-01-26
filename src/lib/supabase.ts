@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import { createClient } from '@supabase/supabase-js';
+import { devLog } from './devLogger';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
@@ -11,7 +12,7 @@ const secureStorage = {
 };
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
+  devLog.warn(
     'Supabase env vars missing. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to enable auth.'
   );
 }

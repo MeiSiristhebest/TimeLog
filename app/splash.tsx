@@ -1,7 +1,8 @@
+import { AppText } from '@/components/ui/AppText';
 import { useEffect } from 'react';
-import { Text, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 
 import { Container } from '@/components/ui/Container';
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -12,7 +13,7 @@ import { useHeritageTheme } from '@/theme/heritage';
 const ROLE_STORYTELLER = 'storyteller';
 const ROLE_FAMILY = 'family';
 
-export default function SplashScreen() {
+export default function SplashScreen(): JSX.Element {
   const router = useRouter();
   const { setRestoring, setAuthenticated, setUnauthenticated } = useAuthStore();
   const { colors } = useHeritageTheme();
@@ -62,21 +63,21 @@ export default function SplashScreen() {
       <View style={styles.container}>
         {/* Heritage Logo */}
         <View
-          style={[styles.logo, {
-            backgroundColor: `${colors.primary}12`,
-            borderColor: `${colors.primary}20`,
-          }]}
-        >
+          style={[
+            styles.logo,
+            {
+              backgroundColor: `${colors.primary}12`,
+              borderColor: `${colors.primary}20`,
+            },
+          ]}>
           <Ionicons name="book" size={48} color={colors.primary} />
         </View>
 
         <View style={styles.textContainer}>
-          <Text style={[styles.title, { color: colors.onSurface }]}>
-            TimeLog
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+          <AppText style={[styles.title, { color: colors.onSurface }]}>TimeLog</AppText>
+          <AppText style={[styles.subtitle, { color: colors.textMuted }]}>
             Restoring your session…
-          </Text>
+          </AppText>
         </View>
 
         {/* Decorative accent */}
@@ -119,4 +120,3 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
 });
-

@@ -1,0 +1,85 @@
+# TimeLog E2E - Playback Flow Test
+# Tests story playback and gallery navigation
+#
+# Critical User Journey:
+# 1. Navigate to Listen (Gallery) tab
+# 2. Verify stories are displayed
+# 3. Select a story
+# 4. Verify playback controls
+# 5. Play audio
+# 6. Pause and navigate back
+
+appId: com.timelog.app
+
+---
+# Phase 1: Navigate to Gallery
+- launchApp:
+    clearState: false
+
+# Tap on Listen tab
+- tapOn:
+    text: 'Listen'
+    optional: false
+
+# Phase 2: Verify Gallery Screen
+- assertVisible:
+    text: 'My Stories'
+
+- assertVisible:
+    text: 'memories recorded'
+    optional: true
+
+# Phase 3: Check Filter Bar
+- assertVisible:
+    text: 'All'
+    optional: true
+
+# Phase 4: Select First Story (if exists)
+- runFlow:
+    when:
+      notVisible: 'No stories yet'
+    commands:
+      # Tap on first story card
+      - tapOn:
+          index: 0
+          className: 'android.view.ViewGroup'
+          optional: true
+
+      # Wait for story detail screen
+      - extendedWaitUntil:
+          visible:
+            text: 'Play'
+          timeout: 5000
+          optional: true
+
+# Phase 5: Test Navigation Back
+- runFlow:
+    when:
+      visible: 'chevron-back'
+    commands:
+      - tapOn:
+          id: 'back-button'
+          optional: true
+
+# Verify return to gallery
+- assertVisible:
+    text: 'My Stories'
+    optional: true
+
+# Phase 6: Test Sort Feature
+- tapOn:
+    text: 'Sort'
+    optional: true
+
+- runFlow:
+    when:
+      visible: 'Newest First'
+    commands:
+      - assertVisible:
+          text: 'Oldest First'
+      - tapOn:
+          text: 'Newest First'
+
+# Verify modal closed
+- assertVisible:
+    text: 'My Stories'

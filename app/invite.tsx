@@ -1,139 +1,84 @@
-import { useState } from 'react';
-import { View, Text, Share } from 'react-native';
-import * as Linking from 'expo-linking';
-import { Ionicons } from '@expo/vector-icons';
-import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
+import { AppText } from '@/components/ui/AppText';
+import { View } from 'react-native';
+import { Ionicons } from '@/components/ui/Icon';
+import Animated from 'react-native-reanimated';
 
-import { createFamilyInvite } from '@/features/family/services/inviteService';
-import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { HeritageInput } from '@/components/ui/heritage/HeritageInput';
 import { useHeritageTheme } from '@/theme/heritage';
 
-export default function InviteScreen() {
+import { useInviteLogic } from '@/features/family/hooks/useFamilyLogic';
+import { FAMILY_STRINGS } from '@/features/family/data/mockFamilyData';
+
+export default function InviteScreen(): JSX.Element {
   const theme = useHeritageTheme();
-  const [email, setEmail] = useState('');
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const scrollY = useSharedValue(0);
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
-    },
-  });
+  // Logic Separation
+  const { state, actions } = useInviteLogic();
+  const { email, inviteLink, loading, error, scrollY, isSubmitDisabled } = state;
 
-  const handleCreateInvite = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const result = await createFamilyInvite(email);
-      setInviteLink(result.inviteLink ?? null);
-      HeritageAlert.show({
-        title: 'Invite Ready!',
-        message: 'Tap "Share link" to send it to your family member.',
-        variant: 'success',
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to create invite right now.';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleShare = async () => {
-    if (!inviteLink) return;
-    try {
-      await Share.share({
-        message: `Join my family on TimeLog!\n\nCopy this entire message and open the TimeLog app to accept: ${inviteLink}`,
-        url: inviteLink,
-      });
-    } catch {
-      // User cancelled or share failed, ignore
-    }
-  };
-
-  const handleOpen = async () => {
-    if (!inviteLink) return;
-    try {
-      await Linking.openURL(inviteLink);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to open the invite link.';
-      HeritageAlert.show({
-        title: 'Could Not Open',
-        message: message,
-        variant: 'error',
-      });
-    }
-  };
-
-  const isSubmitDisabled = !email.trim() || loading;
+  const STRINGS = FAMILY_STRINGS.invite;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
       <HeritageHeader
-        title="Invite Family"
+        title={STRINGS.title}
         showBack
         scrollY={scrollY}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }}
       />
 
       <Animated.ScrollView
+        contentInsetAdjustmentBehavior="automatic"
         className="flex-1"
         contentContainerStyle={{ padding: 24, paddingTop: 100 }}
-        onScroll={scrollHandler}
+        onScroll={actions.scrollHandler}
         scrollEventThrottle={16}
-      >
+        showsVerticalScrollIndicator={false}>
         <View className="flex-1 justify-center gap-8 lg:max-w-xl lg:self-center">
           <View className="gap-3">
-            <Text
+            <AppText
               className="text-center font-semibold"
               style={{
                 fontSize: 28,
                 color: theme.colors.onSurface,
                 fontFamily: 'Fraunces_600SemiBold',
-              }}
-            >
-              Invite a family member
-            </Text>
-            <Text
+              }}>
+              {STRINGS.header}
+            </AppText>
+            <AppText
               className="text-center text-base leading-relaxed"
-              style={{ color: `${theme.colors.onSurface}99` }}
-            >
-              Enter their email to generate a shareable link. They will join your family account
-              after accepting the invite.
-            </Text>
+              style={{ color: `${theme.colors.onSurface}99` }}>
+              {STRINGS.subText}
+            </AppText>
           </View>
 
           <View className="gap-6">
             <HeritageInput
-              label="Email Address"
+              label={STRINGS.emailLabel}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={actions.setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
-              placeholder="sibling@example.com"
+              placeholder={STRINGS.emailPlaceholder}
               leftIcon="mail-outline"
             />
 
             {error ? (
               <View
-                className="p-3 rounded-lg flex-row items-center"
-                style={{ backgroundColor: `${theme.colors.error}15` }}
-              >
+                className="flex-row items-center rounded-lg p-3"
+                style={{ backgroundColor: `${theme.colors.error}15` }}>
                 <Ionicons name="alert-circle" size={20} color={theme.colors.error} />
-                <Text className="ml-2 flex-1" style={{ color: theme.colors.error }}>
+                <AppText className="ml-2 flex-1" style={{ color: theme.colors.error }}>
                   {error}
-                </Text>
+                </AppText>
               </View>
             ) : null}
 
             <HeritageButton
-              title={loading ? 'Generating...' : 'Generate Invite'}
-              onPress={handleCreateInvite}
+              title={loading ? STRINGS.generateButton.loading : STRINGS.generateButton.idle}
+              onPress={actions.handleCreateInvite}
               disabled={isSubmitDisabled}
               loading={loading}
               variant="primary"
@@ -142,55 +87,52 @@ export default function InviteScreen() {
 
           {inviteLink ? (
             <View
-              className="gap-4 rounded-3xl p-5 border shadow-sm"
+              className="gap-4 rounded-3xl border p-5 shadow-sm"
               style={{
                 backgroundColor: theme.colors.surface,
                 borderColor: theme.colors.border,
                 shadowColor: theme.colors.shadow,
                 shadowOpacity: 0.1,
                 shadowRadius: 10,
-              }}
-            >
-              <Text
-                className="font-semibold text-lg"
-                style={{ color: theme.colors.onSurface, fontFamily: 'Fraunces_600SemiBold' }}
-              >
-                Invite Ready
-              </Text>
+              }}>
+              <AppText
+                className="text-lg font-semibold"
+                style={{ color: theme.colors.onSurface, fontFamily: 'Fraunces_600SemiBold' }}>
+                {STRINGS.inviteReady.title}
+              </AppText>
 
               <View
-                className="p-4 rounded-xl border"
+                className="rounded-xl border p-4"
                 style={{
                   backgroundColor: `${theme.colors.primary}08`,
                   borderColor: `${theme.colors.primary}20`,
-                }}
-              >
-                <Text
+                }}>
+                <AppText
                   selectable
                   className="font-mono text-sm"
-                  style={{ color: theme.colors.onSurface }}
-                >
+                  style={{ color: theme.colors.onSurface }}>
                   {inviteLink}
-                </Text>
+                </AppText>
               </View>
 
               {__DEV__ ? (
-                <Text className="text-xs text-center" style={{ color: `${theme.colors.onSurface}60` }}>
-                  Dev builds use the exp+timelog scheme. Open the link from another device or tap
-                  “Open link” to test.
-                </Text>
+                <AppText
+                  className="text-center text-xs"
+                  style={{ color: `${theme.colors.onSurface}60` }}>
+                  {STRINGS.inviteReady.devNote}
+                </AppText>
               ) : null}
 
               <View className="gap-3">
                 <HeritageButton
-                  title="Share Link"
-                  onPress={handleShare}
+                  title={STRINGS.inviteReady.shareButton}
+                  onPress={actions.handleShare}
                   variant="primary"
                   icon="share-outline"
                 />
                 <HeritageButton
-                  title="Open Link"
-                  onPress={handleOpen}
+                  title={STRINGS.inviteReady.openButton}
+                  onPress={actions.handleOpen}
                   variant="outline"
                   icon="open-outline"
                 />

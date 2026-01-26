@@ -18,7 +18,7 @@ export const useAccessibilityStore = create<AccessibilityState>()(
     {
       name: 'accessibility-storage',
       storage: createJSONStorage(() => ({
-        getItem: (name) => mmkv.getString(name),
+        getItem: (name) => mmkv.getString(name) ?? null,
         setItem: (name, value) => mmkv.set(name, value),
         removeItem: (name) => mmkv.delete(name),
       })),

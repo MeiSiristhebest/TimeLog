@@ -1,72 +1,30 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
-import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppText } from '@/components/ui/AppText';
+import React from 'react';
 
-import { DeviceCodeResult, generateDeviceCode } from '@/features/auth/services/deviceCodesService';
-import { getStoredRole } from '@/features/auth/services/roleStorage';
-import { HeritageAlert } from '@/components/ui/HeritageAlert';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
+import { Ionicons } from '@/components/ui/Icon';
+
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
-import { useHeritageTheme } from '@/theme/heritage';
-import { PALETTE } from '@/theme/heritage';
+import { useHeritageTheme, PALETTE } from '@/theme/heritage';
 
-export default function DeviceCodeScreen() {
-  const [codeData, setCodeData] = useState<DeviceCodeResult | null>(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const { colors } = useHeritageTheme();
+import { useDeviceCodeLogic } from '@/features/auth/hooks/useAuthLogic';
+import { AUTH_STRINGS } from '@/features/auth/data/mockAuthData';
 
-  // Redirect if not storyteller
-  useEffect(() => {
-    getStoredRole().then((role) => {
-      if (role !== 'storyteller') {
-        router.replace('/role');
-      }
-    });
-  }, [router]);
+export default function DeviceCodeScreen(): JSX.Element {
+  const { colors, typography } = useHeritageTheme();
+  const scale = typography.body / 24;
 
-  const loadCode = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const result = await generateDeviceCode();
-      setCodeData(result);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to generate code right now.';
-      setError(message);
-      HeritageAlert.show({ title: 'Error', message, variant: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadCode();
-  }, [loadCode]);
-
-  const handleReady = () => {
-    router.replace('/(tabs)');
-  };
-
-  const formattedCode = codeData ? {
-    part1: codeData.code.substring(0, 3),
-    part2: codeData.code.substring(3, 6)
-  } : { part1: '...', part2: '...' };
+  // Logic Separation
+  const { state, actions } = useDeviceCodeLogic();
+  const { codeData, error, loading, formattedCode } = state;
+  const { loadCode, handleReady, handleBack } = actions;
+  const STRINGS = AUTH_STRINGS.deviceCode;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
-      <HeritageHeader
-        title="Connect Device"
-        showBack
-        onBack={() => {
-          if (router.canGoBack()) router.back();
-          else router.replace('/role');
-        }}
-      />
+      <HeritageHeader title={STRINGS.title} showBack onBack={handleBack} />
 
       {/* Main Content */}
       <View style={styles.main}>
@@ -78,42 +36,56 @@ export default function DeviceCodeScreen() {
         {/* Headline */}
         <Animated.Text
           entering={FadeInDown.duration(600).delay(200)}
-          style={[styles.headline, { color: colors.onSurface }]}
-        >
-          Connect with{'\n'}Family
+          style={[
+            styles.headline,
+            {
+              color: colors.onSurface,
+              fontSize: Math.round(36 * scale),
+              lineHeight: Math.round(43.2 * scale),
+            },
+          ]}>
+          {STRINGS.headline}
         </Animated.Text>
 
         {/* Code Container */}
         <Animated.View
           entering={ZoomIn.duration(600).delay(400)}
-          style={[styles.codeContainer, { backgroundColor: colors.surfaceDim, borderColor: colors.border }]}
-        >
-          <Text style={[styles.codeLabel, { color: colors.textMuted }]}>YOUR CODE</Text>
+          style={[
+            styles.codeContainer,
+            { backgroundColor: colors.surfaceDim, borderColor: colors.border },
+          ]}>
+          <AppText style={[styles.codeLabel, { color: colors.textMuted }]}>
+            {STRINGS.codeLabel}
+          </AppText>
 
           {loading ? (
             <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: 12 }} />
           ) : error ? (
-            <Text style={{ color: colors.error, fontSize: 16 }}>Error generating code</Text>
+            <AppText style={{ color: colors.error, fontSize: 16 }}>{STRINGS.error}</AppText>
           ) : (
             <View style={styles.codeTextContainer}>
-              <Text style={[styles.codeDigit, { color: colors.onSurface }]}>{formattedCode.part1}</Text>
-              <Text style={[styles.codeSeparator, { color: `${colors.primary}80` }]}>-</Text>
-              <Text style={[styles.codeDigit, { color: colors.onSurface }]}>{formattedCode.part2}</Text>
+              <AppText style={[styles.codeDigit, { color: colors.onSurface }]}>
+                {formattedCode.part1}
+              </AppText>
+              <AppText style={[styles.codeSeparator, { color: `${colors.primary}80` }]}>-</AppText>
+              <AppText style={[styles.codeDigit, { color: colors.onSurface }]}>
+                {formattedCode.part2}
+              </AppText>
             </View>
           )}
         </Animated.View>
 
         {/* Helper Text */}
-        <Text style={[styles.helperText, { color: `${colors.onSurface}CC` }]}>
-          Share this code with your family.
-        </Text>
+        <AppText style={[styles.helperText, { color: `${colors.onSurface}CC` }]}>
+          {STRINGS.helperText}
+        </AppText>
       </View>
 
       {/* Bottom Action Area */}
       <View style={styles.footer}>
         {/* Primary Action Button */}
         <HeritageButton
-          title="I'm Ready"
+          title={STRINGS.readyButton}
           onPress={handleReady}
           variant="primary"
           size="large"
@@ -123,9 +95,9 @@ export default function DeviceCodeScreen() {
         />
 
         <TouchableOpacity style={styles.troubleLink} onPress={() => loadCode()}>
-          <Text style={[styles.troubleText, { color: colors.textMuted }]}>
-            {loading ? 'Generating...' : 'Regenerate Code'}
-          </Text>
+          <AppText style={[styles.troubleText, { color: colors.textMuted }]}>
+            {loading ? STRINGS.regenerate.loading : STRINGS.regenerate.idle}
+          </AppText>
         </TouchableOpacity>
       </View>
     </View>
@@ -247,5 +219,5 @@ const styles = StyleSheet.create({
   troubleText: {
     fontSize: 14,
     fontWeight: '500',
-  }
+  },
 });

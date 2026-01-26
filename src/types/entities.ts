@@ -12,7 +12,16 @@ export type TopicQuestion = {
   /** The question text in Chinese */
   text: string;
   /** Optional category for grouping questions */
-  category?: 'childhood' | 'family' | 'career' | 'memories' | 'wisdom' | 'general' | 'milestones' | 'adventures' | 'reflections';
+  category?:
+    | 'childhood'
+    | 'family'
+    | 'career'
+    | 'memories'
+    | 'wisdom'
+    | 'general'
+    | 'milestones'
+    | 'adventures'
+    | 'reflections';
   /** Whether this is a family-submitted question */
   isFromFamily?: boolean;
   /** Family member name if submitted by family */

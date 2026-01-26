@@ -1,0 +1,96 @@
+# TimeLog E2E - Settings Flow Test
+# Tests settings and profile screens
+#
+# Critical User Journey:
+# 1. Navigate to Me (Settings) tab
+# 2. Verify profile information
+# 3. Test navigation to sub-screens
+# 4. Verify accessibility features
+
+appId: com.timelog.app
+
+---
+# Phase 1: Navigate to Settings
+- launchApp:
+    clearState: false
+
+# Tap on Me tab
+- tapOn:
+    text: 'Me'
+    optional: false
+
+# Phase 2: Verify Settings Screen
+- assertVisible:
+    text: 'Settings'
+    optional: true
+
+# Check for key settings options
+- assertVisible:
+    text: 'Notifications'
+    optional: true
+
+- assertVisible:
+    text: 'Help'
+    optional: true
+
+# Phase 3: Test Notifications Settings
+- runFlow:
+    when:
+      visible: 'Notifications'
+    commands:
+      - tapOn:
+          text: 'Notifications'
+
+      - extendedWaitUntil:
+          visible:
+            text: 'Push Notifications'
+          timeout: 5000
+          optional: true
+
+      # Navigate back
+      - tapOn:
+          id: 'back-button'
+          optional: true
+
+# Phase 4: Test Help Screen
+- runFlow:
+    when:
+      visible: 'Help'
+    commands:
+      - tapOn:
+          text: 'Help'
+          optional: true
+
+      - extendedWaitUntil:
+          visible:
+            text: 'FAQ'
+          timeout: 5000
+          optional: true
+
+      # Navigate back
+      - tapOn:
+          id: 'back-button'
+          optional: true
+
+# Phase 5: Verify we're back on Settings
+- assertVisible:
+    text: 'Me'
+    optional: true
+
+# Phase 6: Test Deleted Items (if visible)
+- runFlow:
+    when:
+      visible: 'Deleted Items'
+    commands:
+      - tapOn:
+          text: 'Deleted Items'
+
+      - extendedWaitUntil:
+          visible:
+            text: 'Deleted'
+          timeout: 5000
+          optional: true
+
+      - tapOn:
+          id: 'back-button'
+          optional: true

@@ -1,6 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
 import { HeritageTabBar } from '@/components/ui/heritage/HeritageTabBar';
 import { useHeritageTheme } from '@/theme/heritage';
 
@@ -15,7 +14,7 @@ import { useHeritageTheme } from '@/theme/heritage';
 // Larger icon size for elderly users
 const ICON_SIZE = 28;
 
-export default function TabsLayout() {
+export default function TabsLayout(): JSX.Element {
   const theme = useHeritageTheme();
 
   return (
@@ -42,9 +41,7 @@ export default function TabsLayout() {
         options={{
           title: 'Record',
           headerShown: false,
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="mic" size={ICON_SIZE} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <Ionicons name="mic" size={ICON_SIZE} color={color} />,
         }}
       />
 
@@ -54,9 +51,7 @@ export default function TabsLayout() {
         options={{
           title: 'Listen',
           headerShown: false, // Use custom header inside gallery.tsx
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="headset" size={ICON_SIZE} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <Ionicons name="headset" size={ICON_SIZE} color={color} />,
         }}
       />
 
@@ -66,9 +61,7 @@ export default function TabsLayout() {
         options={{
           title: 'Me',
           headerShown: false,
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="person" size={ICON_SIZE} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <Ionicons name="person" size={ICON_SIZE} color={color} />,
         }}
       />
 
@@ -91,5 +84,3 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
-
-

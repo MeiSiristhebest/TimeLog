@@ -1,17 +1,17 @@
+import { AppText } from '@/components/ui/AppText';
 import { Link, Stack } from 'expo-router';
-
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Container } from '@/components/ui/Container';
 
-export default function NotFoundScreen() {
+export default function NotFoundScreen(): JSX.Element {
   return (
     <View className={styles.container}>
       <Stack.Screen options={{ title: 'Oops!' }} />
       <Container>
-        <Text className={styles.title}>{"This screen doesn't exist."}</Text>
+        <AppText className={styles.title}>{"This screen doesn't exist."}</AppText>
         <Link href="/" className={styles.link}>
-          <Text className={styles.linkText}>Go to home screen!</Text>
+          <AppText className={styles.linkText}>Go to home screen!</AppText>
         </Link>
       </Container>
     </View>

@@ -1,149 +1,110 @@
-import { useState } from 'react';
-import { Text, TextInput, View, StyleSheet } from 'react-native';
-import { Link, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '@/components/ui/AppText';
+import { TextInput, View, StyleSheet } from 'react-native';
+import { Link } from 'expo-router';
+import { Ionicons } from '@/components/ui/Icon';
 
 import { Container } from '@/components/ui/Container';
-import { signInWithEmailPassword, sendResetEmail } from '@/features/auth/services/authService';
-import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { useHeritageTheme } from '@/theme/heritage';
+import { useLoginLogic } from '@/features/auth/hooks/useLoginLogic';
 
-export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
-  const { colors, radius, spacing } = useHeritageTheme();
+export default function LoginScreen(): JSX.Element {
+  const { colors } = useHeritageTheme();
 
-  const handleSignIn = async () => {
-    setLoading(true);
-    setError('');
-    setMessage('');
-    try {
-      await signInWithEmailPassword(email, password);
-      setMessage('Login successful.');
-      router.replace('/(tabs)');
-    } catch (err) {
-      const friendly =
-        err instanceof Error ? err.message : 'Something went wrong. Please try again.';
-      setError(friendly);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResetPassword = async () => {
-    setLoading(true);
-    setError('');
-    setMessage('');
-    try {
-      await sendResetEmail(email);
-      setMessage('Password reset email sent. Check your inbox.');
-      HeritageAlert.show({
-        title: 'Check Your Email',
-        message: 'We\'ve sent you a password reset link.',
-        variant: 'success',
-      });
-    } catch (err) {
-      const friendly = err instanceof Error ? err.message : 'Unable to send reset email right now.';
-      setError(friendly);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const isSubmitDisabled = !email.trim() || !password || loading;
+  // Logic Separation
+  const { state, actions } = useLoginLogic();
+  const { email, password, loading, message, error, isSubmitDisabled, isResetDisabled } = state;
 
   return (
     <Container>
       <View style={styles.container}>
         <View style={styles.header}>
           <View
-            style={[styles.logoContainer, {
-              backgroundColor: `${colors.primary}15`,
-              borderColor: `${colors.primary}25`,
-            }]}
-          >
+            style={[
+              styles.logoContainer,
+              {
+                backgroundColor: `${colors.primary}15`,
+                borderColor: `${colors.primary}25`,
+              },
+            ]}>
             <Ionicons name="book" size={40} color={colors.primary} />
           </View>
-          <Text style={[styles.title, { color: colors.onSurface }]}>
-            Welcome Back
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+          <AppText style={[styles.title, { color: colors.onSurface }]}>Welcome Back</AppText>
+          <AppText style={[styles.subtitle, { color: colors.textMuted }]}>
             Sign in to continue your story journey.
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.onSurface }]}>Email</Text>
+            <AppText style={[styles.label, { color: colors.onSurface }]}>Email</AppText>
             <TextInput
               value={email}
-              onChangeText={setEmail}
+              onChangeText={actions.setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
               placeholder="you@example.com"
               placeholderTextColor={colors.handle}
               accessibilityLabel="Email Address"
               accessibilityHint="Please enter your email address"
-              style={[styles.input, {
-                backgroundColor: colors.surface,
-                borderColor: `${colors.primary}30`,
-                color: colors.onSurface,
-              }]}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: `${colors.primary}30`,
+                  color: colors.onSurface,
+                },
+              ]}
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.onSurface }]}>Password</Text>
+            <AppText style={[styles.label, { color: colors.onSurface }]}>Password</AppText>
             <TextInput
               value={password}
-              onChangeText={setPassword}
+              onChangeText={actions.setPassword}
               secureTextEntry
               placeholder="••••••••"
               placeholderTextColor={colors.handle}
               accessibilityLabel="Password"
               accessibilityHint="Please enter your password"
-              style={[styles.input, {
-                backgroundColor: colors.surface,
-                borderColor: `${colors.primary}30`,
-                color: colors.onSurface,
-              }]}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: `${colors.primary}30`,
+                  color: colors.onSurface,
+                },
+              ]}
             />
           </View>
 
           {error ? (
-            <Text style={[styles.message, { color: colors.error }]}>{error}</Text>
+            <AppText style={[styles.message, { color: colors.error }]}>{error}</AppText>
           ) : null}
           {message ? (
-            <Text style={[styles.message, { color: colors.success }]}>{message}</Text>
+            <AppText style={[styles.message, { color: colors.success }]}>{message}</AppText>
           ) : null}
 
           <View style={styles.buttons}>
             <HeritageButton
               title={loading ? 'Signing in…' : 'Sign in'}
-              onPress={handleSignIn}
+              onPress={actions.handleSignIn}
               disabled={isSubmitDisabled}
               variant="primary"
             />
 
             <HeritageButton
               title="Forgot Password?"
-              onPress={handleResetPassword}
-              disabled={!email.trim() || loading}
+              onPress={actions.handleResetPassword}
+              disabled={isResetDisabled}
               variant="ghost"
             />
           </View>
         </View>
 
         <Link href="/(tabs)" asChild>
-          <HeritageButton
-            title="Back to Home"
-            variant="secondary"
-            onPress={() => { }}
-          />
+          <HeritageButton title="Back to Home" variant="secondary" onPress={() => {}} />
         </Link>
       </View>
     </Container>
@@ -213,4 +174,3 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
 });
-

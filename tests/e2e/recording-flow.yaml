@@ -1,0 +1,83 @@
+# TimeLog E2E - Recording Flow Test
+# Tests the core recording functionality for elderly users
+#
+# Critical User Journey:
+# 1. Open app on Record tab
+# 2. Verify Record screen is displayed
+# 3. Start a recording
+# 4. Wait for recording to progress
+# 5. Stop recording
+# 6. Verify success screen
+
+appId: com.timelog.app
+
+---
+# Phase 1: App Launch & Initial State
+- launchApp:
+    clearState: false
+
+- assertVisible:
+    text: 'Record'
+    optional: false
+
+# Verify we're on the Record tab (home screen)
+- assertVisible:
+    text: 'Good'
+    optional: true
+
+# Phase 2: Start Recording
+- tapOn:
+    id: 'record-button'
+    optional: true
+
+- runFlow:
+    when:
+      visible: 'Tap to start'
+    commands:
+      - tapOn:
+          text: 'Tap to start'
+
+# Wait for recording UI to appear
+- assertVisible:
+    text: 'Recording'
+    optional: true
+
+# Phase 3: Let recording run for 3 seconds
+- extendedWaitUntil:
+    visible:
+      text: 'Recording'
+    timeout: 5000
+
+- scroll:
+    # Small scroll to verify responsiveness during recording
+    distance: 50
+    direction: 'DOWN'
+
+# Phase 4: Stop Recording
+- tapOn:
+    id: 'stop-button'
+    optional: true
+
+- runFlow:
+    when:
+      visible: 'Stop'
+    commands:
+      - tapOn:
+          text: 'Stop'
+
+# Phase 5: Verify Success Screen
+- extendedWaitUntil:
+    visible:
+      text: 'Story Kept Safe'
+    timeout: 10000
+
+- assertVisible:
+    text: 'Done'
+
+# Phase 6: Dismiss Success Screen
+- tapOn:
+    text: 'Done'
+
+# Verify return to Record screen
+- assertVisible:
+    text: 'Record'

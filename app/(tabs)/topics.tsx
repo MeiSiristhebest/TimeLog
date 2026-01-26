@@ -1,123 +1,44 @@
-
-import { useState, useMemo, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  Dimensions,
-  Image,
-} from 'react-native';
-import { useRouter } from 'expo-router';
+import { AppText } from '@/components/ui/AppText';
+import { View, StyleSheet, Pressable } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  withSequence,
-  runOnJS
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@/components/ui/Icon';
+import Animated from 'react-native-reanimated';
 
-import { TOPIC_QUESTIONS } from '@/features/recorder/data/topicQuestions';
 import { useHeritageTheme } from '@/theme/heritage';
-import type { TopicQuestion } from '@/types/entities';
+import { useDiscoveryLogic } from '@/features/discovery/hooks/useDiscoveryLogic';
+import {
+  DISCOVERY_STRINGS,
+  MOCK_FAMILY_REQUEST,
+} from '@/features/discovery/data/mockDiscoveryData';
 
-const { width } = Dimensions.get('window');
-
-// Mock data for "Asked by Michael" badge
-const MOCK_FAMILY_REQUEST = {
-  isRequest: true,
-  author: 'Michael',
-  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCeKyv6Is68ryyVsZbU7W1LaYedGd3lkGjzpcmO2C9vr2eyWBUi8vQT3ff2wsdexhTlTsuaoo41bYimeMPUcfHahNiSF3xw8fszJBd9YF_pOG_41lCz2Q0ZHDPlKAc8IrprSW6wxIuBM90UtU8xudu007XmYqmxf9tqDThAAjVCSFmo7asMbn0ojKj-iqG0WuFRjMk15jzyq1hEqDk8BL0cby6ODmpShcPRg8g_qTLUrBWTMZY7X6pMH6CywKW-cN7V7s7vJfborGpn'
-};
-
-// Paper texture asset
+// Paper texture asset - could typically be moved to a shared asset constant but acceptable here or via theme
 const PAPER_TEXTURE = require('../../assets/images/paper-texture.png');
 
-export default function TopicsDiscoveryScreen() {
-  const router = useRouter();
-  const { colors, spacing, radius } = useHeritageTheme();
+export default function TopicsDiscoveryScreen(): JSX.Element {
+  const { colors } = useHeritageTheme();
 
-  // State
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isFlipping, setIsFlipping] = useState(false);
-
-  // Filter to curated list or use all
-  const deck = useMemo(() => TOPIC_QUESTIONS.slice(0, 50), []);
-  const currentCard = deck[currentIndex];
-
-  // Animation values
-  const cardScale = useSharedValue(1);
-  const cardOpacity = useSharedValue(1);
-  const cardTranslateY = useSharedValue(0);
-
-  // Handlers
-  const handleSelectTopic = () => {
-    router.push({
-      pathname: '/',
-      params: { topicId: currentCard.id },
-    });
-  };
-
-  const handleNextCard = () => {
-    if (isFlipping) return;
-    setIsFlipping(true);
-
-    // Animate out
-    cardTranslateY.value = withTiming(-20, { duration: 150 });
-    cardOpacity.value = withTiming(0, { duration: 150 }, () => {
-      runOnJS(setCurrentIndex)((currentIndex + 1) % deck.length);
-      // Reset position instantly
-      cardTranslateY.value = 20;
-
-      // Animate in
-      cardTranslateY.value = withSpring(0);
-      cardOpacity.value = withTiming(1, { duration: 300 }, () => {
-        runOnJS(setIsFlipping)(false);
-      });
-    });
-  };
-
-  const animatedCardStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: cardScale.value },
-      { translateY: cardTranslateY.value }
-    ],
-    opacity: cardOpacity.value,
-  }));
-
-  // Helper to get category icon properties
-  const getCategoryMeta = (catId?: string) => {
-    switch (catId) {
-      case 'childhood': return { icon: 'bicycle', color: '#6B8E6B' };
-      case 'family': return { icon: 'heart', color: '#C49832' };
-      case 'career': return { icon: 'briefcase', color: '#8B4332' };
-      case 'wisdom': return { icon: 'bulb', color: '#475569' };
-      case 'memories': return { icon: 'star', color: '#D4846A' };
-      default: return { icon: 'chatbubbles', color: '#B85A3B' };
-    }
-  };
-
-  const meta = getCategoryMeta(currentCard.category);
+  // Logic Separation
+  const { state, actions } = useDiscoveryLogic();
+  const { currentCard, animatedCardStyle, meta } = state;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.surfaceDim }]} edges={['top']}>
-
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.surfaceDim }]}
+      edges={['top']}>
       {/* 1. Header (Simple) */}
       <View style={styles.header}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={actions.goBack}
           style={({ pressed }) => [
             styles.iconButton,
-            { backgroundColor: pressed ? 'rgba(0,0,0,0.05)' : 'transparent' }
-          ]}
-        >
+            { backgroundColor: pressed ? 'rgba(0,0,0,0.05)' : 'transparent' },
+          ]}>
           <Ionicons name="arrow-back" size={28} color={colors.textMuted} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.onSurface }]}>Topic Discovery</Text>
+        <AppText style={[styles.headerTitle, { color: colors.onSurface }]}>
+          {DISCOVERY_STRINGS.header.title}
+        </AppText>
         <Pressable style={styles.iconButton}>
           <Ionicons name="settings-outline" size={28} color={colors.textMuted} />
         </Pressable>
@@ -129,35 +50,34 @@ export default function TopicsDiscoveryScreen() {
           {/* Paper Card */}
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             {/* Texture Overlay */}
-            <Image source={PAPER_TEXTURE} style={styles.texture} resizeMode="repeat" />
+            <Image source={PAPER_TEXTURE} style={styles.texture} contentFit="cover" />
 
             {/* Top: Icon */}
             <View style={styles.cardHeader}>
               <View style={[styles.iconCircle, { backgroundColor: `${meta.color}15` }]}>
-                <Ionicons name={meta.icon as any} size={40} color={meta.color} />
+                <Ionicons name={meta.icon} size={40} color={meta.color} />
               </View>
             </View>
 
             {/* Middle: Content */}
             <View style={styles.cardContent}>
-              {/* Gold Badge (Hardcoded for demo match HTML) */}
+              {/* Gold Badge */}
               <View style={styles.goldBadge}>
                 <Image
                   source={{ uri: MOCK_FAMILY_REQUEST.avatar }}
                   style={styles.avatar}
+                  contentFit="cover"
                 />
-                <Text style={styles.goldText}>ASKED BY MICHAEL</Text>
+                <AppText style={styles.goldText}>{DISCOVERY_STRINGS.card.badge}</AppText>
               </View>
 
               {/* Question */}
-              <Text style={[styles.questionText, { color: colors.onSurface }]}>
+              <AppText style={[styles.questionText, { color: colors.onSurface }]}>
                 {currentCard.text}
-              </Text>
+              </AppText>
 
-              {/* Helper Text (Mocked based on category for now) */}
-              <Text style={styles.helperText}>
-                Share your thoughts with the grandkids. Did you enjoy it?
-              </Text>
+              {/* Helper Text */}
+              <AppText style={styles.helperText}>{DISCOVERY_STRINGS.card.helperText}</AppText>
             </View>
 
             {/* Bottom Decor */}
@@ -170,37 +90,36 @@ export default function TopicsDiscoveryScreen() {
       <View style={[styles.actionsContainer, { backgroundColor: colors.surfaceDim }]}>
         {/* Primary Record Button */}
         <Pressable
-          onPress={handleSelectTopic}
+          onPress={actions.handleSelectTopic}
           style={({ pressed }) => [
             styles.recordButton,
             {
               backgroundColor: colors.primary,
               transform: [{ scale: pressed ? 0.96 : 1 }],
               shadowColor: colors.primary,
-            }
-          ]}
-        >
+            },
+          ]}>
           <Ionicons name="mic" size={32} color="#FFF" style={{ marginRight: 12 }} />
-          <Text style={styles.recordButtonText}>Record Answer</Text>
+          <AppText style={styles.recordButtonText}>
+            {DISCOVERY_STRINGS.actions.recordAnswer}
+          </AppText>
         </Pressable>
 
         {/* Secondary Try Another */}
         <Pressable
-          onPress={handleNextCard}
+          onPress={actions.handleNextCard}
           style={({ pressed }) => [
             styles.secondaryButton,
             {
               backgroundColor: pressed ? 'rgba(255,255,255,0.5)' : 'transparent',
-              transform: [{ scale: pressed ? 0.98 : 1 }]
-            }
-          ]}
-        >
-          <Text style={[styles.secondaryButtonText, { color: colors.textMuted }]}>
-            Try Another Question
-          </Text>
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+            },
+          ]}>
+          <AppText style={[styles.secondaryButtonText, { color: colors.textMuted }]}>
+            {DISCOVERY_STRINGS.actions.tryAnother}
+          </AppText>
         </Pressable>
       </View>
-
     </SafeAreaView>
   );
 }

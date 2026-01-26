@@ -12,9 +12,12 @@ import { View } from 'react-native';
 import { Container } from '@/components/ui/Container';
 import { FamilyStoryList } from '@/features/family-listener/components/FamilyStoryList';
 import { NotificationPrompt } from '@/features/family-listener/components/NotificationPrompt';
-import { useFamilyStories, useRefreshFamilyStories } from '@/features/family-listener/hooks/useFamilyStories';
+import {
+  useFamilyStories,
+  useRefreshFamilyStories,
+} from '@/features/family-listener/hooks/useFamilyStories';
 
-export default function FamilyTab() {
+export default function FamilyTab(): JSX.Element {
   const { data: stories, isLoading, error, isRefetching } = useFamilyStories();
   const refreshStories = useRefreshFamilyStories();
 

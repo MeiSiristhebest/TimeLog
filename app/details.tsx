@@ -5,7 +5,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { Container } from '@/components/ui/Container';
 import { ScreenContent } from '@/components/ui/ScreenContent';
 
-export default function Details() {
+export default function Details(): JSX.Element {
   const { name } = useLocalSearchParams();
 
   return (

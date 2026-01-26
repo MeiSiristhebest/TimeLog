@@ -8,17 +8,11 @@
  * Story 4.3: Realtime Comment System (AC: 1, 2, 3, 4, 5)
  */
 
+import { AppText } from '@/components/ui/AppText';
 import { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-  Dimensions,
-} from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { Container } from '@/components/ui/Container';
 import { PlaybackControls } from '@/features/family-listener/components/PlaybackControls';
@@ -30,18 +24,20 @@ import { fetchStoryById } from '@/features/family-listener/services/familyStoryS
 import { supabase } from '@/lib/supabase';
 import { useHeritageTheme } from '@/theme/heritage';
 
+const STORY_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
 /**
  * Formats timestamp to absolute date.
  */
 function formatAbsoluteDate(timestamp: number): string {
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date(timestamp));
+  return STORY_DATE_FORMATTER.format(new Date(timestamp));
 }
 
-export default function FamilyStoryPlayerScreen() {
+export default function FamilyStoryPlayerScreen(): JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<string | undefined>();
@@ -67,13 +63,7 @@ export default function FamilyStoryPlayerScreen() {
   });
 
   // Player hook
-  const {
-    playerState,
-    load,
-    togglePlayPause,
-    seek,
-    unload,
-  } = useFamilyPlayer(id!);
+  const { playerState, load, togglePlayPause, seek, unload } = useFamilyPlayer(id!);
 
   // Reaction hook for quick heart reactions
   const { hasReacted, toggleReaction, isPending: isReactionPending } = useReaction(id!);
@@ -109,9 +99,9 @@ export default function FamilyStoryPlayerScreen() {
       <Container>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.onSurface }]}>
+          <AppText style={[styles.loadingText, { color: colors.onSurface }]}>
             Loading story...
-          </Text>
+          </AppText>
         </View>
       </Container>
     );
@@ -123,21 +113,18 @@ export default function FamilyStoryPlayerScreen() {
       <Container>
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={64} color={colors.error} />
-          <Text style={[styles.errorTitle, { color: colors.onSurface }]}>
+          <AppText style={[styles.errorTitle, { color: colors.onSurface }]}>
             Could not load story
-          </Text>
-          <Text style={[styles.errorSubtitle, { color: colors.textMuted }]}>
+          </AppText>
+          <AppText style={[styles.errorSubtitle, { color: colors.textMuted }]}>
             {storyError?.message || 'Story does not exist or is inaccessible'}
-          </Text>
+          </AppText>
           <TouchableOpacity
             onPress={handleBack}
             style={[styles.button, { backgroundColor: colors.primary }]}
             accessibilityRole="button"
-            accessibilityLabel="Back to story list"
-          >
-            <Text style={[styles.buttonText, { color: colors.onPrimary }]}>
-              Back
-            </Text>
+            accessibilityLabel="Back to story list">
+            <AppText style={[styles.buttonText, { color: colors.onPrimary }]}>Back</AppText>
           </TouchableOpacity>
         </View>
       </Container>
@@ -150,21 +137,18 @@ export default function FamilyStoryPlayerScreen() {
       <Container>
         <View style={styles.errorContainer}>
           <Ionicons name="musical-notes-outline" size={64} color={colors.error} />
-          <Text style={[styles.errorTitle, { color: colors.onSurface }]}>
+          <AppText style={[styles.errorTitle, { color: colors.onSurface }]}>
             Could not play audio
-          </Text>
-          <Text style={[styles.errorSubtitle, { color: colors.textMuted }]}>
+          </AppText>
+          <AppText style={[styles.errorSubtitle, { color: colors.textMuted }]}>
             {playerState.error || 'Please try again later'}
-          </Text>
+          </AppText>
           <TouchableOpacity
             onPress={load}
             style={[styles.button, { backgroundColor: colors.primary }]}
             accessibilityRole="button"
-            accessibilityLabel="Retry"
-          >
-            <Text style={[styles.buttonText, { color: colors.onPrimary }]}>
-              Retry
-            </Text>
+            accessibilityLabel="Retry">
+            <AppText style={[styles.buttonText, { color: colors.onPrimary }]}>Retry</AppText>
           </TouchableOpacity>
         </View>
       </Container>
@@ -177,9 +161,9 @@ export default function FamilyStoryPlayerScreen() {
       <Container>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.textMuted }]}>
+          <AppText style={[styles.loadingText, { color: colors.textMuted }]}>
             Preparing playback...
-          </Text>
+          </AppText>
         </View>
       </Container>
     );
@@ -190,31 +174,21 @@ export default function FamilyStoryPlayerScreen() {
     return (
       <Container>
         {/* Header with back button */}
-        <View
-          style={[styles.header, { borderColor: colors.border }]}
-        >
+        <View style={[styles.header, { borderColor: colors.border }]}>
           <TouchableOpacity
             onPress={toggleComments}
             style={[styles.iconButton, { backgroundColor: `${colors.onSurface}10` }]}
             accessibilityRole="button"
-            accessibilityLabel="Back to player"
-          >
+            accessibilityLabel="Back to player">
             <Ionicons name="arrow-back" size={24} color={colors.onSurface} />
           </TouchableOpacity>
-          <Text
-            style={[styles.headerTitle, { color: colors.onSurface }]}
-            numberOfLines={1}
-          >
+          <AppText style={[styles.headerTitle, { color: colors.onSurface }]} numberOfLines={1}>
             {story.title ?? 'Untitled Story'}
-          </Text>
+          </AppText>
         </View>
 
         {/* Comment section */}
-        <CommentSection
-          storyId={id!}
-          currentUserId={currentUserId}
-          readOnly={false}
-        />
+        <CommentSection storyId={id!} currentUserId={currentUserId} readOnly={false} />
       </Container>
     );
   }
@@ -225,31 +199,22 @@ export default function FamilyStoryPlayerScreen() {
       {/* Back button */}
       <TouchableOpacity
         onPress={handleBack}
-        style={[
-          styles.absoluteBackButton,
-          { backgroundColor: `${colors.onSurface}10` }
-        ]}
+        style={[styles.absoluteBackButton, { backgroundColor: `${colors.onSurface}10` }]}
         accessibilityRole="button"
-        accessibilityLabel="Back to story list"
-      >
+        accessibilityLabel="Back to story list">
         <Ionicons name="arrow-back" size={28} color={colors.onSurface} />
       </TouchableOpacity>
 
       {/* Heart reaction button */}
       <View style={styles.topRightControls}>
-        <HeartIcon
-          isLiked={hasReacted}
-          onToggle={toggleReaction}
-          disabled={isReactionPending}
-        />
+        <HeartIcon isLiked={hasReacted} onToggle={toggleReaction} disabled={isReactionPending} />
 
         {/* Comments button */}
         <TouchableOpacity
           onPress={toggleComments}
           style={[styles.iconButton, { backgroundColor: `${colors.onSurface}10` }]}
           accessibilityRole="button"
-          accessibilityLabel="View comments"
-        >
+          accessibilityLabel="View comments">
           <Ionicons name="chatbubble-outline" size={24} color={colors.onSurface} />
         </TouchableOpacity>
       </View>
@@ -259,26 +224,19 @@ export default function FamilyStoryPlayerScreen() {
         {/* Story Info */}
         <View style={styles.storyInfoContainer}>
           {/* Story icon */}
-          <View
-            style={[styles.storyIconCircle, { backgroundColor: `${colors.primary}20` }]}
-          >
+          <View style={[styles.storyIconCircle, { backgroundColor: `${colors.primary}20` }]}>
             <Ionicons name="mic" size={48} color={colors.primary} />
           </View>
 
           {/* Title */}
-          <Text
-            style={[styles.storyTitle, { color: colors.onSurface }]}
-            numberOfLines={2}
-          >
+          <AppText style={[styles.storyTitle, { color: colors.onSurface }]} numberOfLines={2}>
             {story.title ?? 'Untitled Story'}
-          </Text>
+          </AppText>
 
           {/* Date */}
-          <Text
-            style={[styles.storyDate, { color: colors.textMuted }]}
-          >
+          <AppText style={[styles.storyDate, { color: colors.textMuted }]}>
             {formatAbsoluteDate(story.startedAt)}
-          </Text>
+          </AppText>
         </View>
 
         {/* Playback Controls */}
@@ -299,12 +257,9 @@ export default function FamilyStoryPlayerScreen() {
           onPress={toggleComments}
           style={[styles.commentsButton, { backgroundColor: `${colors.primary}15` }]}
           accessibilityRole="button"
-          accessibilityLabel="View and add comments"
-        >
+          accessibilityLabel="View and add comments">
           <Ionicons name="chatbubbles-outline" size={20} color={colors.primary} />
-          <Text style={[styles.commentsButtonText, { color: colors.primary }]}>
-            Comments
-          </Text>
+          <AppText style={[styles.commentsButtonText, { color: colors.primary }]}>Comments</AppText>
         </TouchableOpacity>
       </View>
 
@@ -315,11 +270,10 @@ export default function FamilyStoryPlayerScreen() {
             onPress={handleBack}
             style={[styles.bottomButton, { borderColor: colors.primary }]}
             accessibilityRole="button"
-            accessibilityLabel="Back to story list"
-          >
-            <Text style={[styles.bottomButtonText, { color: colors.primary }]}>
+            accessibilityLabel="Back to story list">
+            <AppText style={[styles.bottomButtonText, { color: colors.primary }]}>
               Back to story list
-            </Text>
+            </AppText>
           </TouchableOpacity>
         </View>
       )}
@@ -460,4 +414,3 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
-

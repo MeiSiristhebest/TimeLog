@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import NetInfo from '@react-native-community/netinfo';
 import { useSyncStore } from '@/lib/sync-engine/store';
 
-export const useNetworkStatus = () => {
+export function useNetworkStatus(): { isOnline: boolean } {
   const setOnline = useSyncStore((s) => s.setOnline);
   const isOnline = useSyncStore((s) => s.isOnline);
 
@@ -28,4 +28,4 @@ export const useNetworkStatus = () => {
   }, [setOnline]);
 
   return { isOnline };
-};
+}

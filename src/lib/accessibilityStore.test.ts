@@ -117,7 +117,7 @@ describe('useAccessibilityStore', () => {
       // The store is configured with name: 'accessibility-storage'
       // This test verifies the store has persist middleware configured
       const store = useAccessibilityStore;
-      
+
       // Zustand persist stores have a persist property
       expect(store.persist).toBeDefined();
       expect(store.persist.getOptions().name).toBe('accessibility-storage');
