@@ -1,89 +1,89 @@
 {
-    "categories": [
-        {
-            "id": "childhood",
-            "name": "Childhood Memories",
-            "icon": "🧒",
-            "questions": [
-                "What was your favorite game as a child?",
-                "Tell me about your first day of school",
-                "What did you want to be when you grew up?",
-                "What was your favorite toy?",
-                "Tell me about your childhood best friend",
-                "What was your favorite place to play?",
-                "What was your favorite food when you were young?",
-                "Tell me about a funny childhood memory",
-                "What was school like for you?",
-                "Did you have any pets as a child?"
-            ]
-        },
-        {
-            "id": "career",
-            "name": "Career & Work",
-            "icon": "💼",
-            "questions": [
-                "What was your first job like?",
-                "Tell me about a challenging project you completed",
-                "Who was your most memorable colleague?",
-                "What was your proudest moment at work?",
-                "How did you choose your career?",
-                "What was the best advice you received about work?",
-                "Tell me about a lesson you learned at work",
-                "What was a typical day like at your job?",
-                "Did you have any mentors?",
-                "What skills did you develop over your career?"
-            ]
-        },
-        {
-            "id": "family",
-            "name": "Family Stories",
-            "icon": "👨‍👩‍👧",
-            "questions": [
-                "How did you meet your spouse?",
-                "Tell me about your wedding day",
-                "What was it like when I was born?",
-                "Tell me about your parents",
-                "What family traditions are most meaningful to you?",
-                "Tell me about your siblings",
-                "What was your favorite family vacation?",
-                "What was dinner time like in your family?",
-                "Tell me about your grandparents",
-                "What values did your parents teach you?"
-            ]
-        },
-        {
-            "id": "experiences",
-            "name": "Life Experiences",
-            "icon": "🌟",
-            "questions": [
-                "What was the happiest moment of your life?",
-                "Tell me about a time you were very brave",
-                "What was the most beautiful place you visited?",
-                "What was a turning point in your life?",
-                "Tell me about a time you helped someone",
-                "What was the most delicious meal you ever had?",
-                "Tell me about a time you learned something new",
-                "What was your biggest adventure?",
-                "Tell me about a friendship that changed you",
-                "What was a difficult time that made you stronger?"
-            ]
-        },
-        {
-            "id": "wisdom",
-            "name": "Wisdom & Advice",
-            "icon": "💡",
-            "questions": [
-                "What is the best advice you would give?",
-                "What do you wish you knew when you were young?",
-                "What makes a good life?",
-                "How do you stay positive during hard times?",
-                "What are you most grateful for?",
-                "What has working hard taught you?",
-                "What does family mean to you?",
-                "What brings you the most joy?",
-                "What would you do differently if you could?",
-                "What do you hope for the future?"
-            ]
-        }
-    ]
+  "categories": [
+    {
+      "id": "childhood",
+      "name": "Childhood Memories",
+      "icon": "🧒",
+      "questions": [
+        "What was your favorite game as a child?",
+        "Tell me about your first day of school",
+        "What did you want to be when you grew up?",
+        "What was your favorite toy?",
+        "Tell me about your childhood best friend",
+        "What was your favorite place to play?",
+        "What was your favorite food when you were young?",
+        "Tell me about a funny childhood memory",
+        "What was school like for you?",
+        "Did you have any pets as a child?"
+      ]
+    },
+    {
+      "id": "career",
+      "name": "Career & Work",
+      "icon": "💼",
+      "questions": [
+        "What was your first job like?",
+        "Tell me about a challenging project you completed",
+        "Who was your most memorable colleague?",
+        "What was your proudest moment at work?",
+        "How did you choose your career?",
+        "What was the best advice you received about work?",
+        "Tell me about a lesson you learned at work",
+        "What was a typical day like at your job?",
+        "Did you have any mentors?",
+        "What skills did you develop over your career?"
+      ]
+    },
+    {
+      "id": "family",
+      "name": "Family Stories",
+      "icon": "👨‍👩‍👧",
+      "questions": [
+        "How did you meet your spouse?",
+        "Tell me about your wedding day",
+        "What was it like when I was born?",
+        "Tell me about your parents",
+        "What family traditions are most meaningful to you?",
+        "Tell me about your siblings",
+        "What was your favorite family vacation?",
+        "What was dinner time like in your family?",
+        "Tell me about your grandparents",
+        "What values did your parents teach you?"
+      ]
+    },
+    {
+      "id": "experiences",
+      "name": "Life Experiences",
+      "icon": "🌟",
+      "questions": [
+        "What was the happiest moment of your life?",
+        "Tell me about a time you were very brave",
+        "What was the most beautiful place you visited?",
+        "What was a turning point in your life?",
+        "Tell me about a time you helped someone",
+        "What was the most delicious meal you ever had?",
+        "Tell me about a time you learned something new",
+        "What was your biggest adventure?",
+        "Tell me about a friendship that changed you",
+        "What was a difficult time that made you stronger?"
+      ]
+    },
+    {
+      "id": "wisdom",
+      "name": "Wisdom & Advice",
+      "icon": "💡",
+      "questions": [
+        "What is the best advice you would give?",
+        "What do you wish you knew when you were young?",
+        "What makes a good life?",
+        "How do you stay positive during hard times?",
+        "What are you most grateful for?",
+        "What has working hard taught you?",
+        "What does family mean to you?",
+        "What brings you the most joy?",
+        "What would you do differently if you could?",
+        "What do you hope for the future?"
+      ]
+    }
+  ]
 }

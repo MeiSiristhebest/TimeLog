@@ -1,16 +1,18 @@
+import { AppText } from '@/components/ui/AppText';
 import React, { useEffect, useState } from 'react';
-import { View, Text, SafeAreaView, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import NetInfo from '@react-native-community/netinfo';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useHeritageTheme } from '@/theme/heritage';
 
-export const OfflineBanner = () => {
-  const { colors, spacing, radius } = useHeritageTheme();
+export function OfflineBanner(): JSX.Element | null {
+  const { colors } = useHeritageTheme();
   const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener(state => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
       // Only show if explicitly disconnected (null is usually loading state)
       const offline = state.isConnected === false;
       setIsOffline(offline);
@@ -25,18 +27,29 @@ export const OfflineBanner = () => {
       <Animated.View
         entering={FadeInUp.springify()}
         exiting={FadeOutUp}
-        style={[styles.toast, { backgroundColor: colors.surfaceDim, shadowColor: colors.shadow }]}
-      >
+        style={[styles.toast, { backgroundColor: colors.surfaceDim, shadowColor: colors.shadow }]}>
         <View style={styles.content}>
-          <Ionicons name="wifi" size={20} color={colors.onSurface} style={{ transform: [{ rotate: '90deg' }], opacity: 0.5 }} />
-          <Ionicons name="close" size={14} color={colors.onSurface} style={{ position: 'absolute', left: 8, top: 4 }} />
+          <Ionicons
+            name="wifi"
+            size={20}
+            color={colors.onSurface}
+            style={{ transform: [{ rotate: '90deg' }], opacity: 0.5 }}
+          />
+          <Ionicons
+            name="close"
+            size={14}
+            color={colors.onSurface}
+            style={{ position: 'absolute', left: 8, top: 4 }}
+          />
           {/* Combining icons to simulate wifi_off or use cloud-offline */}
-          <Text style={[styles.message, { color: colors.onSurface }]}>Please check your Wi-Fi.</Text>
+          <AppText style={[styles.message, { color: colors.onSurface }]}>
+            Please check your Wi-Fi.
+          </AppText>
         </View>
       </Animated.View>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -71,5 +84,5 @@ const styles = StyleSheet.create({
     fontSize: 16, // text-base
     fontWeight: '500',
     lineHeight: 20,
-  }
+  },
 });

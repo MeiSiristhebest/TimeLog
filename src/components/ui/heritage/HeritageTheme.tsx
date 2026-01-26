@@ -19,197 +19,157 @@
  * <View style={{ backgroundColor: theme.surface }}>
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { useColorScheme } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const THEME_STORAGE_KEY = '@heritage_theme_preference';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useHeritageThemeLogic } from './hooks/useHeritageThemeLogic';
 
 // Light Mode Tokens (Heritage Memoir)
 const lightTheme = {
-    // Backgrounds
-    background: '#F9F3E8',       // Aged parchment
-    surface: '#FFFCF7',          // Elevated cards
-    surfaceSecondary: '#F5EFE6', // Secondary surface
+  // Backgrounds
+  background: '#F9F3E8', // Aged parchment
+  surface: '#FFFCF7', // Elevated cards
+  surfaceSecondary: '#F5EFE6', // Secondary surface
 
-    // Primary colors
-    primary: '#B85A3B',          // Deep Terracotta
-    primaryLight: '#C9A961',     // Warm gold accent
+  // Primary colors
+  primary: '#B85A3B', // Deep Terracotta
+  primaryLight: '#C9A961', // Warm gold accent
 
-    // Text
-    onSurface: '#1E293B',        // High contrast
-    textMuted: '#475569',        // Secondary text
-    textDisabled: '#94A3B8',     // Disabled text
+  // Text
+  onSurface: '#1E293B', // High contrast
+  textMuted: '#475569', // Secondary text
+  textDisabled: '#94A3B8', // Disabled text
 
-    // Semantic
-    success: '#6B8E6B',          // Sage green
-    warning: '#C49832',          // Amber
-    error: '#B84A4A',            // Muted red
-    info: '#5B8AC4',             // Calm blue
+  // Semantic
+  success: '#6B8E6B', // Sage green
+  warning: '#C49832', // Amber
+  error: '#B84A4A', // Muted red
+  info: '#5B8AC4', // Calm blue
 
-    // Borders & shadows
-    border: '#E2E8F0',
-    borderFocus: '#B85A3B',
-    shadow: 'rgba(184, 90, 59, 0.15)',
-    backdrop: 'rgba(30, 41, 59, 0.4)',
+  // Borders & shadows
+  border: '#E2E8F0',
+  borderFocus: '#B85A3B',
+  shadow: 'rgba(184, 90, 59, 0.15)',
+  backdrop: 'rgba(30, 41, 59, 0.4)',
 
-    // Skeleton
-    skeleton: '#E8E0D5',
-    skeletonHighlight: '#F5EFE6',
+  // Skeleton
+  skeleton: '#E8E0D5',
+  skeletonHighlight: '#F5EFE6',
 } as const;
 
 // Dark Mode Tokens (Heritage Memoir Night)
 const darkTheme = {
-    // Backgrounds
-    background: '#1A1612',       // Deep warm black
-    surface: '#2A2420',          // Elevated cards
-    surfaceSecondary: '#352E28', // Secondary surface
+  // Backgrounds
+  background: '#1A1612', // Deep warm black
+  surface: '#2A2420', // Elevated cards
+  surfaceSecondary: '#352E28', // Secondary surface
 
-    // Primary colors  
-    primary: '#D4856A',          // Lighter terracotta
-    primaryLight: '#DAC17A',     // Warm gold accent
+  // Primary colors
+  primary: '#D4856A', // Lighter terracotta
+  primaryLight: '#DAC17A', // Warm gold accent
 
-    // Text
-    onSurface: '#F5EFE6',        // Off-white
-    textMuted: '#A89F96',        // Secondary text
-    textDisabled: '#6B635C',     // Disabled text
+  // Text
+  onSurface: '#F5EFE6', // Off-white
+  textMuted: '#A89F96', // Secondary text
+  textDisabled: '#6B635C', // Disabled text
 
-    // Semantic
-    success: '#8FB88F',          // Lighter sage
-    warning: '#E0B64E',          // Brighter amber
-    error: '#D47070',            // Lighter red
-    info: '#7AA3D6',             // Lighter blue
+  // Semantic
+  success: '#8FB88F', // Lighter sage
+  warning: '#E0B64E', // Brighter amber
+  error: '#D47070', // Lighter red
+  info: '#7AA3D6', // Lighter blue
 
-    // Borders & shadows
-    border: '#3D3530',
-    borderFocus: '#D4856A',
-    shadow: 'rgba(0, 0, 0, 0.4)',
-    backdrop: 'rgba(0, 0, 0, 0.6)',
+  // Borders & shadows
+  border: '#3D3530',
+  borderFocus: '#D4856A',
+  shadow: 'rgba(0, 0, 0, 0.4)',
+  backdrop: 'rgba(0, 0, 0, 0.6)',
 
-    // Skeleton
-    skeleton: '#3D3530',
-    skeletonHighlight: '#4A423C',
+  // Skeleton
+  skeleton: '#3D3530',
+  skeletonHighlight: '#4A423C',
 } as const;
 
 // Common theme interface
 export interface HeritageTheme {
-    // Backgrounds
-    background: string;
-    surface: string;
-    surfaceSecondary: string;
+  // Backgrounds
+  background: string;
+  surface: string;
+  surfaceSecondary: string;
 
-    // Primary colors
-    primary: string;
-    primaryLight: string;
+  // Primary colors
+  primary: string;
+  primaryLight: string;
 
-    // Text
-    onSurface: string;
-    textMuted: string;
-    textDisabled: string;
+  // Text
+  onSurface: string;
+  textMuted: string;
+  textDisabled: string;
 
-    // Semantic
-    success: string;
-    warning: string;
-    error: string;
-    info: string;
+  // Semantic
+  success: string;
+  warning: string;
+  error: string;
+  info: string;
 
-    // Borders & shadows
-    border: string;
-    borderFocus: string;
-    shadow: string;
-    backdrop: string;
+  // Borders & shadows
+  border: string;
+  borderFocus: string;
+  shadow: string;
+  backdrop: string;
 
-    // Skeleton
-    skeleton: string;
-    skeletonHighlight: string;
+  // Skeleton
+  skeleton: string;
+  skeletonHighlight: string;
 }
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 type ThemeContextType = {
-    theme: HeritageTheme;
-    isDark: boolean;
-    mode: ThemeMode;
-    setMode: (mode: ThemeMode) => void;
-    toggleTheme: () => void;
+  theme: HeritageTheme;
+  isDark: boolean;
+  mode: ThemeMode;
+  setMode: (mode: ThemeMode) => void;
+  toggleTheme: () => void;
 };
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
 type HeritageThemeProviderProps = {
-    children: ReactNode;
-    defaultMode?: ThemeMode;
+  children: ReactNode;
+  defaultMode?: ThemeMode;
 };
 
 export function HeritageThemeProvider({
-    children,
-    defaultMode = 'system',
+  children,
+  defaultMode = 'system',
 }: HeritageThemeProviderProps) {
-    const systemColorScheme = useColorScheme();
-    const [mode, setModeState] = useState<ThemeMode>(defaultMode);
-    const [isLoaded, setIsLoaded] = useState(false);
+  const { theme, isDark, mode, setMode, toggleTheme, isLoaded } =
+    useHeritageThemeLogic(defaultMode);
 
-    // Load saved preference on mount
-    useEffect(() => {
-        const loadPreference = async () => {
-            try {
-                const savedMode = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-                if (savedMode && ['light', 'dark', 'system'].includes(savedMode)) {
-                    setModeState(savedMode as ThemeMode);
-                }
-            } catch (error) {
-                console.warn('Failed to load theme preference:', error);
-            } finally {
-                setIsLoaded(true);
-            }
-        };
-        loadPreference();
-    }, []);
+  // Don't render until preference is loaded to prevent flash
+  if (!isLoaded) {
+    return null;
+  }
 
-    // Save preference when mode changes
-    const setMode = useCallback(async (newMode: ThemeMode) => {
-        setModeState(newMode);
-        try {
-            await AsyncStorage.setItem(THEME_STORAGE_KEY, newMode);
-        } catch (error) {
-            console.warn('Failed to save theme preference:', error);
-        }
-    }, []);
-
-    // Toggle between light and dark (skipping system)
-    const toggleTheme = useCallback(() => {
-        setMode(mode === 'dark' || (mode === 'system' && systemColorScheme === 'dark') ? 'light' : 'dark');
-    }, [mode, systemColorScheme, setMode]);
-
-    // Determine actual dark mode state
-    const isDark = mode === 'dark' || (mode === 'system' && systemColorScheme === 'dark');
-    const theme = isDark ? darkTheme : lightTheme;
-
-    // Don't render until preference is loaded to prevent flash
-    if (!isLoaded) {
-        return null;
-    }
-
-    return (
-        <ThemeContext.Provider value={{ theme, isDark, mode, setMode, toggleTheme }}>
-            {children}
-        </ThemeContext.Provider>
-    );
+  return (
+    <ThemeContext.Provider value={{ theme, isDark, mode, setMode, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 }
 
 export function useHeritageTheme(): ThemeContextType {
-    const context = useContext(ThemeContext);
-    if (!context) {
-        // Return light theme as default if provider not found
-        return {
-            theme: lightTheme,
-            isDark: false,
-            mode: 'light',
-            setMode: () => { },
-            toggleTheme: () => { },
-        };
-    }
-    return context;
+  const context = useContext(ThemeContext);
+  if (!context) {
+    // Return light theme as default if provider not found
+    return {
+      theme: lightTheme,
+      isDark: false,
+      mode: 'light',
+      setMode: () => {},
+      toggleTheme: () => {},
+    };
+  }
+  return context;
 }
 
 // Export themes for direct access if needed

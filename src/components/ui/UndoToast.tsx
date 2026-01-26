@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
+import React from 'react';
+
+import { Pressable } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { CountdownRing } from './CountdownRing';
 
@@ -36,10 +38,9 @@ export function UndoToast({
     <Animated.View
       entering={FadeInDown.springify()}
       exiting={FadeOutDown}
-      className="absolute bottom-6 left-4 right-4 z-50"
+      className="absolute right-4 bottom-6 left-4 z-50"
       accessibilityLiveRegion="assertive"
-      accessibilityRole="alert"
-    >
+      accessibilityRole="alert">
       <Pressable
         onPress={onUndo}
         style={{
@@ -57,17 +58,17 @@ export function UndoToast({
           borderWidth: 1,
           borderColor: 'rgba(201, 169, 97, 0.2)', // Subtle gold border
         }}
-        accessibilityLabel={`${message}. Double tap to undo.`}
-      >
-        <Text style={{
-          color: '#FFF8E7',
-          fontSize: 16,
-          fontWeight: '500',
-          flex: 1,
-          marginRight: 16
-        }}>
+        accessibilityLabel={`${message}. Double tap to undo.`}>
+        <AppText
+          style={{
+            color: '#FFF8E7',
+            fontSize: 16,
+            fontWeight: '500',
+            flex: 1,
+            marginRight: 16,
+          }}>
           {message}
-        </Text>
+        </AppText>
 
         <CountdownRing
           durationMs={10000}

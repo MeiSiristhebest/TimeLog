@@ -1,6 +1,7 @@
-import { Text, View } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
+import { View } from 'react-native';
 
-export const EditScreenInfo = ({ path }: { path: string }) => {
+export function EditScreenInfo({ path }: { path: string }): JSX.Element {
   const title = 'Open up the code for this screen:';
   const description =
     'Change any of the text, save the file, and your app will automatically update.';
@@ -8,15 +9,15 @@ export const EditScreenInfo = ({ path }: { path: string }) => {
   return (
     <View>
       <View className={styles.getStartedContainer}>
-        <Text className={styles.getStartedText}>{title}</Text>
+        <AppText className={styles.getStartedText}>{title}</AppText>
         <View className={`${styles.codeHighlightContainer} ${styles.homeScreenFilename}`}>
-          <Text className={styles.pathText}>{path}</Text>
+          <AppText className={styles.pathText}>{path}</AppText>
         </View>
-        <Text className={styles.getStartedText}>{description}</Text>
+        <AppText className={styles.getStartedText}>{description}</AppText>
       </View>
     </View>
   );
-};
+}
 
 const styles = {
   codeHighlightContainer: 'rounded-md bg-onSurface/10 px-2 py-1',

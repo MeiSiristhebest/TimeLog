@@ -1,17 +1,17 @@
+import { AppText } from '@/components/ui/AppText';
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Platform, TouchableOpacity } from 'react-native';
-import Animated, {
-  FadeInUp,
-  FadeOutUp,
-} from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { View, StyleSheet, Platform, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import type { ViewStyle } from 'react-native';
+import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
+import { Ionicons } from '@/components/ui/Icon';
 import { registerToastListener, ToastOptions, ToastType } from './toast';
 import { triggerHaptic } from '@/utils/haptics';
 
 const TOAST_DURATION_SHORT = 2000;
 const TOAST_DURATION_LONG = 4000;
 
-export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function ToastProvider({ children }: { children: React.ReactNode }): JSX.Element {
   const [toast, setToast] = useState<ToastOptions | null>(null);
 
   useEffect(() => {
@@ -53,11 +53,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           <Animated.View
             entering={FadeInUp.springify()}
             exiting={FadeOutUp}
-            style={[styles.toast, getToastStyle(toast.type)]}
-          >
+            style={[styles.toast, getToastStyle(toast.type)]}>
             <View style={styles.content}>
               <Ionicons name={getIconName(toast.type)} size={24} color="#FFF" />
-              <Text style={styles.message}>{toast.message}</Text>
+              <AppText style={styles.message}>{toast.message}</AppText>
             </View>
             <TouchableOpacity onPress={dismiss} hitSlop={12}>
               <Ionicons name="close" size={20} color="#FFF" style={{ opacity: 0.8 }} />
@@ -67,27 +66,35 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       )}
     </View>
   );
-};
+}
 
-const getToastStyle = (type?: ToastType) => {
+function getToastStyle(type?: ToastType): ViewStyle {
   switch (type) {
-    case 'error': return { backgroundColor: '#B84A4A' }; // Heritage error
-    case 'success': return { backgroundColor: '#7D9D7A' }; // Success
-    case 'warning': return { backgroundColor: '#D4A012' }; // Warning
+    case 'error':
+      return { backgroundColor: '#B84A4A' }; // Heritage error
+    case 'success':
+      return { backgroundColor: '#7D9D7A' }; // Success
+    case 'warning':
+      return { backgroundColor: '#D4A012' }; // Warning
     case 'info':
-    default: return { backgroundColor: '#333333' }; // Neutral
+    default:
+      return { backgroundColor: '#333333' }; // Neutral
   }
-};
+}
 
-const getIconName = (type?: ToastType): keyof typeof Ionicons.glyphMap => {
+function getIconName(type?: ToastType): keyof typeof Ionicons.glyphMap {
   switch (type) {
-    case 'error': return 'alert-circle';
-    case 'success': return 'checkmark-circle';
-    case 'warning': return 'warning';
+    case 'error':
+      return 'alert-circle';
+    case 'success':
+      return 'checkmark-circle';
+    case 'warning':
+      return 'warning';
     case 'info':
-    default: return 'information-circle';
+    default:
+      return 'information-circle';
   }
-};
+}
 
 const styles = StyleSheet.create({
   container: {

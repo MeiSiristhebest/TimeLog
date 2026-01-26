@@ -1,10 +1,5 @@
-import React, { useEffect } from 'react';
-import {
-  Canvas,
-  Path,
-  Skia,
-  Group,
-} from '@shopify/react-native-skia';
+import { useEffect } from 'react';
+import { Canvas, Path, Skia, Group } from '@shopify/react-native-skia';
 import {
   useDerivedValue,
   useSharedValue,
@@ -37,13 +32,13 @@ interface CountdownRingProps {
  * - Foreground color: Primary/Accent
  * - Background color: Transparent or faint outline
  */
-export const CountdownRing: React.FC<CountdownRingProps> = ({
+export function CountdownRing({
   durationMs = 10000,
   size = 24,
   strokeWidth = 3,
   onComplete,
   isPlaying = true,
-}) => {
+}: CountdownRingProps): JSX.Element {
   const progress = useSharedValue(1); // 1 = full, 0 = empty
   const radius = (size - strokeWidth) / 2;
   const center = size / 2;
@@ -113,4 +108,4 @@ export const CountdownRing: React.FC<CountdownRingProps> = ({
       </Canvas>
     </View>
   );
-};
+}

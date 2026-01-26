@@ -1,5 +1,6 @@
+import { AppText } from '@/components/ui/AppText';
 import React from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { EditScreenInfo } from './EditScreenInfo';
 
@@ -9,16 +10,16 @@ type ScreenContentProps = {
   children?: React.ReactNode;
 };
 
-export const ScreenContent = ({ title, path, children }: ScreenContentProps) => {
+export function ScreenContent({ title, path, children }: ScreenContentProps): JSX.Element {
   return (
     <View className={styles.container}>
-      <Text className={styles.title}>{title}</Text>
+      <AppText className={styles.title}>{title}</AppText>
       <View className={styles.separator} />
       <EditScreenInfo path={path} />
       {children}
     </View>
   );
-};
+}
 const styles = {
   container: 'items-center flex-1 justify-center bg-surface',
   separator: 'h-[1px] my-7 w-4/5 bg-onSurface opacity-10',

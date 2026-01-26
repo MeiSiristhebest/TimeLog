@@ -3,7 +3,7 @@
  * Replaces the native ToastAndroid/Alert implementation with an event-based system
  * that drives a custom UI component.
  */
-
+import { devLog } from '@/lib/devLogger';
 export type ToastType = 'info' | 'success' | 'warning' | 'error';
 
 export interface ToastOptions {
@@ -20,7 +20,7 @@ let listener: ToastListener | null = null;
  * Register a listener to handle toast events.
  * Used by the ToastProvider component.
  */
-export function registerToastListener(fn: ToastListener) {
+export function registerToastListener(fn: ToastListener): () => void {
   listener = fn;
   return () => {
     listener = null;
@@ -37,7 +37,7 @@ export function showToast(options: ToastOptions): void {
   if (listener) {
     listener(options);
   } else {
-    console.warn('showToast called but no listener registered. Wrap your app in ToastProvider.');
+    devLog.warn('showToast called but no listener registered. Wrap your app in ToastProvider.');
   }
 }
 

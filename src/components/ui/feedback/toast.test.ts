@@ -22,9 +22,11 @@ describe('toast service', () => {
     it('notifies the registered listener', () => {
       showToast({ message: 'Test message' });
 
-      expect(mockListener).toHaveBeenCalledWith(expect.objectContaining({
-        message: 'Test message',
-      }));
+      expect(mockListener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Test message',
+        })
+      );
     });
 
     it('passes options correctly', () => {

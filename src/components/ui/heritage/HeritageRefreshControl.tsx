@@ -23,27 +23,30 @@ import { RefreshControl, RefreshControlProps } from 'react-native';
 
 // Heritage Memoir Design Tokens
 const TOKENS = {
-    primary: '#B85A3B',
-    surface: '#F9F3E8',
+  primary: '#B85A3B',
+  surface: '#F9F3E8',
 } as const;
 
-type HeritageRefreshControlProps = Omit<RefreshControlProps, 'colors' | 'tintColor' | 'progressBackgroundColor'>;
+type HeritageRefreshControlProps = Omit<
+  RefreshControlProps,
+  'colors' | 'tintColor' | 'progressBackgroundColor'
+>;
 
 export function HeritageRefreshControl({
-    refreshing,
-    onRefresh,
-    ...props
+  refreshing,
+  onRefresh,
+  ...props
 }: HeritageRefreshControlProps) {
-    return (
-        <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[TOKENS.primary]} // Android
-            tintColor={TOKENS.primary} // iOS
-            progressBackgroundColor={TOKENS.surface} // Android
-            {...props}
-        />
-    );
+  return (
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      colors={[TOKENS.primary]} // Android
+      tintColor={TOKENS.primary} // iOS
+      progressBackgroundColor={TOKENS.surface} // Android
+      {...props}
+    />
+  );
 }
 
 export default HeritageRefreshControl;

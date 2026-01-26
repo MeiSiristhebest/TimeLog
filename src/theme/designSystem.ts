@@ -1,9 +1,9 @@
 /**
  * TimeLog Design System
- * 
+ *
  * Aesthetic: "Digital Heritage"
  * Core Values: Warmth, Clarity, Permanence
- * 
+ *
  * Color Logic:
  * - Surfaces: Different shades of warm white/cream, simulating paper/memories
  * - Primary: Heritage Terracotta (Earth tone)
@@ -15,10 +15,10 @@ export const PALETTE = {
   // Backgrounds - Use Linear Gradients for depth
   background: {
     light: '#FFFAF5', // Warm White
-    warm: '#FFF5EB',  // Creamier
-    dark: '#2C221F',  // Warm Dark (Espresso)
+    warm: '#FFF5EB', // Creamier
+    dark: '#2C221F', // Warm Dark (Espresso)
   },
-  
+
   // Primary Brand Colors
   primary: {
     main: '#C26B4A', // Heritage Terracotta
@@ -36,9 +36,9 @@ export const PALETTE = {
 
   // Neutrals suitable for text
   text: {
-    primary: '#2C221F',   // Soft Black (Espresso)
+    primary: '#2C221F', // Soft Black (Espresso)
     secondary: '#8C7A6C', // Muted Brown
-    tertiary: '#C4B5AA',  // Stone
+    tertiary: '#C4B5AA', // Stone
     disabled: '#E6E0DA',
   },
 
@@ -55,16 +55,16 @@ export const PALETTE = {
     card: '#FFFFFF',
     overlay: 'rgba(255, 255, 255, 0.85)',
     border: 'rgba(194, 107, 74, 0.15)', // Subtle primary tint
-  }
+  },
 };
 
 export const GRADIENTS = {
   // Main background: Subtle warm flow
   background: ['#FFFAF5', '#FFF0E0'],
-  
+
   // Primary Action: Vibrant but earthy
   primaryAction: ['#C26B4A', '#D98263'],
-  
+
   // Cards: Subtle pearlescent
   glassCard: ['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.7)'],
 };

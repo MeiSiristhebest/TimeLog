@@ -1,22 +1,25 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, ViewStyle, StyleProp } from 'react-native';
 
 /**
  * Root container with Apple-style defaults:
- * - Safe area insets
+ * - Safe area insets via contentInsetAdjustmentBehavior
  * - Warm background color
  * - Consistent padding
  */
-export const Container = ({ children }: { children: React.ReactNode }) => {
+export function Container({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}): JSX.Element {
   return (
-    <SafeAreaView
-      className="flex-1 bg-surface"
-      style={{ flex: 1, backgroundColor: '#FFFAF5' }} // Enforce warm background
-    >
+    <ScrollView
+      className="bg-surface flex-1"
+      style={[{ flex: 1, backgroundColor: '#FFFAF5' }, style]} // Enforce warm background
+      contentContainerStyle={{ flexGrow: 1 }}
+      contentInsetAdjustmentBehavior="automatic">
       {children}
-    </SafeAreaView>
+    </ScrollView>
   );
-};
-
-const styles = {
-  // Removed unused styles object
-};
+}
