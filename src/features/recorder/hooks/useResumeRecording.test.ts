@@ -2,18 +2,19 @@ import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useResumeRecording } from './useResumeRecording';
 import * as recorderService from '../services/recorderService';
 import { useRecorderStore } from '../store/recorderStore';
+import { devLog } from '@/lib/devLogger';
 
 // Mock the recorder service
 jest.mock('../services/recorderService');
 jest.mock('../store/recorderStore');
+jest.mock('@/lib/devLogger');
 
 const mockGetPausedRecording = recorderService.getPausedRecording as jest.MockedFunction<
   typeof recorderService.getPausedRecording
 >;
-const mockDiscardPausedRecording =
-  recorderService.discardPausedRecording as jest.MockedFunction<
-    typeof recorderService.discardPausedRecording
-  >;
+const mockDiscardPausedRecording = recorderService.discardPausedRecording as jest.MockedFunction<
+  typeof recorderService.discardPausedRecording
+>;
 const mockStartRecordingStream = recorderService.startRecordingStream as jest.MockedFunction<
   typeof recorderService.startRecordingStream
 >;
@@ -137,7 +138,7 @@ describe('useResumeRecording', () => {
   });
 
   it('should handle errors when checking for paused recording', async () => {
-    const consoleError = jest.spyOn(console, 'error').mockImplementation();
+    const mockDevLogError = jest.spyOn(devLog, 'error').mockImplementation();
     mockGetPausedRecording.mockRejectedValue(new Error('Database error'));
 
     const { result } = renderHook(() => useResumeRecording());
@@ -146,12 +147,12 @@ describe('useResumeRecording', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(consoleError).toHaveBeenCalledWith(
+    expect(mockDevLogError).toHaveBeenCalledWith(
       'Failed to check for paused recording:',
       expect.any(Error)
     );
     expect(result.current.pausedRecording).toBeNull();
 
-    consoleError.mockRestore();
+    mockDevLogError.mockRestore();
   });
 });

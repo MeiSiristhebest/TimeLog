@@ -1,25 +1,25 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 import { render } from '@testing-library/react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { WaveformVisualizer } from './WaveformVisualizer';
 
 // Mock react-native-reanimated
 jest.mock('react-native-reanimated', () => {
-  const Reanimated = require('react-native-reanimated/mock');
-  Reanimated.useSharedValue = jest.fn((initial) => ({
+  const mockReanimated = jest.requireActual('react-native-reanimated/mock');
+  mockReanimated.useSharedValue = jest.fn((initial) => ({
     value: initial,
   }));
-  Reanimated.useDerivedValue = jest.fn((fn) => ({
+  mockReanimated.useDerivedValue = jest.fn((fn) => ({
     value: fn(),
   }));
-  Reanimated.runOnUI = jest.fn((fn) => fn);
-  Reanimated.withTiming = jest.fn((value) => value);
-  return Reanimated;
+  mockReanimated.runOnUI = jest.fn((fn) => fn);
+  mockReanimated.withTiming = jest.fn((value) => value);
+  return mockReanimated;
 });
 
 // Mock @shopify/react-native-skia
 jest.mock('@shopify/react-native-skia', () => ({
-  Canvas: ({ children }: { children: React.ReactNode }) => children,
+  Canvas: ({ children }: { children: ReactNode }) => children,
   Path: () => null,
   Skia: {
     Path: {
@@ -33,11 +33,17 @@ jest.mock('@shopify/react-native-skia', () => ({
 }));
 
 // Helper component to provide SharedValue
-const TestWrapper: React.FC<{
+type TestWrapperProps = {
   amplitudeValue?: number;
   isRecording?: boolean;
   isPaused?: boolean;
-}> = ({ amplitudeValue = 0, isRecording = false, isPaused = false }) => {
+};
+
+function TestWrapper({
+  amplitudeValue = 0,
+  isRecording = false,
+  isPaused = false,
+}: TestWrapperProps): JSX.Element {
   const amplitude = { value: amplitudeValue };
   return (
     <WaveformVisualizer
@@ -46,40 +52,32 @@ const TestWrapper: React.FC<{
       isPaused={isPaused}
     />
   );
-};
+}
 
 describe('WaveformVisualizer', () => {
   it('renders without crashing when idle', () => {
-    const { getByTestId } = render(<TestWrapper />);
+    render(<TestWrapper />);
     // Component should render without errors
     expect(true).toBe(true);
   });
 
   it('renders without crashing when recording', () => {
-    const { getByTestId } = render(
-      <TestWrapper isRecording={true} amplitudeValue={0.5} />
-    );
+    render(<TestWrapper isRecording={true} amplitudeValue={0.5} />);
     expect(true).toBe(true);
   });
 
   it('renders without crashing when paused', () => {
-    const { getByTestId } = render(
-      <TestWrapper isRecording={true} isPaused={true} amplitudeValue={0.5} />
-    );
+    render(<TestWrapper isRecording={true} isPaused={true} amplitudeValue={0.5} />);
     expect(true).toBe(true);
   });
 
   it('renders without crashing with zero amplitude', () => {
-    const { getByTestId } = render(
-      <TestWrapper isRecording={true} amplitudeValue={0} />
-    );
+    render(<TestWrapper isRecording={true} amplitudeValue={0} />);
     expect(true).toBe(true);
   });
 
   it('renders without crashing with max amplitude', () => {
-    const { getByTestId } = render(
-      <TestWrapper isRecording={true} amplitudeValue={1} />
-    );
+    render(<TestWrapper isRecording={true} amplitudeValue={1} />);
     expect(true).toBe(true);
   });
 });

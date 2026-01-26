@@ -6,8 +6,10 @@ export const ELDERLY_VAD_CONFIG = {
   sampleRate: 16000,
 };
 
-export const isSilence = (silenceDurationMs: number) =>
-  silenceDurationMs >= ELDERLY_VAD_CONFIG.silenceThresholdMs;
+export function isSilence(silenceDurationMs: number): boolean {
+  return silenceDurationMs >= ELDERLY_VAD_CONFIG.silenceThresholdMs;
+}
 
-export const isSilentMetering = (metering?: number | null) =>
-  typeof metering === 'number' && metering <= ELDERLY_VAD_CONFIG.silenceDbThreshold;
+export function isSilentMetering(metering?: number | null): boolean {
+  return typeof metering === 'number' && metering <= ELDERLY_VAD_CONFIG.silenceDbThreshold;
+}

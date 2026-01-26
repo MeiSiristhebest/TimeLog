@@ -1,18 +1,20 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import {
   ExpoAudioStreamModule,
-  addAudioAnalysisListener,
   __getAudioAnalysisCallback,
   __resetAudioAnalysisCallback,
 } from '@siteed/expo-audio-studio';
-import { startRecordingStream, ensureSufficientDisk, prepareRecordingTarget } from './recorderService';
+import {
+  startRecordingStream,
+  ensureSufficientDisk,
+  prepareRecordingTarget,
+} from './recorderService';
 import { ELDERLY_VAD_CONFIG } from './vadConfig';
 
 // Type assertion for test helpers
-const getCallback = __getAudioAnalysisCallback as () => ((event: {
-  durationMs: number;
-  dataPoints: Array<{ dB: number }>;
-}) => Promise<void>) | null;
+const getCallback = __getAudioAnalysisCallback as () =>
+  | ((event: { durationMs: number; dataPoints: { dB: number }[] }) => Promise<void>)
+  | null;
 const resetCallback = __resetAudioAnalysisCallback as () => void;
 
 describe('recorderService', () => {

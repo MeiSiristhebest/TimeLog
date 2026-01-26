@@ -1,10 +1,6 @@
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import {
-  getPausedRecording,
-  discardPausedRecording,
-} from './recorderService';
+import { getPausedRecording, discardPausedRecording } from './recorderService';
 
 // Mock database
 jest.mock('@/db/client');
@@ -19,18 +15,18 @@ const mockWhereUpdate = jest.fn();
 
 beforeEach(() => {
   jest.clearAllMocks();
-  
+
   // Setup mock chain for select queries
   mockLimit.mockResolvedValue([]);
   mockWhereSelect.mockReturnValue({ limit: mockLimit });
   mockFrom.mockReturnValue({ where: mockWhereSelect });
   mockSelect.mockReturnValue({ from: mockFrom });
-  
+
   // Setup mock chain for update queries
   mockWhereUpdate.mockResolvedValue(undefined);
   mockSet.mockReturnValue({ where: mockWhereUpdate });
   mockUpdate.mockReturnValue({ set: mockSet });
-  
+
   (db as any).select = mockSelect;
   (db as any).update = mockUpdate;
 });

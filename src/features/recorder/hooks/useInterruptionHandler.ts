@@ -14,7 +14,7 @@ export type InterruptionHandler = {
 
 /**
  * Hook that detects app state changes for interruption handling.
- * 
+ *
  * Audio-level interruptions (phone calls, audio focus loss) are handled separately
  * via the RecordingConfig.onRecordingInterrupted callback in recorderService.
  *
@@ -23,10 +23,7 @@ export type InterruptionHandler = {
  * @param handler - Callbacks for interruption and resume events
  * @param isRecording - Whether recording is currently active
  */
-export const useInterruptionHandler = (
-  handler: InterruptionHandler,
-  isRecording: boolean
-) => {
+export function useInterruptionHandler(handler: InterruptionHandler, isRecording: boolean): void {
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   const handleAppStateChange = useCallback(
@@ -58,4 +55,4 @@ export const useInterruptionHandler = (
       appStateSubscription.remove();
     };
   }, [handleAppStateChange]);
-};
+}

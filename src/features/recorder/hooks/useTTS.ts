@@ -39,7 +39,7 @@ export type UseTTSReturn = {
  * @param options - Configuration options
  * @returns TTS controls and state
  */
-export const useTTS = (options: UseTTSOptions = {}): UseTTSReturn => {
+export function useTTS(options: UseTTSOptions = {}): UseTTSReturn {
   const { autoPlay = false, initialQuestion } = options;
 
   // State
@@ -109,15 +109,14 @@ export const useTTS = (options: UseTTSOptions = {}): UseTTSReturn => {
         speakText(initialQuestion.text);
       }
     }
-  }, [initialQuestion, autoPlay, speakText]);
+  }, [initialQuestion, autoPlay, speakText, currentQuestion.id]);
 
-  // Auto-play on mount if enabled and no initialQuestion sync happened
+  // Auto-play when enabled and no initial question is provided
   useEffect(() => {
     if (autoPlay && !initialQuestion) {
       speak();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount
+  }, [autoPlay, initialQuestion, speak]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -137,6 +136,6 @@ export const useTTS = (options: UseTTSOptions = {}): UseTTSReturn => {
     stop,
     newTopic,
   };
-};
+}
 
 export default useTTS;

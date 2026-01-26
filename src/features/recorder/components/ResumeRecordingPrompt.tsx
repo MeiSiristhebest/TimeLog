@@ -1,5 +1,7 @@
+import { AppText } from '@/components/ui/AppText';
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+
+import { View, Pressable } from '@/tw';
 
 type ResumeRecordingPromptProps = {
   onResume: () => void;
@@ -10,38 +12,30 @@ type ResumeRecordingPromptProps = {
  * UI prompt for resuming a paused recording session.
  * Implements AC: 5 (Show resume prompt with Resume/Discard options)
  */
-export const ResumeRecordingPrompt: React.FC<ResumeRecordingPromptProps> = ({
+export function ResumeRecordingPrompt({
   onResume,
   onDiscard,
-}) => {
+}: ResumeRecordingPromptProps): JSX.Element {
   return (
-    <View className="bg-white rounded-2xl p-6 shadow-lg mx-4">
-      <Text className="text-2xl font-bold text-gray-900 mb-2">
-        Continue your recording?
-      </Text>
-      <Text className="text-base text-gray-600 mb-6">
+    <View className="mx-4 rounded-2xl bg-white p-6 shadow-lg">
+      <AppText className="mb-2 text-2xl font-bold text-gray-900">Continue your recording?</AppText>
+      <AppText className="mb-6 text-base text-gray-600">
         You have an unfinished recording. Would you like to continue?
-      </Text>
-      
+      </AppText>
+
       <View className="flex-row gap-3">
         <Pressable
           onPress={onDiscard}
-          className="flex-1 bg-gray-100 rounded-xl py-4 items-center active:bg-gray-200"
-        >
-          <Text className="text-base font-semibold text-gray-700">
-            Discard
-          </Text>
+          className="flex-1 items-center rounded-xl bg-gray-100 py-4 active:bg-gray-200">
+          <AppText className="text-base font-semibold text-gray-700">Discard</AppText>
         </Pressable>
-        
+
         <Pressable
           onPress={onResume}
-          className="flex-1 bg-blue-600 rounded-xl py-4 items-center active:bg-blue-700"
-        >
-          <Text className="text-base font-semibold text-white">
-            Resume Recording
-          </Text>
+          className="flex-1 items-center rounded-xl bg-blue-600 py-4 active:bg-blue-700">
+          <AppText className="text-base font-semibold text-white">Resume Recording</AppText>
         </Pressable>
       </View>
     </View>
   );
-};
+}

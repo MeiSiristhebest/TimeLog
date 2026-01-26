@@ -19,10 +19,8 @@ export type UseTopicDiscoveryReturn = {
  *
  * @returns Topic discovery state and controls
  */
-export const useTopicDiscovery = (): UseTopicDiscoveryReturn => {
-  const [currentQuestion, setCurrentQuestion] = useState<TopicQuestion>(() =>
-    getRandomQuestion()
-  );
+export function useTopicDiscovery(): UseTopicDiscoveryReturn {
+  const [currentQuestion, setCurrentQuestion] = useState<TopicQuestion>(() => getRandomQuestion());
 
   const nextTopic = useCallback(() => {
     const newQuestion = getRandomQuestion();
@@ -33,6 +31,6 @@ export const useTopicDiscovery = (): UseTopicDiscoveryReturn => {
     currentQuestion,
     nextTopic,
   };
-};
+}
 
 export default useTopicDiscovery;

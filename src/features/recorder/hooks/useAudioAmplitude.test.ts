@@ -1,10 +1,11 @@
 import { renderHook } from '@testing-library/react-native';
+import * as Reanimated from 'react-native-reanimated';
 import { useAudioAmplitude } from './useAudioAmplitude';
 
 // Mock react-native-reanimated with proper callable mocks
 jest.mock('react-native-reanimated', () => {
   const mockSharedValue = { value: 0 };
-  
+
   return {
     useSharedValue: jest.fn(() => mockSharedValue),
     withTiming: jest.fn((value: number) => value),
@@ -115,21 +116,19 @@ describe('useAudioAmplitude', () => {
 
   describe('reanimated integration', () => {
     it('should use runOnUI for UI thread updates', () => {
-      const reanimated = require('react-native-reanimated');
       const { result } = renderHook(() => useAudioAmplitude());
 
       result.current.updateAmplitude(-30);
 
-      expect(reanimated.runOnUI).toHaveBeenCalled();
+      expect(Reanimated.runOnUI).toHaveBeenCalled();
     });
 
     it('should use withTiming for smooth animation', () => {
-      const reanimated = require('react-native-reanimated');
       const { result } = renderHook(() => useAudioAmplitude());
 
       result.current.updateAmplitude(-30);
 
-      expect(reanimated.withTiming).toHaveBeenCalled();
+      expect(Reanimated.withTiming).toHaveBeenCalled();
     });
   });
 });

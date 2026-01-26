@@ -49,6 +49,8 @@ export class TusTransport {
     // TUS endpoint for Supabase Storage
     const tusEndpoint = `${this.supabaseUrl}/storage/v1/upload/resumable`;
 
+    const contentType = this.getContentType(storagePath);
+
     return new Promise((resolve, reject) => {
       const upload = new Upload.Upload(fileBlob, {
         endpoint: tusEndpoint,
@@ -57,7 +59,7 @@ export class TusTransport {
         metadata: {
           bucketName: bucket,
           objectName: storagePath,
-          contentType: 'audio/opus', // Opus format for compressed audio
+          contentType,
         },
         headers: {
           Authorization: `Bearer ${this.anonKey}`,
@@ -104,10 +106,7 @@ export class TusTransport {
     }
 
     const arrayBuffer = await response.arrayBuffer();
-    const digestBuffer = await Crypto.digest(
-      Crypto.CryptoDigestAlgorithm.MD5,
-      arrayBuffer
-    );
+    const digestBuffer = await Crypto.digest(Crypto.CryptoDigestAlgorithm.MD5, arrayBuffer);
 
     return this.arrayBufferToHex(digestBuffer);
   }
@@ -120,6 +119,14 @@ export class TusTransport {
     return Array.from(bytes)
       .map((value) => value.toString(16).padStart(2, '0'))
       .join('');
+  }
+
+  private getContentType(storagePath: string): string {
+    const normalizedPath = storagePath.toLowerCase();
+    if (normalizedPath.endsWith('.wav')) {
+      return 'audio/wav';
+    }
+    return 'application/octet-stream';
   }
 
   /**

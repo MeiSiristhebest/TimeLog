@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Pressable, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '@/components/ui/AppText';
+import { View, Pressable, StyleSheet } from 'react-native';
+
+import { Ionicons } from '@/components/ui/Icon';
 import { triggerHaptic } from '@/utils/haptics';
 import { useHeritageTheme } from '@/theme/heritage';
 
@@ -14,7 +15,7 @@ interface RecordingControlsProps {
   disabled?: boolean;
 }
 
-export const RecordingControls: React.FC<RecordingControlsProps> = ({
+export function RecordingControls({
   isRecording,
   isPaused,
   onStart,
@@ -22,8 +23,8 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
   onPause,
   onResume,
   disabled = false,
-}) => {
-  const { colors, spacing, radius } = useHeritageTheme();
+}: RecordingControlsProps): JSX.Element {
+  const { colors } = useHeritageTheme();
 
   if (!isRecording) {
     // Idle State - Big Start Button with premium design
@@ -49,13 +50,10 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
             },
           ]}
           accessibilityLabel="Start Recording"
-          accessibilityRole="button"
-        >
+          accessibilityRole="button">
           <Ionicons name="mic" size={48} color={colors.onPrimary} />
         </Pressable>
-        <Text style={[styles.mainLabel, { color: colors.primary }]}>
-          Tap to Record
-        </Text>
+        <AppText style={[styles.mainLabel, { color: colors.primary }]}>Tap to Record</AppText>
       </View>
     );
   }
@@ -81,11 +79,10 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
             },
           ]}
           accessibilityLabel="Stop and Save"
-          accessibilityRole="button"
-        >
+          accessibilityRole="button">
           <View style={[styles.stopIcon, { backgroundColor: colors.error }]} />
         </Pressable>
-        <Text style={[styles.buttonLabel, { color: colors.handle }]}>Stop</Text>
+        <AppText style={[styles.buttonLabel, { color: colors.handle }]}>Stop</AppText>
       </View>
 
       {/* Pause/Resume Button */}
@@ -111,8 +108,7 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
               },
             ]}
             accessibilityLabel="Resume Recording"
-            accessibilityRole="button"
-          >
+            accessibilityRole="button">
             <Ionicons name="play" size={40} color={colors.onPrimary} style={{ marginLeft: 4 }} />
           </Pressable>
         ) : (
@@ -133,18 +129,17 @@ export const RecordingControls: React.FC<RecordingControlsProps> = ({
               },
             ]}
             accessibilityLabel="Pause Recording"
-            accessibilityRole="button"
-          >
+            accessibilityRole="button">
             <Ionicons name="pause" size={40} color={colors.primary} />
           </Pressable>
         )}
-        <Text style={[styles.buttonLabel, { color: colors.handle }]}>
+        <AppText style={[styles.buttonLabel, { color: colors.handle }]}>
           {isPaused ? 'Resume' : 'Pause'}
-        </Text>
+        </AppText>
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   centerContainer: {
@@ -193,4 +188,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

@@ -1,4 +1,5 @@
 import * as Speech from 'expo-speech';
+import { devLog } from '@/lib/devLogger';
 
 /**
  * TTS Service for playing topic questions to elderly users.
@@ -39,7 +40,7 @@ const DEFAULT_TTS_OPTIONS: Required<Pick<TTSOptions, 'rate' | 'pitch' | 'languag
  * @param text - The text to speak
  * @param options - Optional TTS configuration
  */
-export const speak = (text: string, options?: TTSOptions): void => {
+export function speak(text: string, options?: TTSOptions): void {
   // Stop any currently playing speech first
   Speech.stop();
 
@@ -56,35 +57,35 @@ export const speak = (text: string, options?: TTSOptions): void => {
     onDone: options?.onDone,
     onStopped: options?.onStopped,
     onError: (error) => {
-      console.warn('[TTSService] Speech error:', error);
+      devLog.warn('[TTSService] Speech error:', error);
       options?.onError?.(new Error(String(error)));
     },
   });
-};
+}
 
 /**
  * Stop any currently playing TTS audio.
  */
-export const stop = (): void => {
+export function stop(): void {
   Speech.stop();
-};
+}
 
 /**
  * Check if TTS is currently speaking.
  *
  * @returns Promise resolving to true if speaking, false otherwise
  */
-export const isSpeaking = async (): Promise<boolean> => {
+export async function isSpeaking(): Promise<boolean> {
   return Speech.isSpeakingAsync();
-};
+}
 
 /**
  * Get available voices for the device.
  * Useful for debugging or future voice selection feature.
  */
-export const getAvailableVoices = async () => {
+export async function getAvailableVoices(): ReturnType<typeof Speech.getAvailableVoicesAsync> {
   return Speech.getAvailableVoicesAsync();
-};
+}
 
 export const TTSService = {
   speak,

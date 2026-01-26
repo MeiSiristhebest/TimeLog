@@ -111,7 +111,7 @@ describe('SyncStore', () => {
         id: 'queue-item-1',
         type: 'upload_recording',
         recordingId: 'rec-123',
-        payload: JSON.stringify({ filePath: '/path/to/file.opus', recordingId: 'rec-123' }),
+        payload: JSON.stringify({ filePath: '/path/to/file.wav', recordingId: 'rec-123' }),
         status: 'pending',
         retryCount: 0,
         createdAt: Date.now(),
@@ -146,7 +146,7 @@ describe('SyncStore', () => {
             id: 'queue-item-1',
             type: 'upload_recording',
             recordingId: 'rec-123',
-            payload: JSON.stringify({ filePath: '/path/to/file.opus', recordingId: 'rec-123' }),
+            payload: JSON.stringify({ filePath: '/path/to/file.wav', recordingId: 'rec-123' }),
             status: 'pending',
             retryCount: 0,
             createdAt: Date.now(),
@@ -176,16 +176,19 @@ describe('SyncStore', () => {
 
       const processQueueSpy = jest.spyOn(useSyncStore.getState(), 'processQueue');
 
-      await useSyncStore.getState().enqueueRecording('rec-123', '/path/to/file.opus');
+      await useSyncStore.getState().enqueueRecording('rec-123', '/path/to/file.wav');
 
-      expect(syncQueueService.enqueueRecordingUpload).toHaveBeenCalledWith('rec-123', '/path/to/file.opus');
+      expect(syncQueueService.enqueueRecordingUpload).toHaveBeenCalledWith(
+        'rec-123',
+        '/path/to/file.wav'
+      );
       expect(processQueueSpy).toHaveBeenCalled();
     });
 
     it('should not duplicate queue items', async () => {
       (syncQueueService.isRecordingQueued as jest.Mock).mockResolvedValue(true);
 
-      await useSyncStore.getState().enqueueRecording('rec-123', '/path/to/file.opus');
+      await useSyncStore.getState().enqueueRecording('rec-123', '/path/to/file.wav');
 
       expect(syncQueueService.enqueueRecordingUpload).not.toHaveBeenCalled();
     });

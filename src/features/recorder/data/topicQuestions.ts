@@ -91,7 +91,7 @@ let lastQuestionId: string | null = null;
  *
  * @returns A random TopicQuestion
  */
-export const getRandomQuestion = (): TopicQuestion => {
+export function getRandomQuestion(): TopicQuestion {
   // Filter out the last shown question to avoid immediate repeats
   const availableQuestions =
     lastQuestionId && TOPIC_QUESTIONS.length > 1
@@ -105,7 +105,7 @@ export const getRandomQuestion = (): TopicQuestion => {
   lastQuestionId = selected.id;
 
   return selected;
-};
+}
 
 /**
  * Get a specific question by ID.
@@ -113,9 +113,9 @@ export const getRandomQuestion = (): TopicQuestion => {
  * @param id - The question ID
  * @returns The question or undefined if not found
  */
-export const getQuestionById = (id: string): TopicQuestion | undefined => {
+export function getQuestionById(id: string): TopicQuestion | undefined {
   return TOPIC_QUESTIONS.find((q) => q.id === id);
-};
+}
 
 /**
  * Get all questions in a specific category.
@@ -123,15 +123,13 @@ export const getQuestionById = (id: string): TopicQuestion | undefined => {
  * @param category - The category to filter by
  * @returns Array of questions in that category
  */
-export const getQuestionsByCategory = (
-  category: TopicQuestion['category']
-): TopicQuestion[] => {
+export function getQuestionsByCategory(category: TopicQuestion['category']): TopicQuestion[] {
   return TOPIC_QUESTIONS.filter((q) => q.category === category);
-};
+}
 
 /**
  * Reset the last question tracker (useful for testing).
  */
-export const resetLastQuestion = (): void => {
+export function resetLastQuestion(): void {
   lastQuestionId = null;
-};
+}

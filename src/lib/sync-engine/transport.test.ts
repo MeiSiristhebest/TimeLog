@@ -4,10 +4,12 @@
  */
 
 import { TusTransport } from './transport';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Crypto from 'expo-crypto';
+import { Upload } from 'tus-js-client';
 
 // Mock expo-file-system
-jest.mock('expo-file-system', () => ({
+jest.mock('expo-file-system/legacy', () => ({
   getInfoAsync: jest.fn(),
   readAsStringAsync: jest.fn(),
   documentDirectory: 'file:///mock/documents/',
@@ -57,6 +59,7 @@ describe('TusTransport', () => {
   let transport: TusTransport;
   const mockSupabaseUrl = 'https://test.supabase.co';
   const mockAnonKey = 'test-anon-key';
+  const uploadMock = Upload as jest.Mock;
 
   beforeEach(() => {
     transport = new TusTransport(mockSupabaseUrl, mockAnonKey);
@@ -90,13 +93,12 @@ describe('TusTransport', () => {
         exists: false,
       });
 
-      await expect(
-        transport.uploadFile(filePath, 'recordings', 'test.wav')
-      ).rejects.toThrow('File not found');
+      await expect(transport.uploadFile(filePath, 'recordings', 'test.wav')).rejects.toThrow(
+        'File not found'
+      );
     });
 
     it('should use correct TUS endpoint for Supabase Storage', async () => {
-      const Upload = require('tus-js-client').Upload;
       const filePath = 'file:///recordings/test.wav';
 
       (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({
@@ -107,12 +109,11 @@ describe('TusTransport', () => {
 
       await transport.uploadFile(filePath, 'recordings', 'test.wav');
 
-      const uploadInstance = Upload.mock.results[0]?.value;
+      const uploadInstance = uploadMock.mock.results[0]?.value;
       expect(uploadInstance?.options.endpoint).toContain('/storage/v1/upload/resumable');
     });
 
     it('should configure proper chunk size for mobile (1MB for low latency)', async () => {
-      const Upload = require('tus-js-client').Upload;
       const filePath = 'file:///recordings/test.wav';
 
       (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({
@@ -123,12 +124,11 @@ describe('TusTransport', () => {
 
       await transport.uploadFile(filePath, 'recordings', 'test.wav');
 
-      const uploadInstance = Upload.mock.results[0]?.value;
+      const uploadInstance = uploadMock.mock.results[0]?.value;
       expect(uploadInstance?.options.chunkSize).toBe(1 * 1024 * 1024); // 1MB
     });
 
     it('should include authentication headers', async () => {
-      const Upload = require('tus-js-client').Upload;
       const filePath = 'file:///recordings/test.wav';
 
       (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({
@@ -139,13 +139,12 @@ describe('TusTransport', () => {
 
       await transport.uploadFile(filePath, 'recordings', 'test.wav');
 
-      const uploadInstance = Upload.mock.results[0]?.value;
+      const uploadInstance = uploadMock.mock.results[0]?.value;
       expect(uploadInstance?.options.headers).toHaveProperty('Authorization');
       expect(uploadInstance?.options.headers?.Authorization).toContain('Bearer');
     });
 
     it('should handle upload errors with proper error messages', async () => {
-      const Upload = require('tus-js-client').Upload;
       const filePath = 'file:///recordings/test.wav';
 
       (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({
@@ -155,7 +154,7 @@ describe('TusTransport', () => {
       });
 
       // Mock upload failure
-      Upload.mockImplementationOnce((file, options) => ({
+      uploadMock.mockImplementationOnce((file, options) => ({
         start: jest.fn(() => {
           options.onError(new Error('Network error'));
         }),
@@ -163,13 +162,12 @@ describe('TusTransport', () => {
         options,
       }));
 
-      await expect(
-        transport.uploadFile(filePath, 'recordings', 'test.wav')
-      ).rejects.toThrow('Network error');
+      await expect(transport.uploadFile(filePath, 'recordings', 'test.wav')).rejects.toThrow(
+        'Network error'
+      );
     });
 
     it('should call onProgress callback during upload', async () => {
-      const Upload = require('tus-js-client').Upload;
       const filePath = 'file:///recordings/test.wav';
       const onProgress = jest.fn();
 
@@ -179,7 +177,7 @@ describe('TusTransport', () => {
         uri: filePath,
       });
 
-      Upload.mockImplementationOnce((file, options) => ({
+      uploadMock.mockImplementationOnce((file, options) => ({
         start: jest.fn(() => {
           // Simulate progress callback
           options.onProgress(512, 1024);
@@ -197,12 +195,11 @@ describe('TusTransport', () => {
 
   describe('calculateMd5Checksum', () => {
     it('should calculate MD5 checksum for a file', async () => {
-      const Crypto = require('expo-crypto');
       const filePath = 'file:///recordings/test.wav';
 
       const mockDigestBuffer = new Uint8Array([
-        0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90,
-        0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90,
+        0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78,
+        0x90,
       ]).buffer;
       const mockHexHash = 'abcdef1234567890abcdef1234567890';
       (Crypto.digest as jest.Mock).mockResolvedValue(mockDigestBuffer);

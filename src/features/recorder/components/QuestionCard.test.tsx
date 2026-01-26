@@ -25,7 +25,7 @@ describe('QuestionCard', () => {
 
   it('renders family badge when isFromFamily is true', () => {
     const { getByText } = render(<QuestionCard question={mockFamilyQuestion} />);
-    expect(getByText('From Alice')).toBeTruthy();
+    expect(getByText('Asked by Alice')).toBeTruthy();
   });
 
   it('calls onReplay when Replay button is pressed in recorder variant', () => {
@@ -33,7 +33,7 @@ describe('QuestionCard', () => {
     const { getByLabelText } = render(
       <QuestionCard question={mockQuestion} onReplay={onReplay} variant="recorder" />
     );
-    fireEvent.press(getByLabelText('Replay question'));
+    fireEvent.press(getByLabelText('Replay'));
     expect(onReplay).toHaveBeenCalled();
   });
 
@@ -42,11 +42,11 @@ describe('QuestionCard', () => {
     const { getByLabelText } = render(
       <QuestionCard question={mockQuestion} onNewTopic={onNewTopic} variant="recorder" />
     );
-    fireEvent.press(getByLabelText('New topic'));
+    fireEvent.press(getByLabelText('New Topic'));
     expect(onNewTopic).toHaveBeenCalled();
   });
 
-  it('renders discovery variant with Record This and Next buttons', () => {
+  it('renders discovery variant with Record Answer and Try Another buttons', () => {
     const onRecordThis = jest.fn();
     const onNext = jest.fn();
     const { getByLabelText, getByText } = render(
@@ -58,13 +58,13 @@ describe('QuestionCard', () => {
       />
     );
 
-    expect(getByText('Record This')).toBeTruthy();
-    expect(getByText('Next')).toBeTruthy();
+    expect(getByText('Record Answer')).toBeTruthy();
+    expect(getByText('Try Another Question')).toBeTruthy();
 
-    fireEvent.press(getByLabelText('Record this story'));
+    fireEvent.press(getByLabelText('Record Answer'));
     expect(onRecordThis).toHaveBeenCalled();
 
-    fireEvent.press(getByLabelText('Next topic'));
+    fireEvent.press(getByLabelText('Try Another Question'));
     expect(onNext).toHaveBeenCalled();
   });
 });

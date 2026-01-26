@@ -1,6 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '@/components/ui/AppText';
+import { View, StyleSheet } from 'react-native';
+
+import { Image } from 'expo-image';
+import { Ionicons } from '@/components/ui/Icon';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { useHeritageTheme } from '@/theme/heritage';
 import type { TopicQuestion } from '@/types/entities';
@@ -19,6 +21,8 @@ const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 export type QuestionCardProps = {
   /** The question to display */
   question: TopicQuestion;
+  /** F3.5: Whether this topic has been answered */
+  isAnswered?: boolean;
   /** Whether TTS is currently speaking (recorder variant) */
   isSpeaking?: boolean;
   /** Callback when Replay button is pressed (recorder variant) */
@@ -44,8 +48,9 @@ export type QuestionCardProps = {
  * - Focus on clarity and simplicity
  * - Topic icon for visual context
  */
-export const QuestionCard: React.FC<QuestionCardProps> = ({
+export function QuestionCard({
   question,
+  isAnswered = false,
   isSpeaking = false,
   onReplay,
   onNewTopic,
@@ -53,19 +58,23 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   onRecordThis,
   disabled = false,
   variant = 'recorder',
-}) => {
+}: QuestionCardProps): JSX.Element {
   const isDiscovery = variant === 'discovery';
   const theme = useHeritageTheme();
-  const { colors, spacing, radius } = theme;
+  const { colors } = theme;
 
   const categoryIcon = CATEGORY_ICONS[question.category || 'default'] || CATEGORY_ICONS.default;
 
   return (
-    <View style={[styles.card, {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      shadowColor: colors.shadow,
-    }]}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          shadowColor: colors.shadow,
+        },
+      ]}>
       {/* 1. Topic Icon */}
       {isDiscovery && (
         <View style={styles.iconContainer}>
@@ -78,47 +87,57 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       {/* 2. Family Request Badge (Gold Style) */}
       {question.isFromFamily && question.submittedBy && (
         <View style={styles.badgeContainer}>
-          <View style={[styles.goldBadge, {
-            backgroundColor: colors.goldLight,
-            borderColor: colors.goldBorder
-          }]}>
+          <View
+            style={[
+              styles.goldBadge,
+              {
+                backgroundColor: colors.surfaceCream,
+                borderColor: colors.amberCustom,
+              },
+            ]}>
             {question.submitterAvatar && (
               <Image
                 source={{ uri: question.submitterAvatar }}
                 style={styles.avatarImage}
+                contentFit="cover"
               />
             )}
-            <Text style={[styles.goldBadgeText, { color: colors.goldText }]}>
+            <AppText style={[styles.goldBadgeText, { color: colors.amberDeep }]}>
               Asked by {question.submittedBy}
-            </Text>
+            </AppText>
           </View>
         </View>
       )}
 
       {/* 3. Question Text - Large and readable */}
-      <Text
-        style={[
-          styles.questionText,
-          { color: colors.onSurface },
-          isDiscovery && styles.questionTextLarge,
-        ]}
-        accessibilityRole="text"
-        accessibilityLabel={question.text}
-      >
-        {question.text}
-      </Text>
+      <View style={styles.questionRow}>
+        <AppText
+          style={[
+            styles.questionText,
+            { color: colors.onSurface },
+            isDiscovery && styles.questionTextLarge,
+          ]}
+          accessibilityRole="text"
+          accessibilityLabel={question.text}>
+          {question.text}
+        </AppText>
+        {/* F3.5: Answered checkmark indicator */}
+        {isAnswered && (
+          <View style={[styles.answeredBadge, { backgroundColor: colors.success + '20' }]}>
+            <Ionicons name="checkmark-circle" size={24} color={colors.success} />
+          </View>
+        )}
+      </View>
 
       {/* 4. Motivation Hint (Discovery only) */}
       {isDiscovery && (
-        <Text style={[styles.hintText, { color: colors.textMuted }]}>
+        <AppText style={[styles.hintText, { color: colors.textMuted }]}>
           Share your memories. Your family would love to hear this story.
-        </Text>
+        </AppText>
       )}
 
       {/* Card Footer Decor (Discovery only) */}
-      {isDiscovery && (
-        <View style={[styles.decorLine, { backgroundColor: colors.border }]} />
-      )}
+      {isDiscovery && <View style={[styles.decorLine, { backgroundColor: colors.border }]} />}
 
       {/* Button Row */}
       <View style={isDiscovery ? styles.discoveryButtons : styles.buttonRow}>
@@ -128,7 +147,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             <HeritageButton
               title="Record Answer"
               icon="mic"
-              onPress={onRecordThis || (() => { })}
+              onPress={onRecordThis || (() => {})}
               disabled={disabled}
               variant="primary"
               fullWidth
@@ -139,7 +158,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             {/* Secondary: Try Another (Ghost) */}
             <HeritageButton
               title="Try Another Question"
-              onPress={onNext || (() => { })}
+              onPress={onNext || (() => {})}
               disabled={disabled}
               variant="ghost"
               fullWidth
@@ -153,7 +172,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               <HeritageButton
                 title={isSpeaking ? 'Playing...' : 'Replay'}
                 icon={isSpeaking ? 'volume-high' : 'volume-medium-outline'}
-                onPress={onReplay || (() => { })}
+                onPress={onReplay || (() => {})}
                 disabled={disabled}
                 variant="secondary"
               />
@@ -162,7 +181,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               <HeritageButton
                 title="New Topic"
                 icon="shuffle-outline"
-                onPress={onNewTopic || (() => { })}
+                onPress={onNewTopic || (() => {})}
                 disabled={disabled}
                 variant="secondary"
               />
@@ -172,7 +191,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   card: {
@@ -264,7 +283,18 @@ const styles = StyleSheet.create({
   discoveryButtons: {
     gap: 16,
   },
+  // F3.5: Styles for answered indicator
+  questionRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  answeredBadge: {
+    borderRadius: 12,
+    padding: 4,
+    marginTop: 4,
+  },
 });
 
 export default QuestionCard;
-

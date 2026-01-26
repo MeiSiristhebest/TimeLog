@@ -2,7 +2,7 @@ import { renderHook, act } from '@testing-library/react-native';
 
 import { useTTS } from './useTTS';
 import { TTSService } from '../services/ttsService';
-import { getRandomQuestion, resetLastQuestion } from '../data/topicQuestions';
+import { getRandomQuestion } from '../data/topicQuestions';
 
 // Mock TTSService
 jest.mock('../services/ttsService', () => ({
@@ -50,9 +50,7 @@ describe('useTTS', () => {
         category: 'general' as const,
       };
 
-      const { result } = renderHook(() =>
-        useTTS({ initialQuestion: customQuestion })
-      );
+      const { result } = renderHook(() => useTTS({ initialQuestion: customQuestion }));
 
       expect(result.current.currentQuestion.id).toBe('custom-001');
       expect(result.current.currentQuestion.text).toBe('Custom question');
@@ -177,10 +175,7 @@ describe('useTTS', () => {
         result.current.newTopic();
       });
 
-      expect(TTSService.speak).toHaveBeenCalledWith(
-        'New question',
-        expect.any(Object)
-      );
+      expect(TTSService.speak).toHaveBeenCalledWith('New question', expect.any(Object));
     });
   });
 

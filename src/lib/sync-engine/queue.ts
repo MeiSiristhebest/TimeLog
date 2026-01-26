@@ -8,7 +8,7 @@ import { eq, and, lte, lt, gte } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { syncQueue, audioRecordings } from '@/db/schema';
 import { generateId } from '@/utils/id';
-import type { SyncQueueItem, SyncStatus } from '@/types/entities';
+import type { SyncQueueItem } from '@/types/entities';
 
 const MAX_RETRY_COUNT = 5;
 const BASE_BACKOFF_MS = 2000; // 2 seconds
@@ -27,10 +27,7 @@ class SyncQueueService {
    * Enqueue a recording upload operation.
    * Sets recording.syncStatus = 'queued' and creates queue entry.
    */
-  async enqueueRecordingUpload(
-    recordingId: string,
-    filePath: string
-  ): Promise<void> {
+  async enqueueRecordingUpload(recordingId: string, filePath: string): Promise<void> {
     const id = generateId();
     const now = Date.now();
 
@@ -129,21 +126,14 @@ class SyncQueueService {
    */
   async markProcessing(id: string): Promise<void> {
     // Get the queue item first
-    const items = await db
-      .select()
-      .from(syncQueue)
-      .where(eq(syncQueue.id, id))
-      .limit(1);
+    const items = await db.select().from(syncQueue).where(eq(syncQueue.id, id)).limit(1);
 
     if (items.length === 0) return;
 
     const item = items[0];
 
     // Update queue item status
-    await db
-      .update(syncQueue)
-      .set({ status: 'processing' })
-      .where(eq(syncQueue.id, id));
+    await db.update(syncQueue).set({ status: 'processing' }).where(eq(syncQueue.id, id));
 
     // Update recording status if this is a recording operation
     if (item.recordingId) {
@@ -160,11 +150,7 @@ class SyncQueueService {
    */
   async dequeue(id: string): Promise<void> {
     // Get the queue item first
-    const items = await db
-      .select()
-      .from(syncQueue)
-      .where(eq(syncQueue.id, id))
-      .limit(1);
+    const items = await db.select().from(syncQueue).where(eq(syncQueue.id, id)).limit(1);
 
     if (items.length === 0) return;
 
@@ -188,11 +174,7 @@ class SyncQueueService {
    */
   async markFailed(id: string, error: string): Promise<void> {
     // Get the queue item first
-    const items = await db
-      .select()
-      .from(syncQueue)
-      .where(eq(syncQueue.id, id))
-      .limit(1);
+    const items = await db.select().from(syncQueue).where(eq(syncQueue.id, id)).limit(1);
 
     if (items.length === 0) return;
 
@@ -225,10 +207,7 @@ class SyncQueueService {
    * Get current queue length (for observability).
    */
   async getQueueLength(): Promise<number> {
-    const items = await db
-      .select()
-      .from(syncQueue)
-      .where(eq(syncQueue.status, 'pending'));
+    const items = await db.select().from(syncQueue).where(eq(syncQueue.status, 'pending'));
     return items.length;
   }
 
@@ -249,14 +228,9 @@ class SyncQueueService {
    * Called periodically to clean up permanently failed items.
    */
   async clearExceededRetries(): Promise<number> {
-    const result = await db
+    await db
       .delete(syncQueue)
-      .where(
-        and(
-          eq(syncQueue.status, 'pending'),
-          gte(syncQueue.retryCount, MAX_RETRY_COUNT)
-        )
-      );
+      .where(and(eq(syncQueue.status, 'pending'), gte(syncQueue.retryCount, MAX_RETRY_COUNT)));
     // Note: Drizzle doesn't return count for SQLite, return 0 as placeholder
     return 0;
   }

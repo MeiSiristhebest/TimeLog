@@ -1,5 +1,7 @@
-import { Audio } from 'expo-av';
+
+import { createAudioPlayer } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
+import { captureError } from '@/lib/logger';
 import {
   initializeSoundCue,
   playSuccess,
@@ -13,14 +15,18 @@ jest.mock('@/lib/logger', () => ({
 
 jest.mock('../../../../assets/sounds/success-ding.wav', () => 1);
 
-// Mock expo-av
-jest.mock('expo-av', () => ({
-  Audio: {
-    setAudioModeAsync: jest.fn(),
-    Sound: {
-      createAsync: jest.fn(),
-    },
-  },
+// Mock expo-audio
+const mockPlayer = {
+  play: jest.fn(),
+  pause: jest.fn(),
+  seekTo: jest.fn(),
+  remove: jest.fn(),
+  replace: jest.fn(),
+  setPlaybackRate: jest.fn(),
+};
+
+jest.mock('expo-audio', () => ({
+  createAudioPlayer: jest.fn(() => mockPlayer),
 }));
 
 // Mock expo-haptics
@@ -32,24 +38,13 @@ jest.mock('expo-haptics', () => ({
 }));
 
 describe('soundCueService', () => {
-  let mockSound: any;
-
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Create mock sound instance
-    mockSound = {
-      replayAsync: jest.fn().mockResolvedValue(undefined),
-      unloadAsync: jest.fn().mockResolvedValue(undefined),
-    };
-
-    // Mock Audio.Sound.createAsync to return our mock sound
-    (Audio.Sound.createAsync as jest.Mock).mockResolvedValue({
-      sound: mockSound,
-    });
-
-    // Mock Audio.setAudioModeAsync
-    (Audio.setAudioModeAsync as jest.Mock).mockResolvedValue(undefined);
+    // Reset player methods
+    mockPlayer.play.mockReset();
+    mockPlayer.seekTo.mockReset();
+    mockPlayer.remove.mockReset();
 
     // Mock Haptics
     (Haptics.notificationAsync as jest.Mock).mockResolvedValue(undefined);
@@ -60,23 +55,10 @@ describe('soundCueService', () => {
   });
 
   describe('initializeSoundCue', () => {
-    it('should initialize sound with correct audio mode settings', async () => {
+    it('should initialize player', async () => {
       await initializeSoundCue();
 
-      expect(Audio.setAudioModeAsync).toHaveBeenCalledWith({
-        playsInSilentModeIOS: false, // Respect silent mode
-        staysActiveInBackground: false,
-      });
-    });
-
-    it('should preload the success sound', async () => {
-      await initializeSoundCue();
-
-      // Sound asset is mocked as number (require returns mock value)
-      expect(Audio.Sound.createAsync).toHaveBeenCalledWith(
-        expect.any(Number),
-        { shouldPlay: false }
-      );
+      expect(createAudioPlayer).toHaveBeenCalledWith(expect.any(Number));
     });
 
     it('should mark as initialized after successful load', async () => {
@@ -87,24 +69,22 @@ describe('soundCueService', () => {
       expect(isSoundCueReady()).toBe(true);
     });
 
-    it('should not reinitialize if already initialized', async () => {
+    it('should not re-initialize if already initialized', async () => {
       await initializeSoundCue();
-      const firstCallCount = (Audio.Sound.createAsync as jest.Mock).mock.calls.length;
+      const firstCallCount = (createAudioPlayer as jest.Mock).mock.calls.length;
 
       await initializeSoundCue();
-      const secondCallCount = (Audio.Sound.createAsync as jest.Mock).mock.calls.length;
+      const secondCallCount = (createAudioPlayer as jest.Mock).mock.calls.length;
 
       expect(secondCallCount).toBe(firstCallCount);
     });
 
     it('should handle initialization errors gracefully', async () => {
-      (Audio.Sound.createAsync as jest.Mock).mockRejectedValueOnce(
-        new Error('Sound load failed')
-      );
+      (createAudioPlayer as jest.Mock).mockImplementationOnce(() => {
+        throw new Error('Player init failed');
+      });
 
       await initializeSoundCue();
-
-      const { captureError } = require('@/lib/logger');
       expect(captureError).toHaveBeenCalled();
       expect(isSoundCueReady()).toBe(false);
     });
@@ -120,21 +100,23 @@ describe('soundCueService', () => {
       );
     });
 
-    it('should play sound using replayAsync for low latency', async () => {
+    it('should play sound using player.play()', async () => {
       await initializeSoundCue();
       await playSuccess();
 
-      expect(mockSound.replayAsync).toHaveBeenCalled();
+      expect(mockPlayer.seekTo).toHaveBeenCalledWith(0);
+      expect(mockPlayer.play).toHaveBeenCalled();
     });
 
     it('should provide haptic feedback even if sound fails', async () => {
       await initializeSoundCue();
-      mockSound.replayAsync.mockRejectedValueOnce(new Error('Playback failed'));
+      mockPlayer.play.mockImplementationOnce(() => {
+        throw new Error('Playback failed');
+      });
 
       await playSuccess();
 
       expect(Haptics.notificationAsync).toHaveBeenCalled();
-      const { captureError } = require('@/lib/logger');
       expect(captureError).toHaveBeenCalled();
     });
 
@@ -143,34 +125,24 @@ describe('soundCueService', () => {
       await playSuccess();
 
       expect(Haptics.notificationAsync).toHaveBeenCalled();
-      // Sound is lazy-loaded, so replayAsync will be called
-      expect(mockSound.replayAsync).toHaveBeenCalled();
+      expect(createAudioPlayer).toHaveBeenCalled();
+      expect(mockPlayer.play).toHaveBeenCalled();
     });
   });
 
   describe('cleanupSoundCue', () => {
-    it('should unload the sound', async () => {
+    it('should clean up the player', async () => {
       await initializeSoundCue();
       await cleanupSoundCue();
 
-      expect(mockSound.unloadAsync).toHaveBeenCalled();
+      expect(mockPlayer.remove).toHaveBeenCalled();
       expect(isSoundCueReady()).toBe(false);
-    });
-
-    it('should handle cleanup errors gracefully', async () => {
-      await initializeSoundCue();
-      mockSound.unloadAsync.mockRejectedValueOnce(new Error('Unload failed'));
-
-      await cleanupSoundCue();
-
-      const { captureError } = require('@/lib/logger');
-      expect(captureError).toHaveBeenCalled();
     });
 
     it('should be safe to call when not initialized', async () => {
       await cleanupSoundCue();
 
-      expect(mockSound.unloadAsync).not.toHaveBeenCalled();
+      expect(mockPlayer.remove).not.toHaveBeenCalled();
     });
   });
 
@@ -191,3 +163,4 @@ describe('soundCueService', () => {
     });
   });
 });
+

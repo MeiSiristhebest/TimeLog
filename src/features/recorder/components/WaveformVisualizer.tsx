@@ -1,12 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Canvas, Path, Skia } from '@shopify/react-native-skia';
-import {
-  useDerivedValue,
-  SharedValue,
-  useSharedValue,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+import { useDerivedValue, SharedValue, useSharedValue } from 'react-native-reanimated';
 import { View, LayoutChangeEvent, StyleSheet } from 'react-native';
 import { useHeritageTheme } from '@/theme/heritage';
 
@@ -20,7 +14,7 @@ interface WaveformVisualizerProps {
 const BAR_COUNT = 7;
 const BAR_WIDTH = 8;
 const BAR_SPACING = 12;
-const MIN_BAR_HEIGHT = 6;
+const MIN_BAR_HEIGHT = 20; // 增加静音时的最小高度使波形更明显
 const MAX_BAR_HEIGHT = 80;
 
 // Pre-calculate sensitivities for each bar (middle bars respond more)
@@ -30,13 +24,13 @@ const SENSITIVITIES = Array.from({ length: BAR_COUNT }, (_, i) => {
   return 1 - (dist / centerIdx) * 0.4;
 });
 
-export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
+export function WaveformVisualizer({
   amplitude,
   isRecording,
   isPaused = false,
   color,
-}) => {
-  const { colors, radius } = useHeritageTheme();
+}: WaveformVisualizerProps): JSX.Element {
+  const { colors } = useHeritageTheme();
   const barColor = color || colors.primary;
   const [layout, setLayout] = useState({ width: 0, height: 0 });
 
@@ -85,18 +79,17 @@ export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
     // Draw rounded bars as path
     for (let i = 0; i < BAR_COUNT; i++) {
       const sensitivity = SENSITIVITIES[i];
-      const barHeight = MIN_BAR_HEIGHT + amp * MAX_BAR_HEIGHT * sensitivity;
+      // 使用更明显的波形高度范围：安静时20px，最响时80px
+      const effectiveAmp = Math.max(0, Math.min(1, amp));
+      const barHeight =
+        MIN_BAR_HEIGHT + effectiveAmp * (MAX_BAR_HEIGHT - MIN_BAR_HEIGHT) * sensitivity;
       const x = startX + i * (BAR_WIDTH + BAR_SPACING);
       const y = centerY - barHeight / 2;
       const cornerRadius = BAR_WIDTH / 2;
 
       // Draw rounded rectangle using path
       skPath.addRRect(
-        Skia.RRectXY(
-          Skia.XYWHRect(x, y, BAR_WIDTH, barHeight),
-          cornerRadius,
-          cornerRadius
-        )
+        Skia.RRectXY(Skia.XYWHRect(x, y, BAR_WIDTH, barHeight), cornerRadius, cornerRadius)
       );
     }
 
@@ -105,12 +98,13 @@ export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
 
   return (
     <View
-      style={[styles.container, {
-        backgroundColor: colors.surfaceDim,
-        borderRadius: radius.xl,
-      }]}
-      onLayout={handleLayout}
-    >
+      style={[
+        styles.container,
+        {
+          backgroundColor: 'transparent',
+        },
+      ]}
+      onLayout={handleLayout}>
       {layout.width > 0 && (
         <Canvas style={{ width: layout.width, height: layout.height }}>
           <Path path={path} color={barColor} />
@@ -118,7 +112,7 @@ export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
       )}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -130,3 +124,5 @@ const styles = StyleSheet.create({
   },
 });
 
+// Default export for React.lazy() compatibility
+export default WaveformVisualizer;

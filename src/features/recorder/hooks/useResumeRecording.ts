@@ -4,14 +4,23 @@ import {
   discardPausedRecording,
   startRecordingStream,
   type RecordingMetadata,
+  type RecordingHandle,
 } from '../services/recorderService';
 import { useRecorderStore } from '../store/recorderStore';
+import { devLog } from '@/lib/devLogger';
 
 /**
  * Hook to detect and manage paused recording sessions.
  * Implements AC: 5 (detect paused session on app return)
  */
-export const useResumeRecording = () => {
+type ResumeRecordingState = {
+  pausedRecording: RecordingMetadata | null;
+  isLoading: boolean;
+  resumeRecording: () => Promise<RecordingHandle | undefined>;
+  discardRecording: () => Promise<void>;
+};
+
+export function useResumeRecording(): ResumeRecordingState {
   const [pausedRecording, setPausedRecording] = useState<RecordingMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { setCurrentRecording, setPausedRecordingId } = useRecorderStore();
@@ -23,7 +32,7 @@ export const useResumeRecording = () => {
         const paused = await getPausedRecording();
         setPausedRecording(paused);
       } catch (error) {
-        console.error('Failed to check for paused recording:', error);
+        devLog.error('Failed to check for paused recording:', error);
       } finally {
         setIsLoading(false);
       }
@@ -53,7 +62,7 @@ export const useResumeRecording = () => {
 
       return handle;
     } catch (error) {
-      console.error('Failed to resume recording:', error);
+      devLog.error('Failed to resume recording:', error);
       throw error;
     }
   };
@@ -66,7 +75,7 @@ export const useResumeRecording = () => {
       setPausedRecording(null);
       setPausedRecordingId(null);
     } catch (error) {
-      console.error('Failed to discard paused recording:', error);
+      devLog.error('Failed to discard paused recording:', error);
       throw error;
     }
   };
@@ -77,4 +86,4 @@ export const useResumeRecording = () => {
     resumeRecording,
     discardRecording,
   };
-};
+}
