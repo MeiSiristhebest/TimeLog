@@ -15,6 +15,7 @@ import {
   type Comment,
 } from '@/features/family-listener/services/commentService';
 import { markCommentsAsRead } from '../services/commentReadService';
+import { devLog } from '@/lib/devLogger';
 
 interface UseStoryCommentsOptions {
   /** Whether to auto-mark comments as read when viewed */
@@ -106,7 +107,7 @@ export function useStoryComments(
           queryClient.invalidateQueries({ queryKey: ['unread-counts'] });
         })
         .catch((err) => {
-          console.error('[useStoryComments] Failed to mark as read:', err);
+          devLog.error('[useStoryComments] Failed to mark as read:', err);
         });
     }
   }, [storyId, comments.length, autoMarkAsRead, queryClient]);

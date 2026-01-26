@@ -1,4 +1,5 @@
-import { Audio, AVPlaybackStatus } from 'expo-av';
+import { createAudioPlayer, AudioPlayer, AudioStatus } from 'expo-audio';
+import { devLog } from '@/lib/devLogger';
 
 export interface PlayerStatus {
   isPlaying: boolean;
@@ -9,87 +10,110 @@ export interface PlayerStatus {
   didJustFinish: boolean;
 }
 
+/**
+ * PlayerService - Audio playback service using expo-audio SDK 52+
+ *
+ * Uses imperative createAudioPlayer API for global usage outside React components.
+ *
+ * ⚠️ Note on time units:
+ * - expo-audio uses SECONDS
+ * - expo-av (legacy) used MILLISECONDS
+ * - App-wide interfaces still expect MILLISECONDS, so we allow conversion here.
+ */
 class PlayerService {
-  private sound: Audio.Sound | null = null;
+  private player: AudioPlayer | null = null;
   private onStatusUpdate: ((status: PlayerStatus) => void) | null = null;
 
   async loadAudio(uri: string, onStatusUpdate: (status: PlayerStatus) => void): Promise<void> {
     try {
-      if (this.sound) {
-        await this.sound.unloadAsync();
+      // Cleanup existing player
+      if (this.player) {
+        this.player.remove(); // Release native resources
+        this.player = null;
       }
 
       this.onStatusUpdate = onStatusUpdate;
 
-      const { sound } = await Audio.Sound.createAsync(
-        { uri },
-        { shouldPlay: false, progressUpdateIntervalMillis: 100 },
-        this.handleStatusUpdate
-      );
+      devLog.info('[PlayerService] Creating new AudioPlayer for:', uri);
 
-      this.sound = sound;
+      // Create new player - strict mode off implies it might throw if native module missing
+      this.player = createAudioPlayer(uri);
+
+      // Subscribe to status updates
+      this.player.addListener('playbackStatusUpdate', (status: AudioStatus) => {
+        this.handleStatusUpdate(status);
+      });
+
+      // Initial status check (sometimes listener doesn't fire immediately on creation)
+      // We can also check player.isLoaded
     } catch (error) {
-      console.error('Error loading audio:', error);
+      devLog.error('[PlayerService] Error loading audio:', error);
       throw error;
     }
   }
 
-  private handleStatusUpdate = (status: AVPlaybackStatus) => {
-    if (!status.isLoaded) {
-      if (status.error) {
-        console.error(`Encountered a fatal error during playback: ${status.error}`);
-      }
-      return;
-    }
+  private handleStatusUpdate(status: AudioStatus): void {
+    if (!this.onStatusUpdate) return;
 
-    if (this.onStatusUpdate) {
-      this.onStatusUpdate({
-        isPlaying: status.isPlaying,
-        positionMillis: status.positionMillis,
-        durationMillis: status.durationMillis || 0,
-        rate: status.rate,
-        isBuffering: status.isBuffering,
-        didJustFinish: status.didJustFinish,
-      });
-    }
-  };
-
-  async play(): Promise<void> {
-    if (this.sound) {
-      await this.sound.playAsync();
-    }
+    this.onStatusUpdate({
+      isPlaying: status.playing,
+      // Convert seconds to ms
+      positionMillis: status.currentTime * 1000,
+      durationMillis: status.duration * 1000,
+      rate: status.playbackRate,
+      isBuffering: status.isBuffering,
+      didJustFinish: status.didJustFinish,
+    });
   }
 
-  async pause(): Promise<void> {
-    if (this.sound) {
-      await this.sound.pauseAsync();
-    }
+  play(): void {
+    if (!this.player) return;
+    this.player.play();
   }
 
-  async stop(): Promise<void> {
-    if (this.sound) {
-      await this.sound.stopAsync();
-    }
+  pause(): void {
+    if (!this.player) return;
+    this.player.pause();
   }
 
-  async seekTo(positionMillis: number): Promise<void> {
-    if (this.sound) {
-      await this.sound.setPositionAsync(positionMillis);
-    }
+  /**
+   * Stop is slightly different in expo-audio.
+   * We usually just pause and seek to 0, or just pause.
+   * 'stop()' method doesn't exist on AudioPlayer, only remove().
+   * We will emulate stop behavior.
+   */
+  stop(): void {
+    if (!this.player) return;
+    this.player.pause();
+    this.player.seekTo(0);
   }
 
-  async setRate(rate: number): Promise<void> {
-    if (this.sound) {
-      await this.sound.setRateAsync(rate, true);
-    }
+  seekTo(positionMillis: number): void {
+    if (!this.player) return;
+    // Convert ms to seconds
+    this.player.seekTo(positionMillis / 1000);
   }
 
-  async unload(): Promise<void> {
-    if (this.sound) {
-      await this.sound.unloadAsync();
-      this.sound = null;
-      this.onStatusUpdate = null;
+  setRate(rate: number): void {
+    if (!this.player) return;
+    this.player.setPlaybackRate(rate);
+  }
+
+  cleanup(): void {
+    if (this.player) {
+      this.player.remove();
+      this.player = null;
     }
+    this.onStatusUpdate = null;
+  }
+
+  // Alias for legacy API compatibility
+  unload(): void {
+    this.cleanup();
+  }
+
+  isLoaded(): boolean {
+    return this.player !== null && this.player.isLoaded;
   }
 }
 

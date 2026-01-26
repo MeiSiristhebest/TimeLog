@@ -13,10 +13,15 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { QueryClient, UseQueryResult } from '@tanstack/react-query';
 import { fetchLinkedSeniorStories, type FamilyStory } from '../services/familyStoryService';
 
 /** Query key for family stories - used for cache invalidation */
 export const FAMILY_STORIES_QUERY_KEY = ['familyStories'] as const;
+
+type FamilyStoriesResult = UseQueryResult<FamilyStory[], Error>;
+type RefreshFamilyStories = () => ReturnType<QueryClient['invalidateQueries']>;
+type PrefetchFamilyStories = () => ReturnType<QueryClient['prefetchQuery']>;
 
 /**
  * Hook to fetch and manage family stories from linked senior.
@@ -29,8 +34,8 @@ export const FAMILY_STORIES_QUERY_KEY = ['familyStories'] as const;
  *
  * @returns Query result with stories data, loading state, and error
  */
-export function useFamilyStories() {
-  return useQuery({
+export function useFamilyStories(): FamilyStoriesResult {
+  return useQuery<FamilyStory[], Error>({
     queryKey: FAMILY_STORIES_QUERY_KEY,
     queryFn: fetchLinkedSeniorStories,
     staleTime: 30 * 1000, // 30 seconds - data considered fresh
@@ -47,7 +52,7 @@ export function useFamilyStories() {
  *
  * @returns Function to trigger refetch
  */
-export function useRefreshFamilyStories() {
+export function useRefreshFamilyStories(): RefreshFamilyStories {
   const queryClient = useQueryClient();
 
   return () => {
@@ -63,7 +68,7 @@ export function useRefreshFamilyStories() {
  *
  * @returns Function to prefetch stories
  */
-export function usePrefetchFamilyStories() {
+export function usePrefetchFamilyStories(): PrefetchFamilyStories {
   const queryClient = useQueryClient();
 
   return () => {

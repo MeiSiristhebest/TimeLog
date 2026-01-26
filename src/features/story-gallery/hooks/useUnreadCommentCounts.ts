@@ -8,9 +8,9 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useCallback, useEffect, useMemo } from 'react';
 import { getBatchUnreadCounts } from '../services/commentReadService';
+import { subscribeToCommentChanges } from '../services/commentRealtimeService';
 import type { AudioRecording } from '@/types/entities';
 
 interface UseUnreadCommentCountsResult {
@@ -37,12 +37,14 @@ export function useUnreadCommentCounts(
 
   // Extract story IDs
   const storyIds = useMemo(() => stories.map((s) => s.id), [stories]);
+  const storyIdSet = useMemo(() => new Set(storyIds), [storyIds]);
 
   // Fetch unread counts
-  const { data: unreadCounts = new Map<string, number>(), isLoading, error } = useQuery<
-    Map<string, number>,
-    Error
-  >({
+  const {
+    data: unreadCounts = new Map<string, number>(),
+    isLoading,
+    error,
+  } = useQuery<Map<string, number>, Error>({
     queryKey: [...queryKey, storyIds],
     queryFn: () => getBatchUnreadCounts(storyIds),
     enabled: storyIds.length > 0,
@@ -52,52 +54,23 @@ export function useUnreadCommentCounts(
 
   // Subscribe to real-time comment changes for all owned stories
   useEffect(() => {
-    if (storyIds.length === 0) return;
+    if (storyIdSet.size === 0) return;
 
     // Subscribe to INSERT events on story_comments for any of the user's stories
-    const channel = supabase
-      .channel('unread-counts-subscription')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'story_comments',
-        },
-        (payload) => {
-          const storyId = payload.new.story_id;
-          // Only refresh if it's one of the user's stories
-          if (storyIds.includes(storyId)) {
-            // Invalidate to trigger refetch
-            queryClient.invalidateQueries({ queryKey: ['unread-counts'] });
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'story_comments',
-        },
-        (payload) => {
-          const storyId = payload.old?.story_id;
-          if (storyId && storyIds.includes(storyId)) {
-            queryClient.invalidateQueries({ queryKey: ['unread-counts'] });
-          }
-        }
-      )
-      .subscribe();
+    const unsubscribe = subscribeToCommentChanges(storyIdSet, () =>
+      queryClient.invalidateQueries({ queryKey: ['unread-counts'] })
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      unsubscribe();
     };
-  }, [storyIds, queryClient]);
+  }, [queryClient, storyIdSet]);
 
   // Helper function to get count for a specific story
-  const getCount = (storyId: string): number => {
-    return unreadCounts.get(storyId) ?? 0;
-  };
+  const getCount = useCallback(
+    (storyId: string): number => unreadCounts.get(storyId) ?? 0,
+    [unreadCounts]
+  );
 
   return {
     unreadCounts,

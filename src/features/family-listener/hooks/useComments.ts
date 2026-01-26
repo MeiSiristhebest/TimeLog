@@ -17,9 +17,12 @@ import {
   subscribeToComments,
   Comment,
 } from '../services/commentService';
+import { devLog } from '@/lib/devLogger';
 
 /** Query key factory for comments */
-export const COMMENTS_QUERY_KEY = (storyId: string) => ['comments', storyId];
+export function COMMENTS_QUERY_KEY(storyId: string): [string, string] {
+  return ['comments', storyId];
+}
 
 export interface UseCommentsReturn {
   /** List of comments for the story */
@@ -67,7 +70,7 @@ export function useComments(storyId: string): UseCommentsReturn {
     isLoading,
     error,
     refetch,
-  } = useQuery({
+  } = useQuery<Comment[], Error>({
     queryKey,
     queryFn: () => fetchComments(storyId),
     enabled: !!storyId && netInfo.isConnected !== false,
@@ -123,10 +126,7 @@ export function useComments(storyId: string): UseCommentsReturn {
         createdAt: Date.now(),
       };
 
-      queryClient.setQueryData<Comment[]>(queryKey, (old = []) => [
-        ...old,
-        optimisticComment,
-      ]);
+      queryClient.setQueryData<Comment[]>(queryKey, (old = []) => [...old, optimisticComment]);
 
       return { previousComments, optimisticComment };
     },
@@ -135,14 +135,12 @@ export function useComments(storyId: string): UseCommentsReturn {
       if (context?.previousComments) {
         queryClient.setQueryData(queryKey, context.previousComments);
       }
-      console.error('[useComments] Post error:', err);
+      devLog.error('[useComments] Post error:', err);
     },
     onSuccess: (newComment, _content, context) => {
       // Replace temp comment with real one
       queryClient.setQueryData<Comment[]>(queryKey, (old = []) => {
-        const withoutTemp = old.filter(
-          (c) => c.id !== context?.optimisticComment.id
-        );
+        const withoutTemp = old.filter((c) => c.id !== context?.optimisticComment.id);
         // Avoid duplicate if realtime already added it
         if (withoutTemp.some((c) => c.id === newComment.id)) {
           return withoutTemp;
@@ -171,7 +169,7 @@ export function useComments(storyId: string): UseCommentsReturn {
       if (context?.previousComments) {
         queryClient.setQueryData(queryKey, context.previousComments);
       }
-      console.error('[useComments] Delete error:', err);
+      devLog.error('[useComments] Delete error:', err);
     },
   });
 
@@ -179,7 +177,7 @@ export function useComments(storyId: string): UseCommentsReturn {
   const handlePostComment = useCallback(
     (content: string) => {
       if (netInfo.isConnected === false) {
-        console.warn('[useComments] Cannot post while offline');
+        devLog.warn('[useComments] Cannot post while offline');
         return;
       }
       postMutation.mutate(content);
@@ -191,7 +189,7 @@ export function useComments(storyId: string): UseCommentsReturn {
   const handleDeleteComment = useCallback(
     (commentId: string) => {
       if (netInfo.isConnected === false) {
-        console.warn('[useComments] Cannot delete while offline');
+        devLog.warn('[useComments] Cannot delete while offline');
         return;
       }
       deleteMutation.mutate(commentId);

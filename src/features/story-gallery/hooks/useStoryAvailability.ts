@@ -5,8 +5,7 @@
  * AC: 1 - Compute which stories are playable offline
  */
 
-import { useCallback, useMemo } from 'react';
-import * as FileSystem from 'expo-file-system/legacy';
+import { useMemo } from 'react';
 import type { AudioRecording, SyncStatus } from '@/types/entities';
 import { useSyncStore } from '@/lib/sync-engine/store';
 
@@ -42,10 +41,7 @@ export function hasLocalFile(syncStatus: SyncStatus): boolean {
  * @param isOnline - Current network connectivity status
  * @returns true if the story can be played
  */
-export function isStoryPlayable(
-  story: AudioRecording,
-  isOnline: boolean
-): boolean {
+export function isStoryPlayable(story: AudioRecording, isOnline: boolean): boolean {
   // In TimeLog's Local-First architecture:
   // - All recordings are saved locally first (Stream-to-Disk)
   // - The filePath field always points to a local file
@@ -67,9 +63,7 @@ export function isStoryPlayable(
  * @param stories - Array of audio recordings
  * @returns Stories with isPlayable and isLocallyAvailable properties
  */
-export function useStoryAvailability(
-  stories: AudioRecording[]
-): StoryWithAvailability[] {
+export function useStoryAvailability(stories: AudioRecording[]): StoryWithAvailability[] {
   const isOnline = useSyncStore((s) => s.isOnline);
 
   return useMemo(() => {

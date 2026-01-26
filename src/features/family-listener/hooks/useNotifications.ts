@@ -53,10 +53,12 @@ export interface UseNotificationsReturn {
 
 export function useNotifications(): UseNotificationsReturn {
   const router = useRouter();
-  const [permissionStatus, setPermissionStatus] = useState<NotificationPermissionStatus>('undetermined');
+  const [permissionStatus, setPermissionStatus] =
+    useState<NotificationPermissionStatus>('undetermined');
   const [canRequestPermission, setCanRequestPermission] = useState(true);
   const [isRequesting, setIsRequesting] = useState(false);
-  const [foregroundNotification, setForegroundNotification] = useState<ForegroundNotification | null>(null);
+  const [foregroundNotification, setForegroundNotification] =
+    useState<ForegroundNotification | null>(null);
   const hasHandledInitialNotification = useRef(false);
 
   // Navigate to story based on notification data
@@ -111,11 +113,12 @@ export function useNotifications(): UseNotificationsReturn {
   // Initialize on mount
   useEffect(() => {
     const initialize = async () => {
-      // Check current permission status
-      const status = await getNotificationPermissionStatus();
-      setPermissionStatus(status);
+      const [status, canAsk] = await Promise.all([
+        getNotificationPermissionStatus(),
+        canRequestNotificationPermission(),
+      ]);
 
-      const canAsk = await canRequestNotificationPermission();
+      setPermissionStatus(status);
       setCanRequestPermission(canAsk);
 
       // If already granted, refresh the push token

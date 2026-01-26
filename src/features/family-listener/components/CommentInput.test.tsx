@@ -70,9 +70,7 @@ describe('CommentInput', () => {
 
     it('calls onSend with trimmed text when pressed', () => {
       const onSend = jest.fn();
-      const { getByLabelText } = render(
-        <CommentInput {...defaultProps} onSend={onSend} />
-      );
+      const { getByLabelText } = render(<CommentInput {...defaultProps} onSend={onSend} />);
 
       const input = getByLabelText('Comment input');
       fireEvent.changeText(input, '  Test comment  ');
@@ -96,9 +94,7 @@ describe('CommentInput', () => {
     });
 
     it('is disabled when sending', () => {
-      const { getByLabelText } = render(
-        <CommentInput {...defaultProps} isSending={true} />
-      );
+      const { getByLabelText } = render(<CommentInput {...defaultProps} isSending={true} />);
 
       const input = getByLabelText('Comment input');
       fireEvent.changeText(input, 'Test');
@@ -110,17 +106,13 @@ describe('CommentInput', () => {
 
   describe('offline state', () => {
     it('shows offline warning when offline', () => {
-      const { getByText } = render(
-        <CommentInput {...defaultProps} isOffline={true} />
-      );
+      const { getByText } = render(<CommentInput {...defaultProps} isOffline={true} />);
 
       expect(getByText('Offline: Cannot send comments')).toBeTruthy();
     });
 
     it('disables send button when offline', () => {
-      const { getByLabelText } = render(
-        <CommentInput {...defaultProps} isOffline={true} />
-      );
+      const { getByLabelText } = render(<CommentInput {...defaultProps} isOffline={true} />);
 
       const input = getByLabelText('Comment input');
       fireEvent.changeText(input, 'Test');

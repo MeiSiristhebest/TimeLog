@@ -8,6 +8,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { devLog } from '@/lib/devLogger';
 
 /** Signed URL expiry time in seconds (1 hour) */
 const SIGNED_URL_EXPIRY_SECONDS = 3600;
@@ -54,7 +55,7 @@ export async function getSignedAudioUrl(storyId: string): Promise<SignedAudioUrl
     .single();
 
   if (storyError) {
-    console.error('[secureAudioService] Failed to fetch story:', storyError.message);
+    devLog.error('[secureAudioService] Failed to fetch story:', storyError.message);
     throw new Error(`Story not found: ${storyError.message}`);
   }
 
@@ -75,7 +76,7 @@ export async function getSignedAudioUrl(storyId: string): Promise<SignedAudioUrl
     .createSignedUrl(storagePath, SIGNED_URL_EXPIRY_SECONDS);
 
   if (error) {
-    console.error('[secureAudioService] Failed to generate signed URL:', error.message);
+    devLog.error('[secureAudioService] Failed to generate signed URL:', error.message);
     throw new Error(`Failed to generate signed URL: ${error.message}`);
   }
 
@@ -85,14 +86,14 @@ export async function getSignedAudioUrl(storyId: string): Promise<SignedAudioUrl
 
   return {
     url: data.signedUrl,
-    expiresAt: Date.now() + (SIGNED_URL_EXPIRY_SECONDS * 1000),
+    expiresAt: Date.now() + SIGNED_URL_EXPIRY_SECONDS * 1000,
   };
 }
 
 /**
  * Derives the storage path from the local file path.
  *
- * Storage path format: {user_id}/{recording_id}.opus
+ * Storage path format: {user_id}/{recording_id}.wav
  * Local file path format: file:///path/to/recordings/{recording_id}.wav
  *
  * @param filePath - The local file path
@@ -100,9 +101,9 @@ export async function getSignedAudioUrl(storyId: string): Promise<SignedAudioUrl
  * @returns The storage path for Supabase Storage
  */
 function deriveStoragePath(filePath: string, storyId: string): string {
-  // For now, assume storage path follows pattern: recordings/{storyId}.opus
+  // For now, assume storage path follows pattern: recordings/{storyId}.wav
   // This may need adjustment based on actual sync engine implementation
-  return `recordings/${storyId}.opus`;
+  return `recordings/${storyId}.wav`;
 }
 
 /**

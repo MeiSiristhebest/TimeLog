@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, Pressable } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
+import { useEffect } from 'react';
+import { View, ActivityIndicator, StyleSheet, Pressable } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useHeritageTheme } from '@/theme/heritage';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 interface AudioPlayerProps {
   uri: string;
@@ -12,7 +14,14 @@ interface AudioPlayerProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export const AudioPlayer: React.FC<AudioPlayerProps> = ({ uri }) => {
+function formatTime(millis: number): string {
+  const totalSeconds = millis / 1000;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
   const theme = useHeritageTheme();
   const {
     load,
@@ -31,13 +40,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ uri }) => {
     load(uri);
   }, [uri, load]);
 
-  const formatTime = (millis: number) => {
-    const totalSeconds = millis / 1000;
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = Math.floor(totalSeconds % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
   const handleSeek = (value: number) => {
     seek(value);
   };
@@ -51,13 +53,17 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ uri }) => {
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePressIn = () => { scale.value = withSpring(0.92, theme.animation.press); };
-  const handlePressOut = () => { scale.value = withSpring(1, theme.animation.press); };
+  const handlePressIn = () => {
+    scale.value = withSpring(0.92, theme.animation.press);
+  };
+  const handlePressOut = () => {
+    scale.value = withSpring(1, theme.animation.press);
+  };
 
   if (error) {
     return (
       <View style={[styles.errorContainer, { backgroundColor: `${theme.colors.error}15` }]}>
-        <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text>
+        <AppText style={[styles.errorText, { color: theme.colors.error }]}>{error}</AppText>
       </View>
     );
   }
@@ -73,9 +79,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ uri }) => {
               styles.waveformBar,
               {
                 height: 40 * h,
-                backgroundColor: i === 2 && isPlaying ? theme.colors.primary : `${theme.colors.primary}50`,
-                opacity: isPlaying ? 1 : 0.8
-              }
+                backgroundColor:
+                  i === 2 && isPlaying ? theme.colors.primary : `${theme.colors.primary}50`,
+                opacity: isPlaying ? 1 : 0.8,
+              },
             ]}
           />
         ))}
@@ -84,8 +91,12 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ uri }) => {
       {/* Scrubber */}
       <View style={styles.progressContainer}>
         <View style={styles.timeContainer}>
-          <Text style={[styles.timeText, { color: theme.colors.primary }]}>{formatTime(positionMillis)}</Text>
-          <Text style={[styles.timeText, { color: theme.colors.textMuted }]}>{formatTime(durationMillis)}</Text>
+          <AppText style={[styles.timeText, { color: theme.colors.primary }]}>
+            {formatTime(positionMillis)}
+          </AppText>
+          <AppText style={[styles.timeText, { color: theme.colors.textMuted }]}>
+            {formatTime(durationMillis)}
+          </AppText>
         </View>
         <Slider
           style={{ width: '100%', height: 40 }}
@@ -104,10 +115,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ uri }) => {
         {/* Skip Back 15s */}
         <Pressable
           onPress={() => handleSkip(-15)}
-          style={({ pressed }) => [styles.skipButton, { opacity: pressed ? 0.7 : 1 }]}
-        >
+          style={({ pressed }) => [styles.skipButton, { opacity: pressed ? 0.7 : 1 }]}>
           <MaterialIcons name="replay-10" size={36} color={theme.colors.textMuted} />
-          <Text style={[styles.skipText, { color: theme.colors.textMuted }]}>15s</Text>
+          <AppText style={[styles.skipText, { color: theme.colors.textMuted }]}>15s</AppText>
         </Pressable>
 
         {/* Play/Pause */}
@@ -122,8 +132,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ uri }) => {
               backgroundColor: theme.colors.primary,
               shadowColor: theme.colors.primary,
             },
-          ]}
-        >
+          ]}>
           {isLoading ? (
             <ActivityIndicator color={theme.colors.onPrimary} size="large" />
           ) : (
@@ -139,15 +148,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ uri }) => {
         {/* Skip Forward 15s */}
         <Pressable
           onPress={() => handleSkip(15)}
-          style={({ pressed }) => [styles.skipButton, { opacity: pressed ? 0.7 : 1 }]}
-        >
+          style={({ pressed }) => [styles.skipButton, { opacity: pressed ? 0.7 : 1 }]}>
           <MaterialIcons name="forward-10" size={36} color={theme.colors.textMuted} />
-          <Text style={[styles.skipText, { color: theme.colors.textMuted }]}>15s</Text>
+          <AppText style={[styles.skipText, { color: theme.colors.textMuted }]}>15s</AppText>
         </Pressable>
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -218,3 +226,6 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
 });
+
+// Default export for React.lazy() compatibility
+export default AudioPlayer;

@@ -3,6 +3,14 @@ import { desc, eq, isNull, isNotNull, and } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
 
+type AudioRecordingRow = typeof audioRecordings.$inferSelect;
+
+type UseStoriesResult = {
+  stories: AudioRecordingRow[];
+  isLoading: boolean;
+  error: unknown;
+};
+
 /**
  * Options for useStories hook to control deleted item filtering.
  */
@@ -24,7 +32,7 @@ interface UseStoriesOptions {
  * @param options - Configuration for deleted item filtering
  * @returns Object with stories data and loading state
  */
-export const useStories = (options: UseStoriesOptions = {}) => {
+export function useStories(options: UseStoriesOptions = {}): UseStoriesResult {
   const { includeDeleted = false, onlyDeleted = false } = options;
 
   // Build where clause based on deleted filtering options
@@ -51,7 +59,7 @@ export const useStories = (options: UseStoriesOptions = {}) => {
       .orderBy(
         onlyDeleted
           ? desc(audioRecordings.deletedAt!) // Deleted Items: most recently deleted first
-          : desc(audioRecordings.startedAt)   // Gallery: newest recordings first
+          : desc(audioRecordings.startedAt) // Gallery: newest recordings first
       )
   );
 
@@ -60,4 +68,4 @@ export const useStories = (options: UseStoriesOptions = {}) => {
     isLoading: stories === undefined,
     error,
   };
-};
+}

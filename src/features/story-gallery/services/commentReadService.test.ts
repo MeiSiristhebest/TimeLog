@@ -4,7 +4,12 @@
  * Story 4.5: Senior Interaction Feedback (AC: 4, 5, Task 7.2)
  */
 
-import { getUnreadCommentCount, markCommentsAsRead, getLastCommentReadAt, getBatchUnreadCounts } from './commentReadService';
+import {
+  getUnreadCommentCount,
+  markCommentsAsRead,
+  getLastCommentReadAt,
+  getBatchUnreadCounts,
+} from './commentReadService';
 
 // Mock drizzle
 const mockGet = jest.fn();

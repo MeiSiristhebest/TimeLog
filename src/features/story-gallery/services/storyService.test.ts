@@ -2,7 +2,6 @@ import { softDeleteStory, restoreStory, getDaysRemaining } from './storyService'
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
 import { syncQueueService } from '@/lib/sync-engine/queue';
-import { eq } from 'drizzle-orm';
 
 // Mock dependencies
 jest.mock('@/db/client', () => ({
@@ -47,10 +46,9 @@ describe('storyService', () => {
       await restoreStory(mockId);
 
       expect(db.update).toHaveBeenCalledWith(audioRecordings);
-      expect(syncQueueService.enqueueMetadataUpdate).toHaveBeenCalledWith(
-        mockId,
-        { deletedAt: null }
-      );
+      expect(syncQueueService.enqueueMetadataUpdate).toHaveBeenCalledWith(mockId, {
+        deletedAt: null,
+      });
     });
   });
 

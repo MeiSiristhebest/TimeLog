@@ -8,50 +8,45 @@
  * Story 4.1: Family Story List (AC: 1)
  */
 
-import { View } from 'react-native';
+import React from 'react';
+import { View } from '@/tw';
 
 // Heritage Palette skeleton colors
 const SKELETON_PULSE = '#EDE5D8'; // Surface Dim
 
-export const SkeletonCard = () => {
+export function SkeletonCard(): JSX.Element {
   return (
     <View
       className="mb-3 min-h-[72px] rounded-2xl border p-4 shadow-sm"
-      style={{ backgroundColor: '#FFFCF7', borderColor: '#E2E8F0' }}
-    >
+      style={{ backgroundColor: '#FFFCF7', borderColor: '#E2E8F0' }}>
       <View className="flex-row items-center gap-3">
-        {/* Icon placeholder */}
         <View
-          className="h-10 w-10 rounded-full animate-pulse"
+          className="h-10 w-10 animate-pulse rounded-full"
           style={{ backgroundColor: SKELETON_PULSE }}
         />
 
-        {/* Content placeholder */}
         <View className="flex-1">
-          {/* Title placeholder */}
           <View
-            className="mb-2 h-5 w-3/4 rounded animate-pulse"
+            className="mb-2 h-5 w-3/4 animate-pulse rounded"
             style={{ backgroundColor: SKELETON_PULSE }}
           />
-          {/* Date placeholder */}
           <View
-            className="h-4 w-1/2 rounded animate-pulse"
+            className="h-4 w-1/2 animate-pulse rounded"
             style={{ backgroundColor: SKELETON_PULSE }}
           />
         </View>
 
-        {/* Duration + Play button placeholder */}
         <View className="flex-row items-center gap-3">
           <View
-            className="h-4 w-10 rounded animate-pulse"
+            className="h-4 w-10 animate-pulse rounded"
             style={{ backgroundColor: SKELETON_PULSE }}
           />
           <View
-            className="h-12 w-12 rounded-full animate-pulse"
+            className="h-12 w-12 animate-pulse rounded-full"
             style={{ backgroundColor: SKELETON_PULSE }}
           />
         </View>
       </View>
     </View>
   );
-};
+}

@@ -32,11 +32,12 @@ describe('secureAudioService', () => {
     it('generates signed URL for synced story', async () => {
       const mockStory = {
         id: 'story-123',
-        file_path: 'recordings/story-123.opus',
+        file_path: 'recordings/story-123.wav',
         sync_status: 'synced',
       };
 
-      const mockSignedUrl = 'https://storage.supabase.co/signed/audio-recordings/recordings/story-123.opus?token=abc123';
+      const mockSignedUrl =
+        'https://storage.supabase.co/signed/audio-recordings/recordings/story-123.wav?token=abc123';
 
       // Mock story query
       const mockSingle = jest.fn().mockResolvedValue({ data: mockStory, error: null });
@@ -58,7 +59,7 @@ describe('secureAudioService', () => {
 
       expect(supabase.from).toHaveBeenCalledWith('audio_recordings');
       expect(supabase.storage.from).toHaveBeenCalledWith('audio-recordings');
-      expect(mockCreateSignedUrl).toHaveBeenCalledWith('recordings/story-123.opus', 3600);
+      expect(mockCreateSignedUrl).toHaveBeenCalledWith('recordings/story-123.wav', 3600);
       expect(result.url).toBe(mockSignedUrl);
       expect(result.expiresAt).toBeGreaterThan(Date.now());
     });
@@ -79,7 +80,7 @@ describe('secureAudioService', () => {
     it('throws error when signed URL generation fails', async () => {
       const mockStory = {
         id: 'story-123',
-        file_path: 'recordings/story-123.opus',
+        file_path: 'recordings/story-123.wav',
         sync_status: 'synced',
       };
 
@@ -99,13 +100,15 @@ describe('secureAudioService', () => {
         createSignedUrl: mockCreateSignedUrl,
       });
 
-      await expect(getSignedAudioUrl('story-123')).rejects.toThrow('Failed to generate signed URL: Access denied');
+      await expect(getSignedAudioUrl('story-123')).rejects.toThrow(
+        'Failed to generate signed URL: Access denied'
+      );
     });
 
     it('sets expiry time to 1 hour from now', async () => {
       const mockStory = {
         id: 'story-123',
-        file_path: 'recordings/story-123.opus',
+        file_path: 'recordings/story-123.wav',
         sync_status: 'synced',
       };
 

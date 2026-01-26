@@ -7,10 +7,12 @@
  * Story 4.3: Realtime Comment System (AC: 2)
  */
 
-import { View, Text, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '@/components/ui/AppText';
+import React from 'react';
+import { View, Pressable } from '@/tw';
+import { Ionicons } from '@/components/ui/Icon';
 import { useHeritageTheme } from '../../../theme/heritage';
-import { Comment } from '../services/commentService';
+import type { Comment } from '../services/commentService';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 type CommentItemProps = {
@@ -25,6 +27,11 @@ type CommentItemProps = {
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const RELATIVE_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+});
 
 /**
  * Formats timestamp to relative time in English.
@@ -43,21 +50,19 @@ function formatRelativeTime(timestamp: number): string {
   if (days < 7) return `${days}d ago`;
 
   // For older comments, show absolute date
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(timestamp));
+  return RELATIVE_DATE_FORMATTER.format(new Date(timestamp));
 }
 
-export const CommentItem = ({
+export function CommentItem({
   comment,
   isOwnComment = false,
   onDelete,
   isDeleting = false,
-}: CommentItemProps) => {
+}: CommentItemProps): JSX.Element {
   const theme = useHeritageTheme();
   const isPending = comment.id.startsWith('temp-');
   const deleteScale = useSharedValue(1);
+  const relativeTime = formatRelativeTime(comment.createdAt);
 
   const deleteAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: deleteScale.value }],
@@ -68,38 +73,36 @@ export const CommentItem = ({
       className="px-4 py-3"
       style={{ opacity: isPending ? 0.6 : 1 }}
       accessibilityRole="text"
-      accessibilityLabel={`${comment.userName} says: ${comment.content}, ${formatRelativeTime(comment.createdAt)}`}
-    >
+      accessibilityLabel={`${comment.userName} says: ${comment.content}, ${relativeTime}`}>
       {/* Header: Name and Time */}
-      <View className="flex-row items-center justify-between mb-1">
-        <View className="flex-row items-center flex-1">
-          <Text
+      <View className="mb-1 flex-row items-center justify-between">
+        <View className="flex-1 flex-row items-center">
+          <AppText
             className="text-base"
-            style={{ color: theme.colors.onSurface, fontFamily: 'Fraunces_600SemiBold' }}
-          >
+            style={{ color: theme.colors.onSurface, fontFamily: 'Fraunces_600SemiBold' }}>
             {comment.userName}
-          </Text>
-          <Text
-            className="ml-2 text-sm"
-            style={{ color: `${theme.colors.onSurface}99` }}
-          >
-            {isPending ? 'Sending...' : formatRelativeTime(comment.createdAt)}
-          </Text>
+          </AppText>
+          <AppText className="ml-2 text-sm" style={{ color: `${theme.colors.onSurface}99` }}>
+            {isPending ? 'Sending...' : relativeTime}
+          </AppText>
         </View>
 
         {/* Delete button for own comments */}
         {isOwnComment && onDelete && !isPending && (
           <AnimatedPressable
             onPress={() => onDelete(comment.id)}
-            onPressIn={() => { deleteScale.value = withSpring(0.9); }}
-            onPressOut={() => { deleteScale.value = withSpring(1); }}
+            onPressIn={() => {
+              deleteScale.value = withSpring(0.9);
+            }}
+            onPressOut={() => {
+              deleteScale.value = withSpring(1);
+            }}
             disabled={isDeleting}
             className="p-2"
             style={deleteAnimatedStyle}
             accessibilityRole="button"
             accessibilityLabel="Delete comment"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Ionicons
               name="trash-outline"
               size={18}
@@ -110,12 +113,9 @@ export const CommentItem = ({
       </View>
 
       {/* Content */}
-      <Text
-        className="text-base leading-6"
-        style={{ color: theme.colors.onSurface }}
-      >
+      <AppText className="text-base leading-6" style={{ color: theme.colors.onSurface }}>
         {comment.content}
-      </Text>
+      </AppText>
     </View>
   );
-};
+}

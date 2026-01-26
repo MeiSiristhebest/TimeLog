@@ -8,16 +8,17 @@
  * - Spinner = Actively syncing
  */
 
-import React, { useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '@/components/ui/AppText';
+import { useEffect, useMemo } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Ionicons } from '@/components/ui/Icon';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
   withTiming,
   Easing,
-  cancelAnimation
+  cancelAnimation,
 } from 'react-native-reanimated';
 import type { SyncStatus } from '@/types/entities';
 import { useHeritageTheme } from '@/theme/heritage';
@@ -34,42 +35,41 @@ type StatusConfig = {
   text: string;
 };
 
-export const SyncStatusBadge = ({
-  status,
-  className = '',
-  showText = true,
-}: SyncStatusBadgeProps) => {
+export function SyncStatusBadge({ status, showText = true }: SyncStatusBadgeProps): JSX.Element {
   const { colors } = useHeritageTheme();
   const rotation = useSharedValue(0);
 
   // Build status config using theme colors
-  const statusConfig: Record<SyncStatus, StatusConfig> = useMemo(() => ({
-    local: {
-      icon: 'cloud-outline',
-      color: colors.warning,
-      text: 'Saved Locally',
-    },
-    queued: {
-      icon: 'time-outline',
-      color: colors.warning,
-      text: 'Waiting for Network',
-    },
-    syncing: {
-      icon: 'sync-outline',
-      color: colors.primary,
-      text: 'Backing up...',
-    },
-    synced: {
-      icon: 'checkmark-circle',
-      color: colors.success,
-      text: 'Saved to Cloud',
-    },
-    failed: {
-      icon: 'alert-circle-outline',
-      color: colors.warning,
-      text: 'Sync Failed',
-    },
-  }), [colors]);
+  const statusConfig: Record<SyncStatus, StatusConfig> = useMemo(
+    () => ({
+      local: {
+        icon: 'cloud-outline',
+        color: colors.warning,
+        text: 'Saved Locally',
+      },
+      queued: {
+        icon: 'time-outline',
+        color: colors.warning,
+        text: 'Waiting for Network',
+      },
+      syncing: {
+        icon: 'sync-outline',
+        color: colors.primary,
+        text: 'Backing up...',
+      },
+      synced: {
+        icon: 'checkmark-circle',
+        color: colors.success,
+        text: 'Saved to Cloud',
+      },
+      failed: {
+        icon: 'alert-circle-outline',
+        color: colors.warning,
+        text: 'Sync Failed',
+      },
+    }),
+    [colors]
+  );
 
   const config = statusConfig[status];
 
@@ -95,24 +95,15 @@ export const SyncStatusBadge = ({
       style={styles.container}
       accessibilityRole="text"
       accessibilityLabel={config.text}
-      accessibilityLiveRegion="polite"
-    >
+      accessibilityLiveRegion="polite">
       <Animated.View style={status === 'syncing' ? animatedStyle : {}}>
-        <Ionicons
-          name={config.icon}
-          size={18}
-          color={config.color}
-        />
+        <Ionicons name={config.icon} size={18} color={config.color} />
       </Animated.View>
 
-      {showText && (
-        <Text style={[styles.text, { color: config.color }]}>
-          {config.text}
-        </Text>
-      )}
+      {showText && <AppText style={[styles.text, { color: config.color }]}>{config.text}</AppText>}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -125,5 +116,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
-

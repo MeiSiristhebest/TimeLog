@@ -9,8 +9,9 @@
  * Story 4.2: Secure Streaming Player (AC: 2)
  */
 
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '@/components/ui/AppText';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@/components/ui/Icon';
 import Slider from '@react-native-community/slider';
 import { useHeritageTheme } from '@/theme/heritage';
 
@@ -41,7 +42,7 @@ function formatTime(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-export const PlaybackControls = ({
+export function PlaybackControls({
   isPlaying,
   isBuffering = false,
   isCompleted = false,
@@ -49,7 +50,7 @@ export const PlaybackControls = ({
   durationMs,
   onPlayPause,
   onSeek,
-}: PlaybackControlsProps) => {
+}: PlaybackControlsProps): JSX.Element {
   const { colors } = useHeritageTheme();
 
   // Determine button icon
@@ -70,18 +71,16 @@ export const PlaybackControls = ({
     <View style={styles.container}>
       {/* Time Display */}
       <View style={styles.timeRow}>
-        <Text
+        <AppText
           style={[styles.timeText, { color: colors.onSurface }]}
-          accessibilityLabel={`Current time ${formatTime(positionMs)}`}
-        >
+          accessibilityLabel={`Current time ${formatTime(positionMs)}`}>
           {formatTime(positionMs)}
-        </Text>
-        <Text
+        </AppText>
+        <AppText
           style={[styles.timeText, { color: colors.textMuted }]}
-          accessibilityLabel={`Total duration ${formatTime(durationMs)}`}
-        >
+          accessibilityLabel={`Total duration ${formatTime(durationMs)}`}>
           {formatTime(durationMs)}
-        </Text>
+        </AppText>
       </View>
 
       {/* Seek Bar */}
@@ -104,40 +103,36 @@ export const PlaybackControls = ({
       <TouchableOpacity
         onPress={onPlayPause}
         disabled={isBuffering}
-        style={[styles.playButton, {
-          backgroundColor: isBuffering ? colors.border : colors.primary,
-        }]}
+        style={[
+          styles.playButton,
+          {
+            backgroundColor: isBuffering ? colors.border : colors.primary,
+          },
+        ]}
         accessibilityRole="button"
         accessibilityLabel={isBuffering ? 'Loading' : getButtonLabel()}
-        accessibilityState={{ disabled: isBuffering }}
-      >
+        accessibilityState={{ disabled: isBuffering }}>
         {isBuffering ? (
           <Ionicons name="hourglass" size={32} color={colors.onSurface} />
         ) : (
-          <Ionicons
-            name={getButtonIcon()}
-            size={32}
-            color={colors.onPrimary}
-          />
+          <Ionicons name={getButtonIcon()} size={32} color={colors.onPrimary} />
         )}
       </TouchableOpacity>
 
       {/* Buffering indicator text */}
       {isBuffering && (
-        <Text style={[styles.statusText, { color: colors.textMuted }]}>
-          Loading...
-        </Text>
+        <AppText style={[styles.statusText, { color: colors.textMuted }]}>Loading...</AppText>
       )}
 
       {/* Completion message */}
       {isCompleted && !isBuffering && (
-        <Text style={[styles.statusText, { color: colors.textMuted }]}>
+        <AppText style={[styles.statusText, { color: colors.textMuted }]}>
           Playback completed
-        </Text>
+        </AppText>
       )}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -174,4 +169,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-

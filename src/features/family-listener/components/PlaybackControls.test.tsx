@@ -4,8 +4,8 @@
  * Story 4.2: Secure Streaming Player (AC: 2)
  */
 
-import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { View as MockView } from 'react-native';
 import { PlaybackControls } from './PlaybackControls';
 
 // Mock @expo/vector-icons
@@ -15,11 +15,14 @@ jest.mock('@expo/vector-icons', () => ({
 
 // Mock @react-native-community/slider
 jest.mock('@react-native-community/slider', () => {
-  const { View } = require('react-native'); // eslint-disable-line @typescript-eslint/no-require-imports
   return {
     __esModule: true,
-    default: (props: { accessibilityLabel?: string; accessibilityRole?: string; onSlidingComplete?: (value: number) => void }) => (
-      <View
+    default: (props: {
+      accessibilityLabel?: string;
+      accessibilityRole?: string;
+      onSlidingComplete?: (value: number) => void;
+    }) => (
+      <MockView
         testID="slider"
         accessibilityLabel={props.accessibilityLabel}
         accessibilityRole={props.accessibilityRole}
@@ -45,25 +48,19 @@ describe('PlaybackControls', () => {
 
   describe('play/pause button', () => {
     it('shows play button when not playing', () => {
-      const { getByLabelText } = render(
-        <PlaybackControls {...defaultProps} isPlaying={false} />
-      );
+      const { getByLabelText } = render(<PlaybackControls {...defaultProps} isPlaying={false} />);
 
       expect(getByLabelText('Play')).toBeTruthy();
     });
 
     it('shows pause button when playing', () => {
-      const { getByLabelText } = render(
-        <PlaybackControls {...defaultProps} isPlaying={true} />
-      );
+      const { getByLabelText } = render(<PlaybackControls {...defaultProps} isPlaying={true} />);
 
       expect(getByLabelText('Pause')).toBeTruthy();
     });
 
     it('shows replay button when completed', () => {
-      const { getByLabelText } = render(
-        <PlaybackControls {...defaultProps} isCompleted={true} />
-      );
+      const { getByLabelText } = render(<PlaybackControls {...defaultProps} isCompleted={true} />);
 
       expect(getByLabelText('Replay')).toBeTruthy();
     });
@@ -80,9 +77,7 @@ describe('PlaybackControls', () => {
     });
 
     it('is disabled when buffering', () => {
-      const { getByLabelText } = render(
-        <PlaybackControls {...defaultProps} isBuffering={true} />
-      );
+      const { getByLabelText } = render(<PlaybackControls {...defaultProps} isBuffering={true} />);
 
       const button = getByLabelText('Loading');
       expect(button.props.accessibilityState).toEqual({ disabled: true });
@@ -128,17 +123,13 @@ describe('PlaybackControls', () => {
 
   describe('buffering state', () => {
     it('shows buffering indicator when buffering', () => {
-      const { getByText } = render(
-        <PlaybackControls {...defaultProps} isBuffering={true} />
-      );
+      const { getByText } = render(<PlaybackControls {...defaultProps} isBuffering={true} />);
 
       expect(getByText('Loading...')).toBeTruthy();
     });
 
     it('hides buffering indicator when not buffering', () => {
-      const { queryByText } = render(
-        <PlaybackControls {...defaultProps} isBuffering={false} />
-      );
+      const { queryByText } = render(<PlaybackControls {...defaultProps} isBuffering={false} />);
 
       expect(queryByText('Loading...')).toBeNull();
     });
@@ -146,17 +137,13 @@ describe('PlaybackControls', () => {
 
   describe('completion state', () => {
     it('shows completion message when completed', () => {
-      const { getByText } = render(
-        <PlaybackControls {...defaultProps} isCompleted={true} />
-      );
+      const { getByText } = render(<PlaybackControls {...defaultProps} isCompleted={true} />);
 
       expect(getByText('Playback completed')).toBeTruthy();
     });
 
     it('hides completion message when not completed', () => {
-      const { queryByText } = render(
-        <PlaybackControls {...defaultProps} isCompleted={false} />
-      );
+      const { queryByText } = render(<PlaybackControls {...defaultProps} isCompleted={false} />);
 
       expect(queryByText('Playback completed')).toBeNull();
     });
@@ -173,11 +160,7 @@ describe('PlaybackControls', () => {
   describe('accessibility', () => {
     it('has accessible seek bar', () => {
       const { getByLabelText } = render(
-        <PlaybackControls
-          {...defaultProps}
-          positionMs={60000}
-          durationMs={180000}
-        />
+        <PlaybackControls {...defaultProps} positionMs={60000} durationMs={180000} />
       );
 
       const seekBar = getByLabelText('Playback progress 1:00 / 3:00');
@@ -185,9 +168,7 @@ describe('PlaybackControls', () => {
     });
 
     it('play button has correct accessibility role', () => {
-      const { getByLabelText } = render(
-        <PlaybackControls {...defaultProps} />
-      );
+      const { getByLabelText } = render(<PlaybackControls {...defaultProps} />);
 
       const button = getByLabelText('Play');
       expect(button.props.accessibilityRole).toBe('button');

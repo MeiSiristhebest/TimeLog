@@ -119,9 +119,7 @@ describe('useStories', () => {
 
   describe('with includeDeleted option', () => {
     it('should accept includeDeleted option', () => {
-      const { result } = renderHook(() =>
-        useStories({ includeDeleted: true })
-      );
+      const { result } = renderHook(() => useStories({ includeDeleted: true }));
 
       expect(result.current.stories).toEqual(mockStories);
     });
@@ -132,9 +130,7 @@ describe('useStories', () => {
         error: undefined,
       });
 
-      const { result } = renderHook(() =>
-        useStories({ includeDeleted: true })
-      );
+      const { result } = renderHook(() => useStories({ includeDeleted: true }));
 
       expect(result.current.stories).toHaveLength(3);
     });
@@ -154,9 +150,7 @@ describe('useStories', () => {
         error: undefined,
       });
 
-      const { result } = renderHook(() =>
-        useStories({ onlyDeleted: true })
-      );
+      const { result } = renderHook(() => useStories({ onlyDeleted: true }));
 
       expect(result.current.stories).toEqual(deletedStories);
     });

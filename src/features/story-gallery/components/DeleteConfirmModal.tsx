@@ -1,7 +1,14 @@
+import { AppText } from '@/components/ui/AppText';
 import React, { useEffect } from 'react';
-import { Modal, View, Text } from 'react-native';
+
+import { Modal, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useHeritageTheme } from '../../../theme/heritage';
 import { HeritageButton } from '../../../components/ui/heritage/HeritageButton';
@@ -43,7 +50,7 @@ export function DeleteConfirmModal({
       opacity.value = withTiming(0, { duration: 150 });
       scale.value = withTiming(0.9, { duration: 150 });
     }
-  }, [visible]);
+  }, [visible, opacity, scale]);
 
   const animatedContainerStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -62,81 +69,91 @@ export function DeleteConfirmModal({
       transparent
       animationType="none" // Managed by Reanimated
       onRequestClose={onCancel}
-      statusBarTranslucent
-    >
+      statusBarTranslucent>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
         {/* Dimmed Backdrop */}
         <Animated.View
-          style={[{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(4px)', // Note: Only works on some platforms/web, harmless on others
-          }, animatedBackdropStyle]}
+          style={[
+            {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(4px)', // Note: Only works on some platforms/web, harmless on others
+            },
+            animatedBackdropStyle,
+          ]}
         />
 
         {/* Modal Content */}
         <Animated.View
-          style={[{
-            width: '100%',
-            maxWidth: 360,
-            backgroundColor: theme.colors.surface, // Light/Dark adaptive
-            borderRadius: 32,
-            padding: 32,
-            alignItems: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 10 },
-            shadowOpacity: 0.25,
-            shadowRadius: 20,
-            elevation: 10,
-          }, animatedContainerStyle]}
-        >
+          style={[
+            {
+              width: '100%',
+              maxWidth: 360,
+              backgroundColor: theme.colors.surface, // Light/Dark adaptive
+              borderRadius: 32,
+              padding: 32,
+              alignItems: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.25,
+              shadowRadius: 20,
+              elevation: 10,
+            },
+            animatedContainerStyle,
+          ]}>
           {/* Large Danger Icon */}
-          <View style={{
-            width: 64,
-            height: 64,
-            borderRadius: 32,
-            backgroundColor: `${theme.colors.error}15`, // Light Red
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginBottom: 24,
-          }}>
+          <View
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              backgroundColor: `${theme.colors.error}15`, // Light Red
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: 24,
+            }}>
             <MaterialIcons name="delete-forever" size={36} color={theme.colors.error} />
           </View>
 
           {/* Text Content */}
-          <Text style={{
-            fontFamily: 'Fraunces_600SemiBold',
-            fontSize: 26,
-            color: theme.colors.onSurface,
-            textAlign: 'center',
-            marginBottom: 12,
-            lineHeight: 32,
-          }}>
+          <AppText
+            style={{
+              fontFamily: 'Fraunces_600SemiBold',
+              fontSize: 26,
+              color: theme.colors.onSurface,
+              textAlign: 'center',
+              marginBottom: 12,
+              lineHeight: 32,
+            }}>
             Delete this story?
-          </Text>
+          </AppText>
 
-          <Text style={{
-            fontSize: 17,
-            color: theme.colors.textMuted,
-            textAlign: 'center',
-            marginBottom: 32,
-            lineHeight: 24,
-          }}>
-            It will move to the <Text style={{ fontWeight: '700', color: theme.colors.error }}>Bin</Text>.
-          </Text>
-          <Text style={{
-            fontSize: 17,
-            color: theme.colors.textMuted,
-            textAlign: 'center',
-            marginBottom: 32,
-            lineHeight: 24,
-          }}>
-            You can recover it for <Text style={{ fontWeight: '700', color: theme.colors.onSurface }}>30 days</Text>.
-          </Text>
+          <AppText
+            style={{
+              fontSize: 17,
+              color: theme.colors.textMuted,
+              textAlign: 'center',
+              marginBottom: 32,
+              lineHeight: 24,
+            }}>
+            It will move to the{' '}
+            <AppText style={{ fontWeight: '700', color: theme.colors.error }}>Bin</AppText>.
+          </AppText>
+          <AppText
+            style={{
+              fontSize: 17,
+              color: theme.colors.textMuted,
+              textAlign: 'center',
+              marginBottom: 32,
+              lineHeight: 24,
+            }}>
+            You can recover it for{' '}
+            <AppText style={{ fontWeight: '700', color: theme.colors.onSurface }}>30 days</AppText>.
+          </AppText>
 
           {/* Action Buttons - Vertical Stack */}
           <View style={{ width: '100%', gap: 12 }}>

@@ -15,8 +15,16 @@ import {
   isUrlExpired,
   SignedAudioUrl,
 } from '../services/secureAudioService';
+import { devLog } from '@/lib/devLogger';
 
-export type PlayerState = 'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'completed' | 'error';
+export type PlayerState =
+  | 'idle'
+  | 'loading'
+  | 'ready'
+  | 'playing'
+  | 'paused'
+  | 'completed'
+  | 'error';
 
 export interface FamilyPlayerState {
   /** Current player state */
@@ -112,7 +120,7 @@ export function useFamilyPlayer(storyId: string): UseFamilyPlayerReturn {
       }));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load audio';
-      console.error('[useFamilyPlayer] Load error:', errorMessage);
+      devLog.error('[useFamilyPlayer] Load error:', errorMessage);
       setPlayerState((prev) => ({
         ...prev,
         state: 'error',
@@ -133,7 +141,7 @@ export function useFamilyPlayer(storyId: string): UseFamilyPlayerReturn {
         await playerService.loadAudio(newUrl.url, handleStatusUpdate);
         return true;
       } catch (err) {
-        console.error('[useFamilyPlayer] URL refresh failed:', err);
+        devLog.error('[useFamilyPlayer] URL refresh failed:', err);
         return false;
       }
     }
@@ -147,7 +155,7 @@ export function useFamilyPlayer(storyId: string): UseFamilyPlayerReturn {
       await ensureValidUrl();
       await playerService.play();
     } catch (err) {
-      console.error('[useFamilyPlayer] Play error:', err);
+      devLog.error('[useFamilyPlayer] Play error:', err);
     }
   }, [ensureValidUrl]);
 
@@ -156,19 +164,22 @@ export function useFamilyPlayer(storyId: string): UseFamilyPlayerReturn {
     try {
       await playerService.pause();
     } catch (err) {
-      console.error('[useFamilyPlayer] Pause error:', err);
+      devLog.error('[useFamilyPlayer] Pause error:', err);
     }
   }, []);
 
   // Seek to position
-  const seek = useCallback(async (positionMs: number) => {
-    try {
-      await ensureValidUrl();
-      await playerService.seekTo(positionMs);
-    } catch (err) {
-      console.error('[useFamilyPlayer] Seek error:', err);
-    }
-  }, [ensureValidUrl]);
+  const seek = useCallback(
+    async (positionMs: number) => {
+      try {
+        await ensureValidUrl();
+        await playerService.seekTo(positionMs);
+      } catch (err) {
+        devLog.error('[useFamilyPlayer] Seek error:', err);
+      }
+    },
+    [ensureValidUrl]
+  );
 
   // Toggle play/pause
   const togglePlayPause = useCallback(async () => {
@@ -186,7 +197,7 @@ export function useFamilyPlayer(storyId: string): UseFamilyPlayerReturn {
   // Unload audio
   const unload = useCallback(async () => {
     try {
-      await playerService.unload();
+      playerService.cleanup();
       signedUrlRef.current = null;
       setPlayerState({
         state: 'idle',
@@ -196,12 +207,20 @@ export function useFamilyPlayer(storyId: string): UseFamilyPlayerReturn {
         error: null,
       });
     } catch (err) {
-      console.error('[useFamilyPlayer] Unload error:', err);
+      devLog.error('[useFamilyPlayer] Cleanup error:', err);
     }
   }, []);
 
   // Set up URL refresh interval
   useEffect(() => {
+    if (playerState.state !== 'playing') {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+      return;
+    }
+
     const checkAndRefreshUrl = async () => {
       if (
         signedUrlRef.current &&
@@ -213,17 +232,21 @@ export function useFamilyPlayer(storyId: string): UseFamilyPlayerReturn {
           signedUrlRef.current = newUrl;
           // Note: expo-av will continue playing - we update the ref for future operations
         } catch (err) {
-          console.error('[useFamilyPlayer] Background URL refresh failed:', err);
+          devLog.error('[useFamilyPlayer] Background URL refresh failed:', err);
         }
       }
     };
 
     // Check every minute
-    refreshIntervalRef.current = setInterval(checkAndRefreshUrl, 60000);
+    refreshIntervalRef.current = setInterval(
+      checkAndRefreshUrl,
+      60000
+    ) as unknown as NodeJS.Timeout;
 
     return () => {
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
       }
     };
   }, [storyId, playerState.state]);
@@ -231,7 +254,7 @@ export function useFamilyPlayer(storyId: string): UseFamilyPlayerReturn {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      playerService.unload().catch(() => {});
+      playerService.cleanup();
     };
   }, []);
 

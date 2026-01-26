@@ -6,15 +6,30 @@
  */
 
 import { render, screen, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { PALETTE } from '@/theme/heritage';
 import { SyncStatusBadge } from './SyncStatusBadge';
 import type { SyncStatus } from '@/types/entities';
 
 // Mock reanimated
 jest.mock('react-native-reanimated', () => {
-  const Reanimated = require('react-native-reanimated/mock');
-  Reanimated.default.call = () => {};
-  return Reanimated;
+  const mockReanimated = jest.requireActual('react-native-reanimated/mock');
+  mockReanimated.default.call = () => {};
+  return mockReanimated;
 });
+
+function getStatusLabel(status: SyncStatus): string {
+  switch (status) {
+    case 'local':
+      return 'Saved Locally';
+    case 'queued':
+      return 'Waiting for Network';
+    case 'failed':
+      return 'Sync Failed';
+    default:
+      return 'Saved to Cloud';
+  }
+}
 
 describe('SyncStatusBadge Integration Tests', () => {
   describe('Task 5.2: Full Sync Flow', () => {
@@ -45,9 +60,7 @@ describe('SyncStatusBadge Integration Tests', () => {
     });
 
     it('maintains accessibility announcements during full sync flow', async () => {
-      const { rerender, getByLabelText } = render(
-        <SyncStatusBadge status="local" />
-      );
+      const { rerender, getByLabelText } = render(<SyncStatusBadge status="local" />);
 
       // Each state should have proper accessibility label
       expect(getByLabelText('Saved Locally')).toBeTruthy();
@@ -72,32 +85,32 @@ describe('SyncStatusBadge Integration Tests', () => {
       const { rerender, getByText } = render(<SyncStatusBadge status="local" />);
 
       // Amber for local
-      expect(getByText('Saved Locally').props.style).toMatchObject({
-        color: '#D4A012',
-      });
+      expect(StyleSheet.flatten(getByText('Saved Locally').props.style).color).toBe(
+        PALETTE.warning
+      );
 
       // Amber for queued
       rerender(<SyncStatusBadge status="queued" />);
       await waitFor(() => {
-        expect(getByText('Waiting for Network').props.style).toMatchObject({
-          color: '#D4A012',
-        });
+        expect(StyleSheet.flatten(getByText('Waiting for Network').props.style).color).toBe(
+          PALETTE.warning
+        );
       });
 
       // Primary for syncing
       rerender(<SyncStatusBadge status="syncing" />);
       await waitFor(() => {
-        expect(getByText('Backing up...').props.style).toMatchObject({
-          color: '#C26B4A',
-        });
+        expect(StyleSheet.flatten(getByText('Backing up...').props.style).color).toBe(
+          PALETTE.primary
+        );
       });
 
       // Success for synced
       rerender(<SyncStatusBadge status="synced" />);
       await waitFor(() => {
-        expect(getByText('Saved to Cloud').props.style).toMatchObject({
-          color: '#7D9D7A',
-        });
+        expect(StyleSheet.flatten(getByText('Saved to Cloud').props.style).color).toBe(
+          PALETTE.success
+        );
       });
     });
   });
@@ -142,7 +155,7 @@ describe('SyncStatusBadge Integration Tests', () => {
 
       // Uses humble language (amber, not red)
       const text = screen.getByText('Sync Failed');
-      expect(text.props.style).toMatchObject({ color: '#D4A012' });
+      expect(StyleSheet.flatten(text.props.style).color).toBe(PALETTE.warning);
     });
 
     it('recovers from failed state to syncing on retry', async () => {
@@ -177,16 +190,16 @@ describe('SyncStatusBadge Integration Tests', () => {
       const locallySafe: SyncStatus[] = ['local', 'queued', 'failed'];
       locallySafe.forEach((status) => {
         const { getByText, unmount } = render(<SyncStatusBadge status={status} />);
-        const textElement = getByText(
-          status === 'local' ? 'Saved Locally' : status === 'queued' ? 'Waiting for Network' : 'Sync Failed'
-        );
-        expect(textElement.props.style.color).toBe('#D4A012');
+        const textElement = getByText(getStatusLabel(status));
+        expect(StyleSheet.flatten(textElement.props.style).color).toBe(PALETTE.warning);
         unmount();
       });
 
       // Cloud backed: Green
       const { getByText } = render(<SyncStatusBadge status="synced" />);
-      expect(getByText('Saved to Cloud').props.style.color).toBe('#7D9D7A');
+      expect(StyleSheet.flatten(getByText('Saved to Cloud').props.style).color).toBe(
+        PALETTE.success
+      );
     });
   });
 });

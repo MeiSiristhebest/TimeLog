@@ -8,6 +8,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { devLog } from '@/lib/devLogger';
 
 /**
  * Represents a story as seen by family members.
@@ -55,7 +56,7 @@ export async function fetchLinkedSeniorStories(): Promise<FamilyStory[]> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('[familyStoryService] Failed to fetch stories:', error.message);
+    devLog.error('[familyStoryService] Failed to fetch stories:', error.message);
     throw new Error(`Failed to fetch stories: ${error.message}`);
   }
 
@@ -91,7 +92,7 @@ export async function fetchStoryById(storyId: string): Promise<FamilyStory | nul
       // No rows returned - story not found or not accessible
       return null;
     }
-    console.error('[familyStoryService] Failed to fetch story:', error.message);
+    devLog.error('[familyStoryService] Failed to fetch story:', error.message);
     throw new Error(`Failed to fetch story: ${error.message}`);
   }
 

@@ -8,7 +8,12 @@ import { supabase } from '@/lib/supabase';
  */
 type InviteResponse = { invite_token: string } | { invite_token: string }[] | string;
 
-export const createFamilyInvite = async (email: string) => {
+type FamilyInviteResult = {
+  token?: string;
+  inviteLink?: string;
+};
+
+export async function createFamilyInvite(email: string): Promise<FamilyInviteResult> {
   const normalized = email.trim().toLowerCase();
   if (!normalized) {
     throw new Error('Email is required.');
@@ -29,7 +34,7 @@ export const createFamilyInvite = async (email: string) => {
   // Handle various response formats from Supabase RPC
   let token: string | undefined;
   const response = data as InviteResponse;
-  
+
   if (Array.isArray(response)) {
     token = response[0]?.invite_token;
   } else if (typeof response === 'object' && response !== null) {
@@ -40,9 +45,9 @@ export const createFamilyInvite = async (email: string) => {
 
   const inviteLink = token ? buildInviteLink(token) : undefined;
   return { token, inviteLink };
-};
+}
 
-export const acceptFamilyInvite = async (token: string) => {
+export async function acceptFamilyInvite(token: string): Promise<void> {
   if (!token) {
     throw new Error('Invite token is required.');
   }
@@ -52,13 +57,13 @@ export const acceptFamilyInvite = async (token: string) => {
   if (error) {
     throw new Error(error.message);
   }
-};
+}
 
-const buildInviteLink = (token: string) => {
+function buildInviteLink(token: string): string {
   if (__DEV__) {
     return Linking.createURL('accept-invite', { queryParams: { token } });
   }
 
   const base = process.env.EXPO_PUBLIC_INVITE_REDIRECT_URL ?? 'timelog://accept-invite';
   return `${base}?token=${token}`;
-};
+}

@@ -7,35 +7,28 @@
  * Story 4.1: Family Story List (AC: 1)
  */
 
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '@/components/ui/AppText';
+import { View, StyleSheet } from 'react-native';
+import { Ionicons } from '@/components/ui/Icon';
 import { useHeritageTheme } from '@/theme/heritage';
 
-export const EmptyFamilyGallery = () => {
+export function EmptyFamilyGallery(): JSX.Element {
   const { colors } = useHeritageTheme();
 
   return (
     <View style={styles.container}>
-      {/* Illustration placeholder - mic icon */}
       <View style={[styles.iconContainer, { backgroundColor: `${colors.primary}10` }]}>
-        <Ionicons
-          name="people-circle-outline"
-          size={80}
-          color={colors.primary}
-        />
+        <Ionicons name="people-circle-outline" size={80} color={colors.primary} />
       </View>
 
-      {/* Empty state message */}
-      <Text style={[styles.title, { color: colors.onSurface }]}>
-        Waiting for stories
-      </Text>
+      <AppText style={[styles.title, { color: colors.onSurface }]}>Waiting for stories</AppText>
 
-      <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+      <AppText style={[styles.subtitle, { color: colors.textMuted }]}>
         When your family records a memory, it will appear here instantly.
-      </Text>
+      </AppText>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -64,4 +57,3 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 });
-

@@ -1,4 +1,4 @@
-import { renderHook, act, waitFor } from '@testing-library/react-native';
+import { renderHook, act } from '@testing-library/react-native';
 import { useNotifications } from './useNotifications';
 import type { NotificationData } from '@/lib/notifications';
 

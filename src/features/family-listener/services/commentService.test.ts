@@ -4,12 +4,7 @@
  * Story 4.3: Realtime Comment System (AC: 1, 2, 3)
  */
 
-import {
-  fetchComments,
-  postComment,
-  deleteComment,
-  getCommentCount,
-} from './commentService';
+import { fetchComments, postComment, deleteComment, getCommentCount } from './commentService';
 import { supabase } from '@/lib/supabase';
 
 // Mock Supabase client

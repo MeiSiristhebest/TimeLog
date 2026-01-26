@@ -8,6 +8,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { devLog } from '@/lib/devLogger';
 
 /**
  * Comment data structure
@@ -65,23 +66,25 @@ function transformComment(raw: RawComment): Comment {
 export async function fetchComments(storyId: string): Promise<Comment[]> {
   const { data, error } = await supabase
     .from('story_comments')
-    .select(`
+    .select(
+      `
       id,
       story_id,
       user_id,
       content,
       created_at,
       profiles:user_id (display_name)
-    `)
+    `
+    )
     .eq('story_id', storyId)
     .order('created_at', { ascending: true });
 
   if (error) {
-    console.error('[commentService] Failed to fetch comments:', error.message);
+    devLog.error('[commentService] Failed to fetch comments:', error.message);
     throw new Error(`Failed to fetch comments: ${error.message}`);
   }
 
-  return (data || []).map((item) => transformComment(item as RawComment));
+  return (data || []).map((item: any) => transformComment(item as RawComment));
 }
 
 /**
@@ -94,7 +97,10 @@ export async function fetchComments(storyId: string): Promise<Comment[]> {
  */
 export async function postComment(storyId: string, content: string): Promise<Comment> {
   // Get current user
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
   if (authError || !user) {
     throw new Error('Not authenticated');
@@ -117,18 +123,20 @@ export async function postComment(storyId: string, content: string): Promise<Com
       user_id: user.id,
       content: trimmedContent,
     })
-    .select(`
+    .select(
+      `
       id,
       story_id,
       user_id,
       content,
       created_at,
       profiles:user_id (display_name)
-    `)
+    `
+    )
     .single();
 
   if (error) {
-    console.error('[commentService] Failed to post comment:', error.message);
+    devLog.error('[commentService] Failed to post comment:', error.message);
     throw new Error(`Failed to post comment: ${error.message}`);
   }
 
@@ -142,13 +150,10 @@ export async function postComment(storyId: string, content: string): Promise<Com
  * @throws Error if delete fails or unauthorized
  */
 export async function deleteComment(commentId: string): Promise<void> {
-  const { error } = await supabase
-    .from('story_comments')
-    .delete()
-    .eq('id', commentId);
+  const { error } = await supabase.from('story_comments').delete().eq('id', commentId);
 
   if (error) {
-    console.error('[commentService] Failed to delete comment:', error.message);
+    devLog.error('[commentService] Failed to delete comment:', error.message);
     throw new Error(`Failed to delete comment: ${error.message}`);
   }
 }
@@ -166,7 +171,7 @@ export async function getCommentCount(storyId: string): Promise<number> {
     .eq('story_id', storyId);
 
   if (error) {
-    console.error('[commentService] Failed to get comment count:', error.message);
+    devLog.error('[commentService] Failed to get comment count:', error.message);
     return 0;
   }
 
@@ -201,14 +206,16 @@ export function subscribeToComments(
         try {
           const { data } = await supabase
             .from('story_comments')
-            .select(`
+            .select(
+              `
               id,
               story_id,
               user_id,
               content,
               created_at,
               profiles:user_id (display_name)
-            `)
+            `
+            )
             .eq('id', payload.new.id)
             .single();
 

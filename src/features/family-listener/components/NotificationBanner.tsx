@@ -7,9 +7,10 @@
  * Story 4.4: Push Notification & Deep Link (AC: 4)
  */
 
-import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
+import { View, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { useEffect, useRef } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NotificationData } from '@/lib/notifications';
 import { useHeritageTheme } from '@/theme/heritage';
@@ -27,15 +28,15 @@ interface NotificationBannerProps {
   onDismiss: () => void;
 }
 
-export const NotificationBanner = ({
+export function NotificationBanner({
   title,
   body,
   data,
   onPress,
   onDismiss,
-}: NotificationBannerProps) => {
+}: NotificationBannerProps): JSX.Element {
   const insets = useSafeAreaInsets();
-  const { colors, radius, spacing } = useHeritageTheme();
+  const { colors } = useHeritageTheme();
   const slideAnim = useRef(new Animated.Value(-100)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -107,8 +108,7 @@ export const NotificationBanner = ({
           transform: [{ translateY: slideAnim }],
           opacity: opacityAnim,
         },
-      ]}
-    >
+      ]}>
       <TouchableOpacity
         onPress={handlePress}
         activeOpacity={0.9}
@@ -122,32 +122,20 @@ export const NotificationBanner = ({
             shadowColor: colors.shadow,
             borderLeftColor: colors.primary,
           },
-        ]}
-      >
+        ]}>
         {/* Icon */}
-        <View
-          style={[
-            styles.iconContainer,
-            { backgroundColor: `${colors.primary}15` },
-          ]}
-        >
+        <View style={[styles.iconContainer, { backgroundColor: `${colors.primary}15` }]}>
           <Ionicons name={getIcon()} size={22} color={colors.primary} />
         </View>
 
         {/* Content */}
         <View style={styles.content}>
-          <Text
-            style={[styles.title, { color: colors.onSurface }]}
-            numberOfLines={1}
-          >
+          <AppText style={[styles.title, { color: colors.onSurface }]} numberOfLines={1}>
             {title}
-          </Text>
-          <Text
-            style={[styles.body, { color: colors.textMuted }]}
-            numberOfLines={2}
-          >
+          </AppText>
+          <AppText style={[styles.body, { color: colors.textMuted }]} numberOfLines={2}>
             {body}
-          </Text>
+          </AppText>
         </View>
 
         {/* Dismiss button */}
@@ -156,17 +144,13 @@ export const NotificationBanner = ({
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           accessibilityRole="button"
           accessibilityLabel="Dismiss notification"
-          style={[
-            styles.dismissButton,
-            { backgroundColor: `${colors.onSurface}10` },
-          ]}
-        >
+          style={[styles.dismissButton, { backgroundColor: `${colors.onSurface}10` }]}>
           <Ionicons name="close" size={16} color={colors.onSurface} />
         </TouchableOpacity>
       </TouchableOpacity>
     </Animated.View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -214,4 +198,3 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
 });
-

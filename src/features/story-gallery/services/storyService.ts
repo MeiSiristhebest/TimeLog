@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
 import { syncQueueService } from '@/lib/sync-engine/queue';
+import { devLog } from '@/lib/devLogger';
 
 /**
  * Story service for managing story lifecycle operations.
@@ -34,7 +35,7 @@ export async function softDeleteStory(id: string): Promise<void> {
 
     // Local operation completes immediately - sync happens in background
   } catch (error) {
-    console.error('[storyService] softDeleteStory failed:', error);
+    devLog.error('[storyService] softDeleteStory failed:', error);
     throw error;
   }
 }
@@ -53,17 +54,14 @@ export async function softDeleteStory(id: string): Promise<void> {
 export async function restoreStory(id: string): Promise<void> {
   try {
     // 1. Update local SQLite first (optimistic UI)
-    await db
-      .update(audioRecordings)
-      .set({ deletedAt: null })
-      .where(eq(audioRecordings.id, id));
+    await db.update(audioRecordings).set({ deletedAt: null }).where(eq(audioRecordings.id, id));
 
     // 2. Enqueue cloud sync via metadata update
     await syncQueueService.enqueueMetadataUpdate(id, { deletedAt: null });
 
     // Local operation completes immediately - sync happens in background
   } catch (error) {
-    console.error('[storyService] restoreStory failed:', error);
+    devLog.error('[storyService] restoreStory failed:', error);
     throw error;
   }
 }
@@ -92,16 +90,12 @@ export function getDaysRemaining(deletedAt: number): number {
 export async function updateStoryTitle(id: string, title: string): Promise<void> {
   try {
     // 1. Update local SQLite first (optimistic UI)
-    await db
-      .update(audioRecordings)
-      .set({ title })
-      .where(eq(audioRecordings.id, id));
+    await db.update(audioRecordings).set({ title }).where(eq(audioRecordings.id, id));
 
     // 2. Enqueue cloud sync
     await syncQueueService.enqueueMetadataUpdate(id, { title });
-
   } catch (error) {
-    console.error('[storyService] updateStoryTitle failed:', error);
+    devLog.error('[storyService] updateStoryTitle failed:', error);
     throw error;
   }
 }

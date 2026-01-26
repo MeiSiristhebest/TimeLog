@@ -42,23 +42,12 @@ describe('StoryCard', () => {
   describe('interactions', () => {
     it('calls onPress when card is tapped', () => {
       const onPress = jest.fn();
-      const { getAllByRole } = render(<StoryCard {...defaultProps} onPress={onPress} />);
+      const { getByLabelText } = render(<StoryCard {...defaultProps} onPress={onPress} />);
 
-      // Card is a button, and play button is a button. Card is the parent wrapper.
-      // However, usually we can target by label.
-      const buttons = getAllByRole('button');
-      // The card wrapper should be one of them. 
-      // Let's target by a known label part since exact role match is ambiguous
-    });
-    
-    it('calls onPress when card is tapped', () => {
-        const onPress = jest.fn();
-        const { getByLabelText } = render(<StoryCard {...defaultProps} onPress={onPress} />);
-        
-        // Match the label constructed in the component
-        const card = getByLabelText(/Story: My First Story/);
-        fireEvent.press(card);
-        expect(onPress).toHaveBeenCalledTimes(1);
+      // Match the label constructed in the component
+      const card = getByLabelText(/Story: My First Story/);
+      fireEvent.press(card);
+      expect(onPress).toHaveBeenCalledTimes(1);
     });
 
     it('calls onPlay when play button is tapped', () => {
@@ -100,7 +89,7 @@ describe('StoryCard', () => {
         <StoryCard {...defaultProps} isOffline={true} isPlayable={false} onPlay={onPlay} />
       );
 
-      const playButton = getByLabelText('Cannot play, network required');
+      const playButton = getByLabelText('Cannot play');
       fireEvent.press(playButton);
       // Button should be disabled, so onPlay should not be called
       expect(onPlay).not.toHaveBeenCalled();

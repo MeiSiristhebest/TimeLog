@@ -21,7 +21,7 @@ interface AudioRecordingRow {
   deleted_at: number | null;
 }
 
-export const fetchFamilyStories = async (): Promise<AudioRecording[]> => {
+export async function fetchFamilyStories(): Promise<AudioRecording[]> {
   const { data, error } = await supabase
     .from('audio_recordings')
     .select('*')
@@ -32,7 +32,9 @@ export const fetchFamilyStories = async (): Promise<AudioRecording[]> => {
     throw error;
   }
 
-  return (data as AudioRecordingRow[] || []).map((item) => ({
+  const rows = (data ?? []) as AudioRecordingRow[];
+
+  return rows.map((item) => ({
     id: item.id,
     filePath: item.file_path,
     title: item.title,
@@ -48,4 +50,4 @@ export const fetchFamilyStories = async (): Promise<AudioRecording[]> => {
     isDeleted: !!item.deleted_at,
     deletedAt: item.deleted_at,
   }));
-};
+}

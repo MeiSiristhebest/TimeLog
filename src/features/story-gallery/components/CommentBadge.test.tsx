@@ -6,6 +6,8 @@
 
 import React from 'react';
 import { render } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { PALETTE } from '@/theme/heritage';
 import { CommentBadge } from './CommentBadge';
 
 describe('CommentBadge', () => {
@@ -73,14 +75,11 @@ describe('CommentBadge', () => {
   });
 
   describe('Styling', () => {
-    it('uses Warning/Amber background color (#D4A012)', () => {
+    it('uses Warning/Amber background color', () => {
       const { getByTestId } = render(<CommentBadge count={3} />);
       const badge = getByTestId('comment-badge');
-      // Check that the background color is set in style
-      const flattenedStyle = Array.isArray(badge.props.style)
-        ? badge.props.style.reduce((acc: object, s: object) => ({ ...acc, ...s }), {})
-        : badge.props.style;
-      expect(flattenedStyle.backgroundColor).toBe('#D4A012');
+      const flattenedStyle = StyleSheet.flatten(badge.props.style);
+      expect(flattenedStyle.backgroundColor).toBe(PALETTE.warning);
     });
   });
 });

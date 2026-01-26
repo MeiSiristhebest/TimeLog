@@ -10,8 +10,10 @@
  * Story 4.1: Family Story List (AC: 1, 2, 5)
  */
 
-import { FlatList, View, Text, RefreshControl, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { AppText } from '@/components/ui/AppText';
+import { useCallback } from 'react';
+import { FlatList, View, RefreshControl, StyleSheet } from 'react-native';
+import { useRouter, Link } from 'expo-router';
 import { FamilyStoryCard } from './FamilyStoryCard';
 import { SkeletonCard } from './SkeletonCard';
 import { EmptyFamilyGallery } from './EmptyFamilyGallery';
@@ -29,58 +31,64 @@ type FamilyStoryListProps = {
 /**
  * Loading state component with skeleton cards (UX spec: no spinners).
  */
-const LoadingState = () => (
-  <View style={styles.loadingContainer}>
-    <SkeletonCard />
-    <SkeletonCard />
-    <SkeletonCard />
-  </View>
-);
+function LoadingState(): JSX.Element {
+  return (
+    <View style={styles.loadingContainer}>
+      <SkeletonCard />
+      <SkeletonCard />
+      <SkeletonCard />
+    </View>
+  );
+}
 
 /**
  * Error state component with friendly message.
  */
-const ErrorState = ({ message }: { message: string }) => {
+function ErrorState({ message }: { message: string }): JSX.Element {
   const { colors } = useHeritageTheme();
 
   return (
     <View style={styles.errorContainer}>
-      <Text
-        style={[styles.errorTitle, { color: colors.error }]}
-      >
-        Failed to load
-      </Text>
-      <Text style={[styles.errorMessage, { color: colors.textMuted }]}>
-        {message}
-      </Text>
+      <AppText style={[styles.errorTitle, { color: colors.error }]}>Failed to load</AppText>
+      <AppText style={[styles.errorMessage, { color: colors.textMuted }]}>{message}</AppText>
     </View>
   );
-};
+}
 
-export const FamilyStoryList = ({
+export function FamilyStoryList({
   stories,
   isLoading,
   isRefreshing,
   onRefresh,
   error,
-}: FamilyStoryListProps) => {
+}: FamilyStoryListProps): JSX.Element {
   const router = useRouter();
   const { colors } = useHeritageTheme();
 
   // Handle navigation to story detail/player
-  const handleSelectStory = (storyId: string) => {
-    router.push({
-      pathname: '/story/[id]',
-      params: { id: storyId },
-    });
-  };
 
-  const handlePlayStory = (storyId: string) => {
-    router.push({
-      pathname: '/story/[id]',
-      params: { id: storyId },
-    });
-  };
+  const handlePlayStory = useCallback(
+    (storyId: string) => {
+      router.push({
+        pathname: '/story/[id]',
+        params: { id: storyId },
+      });
+    },
+    [router]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: FamilyStory }) => (
+      <Link href={{ pathname: '/story/[id]', params: { id: item.id } }} asChild>
+        <FamilyStoryCard
+          story={item}
+          // onPress is handled by Link asChild
+          onPlay={() => handlePlayStory(item.id)}
+        />
+      </Link>
+    ),
+    [handlePlayStory]
+  );
 
   // Show loading skeleton on initial load
   if (isLoading && stories.length === 0) {
@@ -101,13 +109,7 @@ export const FamilyStoryList = ({
     <FlatList
       data={stories}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <FamilyStoryCard
-          story={item}
-          onPress={() => handleSelectStory(item.id)}
-          onPlay={() => handlePlayStory(item.id)}
-        />
-      )}
+      renderItem={renderItem}
       contentContainerStyle={styles.listContent}
       showsVerticalScrollIndicator={false}
       // Pull-to-refresh (AC: 5 - manual refresh option)
@@ -126,7 +128,7 @@ export const FamilyStoryList = ({
       initialNumToRender={10}
     />
   );
-};
+}
 
 const styles = StyleSheet.create({
   loadingContainer: {
@@ -152,4 +154,3 @@ const styles = StyleSheet.create({
     padding: 16,
   },
 });
-

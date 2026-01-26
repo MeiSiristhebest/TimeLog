@@ -37,9 +37,7 @@ describe('FamilyStoryCard', () => {
 
     it('renders default title when title is null', () => {
       const storyWithoutTitle = { ...mockStory, title: null };
-      const { getByText } = render(
-        <FamilyStoryCard {...defaultProps} story={storyWithoutTitle} />
-      );
+      const { getByText } = render(<FamilyStoryCard {...defaultProps} story={storyWithoutTitle} />);
       expect(getByText('Untitled Story')).toBeTruthy();
     });
 
@@ -58,9 +56,7 @@ describe('FamilyStoryCard', () => {
   describe('interactions', () => {
     it('calls onPress when card is tapped', () => {
       const onPress = jest.fn();
-      const { getByLabelText } = render(
-        <FamilyStoryCard {...defaultProps} onPress={onPress} />
-      );
+      const { getByLabelText } = render(<FamilyStoryCard {...defaultProps} onPress={onPress} />);
 
       const card = getByLabelText(/Story:/);
       fireEvent.press(card);
@@ -69,9 +65,7 @@ describe('FamilyStoryCard', () => {
 
     it('calls onPlay when play button is tapped', () => {
       const onPlay = jest.fn();
-      const { getByLabelText } = render(
-        <FamilyStoryCard {...defaultProps} onPlay={onPlay} />
-      );
+      const { getByLabelText } = render(<FamilyStoryCard {...defaultProps} onPlay={onPlay} />);
 
       const playButton = getByLabelText('Play story');
       fireEvent.press(playButton, { stopPropagation: jest.fn() });

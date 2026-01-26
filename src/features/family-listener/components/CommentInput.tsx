@@ -7,16 +7,11 @@
  * Story 4.3: Realtime Comment System (AC: 1, 4)
  */
 
-import { useState, useCallback } from 'react';
-import {
-  View,
-  TextInput,
-  TouchableOpacity,
-  Text,
-  ActivityIndicator,
-  Keyboard,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '@/components/ui/AppText';
+import React, { useCallback, useState } from 'react';
+import { View, TextInput, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Keyboard } from 'react-native';
+import { Ionicons } from '@/components/ui/Icon';
 import { useHeritageTheme } from '../../../theme/heritage';
 
 type CommentInputProps = {
@@ -32,13 +27,13 @@ type CommentInputProps = {
   maxLength?: number;
 };
 
-export const CommentInput = ({
+export function CommentInput({
   onSend,
   isSending = false,
   isOffline = false,
   placeholder = 'Share your thoughts...',
   maxLength = 1000,
-}: CommentInputProps) => {
+}: CommentInputProps): JSX.Element {
   const theme = useHeritageTheme();
   const [text, setText] = useState('');
 
@@ -60,19 +55,18 @@ export const CommentInput = ({
       {/* Offline warning */}
       {isOffline && (
         <View
-          className="px-4 py-2 flex-row items-center"
-          style={{ backgroundColor: `${theme.colors.error}20` }}
-        >
+          className="flex-row items-center px-4 py-2"
+          style={{ backgroundColor: `${theme.colors.error}20` }}>
           <Ionicons name="cloud-offline" size={16} color={theme.colors.error} />
-          <Text className="ml-2 text-sm" style={{ color: theme.colors.error }}>
+          <AppText className="ml-2 text-sm" style={{ color: theme.colors.error }}>
             Offline: Cannot send comments
-          </Text>
+          </AppText>
         </View>
       )}
 
       {/* Input area */}
       <View className="flex-row items-end p-4">
-        <View className="flex-1 mr-3">
+        <View className="mr-3 flex-1">
           <TextInput
             value={text}
             onChangeText={setText}
@@ -96,14 +90,13 @@ export const CommentInput = ({
 
           {/* Character count (shown when near limit) */}
           {isNearLimit && (
-            <Text
-              className="text-xs mt-1 text-right"
+            <AppText
+              className="mt-1 text-right text-xs"
               style={{
                 color: charCount >= maxLength ? theme.colors.error : `${theme.colors.onSurface}66`,
-              }}
-            >
+              }}>
               {charCount}/{maxLength}
-            </Text>
+            </AppText>
           )}
         </View>
 
@@ -119,8 +112,7 @@ export const CommentInput = ({
           }}
           accessibilityRole="button"
           accessibilityLabel="Send comment"
-          accessibilityState={{ disabled: !canSend }}
-        >
+          accessibilityState={{ disabled: !canSend }}>
           {isSending ? (
             <ActivityIndicator size="small" color={theme.colors.onPrimary} />
           ) : (
@@ -134,4 +126,4 @@ export const CommentInput = ({
       </View>
     </View>
   );
-};
+}

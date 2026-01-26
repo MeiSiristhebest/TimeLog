@@ -8,9 +8,10 @@
  * Story 4.4: Push Notification & Deep Link (AC: 3) - Added settings link
  */
 
+import { AppText } from '@/components/ui/AppText';
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@/components/ui/Icon';
 import {
   requestNotificationPermission,
   registerForPushNotifications,
@@ -19,6 +20,7 @@ import {
   getNotificationPermissionStatus,
 } from '@/lib/notifications';
 import { useHeritageTheme } from '@/theme/heritage';
+import { devLog } from '@/lib/devLogger';
 
 type NotificationPromptProps = {
   onDismiss: () => void;
@@ -26,10 +28,10 @@ type NotificationPromptProps = {
   onPermissionGranted?: () => void;
 };
 
-export const NotificationPrompt = ({
+export function NotificationPrompt({
   onDismiss,
   onPermissionGranted,
-}: NotificationPromptProps) => {
+}: NotificationPromptProps): JSX.Element {
   const [isRequesting, setIsRequesting] = useState(false);
   const [isDenied, setIsDenied] = useState(false);
   const [canAskAgain, setCanAskAgain] = useState(true);
@@ -66,7 +68,7 @@ export const NotificationPrompt = ({
         setCanAskAgain(canAsk);
       }
     } catch (error) {
-      console.error('[NotificationPrompt] Failed to request permission:', error);
+      devLog.error('[NotificationPrompt] Failed to request permission:', error);
     } finally {
       setIsRequesting(false);
     }
@@ -80,40 +82,39 @@ export const NotificationPrompt = ({
   if (isDenied && !canAskAgain) {
     return (
       <View
-        style={[styles.container, {
-          backgroundColor: `${colors.error}10`, // Soft red background
-          borderColor: `${colors.error}30`,
-        }]}
-      >
+        style={[
+          styles.container,
+          {
+            backgroundColor: `${colors.error}10`, // Soft red background
+            borderColor: `${colors.error}30`,
+          },
+        ]}>
         <View style={styles.contentRow}>
           {/* Icon */}
-          <Ionicons
-            name="notifications-off-outline"
-            size={24}
-            color={colors.error}
-          />
+          <Ionicons name="notifications-off-outline" size={24} color={colors.error} />
 
           {/* Content */}
           <View style={styles.textContainer}>
-            <Text style={[styles.title, { color: colors.onSurface }]}>
+            <AppText style={[styles.title, { color: colors.onSurface }]}>
               Notification permission denied
-            </Text>
-            <Text style={[styles.message, { color: colors.textMuted }]}>
+            </AppText>
+            <AppText style={[styles.message, { color: colors.textMuted }]}>
               Please enable notifications in system settings to receive new story alerts
-            </Text>
+            </AppText>
 
             {/* Action buttons */}
             <View style={styles.buttonRow}>
               {/* Dismiss button */}
               <TouchableOpacity
                 onPress={onDismiss}
-                style={[styles.button, styles.outlineButton, { borderColor: colors.border, backgroundColor: colors.surface }]}
+                style={[
+                  styles.button,
+                  styles.outlineButton,
+                  { borderColor: colors.border, backgroundColor: colors.surface },
+                ]}
                 accessibilityRole="button"
-                accessibilityLabel="Set up later"
-              >
-                <Text style={[styles.buttonText, { color: colors.onSurface }]}>
-                  Later
-                </Text>
+                accessibilityLabel="Set up later">
+                <AppText style={[styles.buttonText, { color: colors.onSurface }]}>Later</AppText>
               </TouchableOpacity>
 
               {/* Open settings button */}
@@ -121,12 +122,11 @@ export const NotificationPrompt = ({
                 onPress={handleOpenSettings}
                 style={[styles.button, styles.primaryButton, { backgroundColor: colors.primary }]}
                 accessibilityRole="button"
-                accessibilityLabel="Open system settings"
-              >
+                accessibilityLabel="Open system settings">
                 <Ionicons name="settings-outline" size={16} color={colors.onPrimary} />
-                <Text style={[styles.buttonText, { color: colors.onPrimary }]}>
+                <AppText style={[styles.buttonText, { color: colors.onPrimary }]}>
                   Open Settings
-                </Text>
+                </AppText>
               </TouchableOpacity>
             </View>
           </View>
@@ -137,40 +137,39 @@ export const NotificationPrompt = ({
 
   return (
     <View
-      style={[styles.container, {
-        backgroundColor: `${colors.warning}10`, // Soft amber background
-        borderColor: `${colors.warning}30`
-      }]}
-    >
+      style={[
+        styles.container,
+        {
+          backgroundColor: `${colors.warning}10`, // Soft amber background
+          borderColor: `${colors.warning}30`,
+        },
+      ]}>
       <View style={styles.contentRow}>
         {/* Icon */}
-        <Ionicons
-          name="notifications-outline"
-          size={24}
-          color={colors.warning}
-        />
+        <Ionicons name="notifications-outline" size={24} color={colors.warning} />
 
         {/* Content */}
         <View style={styles.textContainer}>
-          <Text style={[styles.title, { color: colors.onSurface }]}>
+          <AppText style={[styles.title, { color: colors.onSurface }]}>
             Turn on notifications to get new stories instantly
-          </Text>
-          <Text style={[styles.message, { color: colors.textMuted }]}>
-            We'll notify you when a new story is recorded
-          </Text>
+          </AppText>
+          <AppText style={[styles.message, { color: colors.textMuted }]}>
+            {"We'll"} notify you when a new story is recorded
+          </AppText>
 
           {/* Action buttons */}
           <View style={styles.buttonRow}>
             {/* Dismiss button */}
             <TouchableOpacity
               onPress={onDismiss}
-              style={[styles.button, styles.outlineButton, { borderColor: colors.border, backgroundColor: colors.surface }]}
+              style={[
+                styles.button,
+                styles.outlineButton,
+                { borderColor: colors.border, backgroundColor: colors.surface },
+              ]}
               accessibilityRole="button"
-              accessibilityLabel="Set up notifications later"
-            >
-              <Text style={[styles.buttonText, { color: colors.onSurface }]}>
-                Later
-              </Text>
+              accessibilityLabel="Set up notifications later">
+              <AppText style={[styles.buttonText, { color: colors.onSurface }]}>Later</AppText>
             </TouchableOpacity>
 
             {/* Enable button */}
@@ -183,21 +182,20 @@ export const NotificationPrompt = ({
                 {
                   backgroundColor: colors.primary,
                   opacity: isRequesting ? 0.7 : 1,
-                }
+                },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Enable notification permission"
-            >
-              <Text style={[styles.buttonText, { color: colors.onPrimary }]}>
+              accessibilityLabel="Enable notification permission">
+              <AppText style={[styles.buttonText, { color: colors.onPrimary }]}>
                 {isRequesting ? 'Requesting...' : 'Enable Notifications'}
-              </Text>
+              </AppText>
             </TouchableOpacity>
           </View>
         </View>
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -256,4 +254,3 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
-

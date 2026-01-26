@@ -3,18 +3,23 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
 
+type AudioRecordingRow = typeof audioRecordings.$inferSelect;
+
+type UseStoryResult = {
+  story: AudioRecordingRow | null;
+  isLoading: boolean;
+  error: unknown;
+};
+
 /**
  * Hook to fetch a single story by ID with live query for real-time updates.
- * 
+ *
  * @param id The ID of the story to fetch
  * @returns Object with story data and loading state
  */
-export const useStory = (id: string) => {
+export function useStory(id: string): UseStoryResult {
   const { data: storyArray, error } = useLiveQuery(
-    db
-      .select()
-      .from(audioRecordings)
-      .where(eq(audioRecordings.id, id))
+    db.select().from(audioRecordings).where(eq(audioRecordings.id, id))
   );
 
   return {
@@ -22,4 +27,4 @@ export const useStory = (id: string) => {
     isLoading: storyArray === undefined,
     error,
   };
-};
+}

@@ -7,17 +7,11 @@
  * Story 4.3: Realtime Comment System (AC: 2, 3)
  */
 
-import { useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  ActivityIndicator,
-  RefreshControl,
-  StyleSheet,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Comment } from '../services/commentService';
+import { AppText } from '@/components/ui/AppText';
+import { useCallback, useEffect, useRef } from 'react';
+import { View, FlatList, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
+import { Ionicons } from '@/components/ui/Icon';
+import type { Comment } from '../services/commentService';
 import { CommentItem } from './CommentItem';
 import { useHeritageTheme } from '@/theme/heritage';
 
@@ -40,7 +34,7 @@ type CommentListProps = {
   readOnly?: boolean;
 };
 
-export const CommentList = ({
+export function CommentList({
   comments,
   isLoading = false,
   currentUserId,
@@ -49,8 +43,8 @@ export const CommentList = ({
   onRefresh,
   isRefreshing = false,
   readOnly = false,
-}: CommentListProps) => {
-  const scrollViewRef = useRef<ScrollView>(null);
+}: CommentListProps): JSX.Element {
+  const listRef = useRef<FlatList<Comment>>(null);
   const prevCountRef = useRef(comments.length);
   const { colors } = useHeritageTheme();
 
@@ -58,20 +52,39 @@ export const CommentList = ({
   useEffect(() => {
     if (comments.length > prevCountRef.current) {
       setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
+        listRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
     prevCountRef.current = comments.length;
   }, [comments.length]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: Comment }) => (
+      <View>
+        <CommentItem
+          comment={item}
+          isOwnComment={!readOnly && currentUserId === item.userId}
+          onDelete={onDeleteComment}
+          isDeleting={isDeleting}
+        />
+      </View>
+    ),
+    [currentUserId, isDeleting, onDeleteComment, readOnly]
+  );
+
+  const itemSeparator = useCallback(
+    () => <View style={[styles.divider, { backgroundColor: colors.border }]} />,
+    [colors.border]
+  );
 
   // Loading state
   if (isLoading && comments.length === 0) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.messageText, { color: colors.textMuted }]}>
+        <AppText style={[styles.messageText, { color: colors.textMuted }]}>
           Loading comments...
-        </Text>
+        </AppText>
       </View>
     );
   }
@@ -80,26 +93,27 @@ export const CommentList = ({
   if (comments.length === 0) {
     return (
       <View style={styles.centerContainer}>
-        <View
-          style={[styles.iconContainer, { backgroundColor: `${colors.primary}20` }]}
-        >
+        <View style={[styles.iconContainer, { backgroundColor: `${colors.primary}20` }]}>
           <Ionicons name="chatbubble-outline" size={32} color={colors.primary} />
         </View>
-        <Text style={[styles.titleText, { color: colors.onSurface }]}>
-          No comments yet
-        </Text>
-        <Text style={[styles.messageText, { color: colors.textMuted }]}>
-          {readOnly ? 'Family hasn\'t left any comments yet' : 'Be the first to comment!'}
-        </Text>
+        <AppText style={[styles.titleText, { color: colors.onSurface }]}>No comments yet</AppText>
+        <AppText style={[styles.messageText, { color: colors.textMuted }]}>
+          {readOnly ? "Family hasn't left any comments yet" : 'Be the first to comment!'}
+        </AppText>
       </View>
     );
   }
 
   return (
-    <ScrollView
-      ref={scrollViewRef}
+    <FlatList
+      ref={listRef}
+      data={comments}
+      keyExtractor={(item) => item.id}
+      renderItem={renderItem}
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
+      ItemSeparatorComponent={itemSeparator}
+      showsVerticalScrollIndicator={false}
       refreshControl={
         onRefresh ? (
           <RefreshControl
@@ -110,26 +124,9 @@ export const CommentList = ({
           />
         ) : undefined
       }
-    >
-      {comments.map((comment, index) => (
-        <View key={comment.id}>
-          <CommentItem
-            comment={comment}
-            isOwnComment={!readOnly && currentUserId === comment.userId}
-            onDelete={onDeleteComment}
-            isDeleting={isDeleting}
-          />
-          {/* Divider between comments */}
-          {index < comments.length - 1 && (
-            <View
-              style={[styles.divider, { backgroundColor: colors.border }]}
-            />
-          )}
-        </View>
-      ))}
-    </ScrollView>
+    />
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -169,3 +166,5 @@ const styles = StyleSheet.create({
   },
 });
 
+// Default export for React.lazy() compatibility
+export default CommentList;

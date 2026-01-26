@@ -116,7 +116,9 @@ describe('familyStoryService', () => {
         }),
       });
 
-      await expect(fetchLinkedSeniorStories()).rejects.toThrow('Failed to fetch stories: Database error');
+      await expect(fetchLinkedSeniorStories()).rejects.toThrow(
+        'Failed to fetch stories: Database error'
+      );
     });
 
     it('returns empty array when no stories exist', async () => {

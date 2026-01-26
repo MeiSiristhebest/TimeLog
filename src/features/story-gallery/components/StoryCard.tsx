@@ -14,13 +14,15 @@
  * - Shows unread comment count badge for seniors
  */
 
-import { View, Text, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '@/components/ui/AppText';
+import { View, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@/components/ui/Icon';
 import type { SyncStatus } from '@/types/entities';
 import { SyncStatusBadge } from './SyncStatusBadge';
 import { CommentBadge } from './CommentBadge';
-import { formatDate, formatDuration } from '../utils/dateUtils';
+import { formatDate, formatDuration } from '../utils/date-utils';
 import { useHeritageTheme } from '@/theme/heritage';
+import { STORY_ACCESSIBILITY } from '../constants';
 
 type StoryCardProps = {
   id: string;
@@ -40,7 +42,16 @@ type StoryCardProps = {
   unreadCommentCount?: number;
 };
 
-export const StoryCard = ({
+function formatUnreadCommentLabel(count: number): string {
+  if (count <= 0) {
+    return '';
+  }
+
+  const suffix = count === 1 ? '' : 's';
+  return `, ${count} new comment${suffix}`;
+}
+
+export function StoryCard({
   id,
   title,
   date,
@@ -52,21 +63,19 @@ export const StoryCard = ({
   isPlayable = true,
   isOffline = false,
   unreadCommentCount = 0,
-}: StoryCardProps) => {
-  const { colors, spacing, radius } = useHeritageTheme();
+}: StoryCardProps): JSX.Element {
+  const { colors } = useHeritageTheme();
   const formattedDate = formatDate(date);
   const formattedDuration = formatDuration(durationMs);
   const displayTitle = title || `Story ${date.toLocaleDateString('en-US')}`;
 
   const isUnavailable = isOffline && !isPlayable;
 
-  const commentCountLabel = unreadCommentCount > 0
-    ? `, ${unreadCommentCount} new comment${unreadCommentCount === 1 ? '' : 's'}`
-    : '';
+  const commentCountLabel = formatUnreadCommentLabel(unreadCommentCount);
 
   const accessibilityLabel = isUnavailable
-    ? `Story: ${displayTitle}, ${formattedDate}, This story requires a network connection${commentCountLabel}`
-    : `Story: ${displayTitle}, ${formattedDate}${commentCountLabel}`;
+    ? STORY_ACCESSIBILITY.UNAVAILABLE_LABEL(displayTitle, formattedDate, commentCountLabel)
+    : STORY_ACCESSIBILITY.AVAILABLE_LABEL(displayTitle, formattedDate, commentCountLabel);
 
   return (
     <TouchableOpacity
@@ -80,18 +89,22 @@ export const StoryCard = ({
         padding: 18,
         marginBottom: 14,
         // Premium Heritage Shadow
-        shadowColor: colors.shadow,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.12,
-        shadowRadius: 16,
-        elevation: 6,
+        // Premium Heritage Shadow
+        // shadowColor: colors.shadow,
+        // shadowOffset: { width: 0, height: 8 },
+        // shadowOpacity: 0.12,
+        // shadowRadius: 16,
+        // elevation: 6,
+        // @ts-ignore - RN 0.76+
+        boxShadow: '0 8px 16px rgba(0, 0, 0, 0.12)',
         opacity: isUnavailable ? 0.6 : 1,
       }}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityHint={isUnavailable ? 'This story requires a network connection' : 'Tap to view story details'}
-      accessibilityState={{ disabled: isUnavailable }}
-    >
+      accessibilityHint={
+        isUnavailable ? STORY_ACCESSIBILITY.UNAVAILABLE_HINT : STORY_ACCESSIBILITY.AVAILABLE_HINT
+      }
+      accessibilityState={{ disabled: isUnavailable }}>
       {/* Story 4.5: Comment badge for unread comments */}
       <CommentBadge count={unreadCommentCount} />
 
@@ -107,34 +120,40 @@ export const StoryCard = ({
             borderRadius: 6,
             paddingHorizontal: 10,
             paddingVertical: 5,
-          }}
-        >
-          <Text style={{ fontSize: 11, fontWeight: '700', color: '#2C2C2C' }}>
-            Online Only
-          </Text>
+          }}>
+          <AppText style={{ fontSize: 11, fontWeight: '700', color: colors.onSurface }}>
+            {STORY_ACCESSIBILITY.ONLINE_ONLY_BADGE}
+          </AppText>
         </View>
       )}
 
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14 }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 14,
+        }}>
         {/* Left: Icon + Title + Date + Duration */}
         <View style={{ flex: 1, flexDirection: 'row', gap: 14 }}>
-          <View style={{
-            width: 44,
-            height: 44,
-            borderRadius: 14,
-            backgroundColor: isUnavailable ? colors.disabled : `${colors.primary}15`,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
+          <View
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              backgroundColor: isUnavailable ? colors.disabled : `${colors.primary}15`,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
             <Ionicons
-              name={isUnavailable ? "cloud-offline" : "mic"}
+              name={isUnavailable ? 'cloud-offline' : 'mic'}
               size={22}
               color={isUnavailable ? colors.handle : colors.primary}
             />
           </View>
 
           <View style={{ flex: 1 }}>
-            <Text
+            <AppText
               numberOfLines={1}
               style={{
                 fontFamily: 'Fraunces_600SemiBold',
@@ -142,18 +161,18 @@ export const StoryCard = ({
                 color: colors.onSurface,
                 marginBottom: 4,
                 lineHeight: 24,
-              }}
-            >
+              }}>
               {displayTitle}
-            </Text>
-            <Text style={{
-              fontSize: 14,
-              color: colors.textMuted,
-              fontFamily: 'System',
-              marginBottom: 6,
-            }}>
+            </AppText>
+            <AppText
+              style={{
+                fontSize: 14,
+                color: colors.textMuted,
+                fontFamily: 'System',
+                marginBottom: 6,
+              }}>
               {formattedDate} · {formattedDuration}
-            </Text>
+            </AppText>
             {/* Sync Badge */}
             <SyncStatusBadge status={syncStatus} className="mt-1" />
           </View>
@@ -178,8 +197,7 @@ export const StoryCard = ({
                 justifyContent: 'center',
               }}
               accessibilityRole="button"
-              accessibilityLabel="Delete story"
-            >
+              accessibilityLabel="Delete story">
               <Ionicons name="trash-outline" size={22} color={colors.error} />
             </TouchableOpacity>
           )}
@@ -198,16 +216,17 @@ export const StoryCard = ({
               backgroundColor: isUnavailable ? colors.disabled : colors.primary,
               alignItems: 'center',
               justifyContent: 'center',
-              shadowColor: colors.primary,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: isUnavailable ? 0 : 0.25,
-              shadowRadius: 8,
-              elevation: 4,
+              // shadowColor: colors.primary,
+              // shadowOffset: { width: 0, height: 4 },
+              // shadowOpacity: isUnavailable ? 0 : 0.25,
+              // shadowRadius: 8,
+              // elevation: 4,
+              // @ts-ignore
+              boxShadow: isUnavailable ? 'none' : '0 4px 8px rgba(234, 191, 170, 0.25)', // Using primary color approx or theme ref
             }}
             accessibilityRole="button"
             accessibilityLabel={isUnavailable ? 'Cannot play' : 'Play story'}
-            disabled={isUnavailable}
-          >
+            disabled={isUnavailable}>
             <Ionicons
               name="play"
               size={22}
@@ -219,5 +238,4 @@ export const StoryCard = ({
       </View>
     </TouchableOpacity>
   );
-};
-
+}

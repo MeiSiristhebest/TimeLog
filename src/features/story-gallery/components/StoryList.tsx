@@ -1,19 +1,12 @@
-/**
- * StoryList - List of story cards with sync status badges.
- *
- * Uses FlatList for performance (future: FlashList for 100+ recordings).
- * Includes empty state and skeleton loading state (no spinners per UX spec).
- *
- * Story 3.6: Added offline state support
- * - Passes isOffline and isPlayable to StoryCard for visual distinction
- * - Uses useStoryAvailability hook to compute playability
- *
- * Story 4.5: Added comment badge support
- * - Fetches unread comment counts for each story
- * - Subscribes to real-time updates for count changes
- */
 
-import { FlatList, View, ListRenderItem } from 'react-native';
+import React, { useCallback, useEffect } from 'react';
+import {
+  ListRenderItem,
+  type FlatListProps,
+  Platform,
+} from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
+import { View } from '@/tw';
 import type { AudioRecording } from '@/types/entities';
 import { StoryCard } from './StoryCard';
 import { SkeletonCard } from './SkeletonCard';
@@ -21,6 +14,13 @@ import { EmptyGallery } from './EmptyGallery';
 import { useSyncStore } from '@/lib/sync-engine/store';
 import { useStoryAvailability } from '../hooks/useStoryAvailability';
 import { useUnreadCommentCounts } from '../hooks/useUnreadCommentCounts';
+
+
+
+import { FlatList } from 'react-native'; // Keep for types
+
+import { TimelineLayout } from './TimelineLayout';
+import { TimelineStoryCard } from './TimelineStoryCard';
 
 type StoryListProps = {
   recordings: AudioRecording[];
@@ -34,7 +34,9 @@ type StoryListProps = {
   /** Optional custom renderer for list items */
   renderItem?: ListRenderItem<AudioRecording & { isPlayable: boolean }>;
   /** Optional custom separator */
-  ItemSeparatorComponent?: React.ComponentType<any> | null;
+  ItemSeparatorComponent?: FlatListProps<
+    AudioRecording & { isPlayable: boolean }
+  >['ItemSeparatorComponent'];
   /** Apple HIG: Pull to Refresh callback */
   onRefresh?: () => void;
   /** Apple HIG: Pull to Refresh loading state */
@@ -44,15 +46,17 @@ type StoryListProps = {
 /**
  * Loading state component with skeleton cards (UX spec: no spinners).
  */
-const LoadingState = () => (
-  <View className="p-4">
-    <SkeletonCard />
-    <SkeletonCard />
-    <SkeletonCard />
-  </View>
-);
+function LoadingState(): JSX.Element {
+  return (
+    <View className="p-4">
+      <SkeletonCard />
+      <SkeletonCard />
+      <SkeletonCard />
+    </View>
+  );
+}
 
-export const StoryList = ({
+export function StoryList({
   recordings,
   onSelectStory,
   onPlayStory,
@@ -63,7 +67,7 @@ export const StoryList = ({
   ItemSeparatorComponent,
   onRefresh,
   isRefreshing = false,
-}: StoryListProps) => {
+}: StoryListProps): JSX.Element {
   // Story 3.6: Get network status for offline detection
   const isOnline = useSyncStore((s) => s.isOnline);
   const isOffline = !isOnline;
@@ -74,6 +78,32 @@ export const StoryList = ({
   // Story 4.5: Fetch unread comment counts for all stories
   const { getCount } = useUnreadCommentCounts(recordings);
 
+  // Note: We don't sort here anymore, we respect the order passed from parent
+  // Parent (useStoryGallery) handles promotion logic
+  const displayStories = storiesWithAvailability;
+
+  const renderTimelineItem = useCallback(
+    ({ item, index }: { item: AudioRecording & { isPlayable: boolean }; index: number }) => (
+      <TimelineStoryCard
+        story={item}
+        index={index}
+        onSelect={onSelectStory} // Pass promote action
+        onPlay={() => {
+          if (isOffline && !item.isPlayable) {
+            onUnavailableStoryTap?.(item.id);
+          } else {
+            onPlayStory(item.id);
+          }
+        }}
+        variant={index === 0 ? 'featured' : 'default'}
+        isPlayable={item.isPlayable}
+        isOffline={isOffline}
+        unreadCommentCount={getCount(item.id)}
+      />
+    ),
+    [isOffline, onPlayStory, onSelectStory, onUnavailableStoryTap]
+  );
+
   if (isLoading) {
     return <LoadingState />;
   }
@@ -82,54 +112,29 @@ export const StoryList = ({
     return <EmptyGallery />;
   }
 
-  // Sort by startedAt descending (newest first) - AC: 1
-  const sortedRecordings = [...storiesWithAvailability].sort(
-    (a, b) => b.startedAt - a.startedAt
-  );
-
   return (
-    <FlatList
-      data={sortedRecordings}
-      keyExtractor={(item) => item.id}
-      renderItem={renderItem || (({ item }) => (
-        <StoryCard
-          id={item.id}
-          title={item.title ?? null}
-          date={new Date(item.startedAt)}
-          durationMs={item.durationMs}
-          syncStatus={item.syncStatus}
-          onPress={() => {
-            // Story 3.6: Handle tap on unavailable story
-            if (isOffline && !item.isPlayable) {
-              onUnavailableStoryTap?.(item.id);
-            } else {
-              onSelectStory(item.id);
-            }
-          }}
-          onPlay={() => {
-            // Story 3.6: Handle play on unavailable story
-            if (isOffline && !item.isPlayable) {
-              onUnavailableStoryTap?.(item.id);
-            } else {
-              onPlayStory(item.id);
-            }
-          }}
-          onDelete={() => onDeleteStory?.(item.id)}
-          isPlayable={item.isPlayable}
-          isOffline={isOffline}
-          unreadCommentCount={getCount(item.id)}
-        />
-      ))}
-      contentContainerStyle={{ padding: 16 }}
-      showsVerticalScrollIndicator={false}
-      ItemSeparatorComponent={ItemSeparatorComponent}
-      // Performance optimizations for 100+ items (AC: 1)
-      removeClippedSubviews={true}
-      maxToRenderPerBatch={10}
-      windowSize={5}
-      // Apple HIG: Pull to Refresh
-      refreshing={isRefreshing}
-      onRefresh={onRefresh}
-    />
+    <TimelineLayout>
+      <Animated.FlatList
+        data={displayStories}
+        keyExtractor={(item) => item.id}
+        renderItem={renderTimelineItem}
+        contentContainerStyle={{
+          paddingTop: 8,
+          paddingBottom: 120, // Extra padding for tab bar/FAB
+          // paddingHorizontal removed for full-width timeline alignment
+        }}
+        showsVerticalScrollIndicator={false}
+        // Performance optimizations for 100+ items (AC: 1)
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        // Apple HIG: Pull to Refresh
+        refreshing={isRefreshing}
+        onRefresh={onRefresh}
+        // Reanimated Layout Transition
+        itemLayoutAnimation={LinearTransition.springify()}
+      />
+    </TimelineLayout>
   );
-};
+}
+

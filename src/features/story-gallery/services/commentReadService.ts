@@ -11,6 +11,7 @@ import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { supabase } from '@/lib/supabase';
+import { devLog } from '@/lib/devLogger';
 
 /**
  * Gets the count of unread comments for a specific story.
@@ -41,13 +42,13 @@ export async function getUnreadCommentCount(storyId: string): Promise<number> {
       .gt('created_at', lastReadAt);
 
     if (error) {
-      console.error('[commentReadService] Failed to fetch unread comment count:', error.message);
+      devLog.error('[commentReadService] Failed to fetch unread comment count:', error.message);
       return 0;
     }
 
     return count || 0;
   } catch (error) {
-    console.error('[commentReadService] Error getting unread count:', error);
+    devLog.error('[commentReadService] Error getting unread count:', error);
     return 0;
   }
 }
@@ -68,7 +69,7 @@ export async function markCommentsAsRead(storyId: string): Promise<void> {
       .set({ lastCommentReadAt: now })
       .where(eq(audioRecordings.id, storyId));
   } catch (error) {
-    console.error('[commentReadService] Error marking comments as read:', error);
+    devLog.error('[commentReadService] Error marking comments as read:', error);
     throw error;
   }
 }
@@ -89,7 +90,7 @@ export async function getLastCommentReadAt(storyId: string): Promise<string | nu
 
     return story?.lastCommentReadAt || null;
   } catch (error) {
-    console.error('[commentReadService] Error getting last read timestamp:', error);
+    devLog.error('[commentReadService] Error getting last read timestamp:', error);
     return null;
   }
 }
@@ -101,9 +102,7 @@ export async function getLastCommentReadAt(storyId: string): Promise<string | nu
  * @param storyIds - Array of story UUIDs
  * @returns Map of storyId to unread count
  */
-export async function getBatchUnreadCounts(
-  storyIds: string[]
-): Promise<Map<string, number>> {
+export async function getBatchUnreadCounts(storyIds: string[]): Promise<Map<string, number>> {
   const result = new Map<string, number>();
 
   if (storyIds.length === 0) {
@@ -151,7 +150,7 @@ export async function getBatchUnreadCounts(
 
     return result;
   } catch (error) {
-    console.error('[commentReadService] Error in batch unread counts:', error);
+    devLog.error('[commentReadService] Error in batch unread counts:', error);
     // Return empty counts for all stories on error
     for (const id of storyIds) {
       result.set(id, 0);

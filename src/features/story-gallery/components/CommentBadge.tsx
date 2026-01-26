@@ -11,7 +11,8 @@
  * - Subtle pulse animation for attention
  */
 
-import { View, Text, AccessibilityInfo, StyleSheet } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
+import { AccessibilityInfo, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   withRepeat,
@@ -36,7 +37,10 @@ interface CommentBadgeProps {
  * @param count - Number of unread comments (0 = hidden)
  * @returns Badge element or null if count is 0
  */
-export function CommentBadge({ count, testID = 'comment-badge' }: CommentBadgeProps) {
+export function CommentBadge({
+  count,
+  testID = 'comment-badge',
+}: CommentBadgeProps): JSX.Element | null {
   const { colors } = useHeritageTheme();
   const [reduceMotion, setReduceMotion] = useState(false);
   const scale = useSharedValue(1);
@@ -49,10 +53,7 @@ export function CommentBadge({ count, testID = 'comment-badge' }: CommentBadgePr
     };
     checkReduceMotion();
 
-    const subscription = AccessibilityInfo.addEventListener(
-      'reduceMotionChanged',
-      setReduceMotion
-    );
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
 
     return () => {
       subscription.remove();
@@ -63,10 +64,7 @@ export function CommentBadge({ count, testID = 'comment-badge' }: CommentBadgePr
   useEffect(() => {
     if (count > 0 && !reduceMotion) {
       scale.value = withRepeat(
-        withSequence(
-          withTiming(1.1, { duration: 500 }),
-          withTiming(1, { duration: 500 })
-        ),
+        withSequence(withTiming(1.1, { duration: 500 }), withTiming(1, { duration: 500 })),
         -1, // infinite
         true
       );
@@ -95,18 +93,11 @@ export function CommentBadge({ count, testID = 'comment-badge' }: CommentBadgePr
 
   return (
     <Animated.View
-      style={[
-        styles.badge,
-        { backgroundColor: colors.warning },
-        animatedStyle,
-      ]}
+      style={[styles.badge, { backgroundColor: colors.warning }, animatedStyle]}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="text"
-      testID={testID}
-    >
-      <Text style={[styles.text, { color: colors.onSurface }]}>
-        {displayCount}
-      </Text>
+      testID={testID}>
+      <AppText style={[styles.text, { color: colors.onSurface }]}>{displayCount}</AppText>
     </Animated.View>
   );
 }
