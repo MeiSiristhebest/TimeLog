@@ -4,6 +4,8 @@
  * Story 4.4: Push Notification & Deep Link (AC: 1, 2, 3)
  */
 
+/* eslint-disable import/first */
+
 // Mock expo-constants BEFORE importing the module
 jest.mock('expo-constants', () => ({
   expoConfig: {

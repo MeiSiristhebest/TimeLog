@@ -11,8 +11,11 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform, Linking } from 'react-native';
 import Constants from 'expo-constants';
-import { supabase } from './supabase';
 import { devLog } from './devLogger';
+import {
+  storePushTokenForCurrentUser,
+  removePushToken,
+} from '@/features/notifications/services/pushTokenService';
 
 // Configure notification behavior for foreground notifications
 Notifications.setNotificationHandler({
@@ -123,28 +126,11 @@ export async function registerForPushNotifications(): Promise<string | null> {
     devLog.info('[Notifications] Got push token:', pushToken);
 
     // Store token in Supabase
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (user) {
-      const { error } = await supabase.from('user_push_tokens').upsert(
-        {
-          user_id: user.id,
-          push_token: pushToken,
-          device_type: Platform.OS,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'user_id,push_token',
-        }
-      );
-
-      if (error) {
-        devLog.error('[Notifications] Failed to store push token:', error);
-      } else {
-        devLog.info('[Notifications] Push token stored successfully');
-      }
+    try {
+      await storePushTokenForCurrentUser(pushToken, Platform.OS);
+      devLog.info('[Notifications] Push token stored successfully');
+    } catch (error) {
+      devLog.error('[Notifications] Failed to store push token:', error);
     }
 
     return pushToken;
@@ -168,15 +154,11 @@ export async function unregisterPushToken(): Promise<void> {
       projectId: getProjectId(),
     });
 
-    const { error } = await supabase
-      .from('user_push_tokens')
-      .delete()
-      .eq('push_token', tokenData.data);
-
-    if (error) {
-      devLog.error('[Notifications] Failed to unregister push token:', error);
-    } else {
+    try {
+      await removePushToken(tokenData.data);
       devLog.info('[Notifications] Push token unregistered successfully');
+    } catch (error) {
+      devLog.error('[Notifications] Failed to unregister push token:', error);
     }
   } catch (error) {
     devLog.error('[Notifications] Failed to unregister push token:', error);
