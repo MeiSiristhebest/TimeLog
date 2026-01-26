@@ -112,7 +112,7 @@ npx supabase functions logs deliver-notifications
 
 ```sql
 -- Check if triggers exist
-SELECT * FROM information_schema.triggers 
+SELECT * FROM information_schema.triggers
 WHERE trigger_name IN ('comment_notification_trigger', 'reaction_notification_trigger');
 ```
 

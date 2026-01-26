@@ -1,8 +1,8 @@
 /**
  * Group Notifications Edge Function
- * 
+ *
  * Story 5.2: Smart Notification Engine (AC: 1, 2)
- * 
+ *
  * This function groups notifications within a 5-minute window and respects quiet hours.
  */
 
@@ -50,10 +50,7 @@ serve(async (req) => {
     if (recentEvents && recentEvents.length > 0) {
       // Group with existing notification
       const existingNotification = recentEvents[0];
-      const groupedEventIds = [
-        ...recentEvents.map((e) => e.event_id),
-        event_id,
-      ];
+      const groupedEventIds = [...recentEvents.map((e) => e.event_id), event_id];
 
       await supabase
         .from('notification_queue')
@@ -81,17 +78,13 @@ serve(async (req) => {
         .select()
         .single();
 
-      return new Response(
-        JSON.stringify({ created: true, notification_id: newNotification.id }),
-        { status: 200 }
-      );
+      return new Response(JSON.stringify({ created: true, notification_id: newNotification.id }), {
+        status: 200,
+      });
     }
   } catch (error) {
     console.error('Notification grouping error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 });
 
@@ -104,9 +97,7 @@ function isWithinQuietHours(
   }
 
   // Convert to user's local time
-  const userTime = new Date(
-    now.toLocaleString('en-US', { timeZone: settings.time_zone })
-  );
+  const userTime = new Date(now.toLocaleString('en-US', { timeZone: settings.time_zone }));
   const currentHour = userTime.getHours();
   const currentMinute = userTime.getMinutes();
   const currentTimeMinutes = currentHour * 60 + currentMinute;
@@ -131,9 +122,7 @@ function getQuietHoursEndTime(
 ): Date {
   const [endHour, endMinute] = settings.quiet_hours_end.split(':').map(Number);
 
-  const userTime = new Date(
-    now.toLocaleString('en-US', { timeZone: settings.time_zone })
-  );
+  const userTime = new Date(now.toLocaleString('en-US', { timeZone: settings.time_zone }));
 
   const endTime = new Date(userTime);
   endTime.setHours(endHour, endMinute, 0, 0);

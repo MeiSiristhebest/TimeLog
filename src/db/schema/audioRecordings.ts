@@ -31,10 +31,7 @@ export const audioRecordings = sqliteTable('audio_recordings', {
   // Sync status: local → queued → syncing → synced/failed
   syncStatus: text('sync_status').notNull().default('local').$type<SyncStatus>(),
   // Recording status: recording → paused/completed (for interruption handling)
-  recordingStatus: text('recording_status')
-    .notNull()
-    .default('completed')
-    .$type<RecordingStatus>(),
+  recordingStatus: text('recording_status').notNull().default('completed').$type<RecordingStatus>(),
   // Pause metadata: timestamp when paused (for session recovery)
   pausedAt: integer('paused_at'),
   checksumMd5: text('checksum_md5'),

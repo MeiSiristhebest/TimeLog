@@ -15,6 +15,69 @@
       "when": 1768293524586,
       "tag": "0001_needy_terror",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1768391186214,
+      "tag": "0002_chemical_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1768391689400,
+      "tag": "0003_aberrant_sister_grimm",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1768458293588,
+      "tag": "0004_swift_wiccan",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1768465610264,
+      "tag": "0005_fast_deathbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1768468040716,
+      "tag": "0006_motionless_roulette",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1768471842199,
+      "tag": "0007_condemned_star_brand",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1768531601699,
+      "tag": "0008_steep_marvel_boy",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1768554455997,
+      "tag": "0009_great_luke_cage",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1768558729355,
+      "tag": "0010_add_story_reactions",
+      "breakpoints": true
     }
   ]
 }

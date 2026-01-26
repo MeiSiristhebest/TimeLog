@@ -18,22 +18,21 @@ WHERE id = 'audio-recordings';
 
 -- If bucket doesn't exist, create it:
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES (
-  'audio-recordings',
-  'audio-recordings',
-  false,  -- CRITICAL: Must be false for security
-  104857600,  -- 100MB max file size
-  ARRAY['audio/opus', 'audio/wav', 'audio/mpeg', 'audio/mp4']
-)
-ON CONFLICT (id) DO UPDATE SET
-  public = false;
+VALUES ('audio-recordings',
+        'audio-recordings',
+        false, -- CRITICAL: Must be false for security
+        104857600, -- 100MB max file size
+        ARRAY['audio/wav', 'audio/mpeg', 'audio/mp4']) ON CONFLICT (id) DO
+UPDATE SET
+    public = false;
 
 -- ============================================
 -- Step 2: RLS Policy for Storage Objects
 -- ============================================
 -- Owners can manage their own audio files
 
-CREATE POLICY "users_manage_own_audio"
+CREATE
+POLICY "users_manage_own_audio"
 ON storage.objects
 FOR ALL
 USING (
@@ -50,24 +49,26 @@ WITH CHECK (
 -- ============================================
 -- Family members can read audio from linked seniors
 
-CREATE POLICY "family_read_linked_senior_audio"
+CREATE
+POLICY "family_read_linked_senior_audio"
 ON storage.objects
-FOR SELECT
-USING (
-  bucket_id = 'audio-recordings'
-  AND (
+FOR
+SELECT
+    USING (
+    bucket_id = 'audio-recordings'
+    AND (
     -- Owner can always read
     auth.uid()::text = (storage.foldername(name))[1]
     OR
     -- Family can read linked senior's audio
     (storage.foldername(name))[1] IN (
-      SELECT senior_user_id::text
-      FROM public.family_members
-      WHERE family_user_id = auth.uid()
-        AND status = 'active'
+    SELECT senior_user_id::text
+    FROM public.family_members
+    WHERE family_user_id = auth.uid()
+    AND status = 'active'
     )
-  )
-);
+    )
+    );
 
 -- ============================================
 -- Verification Queries
@@ -85,7 +86,7 @@ USING (
 -- ============================================
 
 -- Test 1: Direct URL access without auth should fail
--- curl -I "https://your-project.supabase.co/storage/v1/object/public/audio-recordings/test.opus"
+-- curl -I "https://your-project.supabase.co/storage/v1/object/public/audio-recordings/test.wav"
 -- Expected: 400 Bad Request or 403 Forbidden
 
 -- Test 2: Signed URL with valid auth should work

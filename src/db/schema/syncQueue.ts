@@ -11,10 +11,7 @@ export type SyncQueueStatus = 'pending' | 'processing' | 'failed';
 /**
  * Sync operation types.
  */
-export type SyncOperationType =
-  | 'upload_recording'
-  | 'update_metadata'
-  | 'create_profile';
+export type SyncOperationType = 'upload_recording' | 'update_metadata' | 'create_profile';
 
 /**
  * Persistent queue for offline-first sync operations.
@@ -40,7 +37,7 @@ export const syncQueue = sqliteTable('sync_queue', {
   // Retry management
   retryCount: integer('retry_count').notNull().default(0),
   priority: integer('priority').notNull().default(0), // Higher number = higher priority
-  filePath: text('file_path'), // Path to the file (e.g., opus file) for uploads
+  filePath: text('file_path'), // Path to the file (e.g., wav file) for uploads
   status: text('status', {
     enum: ['pending', 'processing', 'failed'],
   })

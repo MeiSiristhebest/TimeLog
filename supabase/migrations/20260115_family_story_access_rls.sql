@@ -20,7 +20,8 @@
 -- ============================================
 -- This policy allows senior users full access to their own recordings.
 
-CREATE POLICY "users_can_manage_own_recordings" ON audio_recordings
+CREATE
+POLICY "users_can_manage_own_recordings" ON audio_recordings
   FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
@@ -32,9 +33,11 @@ CREATE POLICY "users_can_manage_own_recordings" ON audio_recordings
 -- Only synced (uploaded) stories are visible to family.
 -- Deleted stories are excluded.
 
-CREATE POLICY "family_can_view_linked_senior_stories" ON audio_recordings
-  FOR SELECT
-  USING (
+CREATE
+POLICY "family_can_view_linked_senior_stories" ON audio_recordings
+  FOR
+SELECT
+    USING (
     -- Story must be synced to cloud
     sync_status = 'synced'
     AND
@@ -43,12 +46,12 @@ CREATE POLICY "family_can_view_linked_senior_stories" ON audio_recordings
     AND
     -- Current user must be an active family member linked to this senior
     user_id IN (
-      SELECT senior_user_id
-      FROM family_members
-      WHERE family_user_id = auth.uid()
-        AND status = 'active'
+    SELECT senior_user_id
+    FROM family_members
+    WHERE family_user_id = auth.uid()
+    AND status = 'active'
     )
-  );
+    );
 
 -- ============================================
 -- Alternative: Combined policy using OR logic

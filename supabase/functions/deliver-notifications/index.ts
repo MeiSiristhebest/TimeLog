@@ -1,8 +1,8 @@
 /**
  * Deliver Notifications Edge Function
- * 
+ *
  * Story 5.2: Smart Notification Engine (AC: 1, 2)
- * 
+ *
  * This function delivers pending notifications via Expo Push Notification service.
  * Should be triggered by a cron job (e.g., every minute).
  */
@@ -104,10 +104,7 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Delivery service error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 });
 
@@ -118,25 +115,21 @@ function buildNotificationMessage(notification: any) {
     case 'new_comment':
       return {
         title: 'New Comments',
-        body: count === 1
-          ? 'Someone commented on your story'
-          : `${count} new comments from family`,
+        body: count === 1 ? 'Someone commented on your story' : `${count} new comments from family`,
         data: { type: 'comments', event_ids: notification.grouped_with },
       };
     case 'new_reaction':
       return {
         title: 'New Reactions',
-        body: count === 1
-          ? 'Someone liked your story'
-          : `${count} family members liked your stories`,
+        body:
+          count === 1 ? 'Someone liked your story' : `${count} family members liked your stories`,
         data: { type: 'reactions', event_ids: notification.grouped_with },
       };
     case 'new_story':
       return {
         title: 'New Story',
-        body: count === 1
-          ? 'A family member shared a new story'
-          : `${count} new stories from family`,
+        body:
+          count === 1 ? 'A family member shared a new story' : `${count} new stories from family`,
         data: { type: 'stories', event_ids: notification.grouped_with },
       };
     default:
