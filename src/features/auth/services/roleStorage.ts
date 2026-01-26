@@ -1,28 +1,28 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { mmkv } from '@/lib/mmkv';
 
 const ROLE_KEY = 'timelog.role';
 
-export const getStoredRole = async (): Promise<string | null> => {
+export async function getStoredRole(): Promise<string | null> {
   try {
-    const value = await AsyncStorage.getItem(ROLE_KEY);
-    return value;
+    const value = mmkv.getString(ROLE_KEY);
+    return value ?? null;
   } catch {
     return null;
   }
-};
+}
 
-export const setStoredRole = async (role: string) => {
+export async function setStoredRole(role: string): Promise<void> {
   try {
-    await AsyncStorage.setItem(ROLE_KEY, role);
+    mmkv.set(ROLE_KEY, role);
   } catch {
     // ignore
   }
-};
+}
 
-export const clearStoredRole = async () => {
+export async function clearStoredRole(): Promise<void> {
   try {
-    await AsyncStorage.removeItem(ROLE_KEY);
+    mmkv.delete(ROLE_KEY);
   } catch {
     // ignore
   }
-};
+}

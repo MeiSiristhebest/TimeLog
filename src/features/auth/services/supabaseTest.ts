@@ -9,7 +9,7 @@ type SupabaseTestResult = {
   sessionUserId?: string;
 };
 
-export const signInTestUser = async (): Promise<string | undefined> => {
+export async function signInTestUser(): Promise<string | undefined> {
   const email = process.env.EXPO_PUBLIC_SUPABASE_TEST_EMAIL;
   const password = process.env.EXPO_PUBLIC_SUPABASE_TEST_PASSWORD;
 
@@ -24,9 +24,9 @@ export const signInTestUser = async (): Promise<string | undefined> => {
     throw new Error(`Sign-in error: ${error.message}`);
   }
   return data.session?.user?.id;
-};
+}
 
-export const testSupabaseConnection = async (): Promise<SupabaseTestResult> => {
+export async function testSupabaseConnection(): Promise<SupabaseTestResult> {
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   if (sessionError) {
     throw new Error(`Session error: ${sessionError.message}`);
@@ -47,4 +47,4 @@ export const testSupabaseConnection = async (): Promise<SupabaseTestResult> => {
     profilesCount: ownProfiles.length,
     sessionUserId,
   };
-};
+}

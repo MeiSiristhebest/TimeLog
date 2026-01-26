@@ -7,6 +7,11 @@ jest.mock('@/lib/supabase', () => ({
   },
 }));
 
+jest.mock('./deviceCodeRateLimiter', () => ({
+  checkDeviceCodeRateLimit: jest.fn().mockResolvedValue(undefined),
+  recordDeviceCodeAttempt: jest.fn(),
+}));
+
 describe('deviceCodesService', () => {
   beforeEach(() => {
     jest.clearAllMocks();

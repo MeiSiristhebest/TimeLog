@@ -9,13 +9,15 @@ type AuthState = {
   setUnauthenticated: (error?: string) => void;
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
-  status: 'idle',
-  sessionUserId: undefined,
-  error: undefined,
-  setRestoring: () => set({ status: 'restoring', error: undefined }),
-  setAuthenticated: (userId) =>
-    set({ status: 'authenticated', sessionUserId: userId, error: undefined }),
-  setUnauthenticated: (error) =>
-    set({ status: 'unauthenticated', sessionUserId: undefined, error }),
-}));
+export const useAuthStore = create<AuthState>(function useAuthStoreState(set) {
+  return {
+    status: 'idle',
+    sessionUserId: undefined,
+    error: undefined,
+    setRestoring: () => set({ status: 'restoring', error: undefined }),
+    setAuthenticated: (userId) =>
+      set({ status: 'authenticated', sessionUserId: userId, error: undefined }),
+    setUnauthenticated: (error) =>
+      set({ status: 'unauthenticated', sessionUserId: undefined, error }),
+  };
+});

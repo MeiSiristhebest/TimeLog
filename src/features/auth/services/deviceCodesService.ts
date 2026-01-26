@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { checkDeviceCodeRateLimit, recordDeviceCodeAttempt } from './deviceCodeRateLimiter';
 
 export type DeviceCodeResult = {
   code: string;
@@ -21,7 +22,9 @@ export type DeviceSummary = {
   revokedAt: string | null;
 };
 
-export const generateDeviceCode = async (): Promise<DeviceCodeResult> => {
+export async function generateDeviceCode(): Promise<DeviceCodeResult> {
+  await checkDeviceCodeRateLimit('device-code-global');
+
   const { data, error } = await supabase.rpc('generate_device_code');
   if (error) {
     if (error.message.includes('rate_limit_exceeded')) {
@@ -29,6 +32,8 @@ export const generateDeviceCode = async (): Promise<DeviceCodeResult> => {
     }
     throw new Error(error.message);
   }
+
+  recordDeviceCodeAttempt('device-code-global');
 
   const row = Array.isArray(data) ? data[0] : data;
   if (!row?.code || !row?.expires_at) {
@@ -39,9 +44,9 @@ export const generateDeviceCode = async (): Promise<DeviceCodeResult> => {
     code: row.code,
     expiresAt: row.expires_at,
   };
-};
+}
 
-export const listFamilyDevices = async (): Promise<DeviceSummary[]> => {
+export async function listFamilyDevices(): Promise<DeviceSummary[]> {
   const { data, error } = await supabase.rpc('list_family_devices');
   if (error) {
     throw new Error(error.message);
@@ -54,9 +59,9 @@ export const listFamilyDevices = async (): Promise<DeviceSummary[]> => {
     lastSeenAt: row.last_seen_at ?? null,
     revokedAt: row.revoked_at ?? null,
   }));
-};
+}
 
-export const revokeDevice = async (deviceId: string) => {
+export async function revokeDevice(deviceId: string): Promise<void> {
   if (!deviceId) {
     throw new Error('Missing device id.');
   }
@@ -65,4 +70,4 @@ export const revokeDevice = async (deviceId: string) => {
   if (error) {
     throw new Error(error.message);
   }
-};
+}

@@ -9,7 +9,7 @@ import { devLog } from '@/lib/devLogger';
  * Hook that handles deep linking and clipboard "TaoKouLing" detection for family invites.
  * Extracts business logic from Root Layout per Architecture requirements.
  */
-export const useDeepLinkHandler = () => {
+export function useDeepLinkHandler(): void {
   const router = useRouter();
   const lastHandledToken = useRef<string | null>(null);
 
@@ -84,4 +84,4 @@ export const useDeepLinkHandler = () => {
       appStateSub.remove();
     };
   }, [router]);
-};
+}
