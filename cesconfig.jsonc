@@ -8,17 +8,17 @@
       "name": "expo-router",
       "type": "navigation",
       "options": {
-        "type": "stack"
-      }
+        "type": "stack",
+      },
     },
     {
       "name": "nativewind",
-      "type": "styling"
+      "type": "styling",
     },
     {
       "name": "supabase",
-      "type": "authentication"
-    }
+      "type": "authentication",
+    },
   ],
   "flags": {
     "noGit": true,
@@ -27,16 +27,16 @@
     "importAlias": true,
     "packageManager": "npm",
     "eas": false,
-    "publish": false
+    "publish": false,
   },
   "packageManager": {
     "type": "npm",
-    "version": "11.6.4"
+    "version": "11.6.4",
   },
   "os": {
     "type": "Windows_NT",
     "platform": "win32",
     "arch": "x64",
-    "kernelVersion": "10.0.26200"
-  }
+    "kernelVersion": "10.0.26200",
+  },
 }

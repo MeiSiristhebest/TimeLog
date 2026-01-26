@@ -20,11 +20,22 @@
           "icon": "./assets/notification-icon.png",
           "color": "#C26B4A"
         }
+      ],
+      [
+        "@siteed/expo-audio-studio",
+        {
+          "microphonePermission": "Allow TimeLog to record audio to preserve your memories.",
+          "notification": {
+            "icon": "./assets/notification-icon.png",
+            "color": "#C26B4A"
+          }
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
-      "tsconfigPaths": true
+      "tsconfigPaths": true,
+      "reactCompiler": true
     },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -37,6 +48,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.timelog.app",
       "infoPlist": {
         "UIBackgroundModes": ["audio"]
       }
