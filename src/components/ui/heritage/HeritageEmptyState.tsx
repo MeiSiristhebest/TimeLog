@@ -1,35 +1,8 @@
-/**
- * HeritageEmptyState - Empty state component.
- *
- * Features:
- * - Icon or Lottie illustration
- * - Title and description
- * - Optional CTA button
- * - Consistent Heritage Memoir styling
- *
- * @example
- * <HeritageEmptyState
- *   icon="folder-open"
- *   title="No stories yet"
- *   description="Start recording your first story"
- *   actionTitle="Record Now"
- *   onAction={handleRecord}
- * />
- */
-
-import { AppText } from '@/components/ui/AppText';
-import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import { HeritageButton } from './HeritageButton';
-
-// Heritage Memoir Design Tokens
-const TOKENS = {
-  primary: '#B85A3B',
-  surface: '#FFFCF7',
-  onSurface: '#1E293B',
-  textMuted: '#475569',
-  iconBg: '#F9F3E8',
-} as const;
+import { useHeritageTheme } from '@/theme/heritage';
+import { AppText } from '@/components/ui/AppText';
+import { View } from 'react-native';
 
 type HeritageEmptyStateProps = {
   /** Icon name */
@@ -60,22 +33,27 @@ export function HeritageEmptyState({
   onSecondaryAction,
   compact = false,
 }: HeritageEmptyStateProps) {
+  const { colors } = useHeritageTheme();
+
   return (
-    <View style={[styles.container, compact && styles.containerCompact]}>
+    <View className={`${styles.container} ${compact ? styles.containerCompact : ''}`}>
       {/* Icon */}
-      <View style={styles.iconContainer}>
-        <Ionicons name={icon} size={48} color={TOKENS.primary} />
+      <View
+        className={styles.iconContainer}
+        style={{ backgroundColor: colors.surfaceCream }} // Using closest token for iconBg
+      >
+        <Ionicons name={icon} size={48} color={colors.primary} />
       </View>
 
       {/* Text */}
-      <View style={styles.textContainer}>
-        <AppText style={styles.title}>{title}</AppText>
-        {description && <AppText style={styles.description}>{description}</AppText>}
+      <View className={styles.textContainer}>
+        <AppText className={styles.title} style={{ color: colors.onSurface }}>{title}</AppText>
+        {description && <AppText className={styles.description} style={{ color: colors.textMuted }}>{description}</AppText>}
       </View>
 
       {/* Actions */}
       {(actionTitle || secondaryActionTitle) && (
-        <View style={styles.actions}>
+        <View className={styles.actions}>
           {actionTitle && onAction && (
             <HeritageButton
               title={actionTitle}
@@ -98,48 +76,14 @@ export function HeritageEmptyState({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  containerCompact: {
-    padding: 24,
-  },
-  iconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: TOKENS.iconBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  textContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: TOKENS.onSurface,
-    textAlign: 'center',
-    marginBottom: 8,
-    fontFamily: 'Fraunces_600SemiBold',
-  },
-  description: {
-    fontSize: 16,
-    color: TOKENS.textMuted,
-    textAlign: 'center',
-    lineHeight: 24,
-    maxWidth: 300,
-  },
-  actions: {
-    alignItems: 'center',
-    gap: 12,
-  },
-});
+const styles = {
+  container: 'flex-1 items-center justify-center p-8',
+  containerCompact: 'p-6',
+  iconContainer: 'w-24 h-24 rounded-full items-center justify-center mb-6',
+  textContainer: 'items-center mb-6',
+  title: 'text-2xl font-bold text-center mb-2 font-serif font-semibold',
+  description: 'text-base text-center leading-6 max-w-[300px]',
+  actions: 'items-center gap-3',
+} as const;
 
 export default HeritageEmptyState;

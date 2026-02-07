@@ -26,7 +26,7 @@
  */
 
 import { AppText } from '@/components/ui/AppText';
-import { useState, useCallback, createContext, useContext, ReactNode } from 'react';
+import { useState, useCallback, createContext, useContext, ReactNode, useEffect } from 'react';
 import { Alert, View, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import Animated, {
@@ -51,7 +51,6 @@ const TOKENS = {
   info: '#5B8FB9',
   border: '#E2E8F0',
 } as const;
-
 type AlertVariant = 'info' | 'success' | 'warning' | 'error';
 
 type AlertAction = {
@@ -80,12 +79,12 @@ const AlertContext = createContext<AlertContextType | null>(null);
 
 // Icon mapping for variants
 const VARIANT_ICONS: Record<AlertVariant, { name: keyof typeof Ionicons.glyphMap; color: string }> =
-  {
-    info: { name: 'information-circle', color: TOKENS.info },
-    success: { name: 'checkmark-circle', color: TOKENS.success },
-    warning: { name: 'warning', color: TOKENS.warning },
-    error: { name: 'alert-circle', color: TOKENS.error },
-  };
+{
+  info: { name: 'information-circle', color: TOKENS.info },
+  success: { name: 'checkmark-circle', color: TOKENS.success },
+  warning: { name: 'warning', color: TOKENS.warning },
+  error: { name: 'alert-circle', color: TOKENS.error },
+};
 
 /**
  * Alert content component
@@ -139,43 +138,60 @@ function AlertContent({
   const showDefaultOk = !primaryAction && !secondaryAction;
 
   return (
-    <View style={styles.alertContainer}>
+    <View className="items-center p-6">
       {/* Icon */}
-      <View style={[styles.iconContainer, { backgroundColor: `${iconConfig.color}15` }]}>
+      <View
+        className="mb-4 h-16 w-16 items-center justify-center rounded-full"
+        style={{ backgroundColor: `${iconConfig.color}15` }}>
         <Ionicons name={iconConfig.name} size={32} color={iconConfig.color} />
       </View>
 
       {/* Title */}
-      <AppText style={styles.title}>{title}</AppText>
+      <AppText
+        className="mb-2 text-center text-2xl font-semibold"
+        style={{ fontFamily: 'Fraunces_600SemiBold', color: TOKENS.onSurface }}>
+        {title}
+      </AppText>
 
       {/* Message */}
-      {message && <AppText style={styles.message}>{message}</AppText>}
+      {message && (
+        <AppText
+          className="mb-6 text-center text-lg leading-7"
+          style={{ color: TOKENS.textMuted }}>
+          {message}
+        </AppText>
+      )}
 
       {/* Actions */}
-      <View style={styles.actionsContainer}>
+      <View className="w-full flex-row gap-3">
         {/* Two button layout */}
         {hasTwoButtons && (
           <>
-            <Animated.View style={[styles.buttonWrapper, secondaryButtonStyle]}>
+            <Animated.View className="flex-1" style={secondaryButtonStyle}>
               <Pressable
-                style={styles.secondaryButton}
+                className="min-h-[56px] items-center justify-center rounded-2xl border-[1.5px] px-6 py-4"
+                style={{ borderColor: TOKENS.border, backgroundColor: 'transparent' }}
                 onPress={handleSecondaryPress}
                 accessibilityRole="button"
                 accessibilityLabel={secondaryAction.label}>
-                <AppText style={styles.secondaryButtonText}>{secondaryAction.label}</AppText>
+                <AppText className="text-lg font-semibold" style={{ color: TOKENS.textMuted }}>{secondaryAction.label}</AppText>
               </Pressable>
             </Animated.View>
 
-            <Animated.View style={[styles.buttonWrapper, primaryButtonStyle]}>
+            <Animated.View className="flex-1" style={primaryButtonStyle}>
               <Pressable
-                style={[
-                  styles.primaryButton,
-                  primaryAction.destructive && styles.destructiveButton,
-                ]}
+                className="min-h-[56px] items-center justify-center rounded-2xl px-6 py-4 shadow-sm elevation-[4]"
+                style={{
+                  backgroundColor: primaryAction.destructive ? TOKENS.error : TOKENS.primary,
+                  shadowColor: primaryAction.destructive ? TOKENS.error : TOKENS.primary,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 8,
+                }}
                 onPress={handlePrimaryPress}
                 accessibilityRole="button"
                 accessibilityLabel={primaryAction.label}>
-                <AppText style={styles.primaryButtonText}>{primaryAction.label}</AppText>
+                <AppText className="text-lg font-semibold" style={{ color: TOKENS.onPrimary }}>{primaryAction.label}</AppText>
               </Pressable>
             </Animated.View>
           </>
@@ -183,17 +199,20 @@ function AlertContent({
 
         {/* Single primary button */}
         {hasOnlyPrimary && (
-          <Animated.View style={[styles.fullWidthButtonWrapper, primaryButtonStyle]}>
+          <Animated.View className="w-full" style={primaryButtonStyle}>
             <Pressable
-              style={[
-                styles.primaryButton,
-                styles.fullWidthButton,
-                primaryAction.destructive && styles.destructiveButton,
-              ]}
+              className="w-full min-h-[56px] items-center justify-center rounded-2xl px-6 py-4 shadow-sm elevation-[4]"
+              style={{
+                backgroundColor: primaryAction.destructive ? TOKENS.error : TOKENS.primary,
+                shadowColor: primaryAction.destructive ? TOKENS.error : TOKENS.primary,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.25,
+                shadowRadius: 8,
+              }}
               onPress={handlePrimaryPress}
               accessibilityRole="button"
               accessibilityLabel={primaryAction.label}>
-              <AppText style={styles.primaryButtonText}>{primaryAction.label}</AppText>
+              <AppText className="text-lg font-semibold" style={{ color: TOKENS.onPrimary }}>{primaryAction.label}</AppText>
             </Pressable>
           </Animated.View>
         )}
@@ -201,11 +220,18 @@ function AlertContent({
         {/* Default OK button */}
         {showDefaultOk && (
           <Pressable
-            style={[styles.primaryButton, styles.fullWidthButton]}
+            className="w-full min-h-[56px] items-center justify-center rounded-2xl px-6 py-4 shadow-sm elevation-[4]"
+            style={{
+              backgroundColor: TOKENS.primary,
+              shadowColor: TOKENS.primary,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.25,
+              shadowRadius: 8,
+            }}
             onPress={handleOkPress}
             accessibilityRole="button"
             accessibilityLabel="OK">
-            <AppText style={styles.primaryButtonText}>OK</AppText>
+            <AppText className="text-lg font-semibold" style={{ color: TOKENS.onPrimary }}>OK</AppText>
           </Pressable>
         )}
       </View>
@@ -231,8 +257,16 @@ export function HeritageAlertProvider({ children }: { children: ReactNode }): JS
     setTimeout(() => setConfig(null), 250);
   }, []);
 
+  const contextValue = { show, hide };
+
+  // Register global ref per requirements
+  useEffect(() => {
+    setGlobalAlertRef(contextValue);
+    return () => setGlobalAlertRef({ show: () => { }, hide: () => { } } as any);
+  }, [show, hide]);
+
   return (
-    <AlertContext.Provider value={{ show, hide }}>
+    <AlertContext.Provider value={contextValue}>
       {children}
       <HeritageModal
         visible={visible}
@@ -279,88 +313,5 @@ export const HeritageAlert = {
     globalAlertRef?.hide();
   },
 };
-
-const styles = StyleSheet.create({
-  alertContainer: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontFamily: 'Fraunces_600SemiBold',
-    color: TOKENS.onSurface,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  message: {
-    fontSize: 18,
-    lineHeight: 26,
-    color: TOKENS.textMuted,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    width: '100%',
-    gap: 12,
-  },
-  buttonWrapper: {
-    flex: 1,
-  },
-  fullWidthButtonWrapper: {
-    width: '100%',
-  },
-  primaryButton: {
-    backgroundColor: TOKENS.primary,
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 56,
-    // Shadow
-    shadowColor: TOKENS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  destructiveButton: {
-    backgroundColor: TOKENS.error,
-    shadowColor: TOKENS.error,
-  },
-  fullWidthButton: {
-    width: '100%',
-  },
-  primaryButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: TOKENS.onPrimary,
-  },
-  secondaryButton: {
-    backgroundColor: 'transparent',
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: TOKENS.border,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 56,
-  },
-  secondaryButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: TOKENS.textMuted,
-  },
-});
 
 export default HeritageAlert;

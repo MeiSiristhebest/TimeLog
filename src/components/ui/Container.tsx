@@ -1,4 +1,5 @@
-import { ScrollView, ViewStyle, StyleProp } from 'react-native';
+import { ViewStyle, StyleProp } from 'react-native';
+import { ScrollView } from 'react-native';
 
 /**
  * Root container with Apple-style defaults:
@@ -16,7 +17,7 @@ export function Container({
   return (
     <ScrollView
       className="bg-surface flex-1"
-      style={[{ flex: 1, backgroundColor: '#FFFAF5' }, style]} // Enforce warm background
+      style={style}
       contentContainerStyle={{ flexGrow: 1 }}
       contentInsetAdjustmentBehavior="automatic">
       {children}

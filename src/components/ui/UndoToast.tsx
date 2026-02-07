@@ -1,9 +1,8 @@
-import { AppText } from '@/components/ui/AppText';
-import React from 'react';
-
-import { Pressable } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { CountdownRing } from './CountdownRing';
+import { AppText } from '@/components/ui/AppText';
+import React from 'react';
+import { Pressable } from 'react-native';
 
 interface UndoToastProps {
   /** Whether the toast is visible */

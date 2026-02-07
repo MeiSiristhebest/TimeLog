@@ -11,15 +11,11 @@
  * <HeritageLottie source={require('./custom.json')} autoPlay loop={false} />
  */
 
-import { useRef, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { Ionicons } from '@/components/ui/Icon';
-
-// Heritage Memoir Design Tokens
-const TOKENS = {
-  primary: '#B85A3B',
-} as const;
+import { useHeritageTheme } from '@/theme/heritage';
+import { useRef, useEffect } from 'react';
+import { View } from 'react-native';
 
 // Pre-built animation types
 type AnimationType = 'loading' | 'success' | 'error' | 'empty' | 'recording' | 'syncing';
@@ -61,6 +57,7 @@ export function HeritageLottie({
   onAnimationFinish,
 }: HeritageLottieProps) {
   const lottieRef = useRef<LottieView>(null);
+  const { colors } = useHeritageTheme();
 
   useEffect(() => {
     if (autoPlay && lottieRef.current) {
@@ -102,8 +99,11 @@ export function HeritageLottie({
   // Fallback to icon if no animation source
   if (!animationSource && animation) {
     return (
-      <View style={[styles.fallbackContainer, { width: size, height: size }]}>
-        <Ionicons name={FALLBACK_ICONS[animation]} size={size * 0.5} color={TOKENS.primary} />
+      <View
+        className={styles.fallbackContainer}
+        style={{ width: size, height: size, backgroundColor: colors.surfaceCream }} // Using surfaceCream as approximation of #F9F3E8
+      >
+        <Ionicons name={FALLBACK_ICONS[animation]} size={size * 0.5} color={colors.primary} />
       </View>
     );
   }
@@ -125,13 +125,8 @@ export function HeritageLottie({
   );
 }
 
-const styles = StyleSheet.create({
-  fallbackContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F9F3E8',
-    borderRadius: 1000,
-  },
-});
+const styles = {
+  fallbackContainer: 'items-center justify-center rounded-full',
+} as const;
 
 export default HeritageLottie;

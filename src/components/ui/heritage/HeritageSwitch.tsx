@@ -1,7 +1,8 @@
-import { AppText } from '@/components/ui/AppText';
-import { Switch, SwitchProps, View, StyleSheet } from 'react-native';
 
 import { useHeritageTheme } from '@/theme/heritage';
+import { AppText } from '@/components/ui/AppText';
+import { Switch, SwitchProps } from 'react-native';
+import { View } from 'react-native';
 
 export interface HeritageSwitchProps extends Omit<SwitchProps, 'trackColor' | 'thumbColor'> {
   /** Optional label to display next to switch */
@@ -46,8 +47,8 @@ export function HeritageSwitch({
 
   if (label) {
     return (
-      <View style={styles.container}>
-        <AppText style={[styles.label, { color: colors.onSurface }]}>{label}</AppText>
+      <View className={styles.container}>
+        <AppText className={styles.label} style={{ color: colors.onSurface }}>{label}</AppText>
         <Switch
           value={value}
           trackColor={finalTrackColor}
@@ -63,15 +64,7 @@ export function HeritageSwitch({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-});
+const styles = {
+  container: 'flex-row items-center justify-between gap-3',
+  label: 'text-base font-medium',
+} as const;

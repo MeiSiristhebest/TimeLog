@@ -1,19 +1,3 @@
-/**
- * HeritageLoadingOverlay - Full-screen loading overlay.
- *
- * Features:
- * - Spinner animation
- * - Optional message text
- * - Backdrop blur
- * - Heritage Memoir styling
- *
- * @example
- * <HeritageLoadingOverlay
- *   visible={isLoading}
- *   message="Saving your story..."
- * />
- */
-
 import { AppText } from '@/components/ui/AppText';
 import { View, Modal, ActivityIndicator, StyleSheet } from 'react-native';
 import Animated, {
@@ -25,15 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import { Ionicons } from '@/components/ui/Icon';
-
-// Heritage Memoir Design Tokens
-const TOKENS = {
-  primary: '#B85A3B',
-  surface: '#FFFCF7',
-  backdrop: 'rgba(30, 41, 59, 0.5)',
-  onSurface: '#1E293B',
-  textMuted: '#475569',
-} as const;
+import { useHeritageTheme } from '@/theme/heritage';
 
 type HeritageLoadingOverlayProps = {
   /** Whether overlay is visible */
@@ -54,6 +30,7 @@ export function HeritageLoadingOverlay({
 }: HeritageLoadingOverlayProps) {
   const rotation = useSharedValue(0);
   const backdropOpacity = useSharedValue(0);
+  const { colors } = useHeritageTheme();
 
   useEffect(() => {
     if (visible) {
@@ -78,26 +55,42 @@ export function HeritageLoadingOverlay({
 
   return (
     <Modal visible={visible} transparent animationType="none" statusBarTranslucent>
-      <Animated.View style={[styles.backdrop, backdropStyle]}>
-        <View style={styles.container}>
+      <Animated.View
+        className="absolute inset-0 flex-1 justify-center items-center"
+        style={[{ backgroundColor: colors.backdrop }, backdropStyle]}
+      >
+        <View
+          className={styles.container}
+          style={{
+            backgroundColor: colors.surface,
+            shadowColor: '#000',
+            shadowOpacity: 0.15
+          }}
+        >
           {/* Custom spinner */}
-          <View style={styles.spinnerContainer}>
+          <View className={styles.spinnerContainer}>
             <Animated.View style={spinnerStyle}>
-              <Ionicons name="book" size={40} color={TOKENS.primary} />
+              <Ionicons name="book" size={40} color={colors.primary} />
             </Animated.View>
-            <ActivityIndicator size="large" color={TOKENS.primary} style={styles.indicator} />
+            <ActivityIndicator size="large" color={colors.primary} className="absolute inset-0" />
           </View>
 
           {/* Message */}
-          {message && <AppText style={styles.message}>{message}</AppText>}
+          {message && <AppText className={styles.message} style={{ color: colors.onSurface }}>{message}</AppText>}
 
           {/* Progress */}
           {showProgress && (
-            <View style={styles.progressContainer}>
-              <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
+            <View className={styles.progressContainer}>
+              <View className={styles.progressTrack}>
+                <View
+                  className={styles.progressFill}
+                  style={{
+                    width: `${Math.round(progress * 100)}%`,
+                    backgroundColor: colors.primary
+                  }}
+                />
               </View>
-              <AppText style={styles.progressText}>{Math.round(progress * 100)}%</AppText>
+              <AppText className={styles.progressText} style={{ color: colors.textMuted }}>{Math.round(progress * 100)}%</AppText>
             </View>
           )}
         </View>
@@ -106,65 +99,14 @@ export function HeritageLoadingOverlay({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: TOKENS.backdrop,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  container: {
-    backgroundColor: TOKENS.surface,
-    borderRadius: 20,
-    padding: 32,
-    alignItems: 'center',
-    minWidth: 200,
-    // Shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 12,
-  },
-  spinnerContainer: {
-    position: 'relative',
-    width: 64,
-    height: 64,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  indicator: {
-    position: 'absolute',
-  },
-  message: {
-    fontSize: 16,
-    color: TOKENS.onSurface,
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  progressContainer: {
-    marginTop: 16,
-    width: '100%',
-    alignItems: 'center',
-  },
-  progressTrack: {
-    width: '100%',
-    height: 6,
-    backgroundColor: '#E8E0D5',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: TOKENS.primary,
-    borderRadius: 3,
-  },
-  progressText: {
-    fontSize: 14,
-    color: TOKENS.textMuted,
-    marginTop: 8,
-  },
-});
+const styles = {
+  container: 'rounded-2xl p-8 items-center min-w-[200px] shadow-lg elevation-12',
+  spinnerContainer: 'relative w-16 h-16 items-center justify-center mb-4',
+  message: 'text-base text-center mt-2',
+  progressContainer: 'mt-4 w-full items-center',
+  progressTrack: 'w-full h-1.5 bg-[#E8E0D5] rounded-full overflow-hidden',
+  progressFill: 'h-full rounded-full',
+  progressText: 'text-sm mt-2',
+} as const;
 
 export default HeritageLoadingOverlay;

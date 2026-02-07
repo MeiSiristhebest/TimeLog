@@ -1,19 +1,4 @@
-/**
- * HeritageSkeleton - Enhanced skeleton loading component.
- *
- * Features:
- * - Shimmer animation (gradient sweep)
- * - Pulse animation
- * - Multiple layout variants
- * - Heritage Memoir styling
- *
- * @example
- * <HeritageSkeleton variant="card" />
- * <HeritageSkeleton variant="text" width={200} />
- * <HeritageSkeleton variant="avatar" size={48} />
- */
-
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -24,15 +9,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-
-// Heritage Memoir Design Tokens
-const TOKENS = {
-  base: '#E8E0D5',
-  highlight: '#F5EFE6',
-  cardBg: '#FFFCF7',
-} as const;
-
-type SkeletonVariant = 'text' | 'title' | 'avatar' | 'card' | 'thumbnail' | 'button';
+import { useHeritageTheme } from '@/theme/heritage';
 
 type HeritageSkeletonProps = {
   /** Skeleton type */
@@ -51,7 +28,7 @@ type HeritageSkeletonProps = {
   lines?: number;
 };
 
-function ShimmerOverlay({ screenWidth }: { screenWidth: number }): JSX.Element {
+function ShimmerOverlay({ screenWidth, color }: { screenWidth: number, color: string }): JSX.Element {
   const translateX = useSharedValue(-screenWidth);
 
   useEffect(() => {
@@ -71,18 +48,19 @@ function ShimmerOverlay({ screenWidth }: { screenWidth: number }): JSX.Element {
   }));
 
   return (
-    <Animated.View style={[styles.shimmerContainer, shimmerStyle]}>
+    <Animated.View className={styles.shimmerContainer} style={shimmerStyle}>
       <LinearGradient
-        colors={['transparent', TOKENS.highlight, 'transparent']}
+        colors={['transparent', color, 'transparent']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        style={[styles.shimmerGradient, { width: screenWidth * 0.5 }]}
+        className={styles.shimmerGradient}
+        style={{ width: screenWidth * 0.5 }}
       />
     </Animated.View>
   );
 }
 
-function PulseContainer({ children }: { children: React.ReactNode }): JSX.Element {
+function PulseContainer({ children }: { children: ReactNode }): JSX.Element {
   const opacity = useSharedValue(1);
 
   useEffect(() => {
@@ -110,6 +88,8 @@ export function HeritageSkeleton({
   lines = 1,
 }: HeritageSkeletonProps): JSX.Element {
   const { width: screenWidth } = useWindowDimensions();
+  const { colors } = useHeritageTheme();
+
   // Calculate dimensions based on variant
   const getDimensions = () => {
     switch (variant) {
@@ -162,15 +142,16 @@ export function HeritageSkeleton({
 
   const renderSkeleton = () => (
     <View
+      className={styles.skeleton}
       style={[
-        styles.skeleton,
         {
           width: dimensions.width as any,
           height: dimensions.height,
           borderRadius: dimensions.borderRadius,
+          backgroundColor: colors.border
         },
       ]}>
-      {animation === 'shimmer' && <ShimmerOverlay screenWidth={screenWidth} />}
+      {animation === 'shimmer' && <ShimmerOverlay screenWidth={screenWidth} color={colors.surfaceAccent} />}
     </View>
   );
 
@@ -178,20 +159,20 @@ export function HeritageSkeleton({
   if (variant === 'text' && lines > 1) {
     const lineWidths = ['100%', '95%', '80%', '70%', '60%'];
     const content = (
-      <View style={styles.linesContainer}>
+      <View className={styles.linesContainer}>
         {Array.from({ length: lines }).map((_, index) => (
           <View
             key={index}
+            className={`${styles.skeleton} ${styles.textLine}`}
             style={[
-              styles.skeleton,
-              styles.textLine,
               {
                 width: lineWidths[index % lineWidths.length] as any,
                 height: dimensions.height,
                 borderRadius: dimensions.borderRadius,
+                backgroundColor: colors.border
               },
             ]}>
-            {animation === 'shimmer' && <ShimmerOverlay screenWidth={screenWidth} />}
+            {animation === 'shimmer' && <ShimmerOverlay screenWidth={screenWidth} color={colors.surfaceAccent} />}
           </View>
         ))}
       </View>
@@ -208,17 +189,18 @@ export function HeritageSkeleton({
 
 // Pre-built skeleton layouts
 export function SkeletonCard(): JSX.Element {
+  const { colors } = useHeritageTheme();
   return (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
+    <View className={styles.card} style={{ backgroundColor: colors.surface }}>
+      <View className={styles.cardHeader}>
         <HeritageSkeleton variant="avatar" size={48} />
-        <View style={styles.cardHeaderText}>
+        <View className={styles.cardHeaderText}>
           <HeritageSkeleton variant="title" width="70%" />
           <HeritageSkeleton variant="text" width="50%" />
         </View>
       </View>
       <HeritageSkeleton variant="text" lines={3} />
-      <View style={styles.cardFooter}>
+      <View className={styles.cardFooter}>
         <HeritageSkeleton variant="button" width={100} height={36} />
         <HeritageSkeleton variant="button" width={100} height={36} />
       </View>
@@ -227,10 +209,11 @@ export function SkeletonCard(): JSX.Element {
 }
 
 export function SkeletonStoryCard(): JSX.Element {
+  const { colors } = useHeritageTheme();
   return (
-    <View style={styles.storyCard}>
+    <View className={styles.storyCard} style={{ backgroundColor: colors.surface }}>
       <HeritageSkeleton variant="thumbnail" width={100} height={100} borderRadius={16} />
-      <View style={styles.storyCardContent}>
+      <View className={styles.storyCardContent}>
         <HeritageSkeleton variant="title" width="80%" />
         <HeritageSkeleton variant="text" width="60%" />
         <HeritageSkeleton variant="text" width="40%" />
@@ -240,12 +223,13 @@ export function SkeletonStoryCard(): JSX.Element {
 }
 
 export function SkeletonList({ count = 5 }: { count?: number }): JSX.Element {
+  const { colors } = useHeritageTheme();
   return (
-    <View style={styles.list}>
+    <View className={styles.list}>
       {Array.from({ length: count }).map((_, index) => (
-        <View key={index} style={styles.listItem}>
+        <View key={index} className={styles.listItem} style={{ backgroundColor: colors.surface }}>
           <HeritageSkeleton variant="avatar" size={40} />
-          <View style={styles.listItemText}>
+          <View className={styles.listItemText}>
             <HeritageSkeleton variant="text" width="70%" />
             <HeritageSkeleton variant="text" width="50%" height={14} />
           </View>
@@ -255,74 +239,20 @@ export function SkeletonList({ count = 5 }: { count?: number }): JSX.Element {
   );
 }
 
-const styles = StyleSheet.create({
-  skeleton: {
-    backgroundColor: TOKENS.base,
-    overflow: 'hidden',
-  },
-  shimmerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  shimmerGradient: {
-    flex: 1,
-  },
-  linesContainer: {
-    gap: 8,
-  },
-  textLine: {
-    marginBottom: 0,
-  },
-  card: {
-    backgroundColor: TOKENS.cardBg,
-    borderRadius: 16,
-    padding: 16,
-    gap: 16,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  cardHeaderText: {
-    flex: 1,
-    gap: 8,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  storyCard: {
-    flexDirection: 'row',
-    backgroundColor: TOKENS.cardBg,
-    borderRadius: 16,
-    padding: 12,
-    gap: 16,
-  },
-  storyCardContent: {
-    flex: 1,
-    gap: 8,
-    justifyContent: 'center',
-  },
-  list: {
-    gap: 12,
-  },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    backgroundColor: TOKENS.cardBg,
-    borderRadius: 12,
-  },
-  listItemText: {
-    flex: 1,
-    gap: 6,
-  },
-});
+const styles = {
+  skeleton: 'overflow-hidden',
+  shimmerContainer: 'absolute top-0 left-0 right-0 bottom-0',
+  shimmerGradient: 'flex-1',
+  linesContainer: 'gap-2',
+  textLine: 'mb-0', card: 'rounded-2xl p-4 gap-4',
+  cardHeader: 'flex-row items-center gap-3',
+  cardHeaderText: 'flex-1 gap-2',
+  cardFooter: 'flex-row gap-3 mt-2',
+  storyCard: 'flex-row rounded-2xl p-3 gap-4',
+  storyCardContent: 'flex-1 gap-2 justify-center',
+  list: 'gap-3',
+  listItem: 'flex-row items-center gap-3 p-3 rounded-xl',
+  listItemText: 'flex-1 gap-1.5',
+} as const;
 
 export default HeritageSkeleton;

@@ -18,15 +18,6 @@ import { View, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
-// Heritage Memoir Design Tokens
-const TOKENS = {
-  primary: '#B85A3B',
-  primaryLight: '#C9A961',
-  background: '#E8E0D5',
-  onSurface: '#1E293B',
-  textMuted: '#475569',
-} as const;
-
 type HeritageProgressBarProps = {
   /** Progress value (0-1) */
   progress: number;
@@ -54,8 +45,9 @@ export function HeritageProgressBar({
   height = 8,
   gradient = true,
   animated = true,
-  colors,
+  colors: customColors,
 }: HeritageProgressBarProps) {
+  const { colors } = useHeritageTheme();
   const progressValue = useSharedValue(0);
   const clampedProgress = Math.max(0, Math.min(1, progress));
 
@@ -77,32 +69,31 @@ export function HeritageProgressBar({
   const percentage = Math.round(clampedProgress * 100);
 
   return (
-    <View style={styles.container}>
+    <View className={styles.container}>
       {/* Progress bar */}
       <View
+        className={styles.track}
         style={[
-          styles.track,
-          { height },
-          colors?.background && { backgroundColor: colors.background },
+          { height, backgroundColor: customColors?.background || colors.border },
         ]}>
-        <Animated.View style={[styles.fill, { height }, fillStyle]}>
+        <Animated.View className={styles.fill} style={[fillStyle, { height }]}>
           {gradient ? (
             <LinearGradient
-              colors={[TOKENS.primary, TOKENS.primaryLight]}
+              colors={[colors.primary, colors.primaryMuted]} // Approximate light
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={StyleSheet.absoluteFill}
             />
           ) : (
             <View
-              style={[StyleSheet.absoluteFill, { backgroundColor: colors?.fill || TOKENS.primary }]}
+              style={[StyleSheet.absoluteFill, { backgroundColor: customColors?.fill || colors.primary }]}
             />
           )}
         </Animated.View>
       </View>
 
       {/* Label */}
-      {showLabel && <AppText style={styles.label}>{label || `${percentage}%`}</AppText>}
+      {showLabel && <AppText className={styles.label} style={{ color: colors.textMuted }}>{label || `${percentage}%`}</AppText>}
     </View>
   );
 }
@@ -119,6 +110,7 @@ export function HeritageCircularProgress({
   strokeWidth?: number;
   showPercentage?: boolean;
 }) {
+  const { colors } = useHeritageTheme();
   const progressValue = useSharedValue(0);
   const clampedProgress = Math.max(0, Math.min(1, progress));
 
@@ -132,82 +124,49 @@ export function HeritageCircularProgress({
   const percentage = Math.round(clampedProgress * 100);
 
   return (
-    <View style={[styles.circularContainer, { width: size, height: size }]}>
+    <View className={styles.circularContainer} style={{ width: size, height: size }}>
       {/* Background circle */}
       <View
-        style={[
-          styles.circularTrack,
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            borderWidth: strokeWidth,
-          },
-        ]}
+        className={styles.circularTrack}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          borderWidth: strokeWidth,
+          borderColor: colors.border,
+        }}
       />
 
       {/* Progress arc - simplified with View */}
       <View
-        style={[
-          styles.circularFill,
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            borderWidth: strokeWidth,
-            borderColor: TOKENS.primary,
-            borderTopColor: 'transparent',
-            borderRightColor: 'transparent',
-            transform: [{ rotate: `${-90 + clampedProgress * 360}deg` }],
-          },
-        ]}
+        className={styles.circularFill}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          borderWidth: strokeWidth,
+          borderColor: colors.primary,
+          borderTopColor: 'transparent',
+          borderRightColor: 'transparent',
+          transform: [{ rotate: `${-90 + clampedProgress * 360}deg` }],
+        }}
       />
 
       {/* Percentage text */}
-      {showPercentage && <AppText style={styles.circularText}>{percentage}%</AppText>}
+      {showPercentage && <AppText className={styles.circularText} style={{ color: colors.onSurface }}>{percentage}%</AppText>}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  track: {
-    flex: 1,
-    backgroundColor: TOKENS.background,
-    borderRadius: 100,
-    overflow: 'hidden',
-  },
-  fill: {
-    borderRadius: 100,
-    overflow: 'hidden',
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: TOKENS.textMuted,
-    minWidth: 40,
-    textAlign: 'right',
-  },
-  circularContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  circularTrack: {
-    position: 'absolute',
-    borderColor: TOKENS.background,
-  },
-  circularFill: {
-    position: 'absolute',
-  },
-  circularText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: TOKENS.onSurface,
-  },
-});
+const styles = {
+  container: 'flex-row items-center gap-3',
+  track: 'flex-1 rounded-full overflow-hidden',
+  fill: 'rounded-full overflow-hidden',
+  label: 'text-sm font-semibold min-w-[40px] text-right',
+  circularContainer: 'items-center justify-center',
+  circularTrack: 'absolute',
+  circularFill: 'absolute',
+  circularText: 'text-sm font-bold',
+} as const;
 
 export default HeritageProgressBar;

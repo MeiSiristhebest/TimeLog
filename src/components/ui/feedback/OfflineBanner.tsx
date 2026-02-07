@@ -23,12 +23,22 @@ export function OfflineBanner(): JSX.Element | null {
   if (!isOffline) return null;
 
   return (
-    <SafeAreaView pointerEvents="none" style={styles.container}>
+    <SafeAreaView
+      pointerEvents="none"
+      style={{ position: 'absolute', top: 56, left: 0, right: 0, zIndex: 50 }}>
+      <View className="items-center px-4">
       <Animated.View
         entering={FadeInUp.springify()}
         exiting={FadeOutUp}
-        style={[styles.toast, { backgroundColor: colors.surfaceDim, shadowColor: colors.shadow }]}>
-        <View style={styles.content}>
+        className="w-full max-w-sm rounded-[8px] py-3 px-5 flex-row items-center gap-3 shadow-xl elevation-8"
+        style={{
+          backgroundColor: colors.surfaceDim,
+          shadowColor: colors.shadow,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.2,
+          shadowRadius: 10
+        }}>
+        <View className="flex-row items-center gap-3">
           <Ionicons
             name="wifi"
             size={20}
@@ -42,47 +52,12 @@ export function OfflineBanner(): JSX.Element | null {
             style={{ position: 'absolute', left: 8, top: 4 }}
           />
           {/* Combining icons to simulate wifi_off or use cloud-offline */}
-          <AppText style={[styles.message, { color: colors.onSurface }]}>
+          <AppText className="text-base font-medium leading-5" style={{ color: colors.onSurface }}>
             Please check your Wi-Fi.
           </AppText>
         </View>
       </Animated.View>
+      </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    top: 60, // Top offset to simulate "pt-14"
-    left: 0,
-    right: 0,
-    zIndex: 9999,
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
-  toast: {
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2, // shadow-xl
-    shadowRadius: 10,
-    elevation: 8,
-    maxWidth: 384, // max-w-sm
-    width: '100%',
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  message: {
-    fontSize: 16, // text-base
-    fontWeight: '500',
-    lineHeight: 20,
-  },
-});

@@ -37,6 +37,8 @@ type HeaderAction = {
 type HeritageHeaderProps = {
   /** Header title */
   title: string;
+  /** Optional subtitle below the title */
+  subtitle?: string;
   /** Show large title style */
   largeTitle?: boolean;
   /** Show back button */
@@ -57,6 +59,7 @@ type HeritageHeaderProps = {
 
 export function HeritageHeader({
   title,
+  subtitle,
   largeTitle = false,
   showBack = false,
   onBack,
@@ -120,25 +123,35 @@ export function HeritageHeader({
   });
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }, style]}>
+    <View style={[style, { paddingTop: insets.top }]} className="z-10 w-full bg-transparent">
       {/* Background */}
       <Animated.View
-        style={[styles.background, { paddingTop: insets.top }, headerBackgroundStyle]}
+        className="absolute inset-0 border-b border-b-gray-200 dark:border-b-white/10"
+        style={[{ paddingTop: insets.top }, headerBackgroundStyle]}
       />
 
       {/* Header bar */}
-      <View style={styles.headerBar}>
-        {/* Left side */}
-        <View style={styles.leftContainer}>
+      <View
+        className="h-[44px] flex-row items-center justify-between px-4"
+        style={{
+          backgroundColor: transparent ? 'transparent' : undefined, // Let background animated view handle it, or surface
+        }}>
+        {/* Left Section: Back Button */}
+        <View className="min-w-[60px] flex-row items-center">
           {showBack && (
-            <Pressable style={styles.backButton} onPress={handleBack} hitSlop={12}>
+            <Pressable
+              onPress={handleBack}
+              className="-ml-2 p-1"
+              hitSlop={12}
+              accessibilityLabel="Go back"
+              accessibilityRole="button">
               <Ionicons name="chevron-back" size={28} color={colors.primary} />
             </Pressable>
           )}
           {leftActions.map((action, index) => (
             <Pressable
               key={index}
-              style={styles.actionButton}
+              className="p-1"
               onPress={() => handleAction(action)}
               hitSlop={8}
               accessibilityLabel={action.accessibilityLabel}>
@@ -148,22 +161,35 @@ export function HeritageHeader({
         </View>
 
         {/* Title (small) */}
-        <Animated.Text
-          style={[
-            styles.title,
-            { color: colors.onSurface, fontSize: Math.round(17 * scale) },
-            largeTitle && smallTitleStyle,
-          ]}
-          numberOfLines={1}>
-          {title}
-        </Animated.Text>
+        {!largeTitle && (
+          <View className="flex-1 items-center justify-center">
+            <Animated.Text
+              allowFontScaling={false}
+              className="text-center font-semibold"
+              style={[
+                { color: colors.onSurface, fontSize: Math.round(17 * scale) },
+                largeTitle && smallTitleStyle,
+              ]}
+              numberOfLines={1}>
+              {title}
+            </Animated.Text>
+            {subtitle && (
+              <AppText
+                className="mt-[2px] text-center text-xs opacity-80"
+                numberOfLines={1}
+                style={{ color: colors.textMuted }}>
+                {subtitle}
+              </AppText>
+            )}
+          </View>
+        )}
 
-        {/* Right side */}
-        <View style={styles.rightContainer}>
+        {/* Right Section: Actions */}
+        <View className="min-w-[60px] flex-row items-center justify-end gap-4">
           {rightActions.map((action, index) => (
             <Pressable
               key={index}
-              style={styles.actionButton}
+              className="p-1"
               onPress={() => handleAction(action)}
               hitSlop={8}
               accessibilityLabel={action.accessibilityLabel}>
@@ -175,67 +201,16 @@ export function HeritageHeader({
 
       {/* Large title */}
       {largeTitle && (
-        <Animated.View style={[styles.largeTitleContainer, largeTitleStyle]}>
-          <AppText style={[styles.largeTitle, { color: colors.onSurface }]}>{title}</AppText>
+        <Animated.View className="px-5 pt-2 pb-4" style={largeTitleStyle}>
+          <AppText
+            className="font-serif text-3xl font-bold font-semibold"
+            style={{ color: colors.onSurface }}>
+            {title}
+          </AppText>
         </Animated.View>
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: 'transparent',
-    zIndex: 100,
-  },
-  background: {
-    ...StyleSheet.absoluteFillObject,
-    // backgroundColor is set via animated style now
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#E2E8F0', // Keep a fallback or use token effectively if possible via style injection used above
-  },
-  headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    height: 44,
-    paddingHorizontal: 16,
-  },
-  leftContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minWidth: 60,
-  },
-  rightContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    minWidth: 60,
-    gap: 16,
-  },
-  backButton: {
-    marginLeft: -8,
-    padding: 4,
-  },
-  actionButton: {
-    padding: 4,
-  },
-  title: {
-    flex: 1,
-    fontSize: 17,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  largeTitleContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
-  },
-  largeTitle: {
-    fontSize: 34,
-    fontWeight: '700',
-    fontFamily: 'Fraunces_600SemiBold',
-  },
-});
 
 export default HeritageHeader;

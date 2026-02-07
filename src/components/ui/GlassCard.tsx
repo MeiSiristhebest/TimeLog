@@ -1,7 +1,7 @@
 import React from 'react';
-
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import type { ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { View } from 'react-native';
 
 /**
  * Apple-style Glassmorphism Card Component
@@ -23,33 +23,24 @@ interface GlassCardProps {
 
 export function GlassCard({ children, intensity = 40, style }: GlassCardProps) {
   return (
-    <View style={[styles.container, style]}>
-      <BlurView intensity={intensity} tint="light" style={styles.blur}>
-        <View style={styles.content}>{children}</View>
+    <View style={[styles.shadow, style]} className={styles.container}>
+      <BlurView intensity={intensity} tint="light" style={{ overflow: 'hidden' }}>
+        <View className={styles.content}>{children}</View>
       </BlurView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    overflow: 'hidden',
-    borderRadius: 24,
-    // Heritage Memoir - Terracotta-tinted shadow
+const styles = {
+  container: 'overflow-hidden rounded-3xl',
+  blur: 'overflow-hidden',
+  content: 'p-6 rounded-3xl border border-[rgba(184,90,59,0.08)] bg-[rgba(255,252,247,0.85)]',
+  // Keep shadow as inline style for precise control until verified
+  shadow: {
     shadowColor: '#B85A3B',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 24,
     elevation: 8,
-  },
-  blur: {
-    overflow: 'hidden',
-  },
-  content: {
-    padding: 24,
-    backgroundColor: 'rgba(255, 252, 247, 0.85)', // Surface Elevated with transparency
-    borderWidth: 1,
-    borderColor: 'rgba(184, 90, 59, 0.08)', // Subtle terracotta border
-    borderRadius: 24,
-  },
-});
+  }
+} as const;

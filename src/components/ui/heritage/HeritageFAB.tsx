@@ -1,28 +1,3 @@
-/**
- * HeritageFAB - Floating Action Button with animations.
- *
- * Features:
- * - Press scale animation
- * - Shadow depth change on press
- * - Expandable menu option
- * - Haptic feedback
- * - Heritage Memoir styling
- *
- * @example
- * <HeritageFAB
- *   icon="add"
- *   onPress={handleAdd}
- * />
- *
- * // With expandable menu
- * <HeritageFAB
- *   icon="add"
- *   actions={[
- *     { icon: 'mic', label: 'Record', onPress: handleRecord },
- *     { icon: 'camera', label: 'Photo', onPress: handlePhoto },
- *   ]}
- * />
- */
 
 import { AppText } from '@/components/ui/AppText';
 import { useState, useCallback } from 'react';
@@ -37,18 +12,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
+import { useHeritageTheme } from '@/theme/heritage';
 
-// Heritage Memoir Design Tokens
-const TOKENS = {
-  primary: '#B85A3B',
-  onPrimary: '#FFFFFF',
-  surface: '#FFFCF7',
-  onSurface: '#1E293B',
-  shadow: '#B85A3B',
-} as const;
-
-const FAB_SIZE = 64;
 const MINI_FAB_SIZE = 48;
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type FABAction = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -80,14 +48,14 @@ type HeritageFABActionProps = {
   onPress: (action: FABAction) => void;
 };
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 function HeritageFABAction({
   action,
   index,
   expandProgress,
   onPress,
 }: HeritageFABActionProps): JSX.Element {
+  const { colors } = useHeritageTheme();
+
   const actionStyle = useAnimatedStyle(() => {
     const translateY = interpolate(expandProgress.value, [0, 1], [0, -(index + 1) * 70]);
     const opacity = expandProgress.value;
@@ -100,12 +68,25 @@ function HeritageFABAction({
   });
 
   return (
-    <Animated.View style={[styles.actionContainer, actionStyle]}>
-      <View style={styles.actionLabel}>
-        <AppText style={styles.actionLabelText}>{action.label}</AppText>
+    <Animated.View className={styles.actionContainer} style={actionStyle}>
+      <View
+        className={styles.actionLabel}
+        style={{
+          backgroundColor: colors.surface,
+          shadowColor: '#000',
+          shadowOpacity: 0.15,
+        }}>
+        <AppText className={styles.actionLabelText} style={{ color: colors.onSurface }}>{action.label}</AppText>
       </View>
-      <Pressable style={styles.actionButton} onPress={() => onPress(action)}>
-        <Ionicons name={action.icon} size={24} color={TOKENS.onPrimary} />
+      <Pressable
+        className={styles.actionButton}
+        onPress={() => onPress(action)}
+        style={{
+          backgroundColor: colors.primary,
+          shadowColor: colors.shadow,
+          shadowOpacity: 0.25,
+        }}>
+        <Ionicons name={action.icon} size={24} color={colors.onPrimary} />
       </Pressable>
     </Animated.View>
   );
@@ -121,6 +102,7 @@ export function HeritageFAB({
   accessibilityLabel = 'Action button',
 }: HeritageFABProps): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { colors } = useHeritageTheme();
 
   // Animation values
   const scale = useSharedValue(1);
@@ -179,7 +161,8 @@ export function HeritageFAB({
       {/* Backdrop when expanded */}
       {actions && (
         <AnimatedPressable
-          style={[styles.backdrop, backdropStyle]}
+          className="absolute inset-0"
+          style={[{ backgroundColor: '#000' }, backdropStyle]}
           onPress={() => {
             setIsExpanded(false);
             expandProgress.value = withTiming(0, { duration: 200 });
@@ -188,7 +171,7 @@ export function HeritageFAB({
         />
       )}
 
-      <View style={[styles.container, { bottom, right }]}>
+      <View className={styles.container} style={{ bottom, right }}>
         {/* Action buttons */}
         {actions &&
           actions.map((action, index) => (
@@ -203,78 +186,34 @@ export function HeritageFAB({
 
         {/* Main FAB */}
         <AnimatedPressable
-          style={[styles.fab, fabStyle]}
+          className={styles.fab}
+          style={[
+            fabStyle,
+            {
+              backgroundColor: colors.primary,
+              shadowColor: colors.shadow,
+              shadowOpacity: 0.35
+            }
+          ]}
           onPress={handlePress}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           accessibilityLabel={accessibilityLabel}
           accessibilityRole="button">
-          <Ionicons name={isExpanded ? iconExpanded : icon} size={28} color={TOKENS.onPrimary} />
+          <Ionicons name={isExpanded ? iconExpanded : icon} size={28} color={colors.onPrimary} />
         </AnimatedPressable>
       </View>
     </>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    alignItems: 'center',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#000',
-  },
-  fab: {
-    width: FAB_SIZE,
-    height: FAB_SIZE,
-    borderRadius: FAB_SIZE / 2,
-    backgroundColor: TOKENS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Terracotta shadow
-    shadowColor: TOKENS.shadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    elevation: 12,
-  },
-  actionContainer: {
-    position: 'absolute',
-    bottom: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  actionLabel: {
-    backgroundColor: TOKENS.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginRight: 12,
-    // Shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  actionLabelText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: TOKENS.onSurface,
-  },
-  actionButton: {
-    width: MINI_FAB_SIZE,
-    height: MINI_FAB_SIZE,
-    borderRadius: MINI_FAB_SIZE / 2,
-    backgroundColor: TOKENS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Terracotta shadow
-    shadowColor: TOKENS.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    elevation: 8,
-  },
-});
+const styles = {
+  container: 'absolute items-center',
+  fab: 'w-16 h-16 rounded-full items-center justify-center shadow-lg elevation-12',
+  actionContainer: 'absolute bottom-0 flex-row items-center',
+  actionLabel: 'px-3 py-2 rounded-lg mr-3 shadow-sm elevation-4',
+  actionLabelText: 'text-sm font-semibold',
+  actionButton: 'w-12 h-12 rounded-full items-center justify-center shadow-md elevation-8',
+} as const;
 
 export default HeritageFAB;

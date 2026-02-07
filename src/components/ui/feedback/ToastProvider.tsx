@@ -45,26 +45,43 @@ export function ToastProvider({ children }: { children: React.ReactNode }): JSX.
     setToast(null);
   }, []);
 
+  // FIX: Don't wrap children in an absolute view effectively blocking clicks or layout if styling fails
+  // Instead, render children normally and render Toast as a sibling overlay
   return (
-    <View style={StyleSheet.absoluteFill}>
+    <>
       {children}
       {toast && (
-        <SafeAreaView pointerEvents="box-none" style={styles.container}>
-          <Animated.View
-            entering={FadeInUp.springify()}
-            exiting={FadeOutUp}
-            style={[styles.toast, getToastStyle(toast.type)]}>
-            <View style={styles.content}>
-              <Ionicons name={getIconName(toast.type)} size={24} color="#FFF" />
-              <AppText style={styles.message}>{toast.message}</AppText>
-            </View>
-            <TouchableOpacity onPress={dismiss} hitSlop={12}>
-              <Ionicons name="close" size={20} color="#FFF" style={{ opacity: 0.8 }} />
-            </TouchableOpacity>
-          </Animated.View>
-        </SafeAreaView>
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 9999 }} pointerEvents="box-none">
+          <SafeAreaView pointerEvents="box-none" style={{ alignItems: 'center', paddingTop: Platform.OS === 'android' ? 40 : 0 }}>
+            <Animated.View
+              entering={FadeInUp.springify()}
+              exiting={FadeOutUp}
+              className="flex-row items-center justify-between w-[90%] max-w-[400px] py-3 px-4 rounded-xl mt-2 shadow-sm elevation-[6]"
+              style={[
+                getToastStyle(toast.type),
+                {
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 8
+                }
+              ]}>
+              <View className="flex-1 flex-row items-center gap-3">
+                <Ionicons name={getIconName(toast.type)} size={24} color="#FFF" />
+                <AppText
+                  className="flex-1 text-white text-base font-medium"
+                  style={{ fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto' }}>
+                  {toast.message}
+                </AppText>
+              </View>
+              <TouchableOpacity onPress={dismiss} hitSlop={12}>
+                <Ionicons name="close" size={20} color="#FFF" style={{ opacity: 0.8 }} />
+              </TouchableOpacity>
+            </Animated.View>
+          </SafeAreaView>
+        </View>
       )}
-    </View>
+    </>
   );
 }
 
@@ -95,44 +112,3 @@ function getIconName(type?: ToastType): keyof typeof Ionicons.glyphMap {
       return 'information-circle';
   }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 9999,
-    paddingTop: Platform.OS === 'android' ? 40 : 0, // Extra padding for Android status bar
-  },
-  toast: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '90%',
-    maxWidth: 400,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
-    marginTop: 8,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 12,
-  },
-  message: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '500',
-    flex: 1,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-  },
-});

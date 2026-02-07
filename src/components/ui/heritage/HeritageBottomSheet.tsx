@@ -1,21 +1,4 @@
-/**
- * HeritageBottomSheet - Apple Maps style bottom sheet.
- *
- * Features:
- * - Gesture-driven with snap points
- * - Handle indicator with drag feedback
- * - Keyboard avoiding
- * - Heritage Memoir styling
- *
- * @example
- * <HeritageBottomSheet
- *   visible={isOpen}
- *   onClose={() => setIsOpen(false)}
- *   snapPoints={['25%', '50%', '90%']}
- * >
- *   <AppText>Content</AppText>
- * </HeritageBottomSheet>
- */
+
 import { useEffect, useCallback, ReactNode, useRef } from 'react';
 import {
   View,
@@ -37,7 +20,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import { useHeritageTheme } from '../../../theme/heritage';
 
-type SnapPoint = `${number}%` | number;
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type HeritageBottomSheetProps = {
   /** Whether sheet is visible */
@@ -61,8 +44,6 @@ const parseSnapPoint = (point: SnapPoint, screenHeight: number): number => {
   const percentage = parseInt(point.replace('%', ''), 10);
   return (percentage / 100) * screenHeight;
 };
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function HeritageBottomSheet({
   visible,
@@ -207,24 +188,25 @@ export function HeritageBottomSheet({
       statusBarTranslucent
       onRequestClose={onClose}>
       <KeyboardAvoidingView
-        style={styles.container}
+        className={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {/* Backdrop */}
-        <AnimatedPressable style={[styles.backdrop, backdropStyle]} onPress={handleBackdropPress} />
+        <AnimatedPressable style={[StyleSheet.absoluteFill, backdropStyle]} onPress={handleBackdropPress} />
 
         {/* Sheet */}
         <GestureDetector gesture={panGesture}>
           <Animated.View
-            style={[styles.sheet, { height: maxHeight + 50 }, sheetStyle]}
+            className={styles.sheet}
+            style={[{ height: maxHeight + 50 }, sheetStyle]}
             accessibilityLabel={title}
             accessibilityRole="none">
             {/* Handle */}
-            <View style={styles.handleContainer}>
-              <Animated.View style={[styles.handle, handleStyle]} />
+            <View className={styles.handleContainer}>
+              <Animated.View className={styles.handle} style={handleStyle} />
             </View>
 
             {/* Content */}
-            <View style={styles.content}>{children}</View>
+            <View className={styles.content}>{children}</View>
           </Animated.View>
         </GestureDetector>
       </KeyboardAvoidingView>
@@ -232,35 +214,12 @@ export function HeritageBottomSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  sheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 24,
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  handle: {
-    width: 36,
-    height: 5,
-    borderRadius: 3,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-  },
-});
+const styles = {
+  container: 'flex-1 justify-end',
+  sheet: 'rounded-t-3xl shadow-xl shadow-black/15 elevation-24',
+  handleContainer: 'items-center py-3',
+  handle: 'w-9 h-[5px] rounded-full',
+  content: 'flex-1 px-6',
+} as const;
 
 export default HeritageBottomSheet;

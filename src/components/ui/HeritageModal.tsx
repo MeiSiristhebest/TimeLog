@@ -28,17 +28,14 @@ import Animated, {
   withSpring,
   Easing,
 } from 'react-native-reanimated';
+import { useHeritageTheme } from '@/theme/heritage';
 
-// Heritage Memoir Design Tokens
-const TOKENS = {
-  backdrop: 'rgba(30, 41, 59, 0.4)',
-  surface: '#FFFCF7',
-  shadow: 'rgba(184, 90, 59, 0.15)',
-  radius: 24,
-  // Animation
-  enterDuration: 250,
-  exitDuration: 200,
+const ANIMATION = {
+  enterDuration: 200,
+  exitDuration: 150,
 } as const;
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type HeritageModalProps = {
   /** Whether modal is visible */
@@ -55,8 +52,6 @@ type HeritageModalProps = {
   accessibilityLabel?: string;
 };
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 export function HeritageModal({
   visible,
   onClose,
@@ -66,6 +61,7 @@ export function HeritageModal({
   accessibilityLabel = 'Modal dialog',
 }: HeritageModalProps) {
   const { width } = useWindowDimensions();
+  const { colors } = useHeritageTheme();
   const backdropOpacity = useSharedValue(0);
   const contentScale = useSharedValue(0.95);
   const contentOpacity = useSharedValue(0);
@@ -73,19 +69,19 @@ export function HeritageModal({
   // Animate in when visible
   useEffect(() => {
     if (visible) {
-      backdropOpacity.value = withTiming(1, { duration: TOKENS.enterDuration });
+      backdropOpacity.value = withTiming(1, { duration: ANIMATION.enterDuration });
       contentScale.value = withSpring(1, { damping: 20, stiffness: 300 });
-      contentOpacity.value = withTiming(1, { duration: TOKENS.enterDuration });
+      contentOpacity.value = withTiming(1, { duration: ANIMATION.enterDuration });
 
       // Announce to screen readers
       AccessibilityInfo.announceForAccessibility(accessibilityLabel);
     } else {
-      backdropOpacity.value = withTiming(0, { duration: TOKENS.exitDuration });
+      backdropOpacity.value = withTiming(0, { duration: ANIMATION.exitDuration });
       contentScale.value = withTiming(0.95, {
-        duration: TOKENS.exitDuration,
+        duration: ANIMATION.exitDuration,
         easing: Easing.in(Easing.ease),
       });
-      contentOpacity.value = withTiming(0, { duration: TOKENS.exitDuration });
+      contentOpacity.value = withTiming(0, { duration: ANIMATION.exitDuration });
     }
   }, [visible, backdropOpacity, contentScale, contentOpacity, accessibilityLabel]);
 
@@ -112,10 +108,11 @@ export function HeritageModal({
       statusBarTranslucent
       onRequestClose={onClose}
       testID={testID}>
-      <View style={styles.container}>
+      <View className="flex-1 items-center justify-center p-6">
         {/* Backdrop */}
         <AnimatedPressable
-          style={[styles.backdrop, backdropStyle]}
+          className="absolute inset-0"
+          style={[{ backgroundColor: colors.backdrop }, backdropStyle]}
           onPress={handleBackdropPress}
           accessibilityLabel="Close modal"
           accessibilityRole="button"
@@ -123,7 +120,19 @@ export function HeritageModal({
 
         {/* Content */}
         <Animated.View
-          style={[styles.content, contentStyle, { maxWidth: width - 48 }]}
+          className="w-full overflow-hidden rounded-3xl"
+          style={[
+            contentStyle,
+            {
+              maxWidth: width - 48,
+              backgroundColor: colors.surface,
+              shadowColor: '#B85A3B',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.15,
+              shadowRadius: 32,
+              elevation: 24,
+            }
+          ]}
           accessibilityViewIsModal
           accessibilityLabel={accessibilityLabel}>
           {children}
@@ -132,30 +141,5 @@ export function HeritageModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: TOKENS.backdrop,
-  },
-  content: {
-    backgroundColor: TOKENS.surface,
-    borderRadius: TOKENS.radius,
-    width: '100%',
-    // Terracotta-tinted shadow
-    shadowColor: '#B85A3B',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 32,
-    elevation: 24,
-    overflow: 'hidden',
-  },
-});
 
 export default HeritageModal;

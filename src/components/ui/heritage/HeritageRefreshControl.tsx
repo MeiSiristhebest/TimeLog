@@ -1,31 +1,5 @@
-/**
- * HeritageRefreshControl - Custom pull-to-refresh indicator.
- *
- * Features:
- * - Custom pull indicator
- * - Heritage Memoir color scheme
- * - Smooth animation
- *
- * @example
- * <ScrollView
- *   refreshControl={
- *     <HeritageRefreshControl
- *       refreshing={isRefreshing}
- *       onRefresh={handleRefresh}
- *     />
- *   }
- * >
- *   {content}
- * </ScrollView>
- */
-
 import { RefreshControl, RefreshControlProps } from 'react-native';
-
-// Heritage Memoir Design Tokens
-const TOKENS = {
-  primary: '#B85A3B',
-  surface: '#F9F3E8',
-} as const;
+import { useHeritageTheme } from '@/theme/heritage';
 
 type HeritageRefreshControlProps = Omit<
   RefreshControlProps,
@@ -37,13 +11,15 @@ export function HeritageRefreshControl({
   onRefresh,
   ...props
 }: HeritageRefreshControlProps) {
+  const { colors } = useHeritageTheme();
+
   return (
     <RefreshControl
       refreshing={refreshing}
       onRefresh={onRefresh}
-      colors={[TOKENS.primary]} // Android
-      tintColor={TOKENS.primary} // iOS
-      progressBackgroundColor={TOKENS.surface} // Android
+      colors={[colors.primary]} // Android
+      tintColor={colors.primary} // iOS
+      progressBackgroundColor={colors.surface} // Android
       {...props}
     />
   );

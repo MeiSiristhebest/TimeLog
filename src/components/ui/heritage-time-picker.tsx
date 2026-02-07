@@ -1,26 +1,8 @@
-/**
- * HeritageTimePicker - Custom time picker with Heritage Memoir styling.
- *
- * Features:
- * - Wheel-style picker for intuitive selection
- * - Heritage Memoir color scheme
- * - Large touch targets for elderly users
- * - Confirm/Cancel actions
- *
- * @example
- * <HeritageTimePicker
- *   visible={showPicker}
- *   value={selectedTime}
- *   onConfirm={(date) => setSelectedTime(date)}
- *   onCancel={() => setShowPicker(false)}
- * />
- */
-
 import type { NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { HeritageModal } from './HeritageModal';
 import { AppText } from '@/components/ui/AppText';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { View, Pressable, ScrollView } from 'react-native';
 
 // Heritage Memoir Design Tokens
@@ -60,7 +42,14 @@ const MINUTES = Array.from({ length: 60 }, (_, i) => i);
 /**
  * Individual wheel column
  */
-function WheelColumn({
+// Helper functions
+const formatHour = (h: number) => h.toString().padStart(2, '0');
+const formatMinute = (m: number) => m.toString().padStart(2, '0');
+
+/**
+ * Individual wheel column
+ */
+const WheelColumn = memo(function WheelColumn({
   items,
   selectedIndex,
   onSelect,
@@ -113,16 +102,9 @@ function WheelColumn({
   }, []);
 
   return (
-    <View className="overflow-hidden" style={{ width: 80, height: PICKER_HEIGHT }} testID={testID}>
+    <View className="w-20 h-[280px] overflow-hidden" testID={testID}>
       {/* Selection indicator */}
-      <View
-        className="absolute left-0 right-0 -z-10 rounded-xl"
-        style={{
-          top: ITEM_HEIGHT * 2,
-          height: ITEM_HEIGHT,
-          backgroundColor: `${TOKENS.primary}15`
-        }}
-      />
+      <View className="absolute top-[112px] left-0 right-0 h-14 bg-[#B85A3B26] rounded-xl -z-10" />
 
       <ScrollView
         ref={scrollViewRef}
@@ -139,8 +121,7 @@ function WheelColumn({
           return (
             <Pressable
               key={item}
-              className="items-center justify-center"
-              style={{ height: ITEM_HEIGHT }}
+              className="h-14 items-center justify-center"
               onPress={() => {
                 onSelect(index);
                 scrollViewRef.current?.scrollTo({
@@ -150,9 +131,11 @@ function WheelColumn({
                 Haptics.selectionAsync();
               }}>
               <AppText
-                className={isSelected ? "text-3xl font-semibold" : "text-3xl"}
-                style={{ color: isSelected ? TOKENS.primary : TOKENS.textMuted }}
-              >
+                className={
+                  isSelected
+                    ? 'text-[32px] font-semibold text-[#B85A3B]'
+                    : 'text-[28px] text-[#475569]'
+                }>
                 {formatItem(item)}
               </AppText>
             </Pressable>
@@ -161,7 +144,7 @@ function WheelColumn({
       </ScrollView>
     </View>
   );
-}
+});
 
 export function HeritageTimePicker({
   visible,
@@ -193,9 +176,6 @@ export function HeritageTimePicker({
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, [selectedHour, selectedMinute, onConfirm]);
 
-  const formatHour = (h: number) => h.toString().padStart(2, '0');
-  const formatMinute = (m: number) => m.toString().padStart(2, '0');
-
   // Display time
   const displayTime = `${formatHour(selectedHour)}:${formatMinute(selectedMinute)}`;
 
@@ -208,13 +188,15 @@ export function HeritageTimePicker({
       testID={testID}>
       <View className="p-6">
         {/* Header */}
-        <View className="mb-6 items-center">
-          <AppText className="text-lg mb-2" style={{ color: TOKENS.textMuted }}>{title}</AppText>
-          <AppText className="text-5xl" style={{ fontFamily: 'Fraunces_600SemiBold', color: TOKENS.primary, letterSpacing: 2 }}>{displayTime}</AppText>
+        <View className="items-center mb-6">
+          <AppText className="text-lg text-[#475569] mb-2">{title}</AppText>
+          <AppText className="text-5xl font-serif font-semibold text-[#B85A3B] tracking-widest">
+            {displayTime}
+          </AppText>
         </View>
 
         {/* Wheel Picker */}
-        <View className="flex-row items-center justify-center mb-6" style={{ height: PICKER_HEIGHT }}>
+        <View className="flex-row items-center justify-center h-[280px] mb-6">
           {/* Hours */}
           <WheelColumn
             items={HOURS}
@@ -226,7 +208,7 @@ export function HeritageTimePicker({
 
           {/* Separator */}
           <View className="w-6 items-center justify-center">
-            <AppText className="text-4xl font-semibold" style={{ color: TOKENS.primary }}>:</AppText>
+            <AppText className="text-[40px] font-semibold text-[#B85A3B]">:</AppText>
           </View>
 
           {/* Minutes */}
@@ -242,27 +224,20 @@ export function HeritageTimePicker({
         {/* Actions */}
         <View className="flex-row gap-3">
           <Pressable
-            className="flex-1 min-h-[56px] items-center justify-center rounded-2xl border-[1.5px] bg-transparent py-4"
-            style={{ borderColor: TOKENS.border }}
+            className="flex-1 bg-transparent rounded-2xl border-[1.5px] border-[#E2E8F0] py-4 items-center justify-center min-h-[56px]"
             onPress={onCancel}
             accessibilityRole="button"
             accessibilityLabel="Cancel">
-            <AppText className="text-lg font-semibold" style={{ color: TOKENS.textMuted }}>Cancel</AppText>
+            <AppText className="text-lg font-semibold text-[#475569]">Cancel</AppText>
           </Pressable>
 
           <Pressable
-            className="flex-1 min-h-[56px] items-center justify-center rounded-2xl py-4 shadow-sm elevation-[4]"
-            style={{
-              backgroundColor: TOKENS.primary,
-              shadowColor: TOKENS.primary,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.25,
-              shadowRadius: 8,
-            }}
+            className="flex-1 bg-[#B85A3B] rounded-2xl py-4 items-center justify-center min-h-[56px] shadow-sm elevation-4"
+            style={{ shadowColor: TOKENS.primary }}
             onPress={handleConfirm}
             accessibilityRole="button"
             accessibilityLabel="Confirm time selection">
-            <AppText className="text-lg font-semibold" style={{ color: TOKENS.onPrimary }}>Confirm</AppText>
+            <AppText className="text-lg font-semibold text-white">Confirm</AppText>
           </Pressable>
         </View>
       </View>
@@ -271,4 +246,3 @@ export function HeritageTimePicker({
 }
 
 export default HeritageTimePicker;
-

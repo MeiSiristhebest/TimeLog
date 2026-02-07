@@ -32,7 +32,6 @@ import { Ionicons } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
 import { useHeritageTheme } from '../../../theme/heritage';
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
 type ButtonSize = 'small' | 'medium' | 'large';
 
 type HeritageButtonProps = {
@@ -65,8 +64,6 @@ type HeritageButtonProps = {
   /** NativeWind class name */
   className?: string;
 };
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function HeritageButton({
   title,
@@ -241,82 +238,67 @@ export function HeritageButton({
   }));
 
   return (
-    <AnimatedPressable
+    <Animated.View
       style={[
-        styles.container,
         sizeStyles.container,
         variantStyles.container,
-        fullWidth && styles.fullWidth,
-        variant === 'primary' && { ...styles.shadow, shadowColor: theme.colors.shadow },
+        variant === 'primary' && { boxShadow: '0 6px 12px rgba(0, 0, 0, 0.15)', shadowColor: theme.colors.shadow },
         animatedStyle,
         style,
       ]}
-      className={props.className}
-      onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      disabled={disabled || loading}
-      accessibilityLabel={accessibilityLabel || title}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: disabled || loading }}>
-      {loading ? (
-        <ActivityIndicator size="small" color={variantStyles.text.color as string} />
-      ) : (
-        <>
-          {iconElement}
-          {icon && !iconElement && (
-            <Ionicons
-              name={icon}
-              size={sizeStyles.iconSize}
-              color={variantStyles.iconColor}
-              style={styles.iconLeft}
-            />
-          )}
-          <AppText
-            variant="label"
-            style={[styles.text, sizeStyles.text, variantStyles.text, textStyle]}>
-            {title}
-          </AppText>
-          {iconRight && (
-            <Ionicons
-              name={iconRight}
-              size={sizeStyles.iconSize}
-              color={variantStyles.iconColor}
-              style={styles.iconRight}
-            />
-          )}
-        </>
-      )}
-    </AnimatedPressable>
+      // Apply className to the View, not the Pressable, to ensure styles render
+      className={`${styles.container} ${fullWidth ? styles.fullWidth : ''} ${props.className || ''}`}>
+      <Pressable
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled || loading}
+        accessibilityLabel={accessibilityLabel || title}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: disabled || loading }}
+        style={{ width: '100%', height: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color={variantStyles.text.color as string} />
+        ) : (
+          <>
+            {iconElement}
+            {icon && !iconElement && (
+              <Ionicons
+                name={icon}
+                size={sizeStyles.iconSize}
+                color={variantStyles.iconColor}
+                style={[{ marginRight: 8 }]}
+              />
+            )}
+            <AppText
+              variant="label"
+              style={[sizeStyles.text, variantStyles.text, textStyle]}
+              className={styles.text}>
+              {title}
+            </AppText>
+            {iconRight && (
+              <Ionicons
+                name={iconRight}
+                size={sizeStyles.iconSize}
+                color={variantStyles.iconColor}
+                style={[{ marginLeft: 8 }]}
+              />
+            )}
+          </>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fullWidth: {
-    width: '100%',
-  },
-  shadow: {
-    // shadowColor: 'black',
-    // shadowOffset: { width: 0, height: 6 },
-    // shadowRadius: 12,
-    // elevation: 8,
-    // @ts-ignore - React Native 0.76+ / Expo 52+ supports boxShadow
-    boxShadow: '0 6px 12px rgba(0, 0, 0, 0.15)',
-  },
-  text: {
-    fontWeight: '600',
-  },
-  iconLeft: {
-    marginRight: 8,
-  },
-  iconRight: {
-    marginLeft: 8,
-  },
-});
+const styles = {
+  container: 'flex-row items-center justify-center',
+  fullWidth: 'w-full',
+  // Using inline style for specific shadow until NativeWind shadow classes are fully verified
+  text: 'font-semibold',
+  iconLeft: 'mr-2',
+  iconRight: 'ml-2',
+} as const;
 
 export default HeritageButton;

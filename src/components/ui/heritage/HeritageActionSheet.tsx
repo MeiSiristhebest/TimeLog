@@ -1,25 +1,3 @@
-/**
- * HeritageActionSheet - iOS-style action sheet.
- *
- * Features:
- * - Option rows with icons
- * - Destructive action highlight
- * - Cancel button
- * - Slide-up animation
- * - Heritage Memoir styling
- *
- * @example
- * <HeritageActionSheet
- *   visible={showSheet}
- *   onClose={() => setShowSheet(false)}
- *   title="Choose an action"
- *   options={[
- *     { label: 'Edit', icon: 'pencil', onPress: handleEdit },
- *     { label: 'Delete', icon: 'trash', destructive: true, onPress: handleDelete },
- *   ]}
- * />
- */
-
 import { AppText } from '@/components/ui/AppText';
 import { useEffect, useCallback } from 'react';
 import { View, Pressable, StyleSheet, Modal } from 'react-native';
@@ -32,19 +10,9 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
+import { useHeritageTheme } from '@/theme/heritage';
 
-// Heritage Memoir Design Tokens
-const TOKENS = {
-  surface: '#FFFCF7',
-  surfaceSecondary: '#F9F3E8',
-  onSurface: '#1E293B',
-  textMuted: '#475569',
-  primary: '#B85A3B',
-  destructive: '#B84A4A',
-  backdrop: 'rgba(30, 41, 59, 0.4)',
-  border: '#E2E8F0',
-  radius: 16,
-} as const;
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type ActionOption = {
   label: string;
@@ -63,8 +31,6 @@ type HeritageActionSheetProps = {
   cancelLabel?: string;
 };
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 export function HeritageActionSheet({
   visible,
   onClose,
@@ -76,6 +42,7 @@ export function HeritageActionSheet({
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(300);
   const backdropOpacity = useSharedValue(0);
+  const { colors } = useHeritageTheme();
 
   useEffect(() => {
     if (visible) {
@@ -120,19 +87,29 @@ export function HeritageActionSheet({
       animationType="none"
       statusBarTranslucent
       onRequestClose={onClose}>
-      <View style={styles.container}>
+      <View className={styles.container}>
         {/* Backdrop */}
-        <AnimatedPressable style={[styles.backdrop, backdropStyle]} onPress={handleCancel} />
+        <AnimatedPressable
+          className="absolute inset-0"
+          style={[{ backgroundColor: colors.backdrop }, backdropStyle]}
+          onPress={handleCancel}
+        />
 
         {/* Sheet */}
-        <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 8 }, sheetStyle]}>
+        <Animated.View
+          style={[
+            sheetStyle,
+            { paddingBottom: insets.bottom + 8 }
+          ]}
+          className={styles.sheet}
+        >
           {/* Options Group */}
-          <View style={styles.optionsGroup}>
+          <View className={styles.optionsGroup} style={{ backgroundColor: colors.surface }}>
             {/* Header */}
             {(title || message) && (
-              <View style={styles.header}>
-                {title && <AppText style={styles.title}>{title}</AppText>}
-                {message && <AppText style={styles.message}>{message}</AppText>}
+              <View className={styles.header} style={{ borderBottomColor: colors.border }}>
+                {title && <AppText className={styles.title} style={{ color: colors.textMuted }}>{title}</AppText>}
+                {message && <AppText className={styles.message} style={{ color: colors.textMuted }}>{message}</AppText>}
               </View>
             )}
 
@@ -141,28 +118,29 @@ export function HeritageActionSheet({
               <Pressable
                 key={index}
                 style={({ pressed }) => [
-                  styles.option,
-                  index === 0 && !title && !message && styles.optionFirst,
-                  index === options.length - 1 && styles.optionLast,
-                  pressed && styles.optionPressed,
-                  option.disabled && styles.optionDisabled,
+                  {
+                    borderTopWidth: index === 0 && !title && !message ? 0 : 0.5,
+                    borderTopColor: colors.border,
+                    backgroundColor: pressed ? colors.surfaceAccent : 'transparent'
+                  },
+                  option.disabled && { opacity: 0.4 }
                 ]}
+                className={`${styles.option} ${index === 0 && !title && !message ? 'border-t-0' : ''}`}
                 onPress={() => handleOptionPress(option)}
                 disabled={option.disabled}>
                 {option.icon && (
                   <Ionicons
                     name={option.icon}
                     size={22}
-                    color={option.destructive ? TOKENS.destructive : TOKENS.onSurface}
-                    style={styles.optionIcon}
+                    color={option.destructive ? colors.error : colors.onSurface}
+                    style={{ marginRight: 12 }}
                   />
                 )}
                 <AppText
-                  style={[
-                    styles.optionLabel,
-                    option.destructive && styles.optionLabelDestructive,
-                    option.disabled && styles.optionLabelDisabled,
-                  ]}>
+                  className={styles.optionLabel}
+                  style={{
+                    color: option.destructive ? colors.error : colors.primary
+                  }}>
                   {option.label}
                 </AppText>
               </Pressable>
@@ -171,9 +149,10 @@ export function HeritageActionSheet({
 
           {/* Cancel Button */}
           <Pressable
-            style={({ pressed }) => [styles.cancelButton, pressed && styles.cancelPressed]}
+            style={({ pressed }) => [{ backgroundColor: pressed ? colors.surfaceAccent : colors.surface }]}
+            className={styles.cancelButton}
             onPress={handleCancel}>
-            <AppText style={styles.cancelText}>{cancelLabel}</AppText>
+            <AppText className={styles.cancelText} style={{ color: colors.primary }}>{cancelLabel}</AppText>
           </Pressable>
         </Animated.View>
       </View>
@@ -181,89 +160,17 @@ export function HeritageActionSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: TOKENS.backdrop,
-  },
-  sheet: {
-    paddingHorizontal: 8,
-  },
-  optionsGroup: {
-    backgroundColor: TOKENS.surface,
-    borderRadius: TOKENS.radius,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  header: {
-    padding: 16,
-    alignItems: 'center',
-    borderBottomWidth: 0.5,
-    borderBottomColor: TOKENS.border,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: TOKENS.textMuted,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: 13,
-    color: TOKENS.textMuted,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    borderTopWidth: 0.5,
-    borderTopColor: TOKENS.border,
-  },
-  optionFirst: {
-    borderTopWidth: 0,
-  },
-  optionLast: {},
-  optionPressed: {
-    backgroundColor: TOKENS.surfaceSecondary,
-  },
-  optionDisabled: {
-    opacity: 0.4,
-  },
-  optionIcon: {
-    marginRight: 12,
-  },
-  optionLabel: {
-    fontSize: 20,
-    color: TOKENS.primary,
-    fontWeight: '500',
-  },
-  optionLabelDestructive: {
-    color: TOKENS.destructive,
-  },
-  optionLabelDisabled: {
-    color: TOKENS.textMuted,
-  },
-  cancelButton: {
-    backgroundColor: TOKENS.surface,
-    borderRadius: TOKENS.radius,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  cancelPressed: {
-    backgroundColor: TOKENS.surfaceSecondary,
-  },
-  cancelText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: TOKENS.primary,
-  },
-});
+const styles = {
+  container: 'flex-1 justify-end',
+  sheet: 'px-2',
+  optionsGroup: 'rounded-xl overflow-hidden mb-2',
+  header: 'p-4 items-center border-b-[0.5px]',
+  title: 'text-sm font-semibold text-center',
+  message: 'text-xs text-center mt-1',
+  option: 'flex-row items-center justify-center py-[18px] px-4',
+  optionLabel: 'text-xl font-medium',
+  cancelButton: 'rounded-xl py-[18px] items-center',
+  cancelText: 'text-xl font-semibold',
+} as const;
 
 export default HeritageActionSheet;

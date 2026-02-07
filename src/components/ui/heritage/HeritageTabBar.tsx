@@ -16,12 +16,6 @@ import { useHeritageTheme } from '@/theme/heritage';
 const ICON_SIZE = 28;
 
 // Colors from HTML design (updated for WCAG AA accessibility)
-const COLORS = {
-  primary: '#B85A3B', // Updated from #c36b4b for better contrast
-  background: '#FFFAF5',
-  border: '#eee9e6',
-  inactive: '#9e9491',
-};
 
 type TabConfig = {
   name: string;
@@ -60,6 +54,10 @@ function TabItem({ route, index, state, navigation }: TabItemProps): JSX.Element
   const { colors, typography } = theme;
   const scale = typography.body / 24;
 
+  // Theme-aware colors
+  const activeColor = colors.primary;
+  const inactiveColor = colors.textMuted;
+
   const handlePress = useCallback(() => {
     const event = navigation.emit({
       type: 'tabPress',
@@ -75,40 +73,62 @@ function TabItem({ route, index, state, navigation }: TabItemProps): JSX.Element
 
   const labelStyle = useAnimatedStyle(() => {
     return {
-      opacity: withTiming(isFocused ? 1 : 0.8, { duration: 200 }),
+      // Tab Bar Physics - 300ms
+      opacity: withTiming(isFocused ? 1 : 0.8, { duration: 300 }),
     };
   });
 
   return (
     <Pressable
-      style={styles.tabItem}
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 8,
+      }}
       onPress={handlePress}
       accessibilityRole="button"
       accessibilityState={{ selected: isFocused }}
       accessibilityLabel={config.label}>
       {isFocused && (
         <Animated.View
-          entering={FadeIn.duration(200)}
-          exiting={FadeOut.duration(200)}
-          style={[styles.topIndicator, { backgroundColor: COLORS.primary }]}
+          entering={FadeIn.duration(300)}
+          exiting={FadeOut.duration(300)}
+          style={{
+            position: 'absolute',
+            top: -12,
+            width: 48,
+            height: 3,
+            borderBottomLeftRadius: 6,
+            borderBottomRightRadius: 6,
+            backgroundColor: activeColor,
+          }}
         />
       )}
 
-      <View style={styles.iconContainer}>
+      <View
+        style={{
+          marginBottom: 4,
+          width: 30,
+          height: 30,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
         <Ionicons
           name={isFocused ? config.iconActive : config.icon}
           size={ICON_SIZE}
-          color={isFocused ? COLORS.primary : COLORS.inactive}
+          color={isFocused ? activeColor : inactiveColor}
         />
       </View>
 
       <Animated.Text
+        allowFontScaling={false}
         style={[
-          styles.label,
           {
-            color: isFocused ? COLORS.primary : COLORS.inactive,
+            color: isFocused ? activeColor : inactiveColor,
             fontWeight: isFocused ? '700' : '500',
             fontSize: Math.round(12 * scale),
+            letterSpacing: 0.3,
           },
           labelStyle,
         ]}>
@@ -116,8 +136,20 @@ function TabItem({ route, index, state, navigation }: TabItemProps): JSX.Element
       </Animated.Text>
 
       {config.badge && config.badge > 0 && (
-        <View style={[styles.badge, { backgroundColor: colors.error }]}>
-          <AppText style={[styles.badgeText, { color: colors.onPrimary }]}>
+        <View
+          style={{
+            backgroundColor: colors.error,
+            top: 4,
+            right: 20,
+            height: 16,
+            minWidth: 16,
+            borderRadius: 8,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: 4,
+            position: 'absolute',
+          }}>
+          <AppText style={{ color: colors.onPrimary }} className="text-[10px] font-bold">
             {config.badge > 9 ? '9+' : config.badge}
           </AppText>
         </View>
@@ -148,14 +180,22 @@ export function HeritageTabBar({ state, descriptors, navigation }: BottomTabBarP
   return (
     <View
       style={[
-        styles.container,
         {
+          width: '100%',
+          borderTopWidth: 1,
           paddingBottom: insets.bottom || 8,
-          backgroundColor: theme.isDark ? colors.surfaceDim : COLORS.background,
-          borderTopColor: theme.isDark ? 'rgba(255,255,255,0.1)' : COLORS.border,
+          backgroundColor: theme.isDark ? colors.surfaceDim : colors.surface,
+          borderTopColor: theme.isDark ? 'rgba(255,255,255,0.1)' : colors.border,
         },
       ]}>
-      <View style={styles.tabsContainer}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-around',
+          paddingTop: 12,
+          paddingBottom: 8,
+        }}>
         {visibleRoutes.map((route, visibleIndex: number) => (
           <TabItem
             key={route.key}
@@ -169,59 +209,5 @@ export function HeritageTabBar({ state, descriptors, navigation }: BottomTabBarP
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignSelf: 'stretch',
-    borderTopWidth: 1,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-  },
-  iconContainer: {
-    height: 30,
-    width: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  topIndicator: {
-    position: 'absolute',
-    top: -12,
-    width: 48,
-    height: 3,
-    borderBottomLeftRadius: 4,
-    borderBottomRightRadius: 4,
-  },
-  label: {
-    fontSize: 12,
-    letterSpacing: 0.5,
-  },
-  badge: {
-    position: 'absolute',
-    top: 4,
-    right: 20,
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-});
 
 export default HeritageTabBar;

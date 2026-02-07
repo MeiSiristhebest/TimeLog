@@ -1,11 +1,11 @@
-import { AppText } from '@/components/ui/AppText';
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useHeritageTheme } from '@/theme/heritage';
 import { HeritageButton } from '../heritage/HeritageButton';
 import { checkNetworkOnline } from '@/features/shared/services/networkService';
+import { AppText } from '@/components/ui/AppText';
+import React from 'react';
+import { View } from 'react-native';
 
 interface OfflineScreenProps {
   onRetry?: () => void;
@@ -22,24 +22,25 @@ export function OfflineScreen({ onRetry }: OfflineScreenProps): JSX.Element {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.surface }]}>
-      <View style={styles.content}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }}>
+      <View className="flex-1 items-center justify-center">
+        <View className="w-full max-w-[420px] px-6 items-center gap-8">
         {/* Icon Section */}
-        <View style={styles.iconWrapper}>
-          <View style={[styles.iconCircle, { backgroundColor: `${colors.error}15` }]}>
+        <View className="items-center justify-center">
+          <View className="h-40 w-40 items-center justify-center rounded-full" style={{ backgroundColor: `${colors.error}15` }}>
             <Ionicons name="cloud-offline" size={80} color={colors.error} />
           </View>
         </View>
 
-        <View style={styles.textContainer}>
-          <AppText style={[styles.title, { color: colors.onSurface }]}>No connection</AppText>
-          <AppText style={[styles.subtitle, { color: colors.textMuted }]}>
+        <View className="items-center gap-3">
+          <AppText className="text-4xl font-bold tracking-tighter" style={{ fontFamily: 'Fraunces_600SemiBold', color: colors.onSurface }}>No connection</AppText>
+          <AppText className="text-lg text-center leading-7 max-w-xs" style={{ color: colors.textMuted }}>
             Your memories are safe, but we need the internet to upload them.
           </AppText>
         </View>
 
         {/* Action Button */}
-        <View style={styles.buttonContainer}>
+        <View className="w-full max-w-[280px] mt-4">
           <HeritageButton
             title="Try Again"
             onPress={handleRetry}
@@ -50,54 +51,8 @@ export function OfflineScreen({ onRetry }: OfflineScreenProps): JSX.Element {
             textStyle={{ color: colors.primary, letterSpacing: 0.5, fontWeight: '700' }}
           />
         </View>
+        </View>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: {
-    width: '100%',
-    maxWidth: 420,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    gap: 32,
-  },
-  iconWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconCircle: {
-    width: 160, // approximate padding 10 * 4 + 80 size
-    height: 160,
-    borderRadius: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  textContainer: {
-    alignItems: 'center',
-    gap: 12,
-  },
-  title: {
-    fontSize: 32, // md:text-4xl
-    fontFamily: 'Fraunces_600SemiBold', // Fallback to Serif
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 18,
-    textAlign: 'center',
-    lineHeight: 28,
-    maxWidth: 320,
-  },
-  buttonContainer: {
-    width: '100%',
-    maxWidth: 280,
-    marginTop: 16,
-  },
-});

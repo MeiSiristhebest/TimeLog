@@ -1,25 +1,3 @@
-/**
- * HeritageSwipeableRow - Swipeable list item with actions.
- *
- * Features:
- * - Left/right actions reveal
- * - Haptic feedback at thresholds
- * - Auto-snap back
- * - Heritage Memoir styling
- *
- * @example
- * <HeritageSwipeableRow
- *   leftActions={[
- *     { icon: 'archive', color: '#6B8E6B', onPress: handleArchive }
- *   ]}
- *   rightActions={[
- *     { icon: 'trash', color: '#B84A4A', onPress: handleDelete }
- *   ]}
- * >
- *   <YourListItemContent />
- * </HeritageSwipeableRow>
- */
-
 import { AppText } from '@/components/ui/AppText';
 import { ReactNode, useCallback, useRef } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
@@ -33,7 +11,6 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Ionicons } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
 
-const ACTION_WIDTH = 80;
 const THRESHOLD = 40;
 
 type SwipeAction = {
@@ -61,6 +38,7 @@ export function HeritageSwipeableRow({
   const translateX = useSharedValue(0);
   const hasTriggeredHaptic = useRef(false);
   const startX = useRef(0);
+  const { colors } = useHeritageTheme();
 
   const maxLeftSwipe = leftActions.length * ACTION_WIDTH;
   const maxRightSwipe = rightActions.length * ACTION_WIDTH;
@@ -144,17 +122,21 @@ export function HeritageSwipeableRow({
   );
 
   return (
-    <View style={styles.container}>
+    <View className={styles.container}>
       {/* Left actions */}
       {leftActions.length > 0 && (
-        <Animated.View style={[styles.actionsContainer, styles.leftActions, leftActionsStyle]}>
+        <Animated.View
+          className={`${styles.actionsContainer} ${styles.leftActions}`}
+          style={leftActionsStyle}
+        >
           {leftActions.map((action, index) => (
             <Pressable
               key={index}
-              style={[styles.action, { backgroundColor: action.color }]}
+              className={styles.action}
+              style={{ backgroundColor: action.color }}
               onPress={() => handleActionPress(action)}>
               <Ionicons name={action.icon} size={24} color="#FFFFFF" />
-              {action.label && <AppText style={styles.actionLabel}>{action.label}</AppText>}
+              {action.label && <AppText className={styles.actionLabel}>{action.label}</AppText>}
             </Pressable>
           ))}
         </Animated.View>
@@ -162,14 +144,18 @@ export function HeritageSwipeableRow({
 
       {/* Right actions */}
       {rightActions.length > 0 && (
-        <Animated.View style={[styles.actionsContainer, styles.rightActions, rightActionsStyle]}>
+        <Animated.View
+          className={`${styles.actionsContainer} ${styles.rightActions}`}
+          style={rightActionsStyle}
+        >
           {rightActions.map((action, index) => (
             <Pressable
               key={index}
-              style={[styles.action, { backgroundColor: action.color }]}
+              className={styles.action}
+              style={{ backgroundColor: action.color }}
               onPress={() => handleActionPress(action)}>
               <Ionicons name={action.icon} size={24} color="#FFFFFF" />
-              {action.label && <AppText style={styles.actionLabel}>{action.label}</AppText>}
+              {action.label && <AppText className={styles.actionLabel}>{action.label}</AppText>}
             </Pressable>
           ))}
         </Animated.View>
@@ -177,47 +163,28 @@ export function HeritageSwipeableRow({
 
       {/* Content */}
       <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.content, rowStyle]}>{children}</Animated.View>
+        <Animated.View
+          className={styles.content}
+          style={[
+            { backgroundColor: colors.surface },
+            rowStyle
+          ]}
+        >
+          {children}
+        </Animated.View>
       </GestureDetector>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    overflow: 'hidden',
-  },
-  actionsContainer: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    flexDirection: 'row',
-    overflow: 'hidden',
-  },
-  leftActions: {
-    left: 0,
-    justifyContent: 'flex-start',
-  },
-  rightActions: {
-    right: 0,
-    justifyContent: 'flex-end',
-  },
-  action: {
-    width: ACTION_WIDTH,
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-  },
-  actionLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginTop: 4,
-  },
-  content: {
-    backgroundColor: '#FFFCF7',
-  },
-});
+const styles = {
+  container: 'overflow-hidden',
+  actionsContainer: 'absolute top-0 bottom-0 flex-row overflow-hidden',
+  leftActions: 'left-0 justify-start',
+  rightActions: 'right-0 justify-end',
+  action: 'w-20 h-full items-center justify-center px-2',
+  actionLabel: 'text-xs font-semibold text-white mt-1',
+  content: '',
+} as const;
 
 export default HeritageSwipeableRow;

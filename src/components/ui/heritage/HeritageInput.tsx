@@ -63,8 +63,6 @@ type HeritageInputProps = Omit<TextInputProps, 'style'> & {
 
 type HeritageColors = ReturnType<typeof useHeritageTheme>['colors'];
 
-const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
-
 function getInputIconColor(hasError: boolean, isFocused: boolean, colors: HeritageColors): string {
   if (hasError) return colors.error;
   if (isFocused) return colors.primary;
@@ -91,7 +89,7 @@ export function HeritageInput({
   const labelFontSize = Math.round(18 * scale);
 
   const [isFocused, setIsFocused] = useState(false);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<React.ElementRef<typeof TextInput>>(null);
 
   // Animation values
   const focusProgress = useSharedValue(0);
@@ -162,10 +160,10 @@ export function HeritageInput({
     borderColor: hasError
       ? colors.error
       : interpolateColor(
-          focusProgress.value,
-          [0, 1],
-          [colors.border, colors.handleActive] // Use handleActive (primary) for focus
-        ),
+        focusProgress.value,
+        [0, 1],
+        [colors.border, colors.handleActive] // Use handleActive (primary) for focus
+      ),
     backgroundColor: colors.surface,
   }));
 
@@ -192,15 +190,15 @@ export function HeritageInput({
   }));
 
   return (
-    <View style={[styles.wrapper, containerStyle]}>
+    <View style={[containerStyle]} className={`${styles.wrapper} ${props.className || ''}`}>
       <Pressable onPress={handleContainerPress}>
         {/* Focus glow */}
-        <Animated.View style={[styles.glow, glowStyle]} />
+        <Animated.View style={[glowStyle]} className={styles.glow} />
 
-        <Animated.View style={[styles.container, containerAnimatedStyle]}>
+        <Animated.View style={[containerAnimatedStyle]} className={styles.container}>
           {/* Left icon */}
           {leftIcon && (
-            <View style={styles.leftIconContainer}>
+            <View className={styles.leftIconContainer}>
               <Ionicons
                 name={leftIcon}
                 size={22}
@@ -210,20 +208,16 @@ export function HeritageInput({
           )}
 
           {/* Input area */}
-          <View style={styles.inputArea}>
+          <View className={styles.inputArea}>
             {/* Floating label */}
-            <Animated.Text style={[styles.label, labelAnimatedStyle, { fontSize: labelFontSize }]}>
-              {label}
-            </Animated.Text>
-
-            {/* Text input */}
-            <AnimatedTextInput
+            {/* @ts-ignore */}
+            <Animated.TextInput
               ref={inputRef}
               style={[
-                styles.input,
                 { color: colors.onSurface, fontSize: labelFontSize },
                 props.inputStyle,
               ]}
+              className={styles.input}
               value={value}
               onChangeText={onChangeText}
               onFocus={handleFocus}
@@ -239,7 +233,7 @@ export function HeritageInput({
 
           {/* Clear button */}
           {showClear && hasValue && (
-            <Pressable style={styles.clearButton} onPress={handleClear} hitSlop={12}>
+            <Pressable className={styles.clearButton} onPress={handleClear} hitSlop={12}>
               <Ionicons name="close-circle" size={20} color={colors.textMuted} />
             </Pressable>
           )}
@@ -247,10 +241,10 @@ export function HeritageInput({
       </Pressable>
 
       {/* Bottom row: error or counter */}
-      <View style={styles.bottomRow}>
-        {hasError && <AppText style={[styles.errorText, { color: colors.error }]}>{error}</AppText>}
+      <View className={styles.bottomRow}>
+        {hasError && <AppText style={{ color: colors.error }} className={styles.errorText}>{error}</AppText>}
         {showCounter && maxLength && (
-          <AppText style={[styles.counter, { color: colors.textMuted }]}>
+          <AppText style={{ color: colors.textMuted }} className={styles.counter}>
             {value?.length || 0}/{maxLength}
           </AppText>
         )}
@@ -259,61 +253,18 @@ export function HeritageInput({
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    marginBottom: 16,
-  },
-  glow: {
-    position: 'absolute',
-    top: -4,
-    left: -4,
-    right: -4,
-    bottom: -4,
-    borderRadius: 20,
-  },
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 16,
-    minHeight: 64,
-    paddingHorizontal: 16,
-  },
-  leftIconContainer: {
-    marginRight: 12,
-  },
-  inputArea: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingVertical: 20,
-  },
-  label: {
-    position: 'absolute',
-    left: 0,
-    fontSize: 18,
-    fontWeight: '500',
-    paddingHorizontal: 4,
-  },
-  input: {
-    fontSize: 18,
-    padding: 0,
-    margin: 0,
-  },
-  clearButton: {
-    padding: 4,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 4,
-    paddingHorizontal: 4,
-  },
-  errorText: {
-    fontSize: 14,
-    flex: 1,
-  },
-  counter: {
-    fontSize: 14,
-  },
-});
+const styles = {
+  wrapper: 'mb-4',
+  glow: 'absolute -top-1 -left-1 -right-1 -bottom-1 rounded-[20px]',
+  container: 'flex-row items-center rounded-2xl min-h-[64px] px-4',
+  leftIconContainer: 'mr-3',
+  inputArea: 'flex-1 justify-center py-5',
+  label: 'absolute left-0 text-lg font-medium px-1',
+  input: 'text-lg p-0 m-0',
+  clearButton: 'p-1',
+  bottomRow: 'flex-row justify-between mt-1 px-1',
+  errorText: 'text-sm flex-1',
+  counter: 'text-sm',
+} as const;
 
 export default HeritageInput;

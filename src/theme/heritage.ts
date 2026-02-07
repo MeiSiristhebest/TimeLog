@@ -9,6 +9,9 @@ import { useColorScheme } from 'nativewind';
 import { useEffect, useMemo } from 'react';
 import { Easing } from 'react-native-reanimated';
 import { useDisplaySettingsStore } from '@/features/settings/store/displaySettingsStore';
+import { DEFAULT_FONT_SCALE_INDEX, FONT_SCALE_STEPS } from './fontScale';
+
+export { DEFAULT_FONT_SCALE_INDEX, FONT_SCALE_LABELS, FONT_SCALE_STEPS } from './fontScale';
 
 // ------------------------------------------------------------------
 // 1. TOKENS - The Visual Language
@@ -20,6 +23,7 @@ export const PALETTE = {
   primaryDeep: '#C26B4A',
   primarySoft: '#FDF2EE',
   primaryMuted: '#EABFAA',
+  tertiary: '#6B8C9E', // blueAccent mapped as tertiary
 
   // Backgrounds - from HTML mockup
   surface: '#FFFAF5', // background-cream
@@ -76,6 +80,7 @@ export const DARK_PALETTE = {
   primaryDeep: '#A65D45',
   primarySoft: '#352E28',
   primaryMuted: '#8A5A4A',
+  tertiary: '#7AA3D6', // blueAccent mapped as tertiary
 
   // Backgrounds
   surface: '#1A1612', // background-dark
@@ -143,18 +148,6 @@ export const RADIUS = {
   pill: 999,
 } as const;
 
-export const FONT_SCALE_STEPS = [0.9, 0.96, 1.0, 1.08, 1.16, 1.24, 1.32] as const;
-export const FONT_SCALE_LABELS = [
-  'Small',
-  'Medium',
-  'Standard',
-  'Large',
-  'Extra Large',
-  'Huge',
-  'Max',
-] as const;
-export const DEFAULT_FONT_SCALE_INDEX = 2;
-
 // ------------------------------------------------------------------
 // 2. ANIMATION - The "Physics" of Quality
 // ------------------------------------------------------------------
@@ -165,10 +158,11 @@ export const DEFAULT_FONT_SCALE_INDEX = 2;
  * No wobbly retention.
  */
 export const ANIMATION_CONFIGS = {
-  // Button Presses - Snappy but noticeable
+  // Button Presses - "Heavy Book" Feel
+  // High damping + Low stiffness = Stable, solid, no jitter
   press: {
-    damping: 15,
-    stiffness: 400,
+    damping: 30, // Increased from 15
+    stiffness: 250, // Decreased from 400
     mass: 1,
   },
 
@@ -192,6 +186,18 @@ export const ANIMATION_CONFIGS = {
   },
 } as const;
 
+export const ANIMATION_DURATIONS = {
+  // Global Navigation
+  SCREEN_TRANSITION: 400, // iOS style, slower
+
+  // Core Interaction
+  CARD_FLIP_OUT: 200, // Faster exit
+  CARD_FLIP_IN: 500, // "Flowing" enter (Discovery)
+
+  // Tab Bar
+  TAB_INDICATOR: 300,
+} as const;
+
 // ------------------------------------------------------------------
 // 3. HOOKS - Usage
 // ------------------------------------------------------------------
@@ -201,6 +207,7 @@ type HeritageTheme = {
   spacing: typeof SPACING;
   radius: typeof RADIUS;
   animation: typeof ANIMATION_CONFIGS;
+  animationDurations: typeof ANIMATION_DURATIONS;
   typography: HeritageTypography;
   fontScaleIndex: number;
   isDark: boolean;
@@ -241,6 +248,7 @@ export function createHeritageTheme({
     spacing: SPACING,
     radius: RADIUS,
     animation: ANIMATION_CONFIGS,
+    animationDurations: ANIMATION_DURATIONS,
     typography: createTypography(scale),
     fontScaleIndex,
     isDark,
