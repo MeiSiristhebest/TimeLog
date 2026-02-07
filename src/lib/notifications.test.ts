@@ -70,7 +70,6 @@ jest.mock('./supabase', () => ({
     })),
   },
 }));
-
 import {
   getNotificationPermissionStatus,
   requestNotificationPermission,
@@ -86,7 +85,6 @@ import {
   getBadgeCount,
   setBadgeCount,
 } from './notifications';
-
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { supabase } from './supabase';

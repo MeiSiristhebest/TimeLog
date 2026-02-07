@@ -18,7 +18,7 @@ import { createLazyComponent, preloadComponents } from './lazyLoading';
  */
 export const LazyWaveformVisualizer = createLazyComponent(
   () => import('@/features/recorder/components/WaveformVisualizer') as any,
-  { fallback: 'skeleton' }
+  { fallback: 'none' }
 );
 
 /**

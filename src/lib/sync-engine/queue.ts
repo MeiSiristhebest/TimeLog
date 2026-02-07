@@ -13,7 +13,7 @@ import type { SyncQueueItem } from '@/types/entities';
 const MAX_RETRY_COUNT = 5;
 const BASE_BACKOFF_MS = 2000; // 2 seconds
 
-export type SyncItemType = 'upload_recording' | 'update_metadata' | 'create_profile';
+export type SyncItemType = 'upload_recording' | 'update_metadata' | 'create_profile' | 'upload_transcript_segment';
 
 export type EnqueuePayload = {
   type: SyncItemType;
@@ -80,6 +80,26 @@ class SyncQueueService {
       .update(audioRecordings)
       .set({ syncStatus: 'queued' })
       .where(eq(audioRecordings.id, recordingId));
+  }
+
+  /**
+   * Enqueue a transcript segment upload.
+   */
+  async enqueueTranscriptSegment(record: any): Promise<void> {
+    const id = generateId();
+    const now = Date.now();
+
+    await db.insert(syncQueue).values({
+      id,
+      type: 'upload_transcript_segment',
+      recordingId: record.storyId,
+      priority: 3, // Transcript segments are lower priority than metadata
+      payload: JSON.stringify(record),
+      createdAt: now,
+      retryCount: 0,
+      status: 'pending',
+      nextRetryAt: now,
+    });
   }
 
   /**

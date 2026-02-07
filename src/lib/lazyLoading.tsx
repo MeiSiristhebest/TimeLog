@@ -17,8 +17,8 @@
  */
 
 import React, { Suspense, ComponentType, ReactNode } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { HeritageSkeleton } from '@/components/ui/heritage/HeritageSkeleton';
+import { View, ActivityIndicator } from 'react-native';
 
 type FallbackType = 'spinner' | 'skeleton' | 'none' | ReactNode;
 
@@ -34,7 +34,7 @@ interface LazyComponentOptions {
  */
 function SpinnerFallback(): JSX.Element {
   return (
-    <View style={styles.fallbackContainer}>
+    <View className="flex-1 items-center justify-center min-h-[200px]">
       <ActivityIndicator size="large" color="#D97757" />
     </View>
   );
@@ -45,7 +45,7 @@ function SpinnerFallback(): JSX.Element {
  */
 function SkeletonFallback(): JSX.Element {
   return (
-    <View style={styles.fallbackContainer}>
+    <View className="flex-1 items-center justify-center min-h-[200px]">
       <HeritageSkeleton variant="card" />
     </View>
   );
@@ -128,11 +128,3 @@ export function preloadComponents(
   importFns.forEach(preloadComponent);
 }
 
-const styles = StyleSheet.create({
-  fallbackContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 200,
-  },
-});
