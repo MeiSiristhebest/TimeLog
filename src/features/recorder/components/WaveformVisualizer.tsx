@@ -1,8 +1,16 @@
+import { useHeritageTheme } from '@/theme/heritage';
 import { useState, useRef, useEffect } from 'react';
 import { Canvas, Path, Skia } from '@shopify/react-native-skia';
-import { useDerivedValue, SharedValue, useSharedValue } from 'react-native-reanimated';
-import { View, LayoutChangeEvent, StyleSheet } from 'react-native';
-import { useHeritageTheme } from '@/theme/heritage';
+import {
+  useDerivedValue,
+  SharedValue,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
+import { LayoutChangeEvent, View } from 'react-native';
 
 interface WaveformVisualizerProps {
   amplitude: SharedValue<number>;
@@ -11,18 +19,11 @@ interface WaveformVisualizerProps {
   color?: string;
 }
 
-const BAR_COUNT = 7;
-const BAR_WIDTH = 8;
-const BAR_SPACING = 12;
-const MIN_BAR_HEIGHT = 20; // 增加静音时的最小高度使波形更明显
-const MAX_BAR_HEIGHT = 80;
-
-// Pre-calculate sensitivities for each bar (middle bars respond more)
-const SENSITIVITIES = Array.from({ length: BAR_COUNT }, (_, i) => {
-  const centerIdx = (BAR_COUNT - 1) / 2;
-  const dist = Math.abs(i - centerIdx);
-  return 1 - (dist / centerIdx) * 0.4;
-});
+const BAR_COUNT = 13;
+const BAR_WIDTH = 5;
+const BAR_SPACING = 5;
+const MIN_BAR_HEIGHT = 10;
+const MAX_BAR_HEIGHT = 88;
 
 export function WaveformVisualizer({
   amplitude,
@@ -33,9 +34,12 @@ export function WaveformVisualizer({
   const { colors } = useHeritageTheme();
   const barColor = color || colors.primary;
   const [layout, setLayout] = useState({ width: 0, height: 0 });
+  const [ready, setReady] = useState(false);
 
   // Store frozen amplitude when paused
   const frozenAmplitude = useSharedValue(0);
+  const fallbackPulse = useSharedValue(0.28);
+  const fallbackPhase = useSharedValue(0);
   const wasRecordingRef = useRef(isRecording);
 
   // When transitioning to paused, freeze the current amplitude
@@ -47,6 +51,32 @@ export function WaveformVisualizer({
     wasRecordingRef.current = isRecording;
   }, [isPaused, isRecording, amplitude, frozenAmplitude]);
 
+  useEffect(() => {
+    fallbackPulse.value = withRepeat(
+      withSequence(
+        withTiming(0.78, { duration: 320, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.22, { duration: 380, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      false
+    );
+  }, [fallbackPulse]);
+
+  useEffect(() => {
+    fallbackPhase.value = 0;
+    fallbackPhase.value = withRepeat(
+      withTiming(Math.PI * 2, { duration: 1300, easing: Easing.linear }),
+      -1,
+      false
+    );
+  }, [fallbackPhase]);
+
+  useEffect(() => {
+    // Delay first draw slightly to avoid occasional Android first-frame artifacts.
+    const timer = setTimeout(() => setReady(true), 90);
+    return () => clearTimeout(timer);
+  }, []);
+
   const handleLayout = (event: LayoutChangeEvent) => {
     setLayout({
       width: event.nativeEvent.layout.width,
@@ -54,7 +84,6 @@ export function WaveformVisualizer({
     });
   };
 
-  // Calculate layout values
   const totalWidth = BAR_COUNT * BAR_WIDTH + (BAR_COUNT - 1) * BAR_SPACING;
   const startX = (layout.width - totalWidth) / 2;
   const centerY = layout.height / 2;
@@ -65,6 +94,7 @@ export function WaveformVisualizer({
 
     // Determine which amplitude to use
     let amp: number;
+    let hasLiveMetering = false;
     if (!isRecording && !isPaused) {
       // Idle state - no amplitude
       amp = 0;
@@ -72,15 +102,26 @@ export function WaveformVisualizer({
       // Paused - use frozen amplitude
       amp = frozenAmplitude.value;
     } else {
-      // Recording - use live amplitude
-      amp = amplitude.value;
+      // Recording - use live amplitude; if unavailable (Expo Go), show a smooth fallback pulse.
+      const liveAmp = amplitude.value;
+      hasLiveMetering = liveAmp > 0.02;
+      amp = hasLiveMetering ? liveAmp : 0.42 + fallbackPulse.value * 0.58;
     }
 
     // Draw rounded bars as path
+    const centerIdx = (BAR_COUNT - 1) / 2;
     for (let i = 0; i < BAR_COUNT; i++) {
-      const sensitivity = SENSITIVITIES[i];
-      // 使用更明显的波形高度范围：安静时20px，最响时80px
-      const effectiveAmp = Math.max(0, Math.min(1, amp));
+      const dist = Math.abs(i - centerIdx);
+      const sensitivity = 1 - (dist / centerIdx) * 0.5;
+      const liveAmp = Math.max(0, Math.min(1, amp));
+      const responseAmp = Math.pow(liveAmp, 0.62);
+      const fineGrain =
+        hasLiveMetering || !isRecording
+          ? 1
+          : 0.74 +
+            Math.sin(fallbackPhase.value + i * 0.58) * 0.18 +
+            Math.cos(fallbackPhase.value * 0.83 + i * 0.31) * 0.12;
+      const effectiveAmp = Math.max(0, Math.min(1, responseAmp * fineGrain));
       const barHeight =
         MIN_BAR_HEIGHT + effectiveAmp * (MAX_BAR_HEIGHT - MIN_BAR_HEIGHT) * sensitivity;
       const x = startX + i * (BAR_WIDTH + BAR_SPACING);
@@ -94,18 +135,23 @@ export function WaveformVisualizer({
     }
 
     return skPath;
-  }, [amplitude, frozenAmplitude, isRecording, isPaused, startX, centerY]);
+  }, [
+    amplitude,
+    frozenAmplitude,
+    fallbackPulse,
+    fallbackPhase,
+    isRecording,
+    isPaused,
+    startX,
+    centerY,
+  ]);
 
   return (
     <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: 'transparent',
-        },
-      ]}
+      className="w-full items-center justify-center overflow-hidden bg-transparent"
+      style={{ height: '100%' }}
       onLayout={handleLayout}>
-      {layout.width > 0 && (
+      {ready && layout.width > 0 && layout.height > 0 && (
         <Canvas style={{ width: layout.width, height: layout.height }}>
           <Path path={path} color={barColor} />
         </Canvas>
@@ -113,16 +159,6 @@ export function WaveformVisualizer({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    height: 128,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-});
 
 // Default export for React.lazy() compatibility
 export default WaveformVisualizer;

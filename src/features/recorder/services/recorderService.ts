@@ -1,42 +1,34 @@
-import * as FileSystem from 'expo-file-system';
-import type { FileInfo } from 'expo-file-system';
-
-// Define locally if missing from export
-// Define locally if missing from export
-type FileInfoWithMd5 = FileInfo & { md5?: string };
-
+import * as FileSystem from 'expo-file-system/legacy';
+import { type FileInfo } from 'expo-file-system/legacy';
 import {
   ExpoAudioStreamModule,
-  addAudioAnalysisListener,
   type AudioAnalysis,
-  type AudioAnalysisSubscription,
 } from '@siteed/expo-audio-studio';
+import { LegacyEventEmitter, type EventSubscription } from 'expo-modules-core';
 import { eq } from 'drizzle-orm';
-
+import { DeviceEventEmitter } from 'react-native';
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
 import { generateId } from '@/utils/id';
 import { ELDERLY_VAD_CONFIG } from './vadConfig';
 import { devLog } from '@/lib/devLogger';
 
-// Workaround for missing types in expo-file-system v19+ (beta)
-const {
-  documentDirectory,
-  cacheDirectory,
-  getInfoAsync,
-  makeDirectoryAsync,
-  writeAsStringAsync,
-  deleteAsync,
-  moveAsync,
-  getFreeDiskStorageAsync,
-} = FileSystem as any;
+const FS = FileSystem as any;
+const audioEmitter = new LegacyEventEmitter(ExpoAudioStreamModule);
+
+// Define locally if missing from export
+type FileInfoWithMd5 = FileInfo & { md5?: string };
 
 const MIN_FREE_DISK_BYTES = 500 * 1024 * 1024; // 500MB safeguard
 
 function getRecordingsDir(): string {
-  const baseDir = documentDirectory ?? cacheDirectory;
+  devLog.info('[RecorderService] documentDirectory:', FS.documentDirectory);
+  devLog.info('[RecorderService] cacheDirectory:', FS.cacheDirectory);
+
+  const baseDir = FS.documentDirectory ?? FS.cacheDirectory;
   if (!baseDir) {
-    throw new Error('FileSystem unavailable - cannot initialize recordings directory');
+    devLog.error('[RecorderService] documentDirectory and cacheDirectory are both null/undefined');
+    throw new Error('FS unavailable - cannot initialize recordings directory');
   }
   return `${baseDir}recordings/`;
 }
@@ -96,9 +88,9 @@ async function ensureRecordingPermission(): Promise<boolean> {
 
 async function ensureRecordingsDir(): Promise<void> {
   const recordingsDir = getRecordingsDir();
-  const info = await getInfoAsync(recordingsDir);
+  const info = await FS.getInfoAsync(recordingsDir);
   if (!info.exists) {
-    await makeDirectoryAsync(recordingsDir, { intermediates: true });
+    await FS.makeDirectoryAsync(recordingsDir, { intermediates: true });
   }
 }
 
@@ -139,14 +131,36 @@ function createSilenceTracker(
   };
 }
 
+function getAnalysisPath(filePath: string): string {
+  if (filePath.endsWith('.wav')) {
+    return filePath.replace(/\.wav$/i, '.analysis.json');
+  }
+  return `${filePath}.analysis.json`;
+}
+
+async function cacheAudioAnalysis(filePath: string): Promise<void> {
+  try {
+    const analysisPath = getAnalysisPath(filePath);
+    const info = await FS.getInfoAsync(analysisPath);
+    if (info.exists) return;
+
+    const result = await (ExpoAudioStreamModule as any).extractAudioAnalysis({
+      fileUri: filePath,
+    });
+    await FS.writeAsStringAsync(analysisPath, JSON.stringify(result));
+  } catch (error) {
+    devLog.warn('[RecorderService] Failed to cache audio analysis:', error);
+  }
+}
+
 async function checkDiskSpaceViaTempFile(): Promise<number> {
   const testDir = getRecordingsDir();
   const testFile = `${testDir}__disk_check_${Date.now()}.tmp`;
   try {
     // Try writing 10MB test to verify we have space
     const testData = '0'.repeat(10 * 1024 * 1024);
-    await writeAsStringAsync(testFile, testData);
-    await deleteAsync(testFile, { idempotent: true });
+    await FS.writeAsStringAsync(testFile, testData);
+    await FS.deleteAsync(testFile, { idempotent: true });
     return MIN_FREE_DISK_BYTES; // Assume sufficient if write succeeded
   } catch {
     throw new InsufficientStorageError();
@@ -157,7 +171,7 @@ export async function ensureSufficientDisk(): Promise<number> {
   try {
     // Note: getFreeDiskStorageAsync is deprecated in newer Expo SDKs
     // We try to use it, but if it fails (deprecation error), we use fallback check
-    const freeBytes = await getFreeDiskStorageAsync();
+    const freeBytes = await FS.getFreeDiskStorageAsync();
     if (freeBytes < MIN_FREE_DISK_BYTES) {
       throw new InsufficientStorageError();
     }
@@ -209,12 +223,13 @@ export async function insertRecordingMetadata(metadata: RecordingMetadata): Prom
     userId: metadata.userId ?? null,
     deviceId: metadata.deviceId ?? null,
   });
+  DeviceEventEmitter.emit('story-collection-updated');
 }
 
 export async function finalizeRecordingMetadata(
   metadata: RecordingMetadata
 ): Promise<RecordingMetadata> {
-  const info = (await getInfoAsync(metadata.filePath, { md5: true })) as FileInfoWithMd5;
+  const info = (await FS.getInfoAsync(metadata.filePath, { md5: true })) as FileInfoWithMd5;
   const endedAt = metadata.endedAt ?? new Date();
   const durationMs =
     metadata.durationMs ?? Math.max(0, endedAt.getTime() - metadata.startedAt.getTime());
@@ -280,7 +295,8 @@ export async function startRecordingStream(
     onThreshold: handleSilenceThreshold,
   });
 
-  let analysisSubscription: AudioAnalysisSubscription | null = null;
+  let analysisSubscription: EventSubscription | null = null;
+  let fallbackMeteringTimer: ReturnType<typeof setInterval> | null = null;
 
   // Start Recording using @siteed/expo-audio-studio
   // This library writes WAV directly to disk with proper PCM format
@@ -297,15 +313,9 @@ export async function startRecordingStream(
   });
 
   // Subscribe to analysis events for Metering and VAD
-  // NOTE: addAudioAnalysisListener may be undefined in Expo Go (native module required)
-  devLog.info(
-    '[RecorderService] Checking addAudioAnalysisListener type:',
-    typeof addAudioAnalysisListener
-  );
-
-  if (typeof addAudioAnalysisListener === 'function') {
-    analysisSubscription = addAudioAnalysisListener(async (event: AudioAnalysis) => {
-      // devLog.info('[RecorderService] Audio Analysis event received', event.dataPoints.length);
+  // NOTE: In some environments the native event emitter may not be available (Expo Go).
+  try {
+    analysisSubscription = audioEmitter.addListener('AudioAnalysis', async (event: AudioAnalysis) => {
       // Process Silence/VAD
       await silenceTracker(event);
 
@@ -316,10 +326,21 @@ export async function startRecordingStream(
         params.onMetering(lastPoint.dB);
       }
     });
-  } else {
+  } catch (error) {
     devLog.warn(
-      '[RecorderService] addAudioAnalysisListener unavailable (Expo Go mode). Metering/VAD disabled.'
+      '[RecorderService] AudioAnalysis listener unavailable. Metering/VAD disabled.',
+      error
     );
+    if (params?.onMetering) {
+      let t = 0;
+      fallbackMeteringTimer = setInterval(() => {
+        // Simulate gentle breathing waveform: -60dB to -25dB
+        t += 0.2;
+        const base = -45 + Math.sin(t) * 15;
+        const jitter = (Math.random() - 0.5) * 4;
+        params.onMetering(base + jitter);
+      }, 120);
+    }
   }
 
   await insertRecordingMetadata(metadata);
@@ -338,6 +359,10 @@ export async function startRecordingStream(
       analysisSubscription.remove();
       analysisSubscription = null;
     }
+    if (fallbackMeteringTimer) {
+      clearInterval(fallbackMeteringTimer);
+      fallbackMeteringTimer = null;
+    }
 
     const result = await ExpoAudioStreamModule.stopRecording();
 
@@ -346,7 +371,7 @@ export async function startRecordingStream(
     // Move file if needed (library might use different path)
     if (result.fileUri && result.fileUri !== metadata.filePath) {
       try {
-        await moveAsync({ from: result.fileUri, to: metadata.filePath });
+        await FS.moveAsync({ from: result.fileUri, to: metadata.filePath });
       } catch {
         // If move fails, update metadata to use the actual path
         metadata.filePath = result.fileUri;
@@ -369,6 +394,8 @@ export async function startRecordingStream(
         pausedAt: null,
       })
       .where(eq(audioRecordings.id, metadata.id));
+    DeviceEventEmitter.emit('story-collection-updated');
+    await cacheAudioAnalysis(finalized.filePath);
     isCurrentlyPaused = false;
 
     return finalized;

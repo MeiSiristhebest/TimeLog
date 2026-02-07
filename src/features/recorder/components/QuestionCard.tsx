@@ -1,11 +1,11 @@
-import { AppText } from '@/components/ui/AppText';
-import { View, StyleSheet } from 'react-native';
 
-import { Image } from 'expo-image';
 import { Ionicons } from '@/components/ui/Icon';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { useHeritageTheme } from '@/theme/heritage';
 import type { TopicQuestion } from '@/types/entities';
+import { AppText } from '@/components/ui/AppText';
+import { View } from 'react-native';
+import { Image } from 'expo-image';
 
 // Category to icon mapping
 const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -13,7 +13,7 @@ const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   family: 'heart-outline',
   career: 'briefcase-outline',
   milestones: 'star-outline',
-  reflections: 'bulb-outline',
+
   adventures: 'airplane-outline',
   default: 'chatbubble-outline',
 };
@@ -67,18 +67,19 @@ export function QuestionCard({
 
   return (
     <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
-          shadowColor: colors.shadow,
-        },
-      ]}>
+      className="mx-4 rounded-[32px] border p-8 shadow-sm elevation-12"
+      style={{
+        backgroundColor: colors.surface,
+        borderColor: colors.border,
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: 16 },
+        shadowOpacity: 0.1,
+        shadowRadius: 32,
+      }}>
       {/* 1. Topic Icon */}
       {isDiscovery && (
-        <View style={styles.iconContainer}>
-          <View style={[styles.iconCircle, { backgroundColor: `${colors.primary}15` }]}>
+        <View className="items-center mb-6">
+          <View className="w-20 h-20 rounded-full items-center justify-center" style={{ backgroundColor: `${colors.primary}15` }}>
             <Ionicons name={categoryIcon} size={40} color={colors.primary} />
           </View>
         </View>
@@ -86,23 +87,25 @@ export function QuestionCard({
 
       {/* 2. Family Request Badge (Gold Style) */}
       {question.isFromFamily && question.submittedBy && (
-        <View style={styles.badgeContainer}>
+        <View className="items-center mb-6">
           <View
-            style={[
-              styles.goldBadge,
-              {
-                backgroundColor: colors.surfaceCream,
-                borderColor: colors.amberCustom,
-              },
-            ]}>
+            className="flex-row items-center rounded-3xl pr-4 pl-1 py-1 border gap-2 shadow-sm elevation-4"
+            style={{
+              backgroundColor: colors.surfaceCream,
+              borderColor: colors.amberCustom,
+              shadowColor: 'rgba(255, 200, 50, 0.3)',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 1,
+              shadowRadius: 12,
+            }}>
             {question.submitterAvatar && (
               <Image
                 source={{ uri: question.submitterAvatar }}
-                style={styles.avatarImage}
+                className="w-8 h-8 rounded-full border border-[#FFFCF7]"
                 contentFit="cover"
               />
             )}
-            <AppText style={[styles.goldBadgeText, { color: colors.amberDeep }]}>
+            <AppText className="text-[13px] font-bold uppercase tracking-[0.5px]" style={{ color: colors.amberDeep }}>
               Asked by {question.submittedBy}
             </AppText>
           </View>
@@ -110,20 +113,17 @@ export function QuestionCard({
       )}
 
       {/* 3. Question Text - Large and readable */}
-      <View style={styles.questionRow}>
+      <View className="flex-row items-start justify-center gap-2">
         <AppText
-          style={[
-            styles.questionText,
-            { color: colors.onSurface },
-            isDiscovery && styles.questionTextLarge,
-          ]}
+          className={`font-serif font-semibold text-center mb-4 tracking-[0.3px] ${isDiscovery ? 'text-[34px] leading-[44px] mb-6' : 'text-2xl leading-9'}`}
+          style={{ color: colors.onSurface }}
           accessibilityRole="text"
           accessibilityLabel={question.text}>
           {question.text}
         </AppText>
         {/* F3.5: Answered checkmark indicator */}
         {isAnswered && (
-          <View style={[styles.answeredBadge, { backgroundColor: colors.success + '20' }]}>
+          <View className="mt-1 rounded-xl p-1" style={{ backgroundColor: `${colors.success}20` }}>
             <Ionicons name="checkmark-circle" size={24} color={colors.success} />
           </View>
         )}
@@ -131,23 +131,23 @@ export function QuestionCard({
 
       {/* 4. Motivation Hint (Discovery only) */}
       {isDiscovery && (
-        <AppText style={[styles.hintText, { color: colors.textMuted }]}>
+        <AppText className="text-lg leading-7 text-center mb-6 max-w-[280px] self-center" style={{ color: colors.textMuted }}>
           Share your memories. Your family would love to hear this story.
         </AppText>
       )}
 
       {/* Card Footer Decor (Discovery only) */}
-      {isDiscovery && <View style={[styles.decorLine, { backgroundColor: colors.border }]} />}
+      {isDiscovery && <View className="w-12 h-1.5 rounded-full self-center mb-8" style={{ backgroundColor: colors.border }} />}
 
       {/* Button Row */}
-      <View style={isDiscovery ? styles.discoveryButtons : styles.buttonRow}>
+      <View className={isDiscovery ? "gap-4" : "flex-row gap-4"}>
         {isDiscovery ? (
           <>
             {/* Primary: Record Answer (Full Width) */}
             <HeritageButton
               title="Record Answer"
               icon="mic"
-              onPress={onRecordThis || (() => {})}
+              onPress={onRecordThis || (() => { })}
               disabled={disabled}
               variant="primary"
               fullWidth
@@ -157,8 +157,8 @@ export function QuestionCard({
 
             {/* Secondary: Try Another (Ghost) */}
             <HeritageButton
-              title="Try Another Question"
-              onPress={onNext || (() => {})}
+              title="Next"
+              onPress={onNext || (() => { })}
               disabled={disabled}
               variant="ghost"
               fullWidth
@@ -168,20 +168,20 @@ export function QuestionCard({
           </>
         ) : (
           <>
-            <View style={{ flex: 1 }}>
+            <View className="flex-1">
               <HeritageButton
-                title={isSpeaking ? 'Playing...' : 'Replay'}
+                title={isSpeaking ? 'Playing' : 'Replay'}
                 icon={isSpeaking ? 'volume-high' : 'volume-medium-outline'}
-                onPress={onReplay || (() => {})}
+                onPress={onReplay || (() => { })}
                 disabled={disabled}
                 variant="secondary"
               />
             </View>
-            <View style={{ flex: 1 }}>
+            <View className="flex-1">
               <HeritageButton
-                title="New Topic"
-                icon="shuffle-outline"
-                onPress={onNewTopic || (() => {})}
+                title="Next"
+                icon="arrow-forward-circle-outline" // Clearer directional icon
+                onPress={onNewTopic || (() => { })}
                 disabled={disabled}
                 variant="secondary"
               />
@@ -192,109 +192,5 @@ export function QuestionCard({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: 16,
-    borderRadius: 32,
-    borderWidth: 1,
-    padding: 32,
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.1,
-    shadowRadius: 32,
-    elevation: 12,
-  },
-  iconContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  goldBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 24,
-    paddingRight: 16,
-    paddingLeft: 4,
-    paddingVertical: 4,
-    borderWidth: 1,
-    gap: 8,
-    shadowColor: 'rgba(255, 200, 50, 0.3)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  avatarImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#FFFCF7', // PALETTE.surface
-  },
-  goldBadgeText: {
-    fontSize: 13,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  questionText: {
-    fontSize: 24,
-    lineHeight: 36,
-    fontWeight: '700',
-    fontFamily: 'Fraunces_600SemiBold',
-    textAlign: 'center',
-    marginBottom: 16,
-    letterSpacing: 0.3,
-  },
-  questionTextLarge: {
-    fontSize: 34,
-    lineHeight: 44,
-    marginBottom: 24,
-  },
-  hintText: {
-    fontSize: 18,
-    lineHeight: 28,
-    textAlign: 'center',
-    marginBottom: 24,
-    maxWidth: 280,
-    alignSelf: 'center',
-  },
-  decorLine: {
-    width: 48,
-    height: 6,
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginBottom: 32,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  discoveryButtons: {
-    gap: 16,
-  },
-  // F3.5: Styles for answered indicator
-  questionRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  answeredBadge: {
-    borderRadius: 12,
-    padding: 4,
-    marginTop: 4,
-  },
-});
 
 export default QuestionCard;

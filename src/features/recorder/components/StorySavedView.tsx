@@ -26,13 +26,19 @@ import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { useHeritageTheme } from '@/theme/heritage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Assets
-const PAPER_TEXTURE = require('../../../../assets/images/paper-texture.png');
 const ILL_CHILDHOOD = require('../../../../assets/images/illustration_childhood.png');
 const ILL_FAMILY = require('../../../../assets/images/illustration_family.png');
 const ILL_CAREER = require('../../../../assets/images/illustration_career.png');
+const ILL_EDUCATION = require('../../../../assets/images/illustration_education.png');
+const ILL_TRAVEL = require('../../../../assets/images/illustration_travel.png');
 const ILL_WISDOM = require('../../../../assets/images/illustration_wisdom.png');
 const ILL_MEMORIES = require('../../../../assets/images/illustration_memories.png');
+const ILL_CELEBRATION = require('../../../../assets/images/illustration_celebration.png');
+const ILL_HOBBIES = require('../../../../assets/images/illustration_hobbies.png');
+const ILL_FOOD = require('../../../../assets/images/illustration_food.png');
+const ILL_FRIENDSHIP = require('../../../../assets/images/illustration_friendship.png');
+const ILL_HISTORY = require('../../../../assets/images/illustration_history.png');
+const PAPER_TEXTURE = require('../../../../assets/images/paper-texture.png');
 
 interface StorySavedViewProps {
   onDismiss: () => void;
@@ -49,12 +55,57 @@ const getCategoryIllustration = (category?: string): any => {
       return ILL_FAMILY;
     case 'career':
       return ILL_CAREER;
+    case 'education':
+      return ILL_EDUCATION;
     case 'memories':
       return ILL_MEMORIES;
+    case 'history':
+      return ILL_HISTORY;
     case 'wisdom':
       return ILL_WISDOM;
+    case 'travel':
+      return ILL_TRAVEL;
+    case 'celebrations':
+      return ILL_CELEBRATION;
+    case 'hobbies':
+      return ILL_HOBBIES;
+    case 'food':
+      return ILL_FOOD;
+    case 'friendship':
+      return ILL_FRIENDSHIP;
     default:
       return ILL_MEMORIES;
+  }
+};
+
+const getCategoryLabel = (category?: string): string => {
+  switch (category) {
+    case 'childhood':
+      return 'My Childhood';
+    case 'family':
+      return 'My Family';
+    case 'career':
+      return 'My Career';
+    case 'education':
+      return 'My Education';
+    case 'memories':
+      return 'My Memories';
+    case 'history':
+      return 'My History';
+    case 'wisdom':
+      return 'My Wisdom';
+    case 'travel':
+      return 'My Travel';
+    case 'celebrations':
+      return 'My Celebration';
+    case 'hobbies':
+      return 'My Hobbies';
+    case 'food':
+      return 'My Food';
+    case 'friendship':
+      return 'My Friends';
+    default:
+      return 'My Story';
   }
 };
 
@@ -67,6 +118,7 @@ export const StorySavedView = ({
 
   // Get dynamic illustration
   const illustrationSource = getCategoryIllustration(category);
+  const captionLabel = getCategoryLabel(category);
 
   // Animations
   const rotate = useSharedValue(0);
@@ -95,14 +147,15 @@ export const StorySavedView = ({
   }));
 
   return (
-    <ImageBackground source={PAPER_TEXTURE} style={styles.container} resizeMode="repeat">
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.content}>
+    <ImageBackground source={PAPER_TEXTURE} className="flex-1 w-full h-full" resizeMode="repeat">
+      <SafeAreaView style={{ flex: 1 }}>
+        <View className="flex-1 px-6 pb-6 justify-between items-center">
+          <View className="flex-1 justify-center items-center w-full pb-[60px]">
           {/* 1. Success Icon */}
           <Animated.View
             entering={ZoomIn.duration(600).springify()}
+            className="rounded-full items-center justify-center border mb-5"
             style={[
-              styles.iconWrapper,
               { borderColor: `${colors.success}30`, backgroundColor: `${colors.success}10` },
             ]}>
             <Ionicons name="checkmark-circle" size={80} color={colors.success} />
@@ -111,9 +164,9 @@ export const StorySavedView = ({
           {/* 2. Text Content */}
           <Animated.View
             entering={FadeInDown.delay(200).duration(600)}
-            style={styles.textContainer}>
-            <AppText style={[styles.title, { color: colors.onSurface }]}>Story Kept Safe.</AppText>
-            <AppText style={[styles.subtitle, { color: colors.textMuted }]}>
+            className="items-center mb-8 gap-2">
+            <AppText className="text-[32px] text-center" style={{ fontFamily: 'Fraunces_600SemiBold', color: colors.onSurface }}>Story Kept Safe.</AppText>
+            <AppText className="text-base text-center" style={{ color: colors.textMuted }}>
               Saving to your library...
             </AppText>
           </Animated.View>
@@ -126,130 +179,58 @@ export const StorySavedView = ({
               .damping(12)
               .stiffness(100)
               .withInitialValues({ transform: [{ scale: 0.7 }] })}
-            style={[styles.polaroidContainer, polaroidStyle]}>
-            <View style={[styles.polaroid, { backgroundColor: colors.surface }]}>
+            className="w-[320px] items-center shadow-lg elevation-10"
+            style={[
+              {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 20 },
+                shadowOpacity: 0.15,
+                shadowRadius: 30,
+              },
+              polaroidStyle
+            ]}>
+            <View className="w-full p-4 pb-[60px] rounded items-center" style={{ backgroundColor: colors.surface }}>
               {/* Photo Area */}
-              <View style={styles.polaroidImage}>
+              <View className="w-full aspect-square items-center justify-center overflow-hidden border relative"
+                style={{ backgroundColor: '#F5F2EA', borderColor: 'rgba(0,0,0,0.05)' }}>
                 <Image
                   source={illustrationSource}
                   style={{ width: '85%', height: '85%', opacity: 0.9 }}
                   contentFit="contain"
                 />
                 {/* Grain Overlay Simulation */}
-                <View style={[styles.overlay, { backgroundColor: `${colors.primary}05` }]} />
+                <View className="absolute inset-0" style={{ backgroundColor: `${colors.primary}05` }} />
               </View>
 
               {/* Caption */}
-              <View style={styles.polaroidCaption}>
-                <AppText style={[styles.handwritingText, { color: '#444' }]} numberOfLines={1}>
-                  {storyTitle}
+              <View className="absolute bottom-5 w-full items-center px-8">
+                <AppText
+                  className="text-lg italic text-center"
+                  style={{ fontFamily: 'Fraunces_600SemiBold', color: '#444', maxWidth: '80%', paddingHorizontal: 6 }}
+                  ellipsizeMode="tail"
+                  numberOfLines={1}>
+                  {captionLabel || storyTitle}
                 </AppText>
               </View>
             </View>
           </Animated.View>
         </View>
 
-        {/* 4. Footer Action */}
-        <View style={styles.footer}>
-          <Animated.View entering={FadeInDown.delay(600).duration(500)} style={{ width: '100%' }}>
-            <HeritageButton
-              title="Done"
-              onPress={onDismiss}
-              variant="primary"
-              size="large"
-              fullWidth
-              icon="checkmark"
-            />
-          </Animated.View>
+          {/* 4. Footer Action */}
+          <View className="w-full max-w-[400px]">
+            <Animated.View entering={FadeInDown.delay(600).duration(500)} className="w-full">
+              <HeritageButton
+                title="Done"
+                onPress={onDismiss}
+                variant="primary"
+                size="large"
+                fullWidth
+                icon="checkmark"
+              />
+            </Animated.View>
+          </View>
         </View>
       </SafeAreaView>
     </ImageBackground>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    paddingBottom: 60,
-  },
-  iconWrapper: {
-    borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    marginBottom: 20, // Reduced from 32
-  },
-  textContainer: {
-    alignItems: 'center',
-    marginBottom: 32, // Reduced from 48
-    gap: 8,
-  },
-  title: {
-    fontFamily: 'Fraunces_600SemiBold',
-    fontSize: 32,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  polaroidContainer: {
-    width: 280,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.15,
-    shadowRadius: 30,
-    elevation: 10,
-  },
-  polaroid: {
-    width: '100%',
-    padding: 16,
-    paddingBottom: 60,
-    borderRadius: 4,
-    alignItems: 'center',
-  },
-  polaroidImage: {
-    width: '100%',
-    aspectRatio: 1,
-    backgroundColor: '#F5F2EA',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  polaroidCaption: {
-    position: 'absolute',
-    bottom: 20,
-    width: '100%',
-    alignItems: 'center',
-  },
-  handwritingText: {
-    fontFamily: 'Fraunces_600SemiBold', // Fallback to Fraunces italic if Handwriting not available
-    fontStyle: 'italic',
-    fontSize: 24,
-  },
-  footer: {
-    width: '100%',
-    maxWidth: 400,
-  },
-});

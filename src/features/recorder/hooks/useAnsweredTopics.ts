@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
-import { isNotNull } from 'drizzle-orm';
+import { isNotNull, isNull, and } from 'drizzle-orm';
 
 /**
  * Returns a Set of topicIds that have been answered (have at least one recording).
@@ -19,7 +19,7 @@ export function useAnsweredTopics(): Set<string> {
     db
       .select({ topicId: audioRecordings.topicId })
       .from(audioRecordings)
-      .where(isNotNull(audioRecordings.topicId))
+      .where(and(isNotNull(audioRecordings.topicId), isNull(audioRecordings.deletedAt)))
   );
 
   const answeredTopicIds = useMemo(() => {

@@ -1,8 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-
 import { getRandomQuestion } from '../data/topicQuestions';
 import { TTSService } from '../services/ttsService';
-
 import type { TopicQuestion } from '@/types/entities';
 
 export type UseTTSOptions = {
@@ -17,6 +15,10 @@ export type UseTTSReturn = {
   currentQuestion: TopicQuestion;
   /** Whether TTS is currently speaking */
   isSpeaking: boolean;
+  /** Words of the current question */
+  words: string[];
+  /** Index of the currently highlighted word */
+  currentWordIndex: number;
   /** Speak the current question */
   speak: () => void;
   /** Replay the current question */
@@ -47,34 +49,70 @@ export function useTTS(options: UseTTSOptions = {}): UseTTSReturn {
     () => initialQuestion ?? getRandomQuestion()
   );
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [words, setWords] = useState<string[]>([]);
+  const [currentWordIndex, setCurrentWordIndex] = useState(-1);
 
   // Track if component is mounted to prevent state updates after unmount
   const isMountedRef = useRef(true);
+  const highlightTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+
+  const clearHighlightTimers = useCallback(() => {
+    highlightTimersRef.current.forEach((timer) => clearTimeout(timer));
+    highlightTimersRef.current = [];
+  }, []);
+
+  const scheduleWordHighlights = useCallback((text: string, rate = 0.8) => {
+    const splitWords = text.trim().split(/\s+/);
+    setWords(splitWords);
+    setCurrentWordIndex(-1);
+    clearHighlightTimers();
+
+    const baseMsPerWord = 220 / Math.max(0.5, rate);
+    let cumulative = 0;
+
+    splitWords.forEach((word, index) => {
+      const punctuationBonus = /[.,!?;:]$/.test(word) ? 120 : 0;
+      cumulative += baseMsPerWord + punctuationBonus;
+      const timer = setTimeout(() => {
+        if (isMountedRef.current) {
+          setCurrentWordIndex(index);
+        }
+      }, cumulative);
+      highlightTimersRef.current.push(timer);
+    });
+  }, [clearHighlightTimers]);
 
   // Speak the given text
   const speakText = useCallback((text: string) => {
     if (!isMountedRef.current) return;
 
     setIsSpeaking(true);
+    scheduleWordHighlights(text);
 
     TTSService.speak(text, {
       onDone: () => {
         if (isMountedRef.current) {
           setIsSpeaking(false);
+          setCurrentWordIndex(-1);
+          clearHighlightTimers();
         }
       },
       onStopped: () => {
         if (isMountedRef.current) {
           setIsSpeaking(false);
+          setCurrentWordIndex(-1);
+          clearHighlightTimers();
         }
       },
       onError: () => {
         if (isMountedRef.current) {
           setIsSpeaking(false);
+          setCurrentWordIndex(-1);
+          clearHighlightTimers();
         }
       },
     });
-  }, []);
+  }, [clearHighlightTimers, scheduleWordHighlights]);
 
   // Speak the current question
   const speak = useCallback(() => {
@@ -91,8 +129,10 @@ export function useTTS(options: UseTTSOptions = {}): UseTTSReturn {
     TTSService.stop();
     if (isMountedRef.current) {
       setIsSpeaking(false);
+      setCurrentWordIndex(-1);
+      clearHighlightTimers();
     }
-  }, []);
+  }, [clearHighlightTimers]);
 
   // Get a new random question and speak it
   const newTopic = useCallback(() => {
@@ -125,12 +165,15 @@ export function useTTS(options: UseTTSOptions = {}): UseTTSReturn {
     return () => {
       isMountedRef.current = false;
       TTSService.stop();
+      clearHighlightTimers();
     };
-  }, []);
+  }, [clearHighlightTimers]);
 
   return {
     currentQuestion,
     isSpeaking,
+    words,
+    currentWordIndex,
     speak,
     replay,
     stop,

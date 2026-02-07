@@ -3,6 +3,14 @@ import { render } from '@testing-library/react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { WaveformVisualizer } from './WaveformVisualizer';
 
+jest.mock('@/theme/heritage', () => ({
+  useHeritageTheme: () => ({
+    colors: {
+      primary: '#D97757',
+    },
+  }),
+}));
+
 // Mock react-native-reanimated
 jest.mock('react-native-reanimated', () => {
   const mockReanimated = jest.requireActual('react-native-reanimated/mock');

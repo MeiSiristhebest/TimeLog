@@ -1,7 +1,6 @@
 import { AppText } from '@/components/ui/AppText';
 import React from 'react';
-
-import { View, Pressable } from '@/tw';
+import { View, Pressable } from 'react-native';
 
 type ResumeRecordingPromptProps = {
   onResume: () => void;
