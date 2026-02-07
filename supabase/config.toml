@@ -20,3 +20,17 @@ entrypoint = "./functions/deliver-notifications/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/deliver-notifications/*.html" ]
+
+# LiveKit Token Generation (H2 AI Dialog)
+[functions.livekit-token]
+enabled = true
+verify_jwt = false
+import_map = "./functions/deno.json"
+entrypoint = "./functions/livekit-token/index.ts"
+
+# Network Quality Probe (H2 AI Dialog)
+[functions.network-probe]
+enabled = true
+verify_jwt = false
+import_map = "./functions/deno.json"
+entrypoint = "./functions/network-probe/index.ts"

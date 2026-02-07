@@ -1,0 +1,14 @@
+# LiveKit Agent Framework
+livekit==0.17.4
+livekit-agents==0.11.0
+livekit-plugins-deepgram==0.8.0
+livekit-plugins-silero==0.8.0
+
+# AI & STT/TTS
+deepgram-sdk==3.9.0
+google-generativeai==0.8.3
+google-cloud-aiplatform==1.75.0  # Vertex AI SDK
+
+# Utilities
+python-dotenv==1.0.1
+aiohttp==3.11.11
