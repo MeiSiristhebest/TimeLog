@@ -1,8 +1,7 @@
 import { AppText } from '@/components/ui/AppText';
 import React, { useEffect } from 'react';
-
 import { Modal, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -116,7 +115,7 @@ export function DeleteConfirmModal({
               alignItems: 'center',
               marginBottom: 24,
             }}>
-            <MaterialIcons name="delete-forever" size={36} color={theme.colors.error} />
+            <Ionicons name="trash" size={36} color={theme.colors.error} />
           </View>
 
           {/* Text Content */}

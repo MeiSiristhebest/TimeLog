@@ -1,16 +1,19 @@
 import { AppText } from '@/components/ui/AppText';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@/components/ui/Icon';
 import { AudioRecording } from '@/types/entities';
 import { useHeritageTheme } from '@/theme/heritage';
 import { CommentBadge } from './CommentBadge';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import {
   COVER_IMAGES,
+  CATEGORY_COVERS,
   PREVIEW_TEXT_PLACEHOLDER,
-  LISTENER_NAME_DEFAULT,
 } from '../data/mockStoryData';
+import { mapRawCategoryToFilter } from '../data/mockGalleryData';
+import { getQuestionById } from '@/features/recorder/data/topicQuestions';
 
 export interface FeaturedStoryCardProps {
   story: AudioRecording;
@@ -18,11 +21,13 @@ export interface FeaturedStoryCardProps {
   dateObj: Date;
   fullDateStr: string;
   durationStr: string;
+  isBeingListened?: boolean;
   isPlayable?: boolean;
   isOffline?: boolean;
   unreadCommentCount?: number;
   onPlay: (id: string) => void;
   onSelect: (id: string) => void;
+  onOffload?: (id: string) => void;
 }
 
 export function FeaturedStoryCard({
@@ -31,11 +36,13 @@ export function FeaturedStoryCard({
   dateObj,
   fullDateStr,
   durationStr,
+  isBeingListened = false,
   isPlayable = true,
   isOffline = false,
   unreadCommentCount = 0,
   onPlay,
   onSelect,
+  onOffload,
 }: FeaturedStoryCardProps): JSX.Element {
   const { colors } = useHeritageTheme();
 
@@ -44,294 +51,224 @@ export function FeaturedStoryCard({
   const isSyncing = story.syncStatus === 'syncing' || story.syncStatus === 'queued';
   const isDisabled = isOffline && !isPlayable;
 
-  // Mock data (should be passed via props or context in future)
-  const isBeingListened = index === 0;
-  const listenerName = LISTENER_NAME_DEFAULT;
-  const coverImage = COVER_IMAGES[index % COVER_IMAGES.length];
-  const previewText = PREVIEW_TEXT_PLACEHOLDER;
+  // Animations
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
-  // Font adjustments
-  const FONTS = {
-    serifLight: 'Fraunces_300Light',
-    serifSemiBold: 'Fraunces_600SemiBold',
-  };
+  // Mock data (should be passed via props or context in future)
+  const listenerName = 'You';
+  const isSelf = listenerName.toLowerCase() === 'you';
+
+  // Resolve Category & Cover
+  const question = story.topicId ? getQuestionById(story.topicId) : null;
+  const rawCategory = question?.category || 'general';
+
+  // Use centralized mapping to match Gallery Filters
+  const categoryKey = mapRawCategoryToFilter(rawCategory);
+
+  // @ts-ignore - indexing mock data
+  const coverImage =
+    story.coverImagePath
+      ? { uri: story.coverImagePath }
+      : CATEGORY_COVERS[categoryKey] || COVER_IMAGES[index % COVER_IMAGES.length];
+
+  const previewText = PREVIEW_TEXT_PLACEHOLDER;
+  const displayTitle = story.title || question?.text || 'Untitled Story';
 
   return (
-    <View style={styles.featuredCardContainer}>
+    <View className="relative mb-6 w-full items-center px-4 overflow-visible z-10">
       {/* Center Timeline Dot */}
       <View
-        style={[
-          styles.centerDot,
-          {
-            top: -20,
-            borderColor: colors.border, // #D6D3D1 equivalent
+        className="absolute left-0 right-0 items-center -top-5 z-20"
+        pointerEvents="none">
+        <View
+          className="w-[9px] h-[9px] rounded-full border bg-surface"
+          style={{
+            borderColor: colors.border,
             backgroundColor: colors.surface,
-          },
-        ]}
-      />
+          }}
+        />
+      </View>
 
       {/* Outer Shadow Container */}
-      <TouchableOpacity
+      <Pressable
         onPress={() => onSelect(story.id)}
-        activeOpacity={0.9}
         disabled={isDisabled}
-        style={[
-          styles.featuredShadowWrapper,
-          styles.elevatedShadow,
-          { backgroundColor: colors.surfaceCard }, // Use theme
-          isDisabled && { opacity: 0.6 },
-        ]}>
-        {/* Inner Content Container */}
-        <View style={[styles.featuredCardInner, { backgroundColor: colors.surfaceCard }]}>
-          {/* Cover Image */}
-          <View style={[styles.coverImageContainer, { backgroundColor: colors.surfaceDim }]}>
-            <Image source={coverImage} style={styles.coverImage} contentFit="cover" />
-            {/* Recorded Year Overlay */}
-            <View style={styles.yearOverlay}>
-              <AppText style={[styles.yearText, { fontFamily: FONTS.serifSemiBold }]}>
-                Recorded {dateObj.getFullYear()}
-              </AppText>
-            </View>
-          </View>
-
-          {/* Content with left accent bar */}
-          <View style={styles.featuredContent}>
-            {/* Left Accent Bar */}
-            <View style={[styles.accentBar, { backgroundColor: colors.blueAccent }]} />
-
-            {/* Title Section */}
-            <View style={styles.titleSection}>
-              <View style={styles.titleRow}>
+        onPressIn={() => (scale.value = withSpring(0.98, { damping: 10, stiffness: 300 }))}
+        onPressOut={() => (scale.value = withSpring(1, { damping: 10, stiffness: 300 }))}
+        style={{ width: '100%' }}
+      >
+        <Animated.View
+          className="w-full rounded-2xl shadow-lg elevation-8"
+          style={[
+            {
+              backgroundColor: colors.surfaceCard,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.1,
+              shadowRadius: 20,
+            },
+            isDisabled && { opacity: 0.6 },
+            animatedStyle,
+          ]}>
+          {/* Inner Content Container */}
+          <View className="w-full overflow-hidden rounded-2xl" style={{ backgroundColor: colors.surfaceCard }}>
+            {/* Cover Image */}
+            <View className="relative h-56 overflow-hidden" style={{ backgroundColor: colors.surfaceDim }}>
+              <Image
+                source={coverImage}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="cover"
+              />
+              {/* Recorded Year Overlay */}
+              <View className="absolute bottom-3 left-4">
                 <AppText
-                  style={[
-                    styles.featuredTitle,
-                    { fontFamily: FONTS.serifLight, color: colors.onSurface },
-                  ]}
-                  numberOfLines={2}>
-                  {story.title || 'Untitled Story'}
+                  className="text-sm tracking-wide text-white font-serif opacity-90"
+                  style={{
+                    textShadowColor: 'rgba(0,0,0,0.3)',
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 3,
+                  }}>
+                  Recorded {dateObj.getFullYear()}
                 </AppText>
+              </View>
+            </View>
 
-                {isBeingListened && (
-                  <View style={styles.listeningBadge}>
-                    <AppText style={[styles.listeningText, { color: colors.amberDeep }]}>
-                      {listenerName.toUpperCase()} IS LISTENING
+            {/* Content with left accent bar */}
+            <View className="relative p-6 pt-8">
+              {/* Left Accent Bar */}
+              <View className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: colors.blueAccent }} />
+
+              {isBeingListened && (
+                <View className="absolute right-3 top-2 z-20" pointerEvents="none">
+                  <View
+                    style={{
+                      backgroundColor: `${colors.surface}E6`,
+                      borderColor: colors.border,
+                      borderWidth: 0.5,
+                      paddingHorizontal: 7,
+                      paddingVertical: 1.5,
+                      borderRadius: 999,
+                      maxWidth: 112,
+                    }}>
+                    <AppText
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 8,
+                        letterSpacing: 0.2,
+                        color: colors.amberDeep,
+                        fontWeight: '600',
+                      }}>
+                      {isSelf ? 'You are listening' : `${listenerName} is listening`}
                     </AppText>
                   </View>
-                )}
+                </View>
+              )}
+
+              {/* Title Section */}
+              <View className="mb-4">
+                <View className="flex-row items-start justify-between mb-1">
+                  <AppText
+                    className="flex-1 text-3xl leading-9 tracking-tighter"
+                    style={{ fontFamily: 'Fraunces_300Light', color: colors.onSurface }}
+                    numberOfLines={2}>
+                    {displayTitle}
+                  </AppText>
+                </View>
+
+                <AppText className="text-xl font-medium tracking-wide" style={{ color: colors.textFaint }}>
+                  {fullDateStr}
+                </AppText>
               </View>
 
-              <AppText style={[styles.featuredDate, { color: colors.textFaint }]}>
-                {fullDateStr}
+              {/* PREVIEW */}
+              <AppText
+                className="mb-6 text-lg leading-7"
+                style={{ fontFamily: 'Fraunces_300Light', color: colors.textFaint }}>
+                {previewText}
               </AppText>
-            </View>
 
-            {/* PREVIEW */}
-            <AppText
-              style={[
-                styles.previewText,
-                { fontFamily: FONTS.serifLight, color: colors.textFaint },
-              ]}>
-              {previewText}
-            </AppText>
+              {/* Footer */}
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center gap-3">
+                  <TouchableOpacity
+                    onPress={() => onPlay(story.id)}
+                    disabled={isDisabled}
+                    className="w-14 h-14 items-center justify-center rounded-full"
+                    style={{ backgroundColor: colors.primarySoft }}
+                    activeOpacity={0.7}>
+                    <Ionicons
+                      name="play"
+                      size={32}
+                      color={isDisabled ? colors.disabledText : colors.primaryDeep}
+                      style={{ marginLeft: 3 }}
+                    />
+                  </TouchableOpacity>
 
-            {/* Footer */}
-            <View style={styles.featuredFooter}>
-              <TouchableOpacity
-                onPress={() => onPlay(story.id)}
-                disabled={isDisabled}
-                style={[styles.playButtonLarge, { backgroundColor: colors.primarySoft }]}
-                activeOpacity={0.7}>
-                <Ionicons
-                  name="play"
-                  size={32}
-                  color={isDisabled ? colors.disabledText : colors.primaryDeep}
-                  style={{ marginLeft: 3 }}
-                />
-              </TouchableOpacity>
+                  {/* Offload Button - Only if Synced and Not Offloaded */}
+                  {isSynced && story.filePath !== 'OFFLOADED' && onOffload && (
+                    <TouchableOpacity
+                      onPress={() => onOffload(story.id)}
+                      className="px-3 py-2 rounded-2xl border flex-row items-center gap-1"
+                      style={{
+                        backgroundColor: colors.surface,
+                        borderColor: colors.border,
+                      }}>
+                      <Ionicons name="phone-portrait-outline" size={14} color={colors.textMuted} />
+                      <AppText className="text-xs" style={{ color: colors.textMuted }}>Free up Space</AppText>
+                    </TouchableOpacity>
+                  )}
 
-              <View style={styles.footerRight}>
-                {unreadCommentCount > 0 && (
-                  <View style={styles.commentBadgeContainer}>
-                    <CommentBadge count={unreadCommentCount} />
-                  </View>
-                )}
+                  {/* Cloud Only Indicator */}
+                  {story.filePath === 'OFFLOADED' && (
+                    <View className="px-2.5 py-1.5 rounded-2xl flex-row items-center gap-1"
+                      style={{ backgroundColor: `${colors.primary}15` }}>
+                      <Ionicons name="cloud-done" size={12} color={colors.primary} />
+                      <AppText className="text-[11px] font-semibold" style={{ color: colors.primary }}>
+                        Cloud Only
+                      </AppText>
+                    </View>
+                  )}
+                </View>
 
-                <View style={styles.durationStatusContainer}>
-                  <AppText style={[styles.durationText, { color: colors.textMuted }]}>
-                    {durationStr}
-                  </AppText>
-                  <View style={styles.syncStatus}>
-                    {isSynced && (
-                      <>
-                        <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-                        <AppText style={[styles.syncText, { color: colors.textMuted }]}>
-                          Saved to cloud
-                        </AppText>
-                      </>
-                    )}
-                    {isSyncing && (
-                      <>
-                        <Ionicons name="cloud-outline" size={18} color={colors.disabledText} />
-                        <AppText style={[styles.syncingText, { color: colors.disabledText }]}>
-                          Waiting for sync...
-                        </AppText>
-                      </>
-                    )}
+                <View className="flex-row items-end gap-4">
+                  {unreadCommentCount > 0 && (
+                    <View className="mb-1">
+                      <CommentBadge count={unreadCommentCount} />
+                    </View>
+                  )}
+
+                  <View className="items-end gap-1">
+                    <AppText className="text-xs font-medium" style={{ color: colors.textMuted }}>
+                      {durationStr}
+                    </AppText>
+                    <View className="flex-row items-center gap-1.5">
+                      {isSynced && story.filePath !== 'OFFLOADED' && (
+                        <>
+                          <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+                          <AppText className="text-xs font-medium" style={{ color: colors.textMuted }}>
+                            Saved
+                          </AppText>
+                        </>
+                      )}
+                      {isSyncing && (
+                        <>
+                          <Ionicons name="cloud-outline" size={18} color={colors.disabledText} />
+                          <AppText className="text-xs font-medium" style={{ color: colors.disabledText }}>
+                            Syncing...
+                          </AppText>
+                        </>
+                      )}
+                    </View>
                   </View>
                 </View>
               </View>
             </View>
           </View>
-        </View>
-      </TouchableOpacity>
+        </Animated.View>
+      </Pressable>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  featuredCardContainer: {
-    position: 'relative',
-    marginBottom: 24,
-    width: '100%',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    overflow: 'visible',
-    zIndex: 1,
-  },
-  featuredShadowWrapper: {
-    width: '100%',
-    borderRadius: 16,
-  },
-  featuredCardInner: {
-    width: '100%',
-    overflow: 'hidden',
-    borderRadius: 16,
-  },
-  coverImageContainer: {
-    position: 'relative',
-    height: 160,
-    overflow: 'hidden',
-  },
-  coverImage: {
-    width: '100%',
-    height: '100%',
-  },
-  yearOverlay: {
-    position: 'absolute',
-    bottom: 12,
-    left: 16,
-  },
-  yearText: {
-    fontSize: 14,
-    letterSpacing: 0.5,
-    color: 'white',
-    opacity: 0.9,
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  featuredContent: {
-    position: 'relative',
-    padding: 24,
-  },
-  titleSection: {
-    marginBottom: 16,
-  },
-  titleRow: {
-    marginBottom: 4,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-  },
-  featuredTitle: {
-    flex: 1,
-    fontSize: 30,
-    lineHeight: 36,
-    letterSpacing: -0.5,
-  },
-  listeningBadge: {
-    marginLeft: 8,
-    paddingTop: 8,
-  },
-  listeningText: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-  },
-  featuredDate: {
-    fontSize: 20,
-    fontWeight: '500',
-    letterSpacing: 0.3,
-  },
-  previewText: {
-    marginBottom: 24,
-    fontSize: 18,
-    lineHeight: 28,
-  },
-  featuredFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  footerRight: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 16,
-  },
-  commentBadgeContainer: {
-    marginBottom: 4,
-  },
-  durationStatusContainer: {
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  durationText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  syncStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  syncText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  syncingText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  playButtonLarge: {
-    width: 56,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 28,
-  },
-  centerDot: {
-    position: 'absolute',
-    left: '50%',
-    marginLeft: -6,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 1,
-    zIndex: 20,
-  },
-  accentBar: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-  },
-  elevatedShadow: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-});

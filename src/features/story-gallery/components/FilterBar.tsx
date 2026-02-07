@@ -7,13 +7,12 @@
  * - Clean, flat design that works reliably on Android
  */
 
-import { AppText } from '@/components/ui/AppText';
-import React from 'react';
-import { View, Pressable, ScrollView } from '@/tw';
-import { StyleSheet } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import { FilterCategory, CATEGORY_DATA } from '../data/mockGalleryData';
 import { useHeritageTheme } from '@/theme/heritage';
+import { AppText } from '@/components/ui/AppText';
+import React from 'react';
+import { View, Pressable, ScrollView } from 'react-native';
 
 interface FilterBarProps {
   selectedCategory: FilterCategory;
@@ -24,12 +23,16 @@ export function FilterBar({ selectedCategory, onSelectCategory }: FilterBarProps
   const { colors } = useHeritageTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surfaceWarm }]}>
+    <View style={{ backgroundColor: colors.surfaceWarm }}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}>
-        {CATEGORY_DATA.map((cat) => {
+        contentContainerStyle={{
+          paddingHorizontal: 24,
+          paddingVertical: 12,
+          alignItems: 'center',
+        }}>
+        {CATEGORY_DATA.map((cat, index) => {
           const isSelected = selectedCategory === cat.id;
 
           // Map colorKey to actual token
@@ -52,24 +55,36 @@ export function FilterBar({ selectedCategory, onSelectCategory }: FilterBarProps
             <Pressable
               key={cat.id}
               onPress={() => onSelectCategory(cat.id)}
-              style={({ pressed }) => [
-                styles.pill,
+              style={[
+                {
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  borderRadius: 999,
+                  borderWidth: 1,
+                  paddingHorizontal: 18,
+                  paddingVertical: 10,
+                },
                 isSelected
                   ? { backgroundColor: colors.primary, borderColor: colors.primary }
                   : { backgroundColor: colors.surfaceCard, borderColor: colors.border },
-                pressed && styles.pillPressed,
+                { marginRight: index === CATEGORY_DATA.length - 1 ? 0 : 12, minHeight: 44 },
               ]}>
               {cat.icon && (
                 <Ionicons
                   name={cat.icon}
                   size={16}
                   color={isSelected ? colors.onPrimary : iconColor}
-                  style={styles.icon}
+                  style={{ marginRight: 6 }}
                 />
               )}
               <AppText
                 style={[
-                  styles.text,
+                  {
+                    fontSize: 15,
+                    lineHeight: 18,
+                    fontWeight: '600',
+                    letterSpacing: 0.2,
+                  },
                   isSelected ? { color: colors.onPrimary } : { color: colors.onSurface },
                 ]}>
                 {cat.label}
@@ -81,36 +96,3 @@ export function FilterBar({ selectedCategory, onSelectCategory }: FilterBarProps
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    // Background set via style prop
-    // Removed marginTop to prevent gaps - spacing handled by padding
-  },
-  scrollContent: {
-    paddingHorizontal: 24, // Match screen padding (px-6)
-    paddingVertical: 12,
-    gap: 12, // Space between pills
-    alignItems: 'center',
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10, // Taller touch target
-    paddingHorizontal: 18,
-    borderRadius: 24,
-    borderWidth: 1,
-  },
-  pillPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.98 }],
-  },
-  icon: {
-    marginRight: 6,
-  },
-  text: {
-    fontSize: 15,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
-});

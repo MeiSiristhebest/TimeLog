@@ -93,30 +93,12 @@ export function CommentBadge({
 
   return (
     <Animated.View
-      style={[styles.badge, { backgroundColor: colors.warning }, animatedStyle]}
+      className="absolute -top-2 -right-2 min-w-[24px] h-6 rounded-full items-center justify-center px-1.5 z-10"
+      style={[{ backgroundColor: colors.warning }, animatedStyle]}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="text"
       testID={testID}>
-      <AppText style={[styles.text, { color: colors.onSurface }]}>{displayCount}</AppText>
+      <AppText className="text-sm font-bold" style={{ color: colors.onSurface }}>{displayCount}</AppText>
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  badge: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    minWidth: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-    zIndex: 10,
-  },
-  text: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-});

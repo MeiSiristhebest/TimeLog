@@ -1,12 +1,5 @@
 
 import React, { useCallback, useEffect } from 'react';
-import {
-  ListRenderItem,
-  type FlatListProps,
-  Platform,
-} from 'react-native';
-import Animated, { LinearTransition } from 'react-native-reanimated';
-import { View } from '@/tw';
 import type { AudioRecording } from '@/types/entities';
 import { StoryCard } from './StoryCard';
 import { SkeletonCard } from './SkeletonCard';
@@ -14,10 +7,8 @@ import { EmptyGallery } from './EmptyGallery';
 import { useSyncStore } from '@/lib/sync-engine/store';
 import { useStoryAvailability } from '../hooks/useStoryAvailability';
 import { useUnreadCommentCounts } from '../hooks/useUnreadCommentCounts';
-
-
-
-import { FlatList } from 'react-native'; // Keep for types
+import { FlatList, ListRenderItem, type FlatListProps, Platform, View } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 
 import { TimelineLayout } from './TimelineLayout';
 import { TimelineStoryCard } from './TimelineStoryCard';
@@ -31,6 +22,8 @@ type StoryListProps = {
   onUnavailableStoryTap?: (id: string) => void;
   /** Callback to delete story (Story 3.3) */
   onDeleteStory?: (id: string) => void;
+  /** Callback to offload story (Local Delete) */
+  onOffloadStory?: (id: string) => void;
   /** Optional custom renderer for list items */
   renderItem?: ListRenderItem<AudioRecording & { isPlayable: boolean }>;
   /** Optional custom separator */
@@ -41,6 +34,8 @@ type StoryListProps = {
   onRefresh?: () => void;
   /** Apple HIG: Pull to Refresh loading state */
   isRefreshing?: boolean;
+  /** Optional extra data to force re-render */
+  extraData?: any;
 };
 
 /**
@@ -63,10 +58,12 @@ export function StoryList({
   isLoading = false,
   onUnavailableStoryTap,
   onDeleteStory,
+  onOffloadStory,
   renderItem,
   ItemSeparatorComponent,
   onRefresh,
   isRefreshing = false,
+  extraData,
 }: StoryListProps): JSX.Element {
   // Story 3.6: Get network status for offline detection
   const isOnline = useSyncStore((s) => s.isOnline);
@@ -95,13 +92,14 @@ export function StoryList({
             onPlayStory(item.id);
           }
         }}
+        onOffload={onOffloadStory ? () => onOffloadStory(item.id) : undefined}
         variant={index === 0 ? 'featured' : 'default'}
         isPlayable={item.isPlayable}
         isOffline={isOffline}
         unreadCommentCount={getCount(item.id)}
       />
     ),
-    [isOffline, onPlayStory, onSelectStory, onUnavailableStoryTap]
+    [isOffline, onPlayStory, onSelectStory, onUnavailableStoryTap, onOffloadStory, getCount]
   );
 
   if (isLoading) {
@@ -117,7 +115,7 @@ export function StoryList({
       <Animated.FlatList
         data={displayStories}
         keyExtractor={(item) => item.id}
-        renderItem={renderTimelineItem}
+        renderItem={renderItem || renderTimelineItem}
         contentContainerStyle={{
           paddingTop: 8,
           paddingBottom: 120, // Extra padding for tab bar/FAB
@@ -131,6 +129,7 @@ export function StoryList({
         // Apple HIG: Pull to Refresh
         refreshing={isRefreshing}
         onRefresh={onRefresh}
+        extraData={extraData}
         // Reanimated Layout Transition
         itemLayoutAnimation={LinearTransition.springify()}
       />

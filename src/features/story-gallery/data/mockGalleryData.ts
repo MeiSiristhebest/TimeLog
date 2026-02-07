@@ -6,11 +6,15 @@ import { Ionicons } from '@/components/ui/Icon';
 
 export type FilterCategory =
   | 'all'
-  | 'adventures'
-  | 'reflections'
-  | 'milestones'
-  | 'childhood'
-  | 'family';
+  | 'travel'
+  | 'education'
+  | 'wisdom'
+  | 'celebration'
+  | 'hobbies'
+  | 'food'
+  | 'friendship'
+  | 'history'
+  | 'childhood';
 
 export const GALLERY_STRINGS = {
   header: {
@@ -36,16 +40,77 @@ export const CATEGORY_DATA: {
   id: FilterCategory;
   label: string;
   icon?: keyof typeof Ionicons.glyphMap;
-  // Colors will be mapped in the component to use Theme Tokens, avoiding hex here if possible,
-  // OR we map semantic names here and resolve to tokens in View.
-  // For 'reactcomponents' skill, data should be pure.
-  // Let's use semantic color keys.
   colorKey: 'primary' | 'blueAccent' | 'amberCustom' | 'sageGreen' | 'primaryMuted' | 'textMuted';
 }[] = [
-  { id: 'all', label: 'All Stories', colorKey: 'textMuted' },
-  { id: 'adventures', label: 'Adventures', icon: 'sparkles', colorKey: 'primary' },
-  { id: 'reflections', label: 'Reflections', icon: 'bulb', colorKey: 'blueAccent' },
-  { id: 'milestones', label: 'Milestones', icon: 'star', colorKey: 'amberCustom' },
-  { id: 'childhood', label: 'Childhood', icon: 'home', colorKey: 'sageGreen' },
-  { id: 'family', label: 'Family', icon: 'heart', colorKey: 'primaryMuted' },
-];
+    { id: 'all', label: 'All', colorKey: 'textMuted' },
+    { id: 'travel', label: 'Travel', icon: 'map', colorKey: 'primary' },
+    { id: 'education', label: 'Education', icon: 'school', colorKey: 'blueAccent' },
+    { id: 'wisdom', label: 'Wisdom', icon: 'leaf', colorKey: 'amberCustom' },
+    { id: 'celebration', label: 'Celebration', icon: 'wine', colorKey: 'primaryMuted' },
+    { id: 'hobbies', label: 'Hobbies', icon: 'color-palette', colorKey: 'sageGreen' },
+    { id: 'food', label: 'Food', icon: 'restaurant', colorKey: 'amberCustom' },
+    { id: 'friendship', label: 'Friendship', icon: 'people', colorKey: 'blueAccent' },
+    { id: 'history', label: 'History', icon: 'time', colorKey: 'textMuted' },
+    // Keeping Childhood as distinct or merging? User listed it above but also in the list
+    // Wait, the user's list was: Travel, Education, Wisdom, Celebration, Hobbies (incl Food?), Friendship, History.
+    // Childhood was in the old list. I will keep it for backward compat or if it fits 'History'? 
+    // User list mentions: Hobbies -> Food (indented?), maybe Food is sub? But usually flat list is better for UI pill bar.
+    // I will make Food top level.
+    { id: 'childhood', label: 'Childhood', icon: 'home', colorKey: 'sageGreen' },
+  ];
+
+/**
+ * Maps raw question categories (from database/questions) to UI Filter Categories.
+ * Centralized logic to ensure consistent behavior between FilterBar and Card UI.
+ */
+export function mapRawCategoryToFilter(raw: string): FilterCategory {
+  if (!raw) return 'wisdom';
+
+  const normalized = raw.trim().toLowerCase().replace(/[\s-]+/g, '_');
+
+  switch (normalized) {
+    case 'childhood': return 'childhood';
+
+    // Family & Social
+    case 'family':
+    case 'relatives':
+      return 'celebration'; // Based on previous decision, although 'family' -> 'celebration' is a bit weird. 
+    // User requested "Friendship" separately. 
+    // Let's improve this based on user's new list:
+    // Travel, Education, Wisdom, Celebration, Hobbies(Food), Friendship, History.
+
+    case 'food': return 'food';
+    case 'celebration':
+    case 'celebrations':
+      return 'celebration';
+    case 'friend':
+    case 'friends':
+    case 'friendship':
+    case 'friendships':
+      return 'friendship';
+
+    // Hobbies & Lifestyle
+    case 'travel': return 'travel';
+    case 'adventures': return 'travel';
+    case 'hobbies': return 'hobbies';
+    case 'general': return 'hobbies'; // Fallback for misc
+
+    // Wisdom & Reflections
+    case 'wisdom': return 'wisdom';
+    case 'fun':
+    case 'reflections':
+      return 'wisdom';
+    case 'memory':
+    case 'memories':
+    case 'family_history':
+      return 'history'; // Past memories -> history
+    case 'history': return 'history';
+
+    // Milestones
+    case 'career':
+    case 'education': return 'education';
+
+    default:
+      return 'wisdom'; // Default fallback
+  }
+}

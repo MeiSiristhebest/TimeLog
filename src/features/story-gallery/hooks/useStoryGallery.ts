@@ -1,13 +1,13 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useStories } from '../hooks/useStories';
-import { softDeleteStory, restoreStory } from '../services/storyService';
+import { softDeleteStory, restoreStory, offloadStory } from '../services/storyService';
 import {
   showSuccessToast,
   showErrorToast,
   showOfflineUnavailableToast,
 } from '@/components/ui/feedback/toast';
-import { FilterCategory, GALLERY_STRINGS } from '../data/mockGalleryData';
+import { FilterCategory, GALLERY_STRINGS, mapRawCategoryToFilter } from '../data/mockGalleryData';
 import { SortOption } from '../components/SortOptionsModal';
 import { getQuestionById } from '@/features/recorder/data/topicQuestions';
 
@@ -27,6 +27,12 @@ export function useStoryGallery() {
   // Focused Story State (for expansion interaction)
   const [focusedStoryId, setFocusedStoryId] = useState<string | null>(null);
 
+  // Reset focus when filter changes (impl in handler to avoid useEffect re-render)
+  const handleSetFilter = useCallback((newFilter: FilterCategory) => {
+    setFilter(newFilter);
+    setFocusedStoryId(null);
+  }, []);
+
   // Computed Strings
   const subtitle = `${stories.filter((s) => !s.deletedAt).length}${GALLERY_STRINGS.header.subtitleSuffix}`;
 
@@ -38,10 +44,15 @@ export function useStoryGallery() {
       filter === 'all'
         ? activeStories
         : activeStories.filter((story) => {
-            if (!story.topicId) return false;
-            const question = getQuestionById(story.topicId);
-            return question?.category === filter;
-          });
+          if (!story.topicId) return false;
+
+          const question = getQuestionById(story.topicId);
+          if (!question?.category) return false;
+
+          // Use centralized mapping
+          const mapped = mapRawCategoryToFilter(question.category);
+          return mapped === filter;
+        });
 
     // 1. Sort Logic - Pure chronological/etc
     const sorted = [...filtered].sort((a, b) => {
@@ -75,6 +86,8 @@ export function useStoryGallery() {
       topicId: record.topicId,
       userId: record.userId,
       deviceId: record.deviceId,
+      coverImagePath: record.coverImagePath,
+      isOffloaded: record.filePath === 'OFFLOADED',
     }));
   }, [stories, filter, sortOption]);
 
@@ -87,6 +100,7 @@ export function useStoryGallery() {
 
   const handlePlayStory = useCallback(
     (id: string) => {
+      setFocusedStoryId(id);
       // "Clicking play enters detail page"
       router.push({ pathname: '/story/[id]', params: { id } });
     },
@@ -132,13 +146,22 @@ export function useStoryGallery() {
     setLastDeletedId(null);
   }, []);
 
+  const handleOffloadStory = useCallback(async (id: string) => {
+    try {
+      await offloadStory(id);
+      showSuccessToast('Removed from device');
+    } catch (error) {
+      showErrorToast('Failed to offload story');
+    }
+  }, []);
+
   return {
     isLoading,
     recordings,
     subtitle,
     // State
     filter,
-    setFilter,
+    setFilter: handleSetFilter,
     sortOption,
     setSortOption,
     deleteModalVisible,
@@ -153,6 +176,7 @@ export function useStoryGallery() {
       onSelectStory: handleSelectStory, // Now sets focus
       onPlayStory: handlePlayStory,
       onDeleteStory: handleDeleteStory,
+      onOffloadStory: handleOffloadStory,
       onUnavailableStoryTap: handleUnavailableStoryTap,
       onConfirmDelete: handleConfirmDelete,
       onUndo: handleUndo,

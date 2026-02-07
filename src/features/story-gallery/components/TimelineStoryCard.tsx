@@ -18,9 +18,11 @@ export interface TimelineStoryCardProps {
   onSelect: (id: string) => void;
   index: number;
   variant?: 'default' | 'featured';
+  isBeingListened?: boolean;
   isPlayable?: boolean;
   isOffline?: boolean;
   unreadCommentCount?: number;
+  onOffload?: () => void;
 }
 
 export function TimelineStoryCard({
@@ -29,9 +31,11 @@ export function TimelineStoryCard({
   onSelect,
   index,
   variant = 'default',
+  isBeingListened = false,
   isPlayable = true,
   isOffline = false,
   unreadCommentCount = 0,
+  onOffload,
 }: TimelineStoryCardProps): JSX.Element {
   // Logic Extraction: Date Data
   // In a larger app, this `useMemo` block could be its own hook `useStoryDisplayData(story)`
@@ -68,11 +72,13 @@ export function TimelineStoryCard({
         dateObj={dateObj}
         fullDateStr={fullDateStr}
         durationStr={durationStr}
+        isBeingListened={isBeingListened}
         isPlayable={isPlayable}
         isOffline={isOffline}
         unreadCommentCount={unreadCommentCount}
         onPlay={onPlay}
         onSelect={onSelect}
+        onOffload={onOffload ? () => onOffload() : undefined}
       />
     );
   }
@@ -87,6 +93,7 @@ export function TimelineStoryCard({
       unreadCommentCount={unreadCommentCount}
       onPlay={onPlay}
       onSelect={onSelect}
+      onOffload={onOffload ? () => onOffload() : undefined}
     />
   );
 }

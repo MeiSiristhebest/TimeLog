@@ -1,13 +1,13 @@
+import { useHeritageTheme } from '@/theme/heritage';
 import { AppText } from '@/components/ui/AppText';
 import React, { useState, useEffect } from 'react';
 import {
+  Platform,
+  Modal,
   View,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
-  Platform,
-  Modal,
-  StyleSheet,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
@@ -79,30 +79,53 @@ export function EditTitleSheet({
     }
   };
 
+  const { colors } = useHeritageTheme();
+
   return (
     <Modal visible={isVisible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}>
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+        className="flex-1 justify-end">
+        <TouchableOpacity
+          className="absolute inset-0 bg-black/40"
+          activeOpacity={1}
+          onPress={onClose}
+        />
 
-        <View style={styles.sheet}>
-          <View style={styles.header}>
-            <AppText style={styles.title}>Edit Story Title</AppText>
+        <View
+          className="rounded-t-3xl p-6 shadow-xl elevation-10"
+          style={{
+            backgroundColor: colors.surface,
+            paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+            shadowColor: colors.primary, // Terracotta shadow
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 16,
+          }}>
+          <View className="flex-row justify-between items-center mb-6">
+            <AppText className="text-xl font-semibold" style={{ color: colors.onSurface, fontFamily: 'Fraunces_600SemiBold' }}>Edit Story Title</AppText>
             <TouchableOpacity onPress={onClose} hitSlop={12}>
               <Ionicons name="close" size={24} color="#666" />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.content}>
+          <View className="gap-4">
             <TextInput
-              style={[styles.input, error ? styles.inputError : null]}
+              className="border rounded-2xl p-[18px] text-lg"
+              style={[
+                {
+                  borderColor: error ? colors.error : colors.border,
+                  backgroundColor: colors.surface,
+                  color: colors.onSurface
+                }
+              ]}
               value={title}
               onChangeText={(text) => {
                 setTitle(text);
                 if (error) setError(null);
               }}
               placeholder="Enter story title"
+              placeholderTextColor={colors.textMuted}
               autoFocus={true}
               maxLength={100}
               returnKeyType="done"
@@ -110,24 +133,34 @@ export function EditTitleSheet({
               accessibilityLabel="Story title input"
             />
 
-            {error ? <AppText style={styles.errorText}>{error}</AppText> : null}
+            {error ? <AppText className="text-sm -mt-2" style={{ color: colors.error }}>{error}</AppText> : null}
 
-            <View style={styles.excludeNote}>
-              <AppText style={styles.hintText}>
+            <View className="mb-2">
+              <AppText className="text-sm italic" style={{ color: colors.textMuted }}>
                 Tip: Gives your memory a meaningful name to help you remember it.
               </AppText>
             </View>
 
             <TouchableOpacity
-              style={[styles.saveButton, (!title.trim() || isSaving) && styles.saveButtonDisabled]}
+              className="py-[18px] rounded-full items-center mt-2 shadow-sm elevation-4"
+              style={[
+                { backgroundColor: colors.primary },
+                (!title.trim() || isSaving) && { opacity: 0.6, backgroundColor: colors.primaryMuted },
+                {
+                  shadowColor: colors.primary,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 8,
+                }
+              ]}
               onPress={handleSave}
               disabled={!title.trim() || isSaving}
               accessibilityLabel="Save title"
               accessibilityRole="button">
               {isSaving ? (
-                <ActivityIndicator color="#FFF" />
+                <ActivityIndicator color={colors.onPrimary} />
               ) : (
-                <AppText style={styles.saveButtonText}>Save Changes</AppText>
+                <AppText className="text-[17px] font-semibold" style={{ color: colors.onPrimary }}>Save Changes</AppText>
               )}
             </TouchableOpacity>
           </View>
@@ -136,90 +169,3 @@ export function EditTitleSheet({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  sheet: {
-    backgroundColor: '#FFFCF7', // Surface Elevated
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    shadowColor: '#B85A3B', // Terracotta shadow
-    shadowOffset: {
-      width: 0,
-      height: -4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1E293B', // High contrast text
-    fontFamily: 'Fraunces_600SemiBold',
-  },
-  content: {
-    gap: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E2E8F0', // Border color
-    borderRadius: 16,
-    padding: 18,
-    fontSize: 18,
-    color: '#1E293B',
-    backgroundColor: '#F9F3E8', // Surface
-  },
-  inputError: {
-    borderColor: '#B84A4A', // Heritage error
-  },
-  errorText: {
-    color: '#B84A4A',
-    fontSize: 14,
-    marginTop: -8,
-  },
-  hintText: {
-    color: '#475569', // Muted text
-    fontSize: 14,
-    fontStyle: 'italic',
-  },
-  excludeNote: {
-    marginBottom: 8,
-  },
-  saveButton: {
-    backgroundColor: '#B85A3B', // Heritage primary
-    paddingVertical: 18,
-    borderRadius: 999, // Pill shape
-    alignItems: 'center',
-    marginTop: 8,
-    shadowColor: '#B85A3B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  saveButtonDisabled: {
-    backgroundColor: '#D4846A', // Primary soft
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    color: '#FFF8E7', // On Primary
-    fontSize: 17,
-    fontWeight: '600',
-  },
-});

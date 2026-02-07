@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { View } from '@/tw';
+import { View } from 'react-native';
 
 const SKELETON_PULSE = '#EDE5D8'; // Surface Dim
 

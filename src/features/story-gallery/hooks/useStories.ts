@@ -1,4 +1,6 @@
-import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { useState, useCallback, useEffect } from 'react';
+import { DeviceEventEmitter } from 'react-native';
+// import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { desc, eq, isNull, isNotNull, and } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
@@ -36,7 +38,7 @@ export function useStories(options: UseStoriesOptions = {}): UseStoriesResult {
   const { includeDeleted = false, onlyDeleted = false } = options;
 
   // Build where clause based on deleted filtering options
-  const whereConditions = [];
+  const whereConditions: any[] = [];
 
   // Always filter by completed recordings
   whereConditions.push(eq(audioRecordings.recordingStatus, 'completed'));
@@ -51,21 +53,48 @@ export function useStories(options: UseStoriesOptions = {}): UseStoriesResult {
   }
   // If includeDeleted=true and onlyDeleted=false: show all items (no deletedAt filter)
 
-  const { data: stories, error } = useLiveQuery(
-    db
-      .select()
-      .from(audioRecordings)
-      .where(and(...whereConditions))
-      .orderBy(
-        onlyDeleted
-          ? desc(audioRecordings.deletedAt!) // Deleted Items: most recently deleted first
-          : desc(audioRecordings.startedAt) // Gallery: newest recordings first
-      )
-  );
+  const [stories, setStories] = useState<AudioRecordingRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<unknown>(null);
+
+  const fetchStories = useCallback(async () => {
+    try {
+      const result = await db
+        .select()
+        .from(audioRecordings)
+        .where(and(...whereConditions))
+        .orderBy(
+          onlyDeleted
+            ? desc(audioRecordings.deletedAt!)
+            : desc(audioRecordings.startedAt)
+        );
+      setStories(result);
+      setError(null);
+    } catch (e) {
+      setError(e);
+      // Fallback or log?
+    } finally {
+      setIsLoading(false);
+    }
+  }, [includeDeleted, onlyDeleted]); // whereConditions dependency is unstable if constructed inline, so relying on props
+
+  useEffect(() => {
+    // Initial fetch
+    fetchStories();
+
+    // Listen for updates
+    const subscription = DeviceEventEmitter.addListener('story-collection-updated', () => {
+      fetchStories();
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [fetchStories]);
 
   return {
-    stories: stories ?? [],
-    isLoading: stories === undefined,
+    stories,
+    isLoading,
     error,
   };
 }

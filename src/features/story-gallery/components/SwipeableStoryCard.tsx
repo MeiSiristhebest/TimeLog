@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useRef, type ReactNode } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import { View, Animated } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
@@ -45,15 +45,23 @@ export function SwipeableStoryCard({ children, onDelete }: SwipeableStoryCardPro
 
     return (
       <Animated.View
-        style={[
-          styles.deleteAction,
-          {
-            backgroundColor: colors.error,
-            opacity,
-            transform: [{ translateX }],
-          },
-        ]}>
-        <View style={styles.deleteContent}>
+        style={{
+          backgroundColor: colors.error,
+          opacity,
+          transform: [{ translateX }],
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          borderRadius: 16,
+          marginBottom: 14,
+          marginLeft: -20,
+        }}>
+        <View
+          style={{
+            width: 80,
+            height: '100%',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
           <Ionicons name="trash" size={24} color="#FFF" />
         </View>
       </Animated.View>
@@ -80,19 +88,3 @@ export function SwipeableStoryCard({ children, onDelete }: SwipeableStoryCardPro
     </Swipeable>
   );
 }
-
-const styles = StyleSheet.create({
-  deleteAction: {
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    borderRadius: 20,
-    marginBottom: 14,
-    marginLeft: -20, // Overlap with card
-  },
-  deleteContent: {
-    width: 80,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

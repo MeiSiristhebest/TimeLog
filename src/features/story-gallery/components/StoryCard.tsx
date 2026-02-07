@@ -14,8 +14,6 @@
  * - Shows unread comment count badge for seniors
  */
 
-import { AppText } from '@/components/ui/AppText';
-import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import type { SyncStatus } from '@/types/entities';
 import { SyncStatusBadge } from './SyncStatusBadge';
@@ -23,6 +21,8 @@ import { CommentBadge } from './CommentBadge';
 import { formatDate, formatDuration } from '../utils/date-utils';
 import { useHeritageTheme } from '@/theme/heritage';
 import { STORY_ACCESSIBILITY } from '../constants';
+import { AppText } from '@/components/ui/AppText';
+import { View, TouchableOpacity } from 'react-native';
 
 type StoryCardProps = {
   id: string;
@@ -40,6 +40,8 @@ type StoryCardProps = {
   isOffline?: boolean;
   /** Number of unread comments (Story 4.5) */
   unreadCommentCount?: number;
+  /** Callback to offload story (Local Delete) */
+  onOffload?: () => void;
 };
 
 function formatUnreadCommentLabel(count: number): string {
@@ -63,6 +65,7 @@ export function StoryCard({
   isPlayable = true,
   isOffline = false,
   unreadCommentCount = 0,
+  onOffload,
 }: StoryCardProps): JSX.Element {
   const { colors } = useHeritageTheme();
   const formattedDate = formatDate(date);
@@ -180,6 +183,31 @@ export function StoryCard({
 
         {/* Right: Actions */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          {/* Offload Button (Only if synced and not offloaded) */}
+          {syncStatus === 'synced' && !isOffline && !isUnavailable && onOffload && (
+            <TouchableOpacity
+              onPress={(e) => {
+                e.stopPropagation();
+                onOffload();
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: colors.border,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Free up space"
+              accessibilityHint="Removes download from device, keeps in cloud">
+              <Ionicons name="phone-portrait-outline" size={20} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
+
           {/* Delete Button */}
           {onDelete && (
             <TouchableOpacity
@@ -189,7 +217,7 @@ export function StoryCard({
               }}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{
-                width: 48, // Increased from 40 for touch target compliance
+                width: 40,
                 height: 48,
                 borderRadius: 24,
                 backgroundColor: `${colors.error}10`,

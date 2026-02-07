@@ -92,7 +92,7 @@ export function SyncStatusBadge({ status, showText = true }: SyncStatusBadgeProp
 
   return (
     <View
-      style={styles.container}
+      className="flex-row items-center gap-1.5"
       accessibilityRole="text"
       accessibilityLabel={config.text}
       accessibilityLiveRegion="polite">
@@ -100,19 +100,7 @@ export function SyncStatusBadge({ status, showText = true }: SyncStatusBadgeProp
         <Ionicons name={config.icon} size={18} color={config.color} />
       </Animated.View>
 
-      {showText && <AppText style={[styles.text, { color: config.color }]}>{config.text}</AppText>}
+      {showText && <AppText className="text-sm font-semibold" style={{ color: config.color }}>{config.text}</AppText>}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  text: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});

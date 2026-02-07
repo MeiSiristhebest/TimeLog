@@ -1,18 +1,17 @@
-import { AppText } from '@/components/ui/AppText';
-import React, { useCallback } from 'react';
-
-import { FlatList } from 'react-native';
-import { View } from '@/tw';
 import { Ionicons } from '@/components/ui/Icon';
 import { AudioRecording } from '@/types/entities';
 import { getDaysRemaining } from '../services/storyService';
-import { formatDate, formatDuration } from '../utils/date-utils';
-import { useHeritageTheme } from '../../../theme/heritage';
-import { HeritageButton } from '../../../components/ui/heritage/HeritageButton';
+import { formatDate } from '../utils/date-utils';
+import { useHeritageTheme } from '@/theme/heritage';
+import { AppText } from '@/components/ui/AppText';
+import React, { useCallback } from 'react';
+import { FlatList } from 'react-native';
+import { View, Pressable } from 'react-native';
 
 interface DeletedItemsListProps {
   items: AudioRecording[];
   onRestore: (id: string) => void;
+  onPermanentDelete: (id: string) => void;
   isLoading?: boolean;
 }
 
@@ -20,62 +19,91 @@ interface DeletedItemsListProps {
  * List of soft-deleted stories with restore option.
  * Implements AC: 4 from Story 3.3
  */
-
 export function DeletedItemsList({
   items,
   onRestore,
+  onPermanentDelete,
   isLoading,
 }: DeletedItemsListProps): JSX.Element {
   const { colors } = useHeritageTheme();
 
-  const renderItem = useCallback(
-    ({ item }: { item: AudioRecording }) => {
+  const renderRow = useCallback(
+    ({ item, index }: { item: AudioRecording; index: number }) => {
       const daysRemaining = item.deletedAt ? getDaysRemaining(item.deletedAt) : 0;
+      const isLast = index === items.length - 1;
 
       return (
         <View
-          className="flex-row items-center justify-between rounded-xl border p-4 shadow-sm"
           style={{
-            backgroundColor: colors.surface,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            backgroundColor: colors.surfaceCard,
+            borderBottomWidth: isLast ? 0 : 0.5,
             borderColor: colors.border,
-            shadowColor: colors.shadow,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
           }}>
-          <View className="mr-4 flex-1">
+          <View style={{ flex: 1, paddingRight: 16 }}>
             <AppText
-              className="text-lg"
-              style={{ color: colors.onSurface, fontFamily: 'Fraunces_600SemiBold' }}
+              style={{ fontSize: 16, fontWeight: '600', color: colors.onSurface, marginBottom: 2 }}
               numberOfLines={1}>
-              {item.title || formatDate(new Date(item.startedAt))}
+              {item.title || 'Untitled Story'}
             </AppText>
-            <AppText className="mt-1 text-sm" style={{ color: `${colors.onSurface}99` }}>
-              {formatDuration(item.durationMs)} • Deleted{' '}
-              {formatDate(new Date(item.deletedAt || Date.now()))}
-            </AppText>
-            <AppText className="mt-1 text-sm font-medium" style={{ color: colors.error }}>
-              {daysRemaining} days remaining
+            <AppText style={{ fontSize: 12, color: `${colors.onSurface}99` }}>
+              Deleted {formatDate(new Date(item.deletedAt || Date.now()))}
             </AppText>
           </View>
 
-          <HeritageButton
-            title="Restore"
-            size="small"
-            variant="secondary"
-            onPress={() => onRestore(item.id)}
-          />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ alignItems: 'flex-end' }}>
+              <AppText style={{ fontSize: 12, fontWeight: '500', color: daysRemaining < 7 ? colors.error : `${colors.onSurface}60` }}>
+                {daysRemaining} days left
+              </AppText>
+            </View>
+
+            <Pressable
+              onPress={() => onRestore(item.id)}
+              style={({ pressed }) => ({
+                height: 32,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderRadius: 16,
+                paddingHorizontal: 12,
+                backgroundColor: `${colors.primary}15`,
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <AppText style={{ fontSize: 12, fontWeight: '600', color: colors.primary }}>
+                Recover
+              </AppText>
+            </Pressable>
+
+            <Pressable
+              onPress={() => onPermanentDelete(item.id)}
+              style={({ pressed }) => ({
+                height: 32,
+                width: 32,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderRadius: 16,
+                backgroundColor: `${colors.error}10`,
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Ionicons name="trash-outline" size={18} color={colors.error} />
+            </Pressable>
+          </View>
         </View>
       );
     },
-    [colors, onRestore]
+    [colors, items.length, onRestore, onPermanentDelete]
   );
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <AppText className="text-lg" style={{ color: `${colors.onSurface}80` }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <AppText style={{ fontSize: 16, color: `${colors.onSurface}80` }}>
           Loading deleted items...
         </AppText>
       </View>
@@ -84,10 +112,17 @@ export function DeletedItemsList({
 
   if (items.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center p-6">
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <View
-          className="mb-4 h-16 w-16 items-center justify-center rounded-full"
-          style={{ backgroundColor: `${colors.onSurface}08` }}>
+          style={{
+            marginBottom: 16,
+            height: 64,
+            width: 64,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 32,
+            backgroundColor: `${colors.onSurface}08`
+          }}>
           <Ionicons
             name="trash-outline"
             size={32}
@@ -95,7 +130,7 @@ export function DeletedItemsList({
             style={{ opacity: 0.5 }}
           />
         </View>
-        <AppText className="text-center text-lg" style={{ color: `${colors.onSurface}80` }}>
+        <AppText style={{ fontSize: 16, textAlign: 'center', color: `${colors.onSurface}80` }}>
           No deleted stories found.
         </AppText>
       </View>
@@ -103,12 +138,21 @@ export function DeletedItemsList({
   }
 
   return (
-    <FlatList
-      data={items}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 100 }}
-      renderItem={renderItem}
-      showsVerticalScrollIndicator={false}
-    />
+    <View
+      style={{
+        margin: 16,
+        overflow: 'hidden',
+        borderRadius: 12,
+        backgroundColor: colors.surfaceCard
+      }}
+    >
+      <FlatList
+        data={items}
+        keyExtractor={(item) => item.id}
+        renderItem={renderRow}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 0 }}
+      />
+    </View>
   );
 }

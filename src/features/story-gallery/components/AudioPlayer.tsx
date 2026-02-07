@@ -1,24 +1,22 @@
 import { AppText } from '@/components/ui/AppText';
 import { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet, Pressable } from 'react-native';
+import { View, ActivityIndicator, Pressable, Text } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { MaterialIcons } from '@expo/vector-icons';
 import { Ionicons } from '@/components/ui/Icon';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useHeritageTheme } from '@/theme/heritage';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-
-interface AudioPlayerProps {
-  uri: string;
-}
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+import { PlaybackWaveform } from './PlaybackWaveform';
 
 function formatTime(millis: number): string {
   const totalSeconds = millis / 1000;
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = Math.floor(totalSeconds % 60);
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+interface AudioPlayerProps {
+  uri: string;
 }
 
 export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
@@ -53,6 +51,8 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
     transform: [{ scale: scale.value }],
   }));
 
+  const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
   const handlePressIn = () => {
     scale.value = withSpring(0.92, theme.animation.press);
   };
@@ -62,39 +62,35 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
 
   if (error) {
     return (
-      <View style={[styles.errorContainer, { backgroundColor: `${theme.colors.error}15` }]}>
-        <AppText style={[styles.errorText, { color: theme.colors.error }]}>{error}</AppText>
+      <View className="p-4 rounded-2xl items-center" style={{ backgroundColor: `${theme.colors.error}15` }}>
+        <AppText className="text-sm font-medium" style={{ color: theme.colors.error }}>{error}</AppText>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* Waveform Visual (Simulated for aesthetics) */}
-      <View style={styles.waveformContainer}>
-        {[0.4, 0.7, 1.0, 0.6, 0.4].map((h, i) => (
-          <View
-            key={i}
-            style={[
-              styles.waveformBar,
-              {
-                height: 40 * h,
-                backgroundColor:
-                  i === 2 && isPlaying ? theme.colors.primary : `${theme.colors.primary}50`,
-                opacity: isPlaying ? 1 : 0.8,
-              },
-            ]}
-          />
-        ))}
+    <View className="w-full">
+      {/* Waveform Visual (Real analysis) */}
+      <View style={{ marginBottom: 12 }}>
+        <PlaybackWaveform
+          uri={uri}
+          positionMillis={positionMillis}
+          durationMillis={durationMillis}
+          height={50}
+          barWidth={1}
+          barGap={2}
+          color={`${theme.colors.primary}60`}
+          progressColor={theme.colors.primaryDeep}
+        />
       </View>
 
       {/* Scrubber */}
-      <View style={styles.progressContainer}>
-        <View style={styles.timeContainer}>
-          <AppText style={[styles.timeText, { color: theme.colors.primary }]}>
+      <View className="mb-4">
+        <View className="flex-row justify-between px-1 -mb-2">
+          <AppText className="font-semibold text-sm tabular-nums" style={{ color: theme.colors.primary }}>
             {formatTime(positionMillis)}
           </AppText>
-          <AppText style={[styles.timeText, { color: theme.colors.textMuted }]}>
+          <AppText className="font-semibold text-sm tabular-nums" style={{ color: theme.colors.textMuted }}>
             {formatTime(durationMillis)}
           </AppText>
         </View>
@@ -111,13 +107,23 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
       </View>
 
       {/* Controls */}
-      <View style={styles.controlsContainer}>
+      <View className="flex-row items-center justify-between px-6" style={{ marginTop: -18 }}>
         {/* Skip Back 15s */}
         <Pressable
           onPress={() => handleSkip(-15)}
-          style={({ pressed }) => [styles.skipButton, { opacity: pressed ? 0.7 : 1 }]}>
-          <MaterialIcons name="replay-10" size={36} color={theme.colors.textMuted} />
-          <AppText style={[styles.skipText, { color: theme.colors.textMuted }]}>15s</AppText>
+          className="items-center gap-0.5"
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+          <Ionicons name="play-back" size={12} color={theme.colors.textMuted} />
+          <Text
+            style={{
+              color: theme.colors.textMuted,
+              fontSize: 10,
+              fontWeight: '600',
+              letterSpacing: 0,
+              textTransform: 'uppercase',
+            }}>
+            15s
+          </Text>
         </Pressable>
 
         {/* Play/Pause */}
@@ -125,12 +131,15 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
           onPress={togglePlayback}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
+          className="w-[56px] h-[56px] items-center justify-center rounded-full shadow-lg elevation-8"
           style={[
-            styles.playButton,
             playButtonStyle,
             {
               backgroundColor: theme.colors.primary,
               shadowColor: theme.colors.primary,
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 16,
             },
           ]}>
           {isLoading ? (
@@ -138,7 +147,7 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
           ) : (
             <Ionicons
               name={isPlaying ? 'pause' : 'play'}
-              size={40}
+              size={28}
               color={theme.colors.onPrimary}
               style={{ marginLeft: isPlaying ? 0 : 4 }}
             />
@@ -148,84 +157,24 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
         {/* Skip Forward 15s */}
         <Pressable
           onPress={() => handleSkip(15)}
-          style={({ pressed }) => [styles.skipButton, { opacity: pressed ? 0.7 : 1 }]}>
-          <MaterialIcons name="forward-10" size={36} color={theme.colors.textMuted} />
-          <AppText style={[styles.skipText, { color: theme.colors.textMuted }]}>15s</AppText>
+          className="items-center gap-0.5"
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+          <Ionicons name="play-forward" size={12} color={theme.colors.textMuted} />
+          <Text
+            style={{
+              color: theme.colors.textMuted,
+              fontSize: 10,
+              fontWeight: '600',
+              letterSpacing: 0,
+              textTransform: 'uppercase',
+            }}>
+            15s
+          </Text>
         </Pressable>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-  },
-  errorContainer: {
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-  errorText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  waveformContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 40,
-    gap: 6,
-    marginBottom: 24,
-    opacity: 0.8,
-  },
-  waveformBar: {
-    width: 6,
-    borderRadius: 999,
-  },
-  progressContainer: {
-    marginBottom: 24,
-  },
-  timeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 4,
-    marginBottom: -8, // Pull closer to slider
-  },
-  timeText: {
-    fontFamily: 'System',
-    fontWeight: '600',
-    fontSize: 14,
-    fontVariant: ['tabular-nums'],
-  },
-  controlsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between', // Spread out skip buttons from center
-    paddingHorizontal: 20,
-  },
-  skipButton: {
-    alignItems: 'center',
-    gap: 2,
-  },
-  skipText: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  playButton: {
-    width: 72,
-    height: 72,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 36,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-});
 
 // Default export for React.lazy() compatibility
 export default AudioPlayer;
