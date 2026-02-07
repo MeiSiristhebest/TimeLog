@@ -1,16 +1,15 @@
+
 import { AppText } from '@/components/ui/AppText';
 import { View, ScrollView, Pressable } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { FAMILY_STRINGS } from '@/features/family/data/mockFamilyData';
+import { useAskQuestionLogic } from '@/features/family/hooks/useFamilyLogic';
+import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
+import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
+import { HeritageInput } from '@/components/ui/heritage/HeritageInput';
+import { useHeritageTheme } from '@/theme/heritage';
 
 import { useAuthStore } from '@/features/auth/store/authStore';
-
-// Heritage
-import { useHeritageTheme } from '@/theme/heritage';
-import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
-import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
-import { HeritageInput } from '@/components/ui/heritage/HeritageInput';
-import Animated from 'react-native-reanimated';
-import { useAskQuestionLogic } from '@/features/family/hooks/useFamilyLogic';
-import { FAMILY_STRINGS } from '@/features/family/data/mockFamilyData';
 
 export default function AskQuestionScreen(): JSX.Element {
   const theme = useHeritageTheme();

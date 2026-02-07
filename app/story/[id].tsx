@@ -1,25 +1,23 @@
 import { AppText } from '@/components/ui/AppText';
 import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@/components/ui/Icon';
 import { useStory } from '@/features/story-gallery/hooks/useStory';
 import { useStoryCommentCount } from '@/features/story-gallery/hooks/useStoryCommentCount';
-import { LazyStoryPlayer } from '@/lib/lazyComponents';
+import { AudioPlayer } from '@/features/story-gallery/components/AudioPlayer';
 import type { SyncStatus } from '@/types/entities';
-
 import { SyncStatusBadge } from '@/features/story-gallery/components/SyncStatusBadge';
-import { EditTitleSheet } from '@/features/story-gallery/components/EditTitleSheet';
 import { softDeleteStory, restoreStory } from '@/features/story-gallery/services/storyService';
 import { DeleteConfirmModal } from '@/features/story-gallery/components/DeleteConfirmModal';
 import { UndoToast } from '@/components/ui/UndoToast';
 import { showErrorToast } from '@/components/ui/feedback/toast';
+import { getQuestionById } from '@/features/recorder/data/topicQuestions';
 
 // Heritage
 import { useHeritageTheme } from '@/theme/heritage';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
-import Animated, { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 type HeritageTheme = ReturnType<typeof useHeritageTheme>;
 
@@ -31,9 +29,6 @@ export default function StoryDetailScreen(): JSX.Element {
 
   // Story 4.5: Fetch comments for this story
   const { count: commentCount } = useStoryCommentCount(id);
-
-  // Edit Title Sheet state
-  const [isEditing, setIsEditing] = React.useState(false);
 
   // Story 3.3 State
   const [deleteModalVisible, setDeleteModalVisible] = React.useState(false);
@@ -102,6 +97,8 @@ export default function StoryDetailScreen(): JSX.Element {
     month: 'long',
     day: 'numeric',
   });
+  const question = story.topicId ? getQuestionById(story.topicId) : null;
+  const displayTitle = story.title || question?.text || 'Untitled Story';
 
   // Story 3.3 Handlers
   const confirmDelete = async () => {
@@ -128,11 +125,6 @@ export default function StoryDetailScreen(): JSX.Element {
     router.push(`/story-comments/${id}`);
   };
 
-  // Open edit title sheet
-  const handleEditStory = () => {
-    setIsEditing(true);
-  };
-
   const syncStatus: SyncStatus = story.syncStatus;
 
   return (
@@ -150,24 +142,18 @@ export default function StoryDetailScreen(): JSX.Element {
           paddingHorizontal: 20,
           zIndex: 10,
         }}>
-        <TouchableOpacity
+        <HeaderHelperButton
           onPress={() => router.back()}
-          style={{ flexDirection: 'row', alignItems: 'center', padding: 4 }}>
-          <Ionicons name="chevron-back" size={28} color={`${theme.colors.primary}CC`} />
-          <AppText
-            style={{
-              fontSize: 18,
-              fontWeight: '600',
-              color: `${theme.colors.primary}CC`,
-              marginLeft: -4,
-            }}>
-            Back
-          </AppText>
-        </TouchableOpacity>
+          icon="chevron-back"
+          label="Back"
+          color={`${theme.colors.primary}CC`}
+        />
 
-        <TouchableOpacity onPress={() => setDeleteModalVisible(true)} style={{ padding: 8 }}>
-          <Ionicons name="ellipsis-horizontal" size={24} color={theme.colors.textMuted} />
-        </TouchableOpacity>
+        <HeaderHelperButton
+          onPress={() => setDeleteModalVisible(true)}
+          icon="ellipsis-horizontal"
+          color={theme.colors.textMuted}
+        />
       </View>
 
       {/* 2. Content (Transcript) */}
@@ -193,7 +179,7 @@ export default function StoryDetailScreen(): JSX.Element {
                 lineHeight: 40,
                 marginBottom: 8,
               }}>
-              {story.title || 'Untitled Story'}
+              {displayTitle}
             </AppText>
             <AppText style={{ color: theme.colors.textMuted, fontSize: 18, fontWeight: '500' }}>
               {formattedDate}
@@ -240,18 +226,6 @@ export default function StoryDetailScreen(): JSX.Element {
               {"mother's"} skirt, peeking out with curiosity...
             </AppText>
 
-            {/* Gradient Fade at bottom of text area */}
-            <LinearGradient
-              colors={['transparent', theme.colors.surface]}
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 120,
-              }}
-              pointerEvents="none"
-            />
           </View>
 
           {/* Story Details Card */}
@@ -299,7 +273,7 @@ export default function StoryDetailScreen(): JSX.Element {
       {/* 3. Footer (Player + Actions) */}
       <View
         style={{
-          backgroundColor: `${theme.colors.surface}F2`, // Transparent/blur effect
+          backgroundColor: theme.colors.surface,
           borderTopLeftRadius: 32,
           borderTopRightRadius: 32,
           borderTopWidth: 1,
@@ -309,60 +283,47 @@ export default function StoryDetailScreen(): JSX.Element {
           paddingBottom: 40,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.05,
-          shadowRadius: 20,
+          shadowOpacity: 0.03,
+          shadowRadius: 12,
           elevation: 10,
         }}>
         {/* Audio Player */}
         <View style={{ marginBottom: 24 }}>
-          <LazyStoryPlayer uri={story.filePath} />
+          <AudioPlayer uri={story.filePath} />
         </View>
 
         {/* Action Buttons */}
         <View style={{ flexDirection: 'row', gap: 16 }}>
           {/* Comments - with real count */}
-          <TouchableOpacity
-            onPress={handleViewComments}
-            style={[
-              styles.actionButton,
-              {
-                backgroundColor: theme.colors.surface,
-                borderColor: `${theme.colors.primary}20`,
-                borderWidth: 2,
-              },
-            ]}>
-            <Ionicons name="chatbubble-outline" size={24} color={theme.colors.primary} />
-            <AppText style={[styles.actionText, { color: theme.colors.primary }]}>
-              Comments {commentCount > 0 ? `(${commentCount})` : ''}
-            </AppText>
-          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <HeritageButton
+              title={`Comments ${commentCount > 0 ? `(${commentCount})` : ''}`}
+              onPress={handleViewComments}
+              variant="secondary"
+              icon="chatbubble-outline"
+              style={{ height: 56 }}
+            />
+          </View>
 
-          {/* Edit - opens EditTitleSheet */}
-          <TouchableOpacity
-            onPress={handleEditStory}
-            style={[styles.actionButton, { backgroundColor: theme.colors.primary }]}>
-            <Ionicons name="pencil" size={24} color={theme.colors.onPrimary} />
-            <AppText style={[styles.actionText, { color: theme.colors.onPrimary }]}>
-              Edit Story
-            </AppText>
-          </TouchableOpacity>
+          {/* Edit - opens Full Story Edit Screen */}
+          <View style={{ flex: 1 }}>
+            <HeritageButton
+              title="Edit Story"
+              onPress={() => router.push(`/story/edit?id=${id}`)}
+              variant="primary"
+              icon="pencil"
+              style={{ height: 56 }}
+            />
+          </View>
         </View>
       </View>
-
-      {/* Edit Title Sheet */}
-      <EditTitleSheet
-        isVisible={isEditing}
-        onClose={() => setIsEditing(false)}
-        storyId={id}
-        initialTitle={story.title || ''}
-      />
 
       {/* Delete Modal */}
       <DeleteConfirmModal
         visible={deleteModalVisible}
         onCancel={() => setDeleteModalVisible(false)}
         onConfirm={confirmDelete}
-        storyTitle={story.title || undefined}
+        storyTitle={displayTitle || undefined}
       />
 
       {/* Undo Toast */}
@@ -397,18 +358,43 @@ function DetailRow({
   );
 }
 
-const styles = {
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    paddingVertical: 16,
-    borderRadius: 16,
-    gap: 8,
-  },
-  actionText: {
-    fontSize: 16,
-    fontWeight: '700' as const,
-  },
-};
+function HeaderHelperButton({
+  onPress,
+  icon,
+  label,
+  color,
+}: {
+  onPress: () => void;
+  icon: keyof typeof Ionicons.glyphMap;
+  label?: string;
+  color: string;
+}) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => (scale.value = withSpring(0.9, { damping: 10, stiffness: 300 }))}
+      onPressOut={() => (scale.value = withSpring(1, { damping: 10, stiffness: 300 }))}
+      style={{ flexDirection: 'row', alignItems: 'center', padding: 4 }}
+    >
+      <Animated.View style={[{ flexDirection: 'row', alignItems: 'center' }, animatedStyle]}>
+        <Ionicons name={icon} size={28} color={color} />
+        {label && (
+          <AppText
+            style={{
+              fontSize: 18,
+              fontWeight: '600',
+              color: color,
+              marginLeft: -4,
+            }}>
+            {label}
+          </AppText>
+        )}
+      </Animated.View>
+    </Pressable>
+  );
+}

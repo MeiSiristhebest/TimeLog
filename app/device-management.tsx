@@ -1,12 +1,10 @@
 import { AppText } from '@/components/ui/AppText';
 import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, View } from 'react-native';
-
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { useHeritageTheme } from '@/theme/heritage';
 import { DeviceSummary } from '@/features/auth/services/deviceCodesService';
-
 import { useDeviceManagementLogic } from '@/features/auth/hooks/useAuthLogic';
 import { AUTH_STRINGS } from '@/features/auth/data/mockAuthData';
 

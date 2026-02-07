@@ -1,12 +1,17 @@
-import { AppText } from '@/components/ui/AppText';
-import { View, Pressable, StyleSheet, ScrollView } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { Ionicons } from '@/components/ui/Icon';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { useHeritageTheme, PALETTE } from '@/theme/heritage';
 import { useRoleLogic } from '@/features/auth/hooks/useAuthLogic';
 import { AUTH_STRINGS } from '@/features/auth/data/mockAuthData';
+import { AppText } from '@/components/ui/AppText';
+import { StyleSheet } from 'react-native';
+import { View, Pressable, ScrollView } from 'react-native';
 
 export default function RoleScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
@@ -56,59 +61,83 @@ export default function RoleScreen(): JSX.Element {
         <View style={styles.cardsContainer}>
           {/* Storyteller Card */}
           <Animated.View entering={FadeInDown.delay(200).duration(600)} style={{ width: '100%' }}>
-            <Pressable
+            <RoleCard
+              title={STRINGS.storyteller.title}
+              subtitle={STRINGS.storyteller.subtitle}
+              icon="mic"
               onPress={() => handleSelect(ROLE_STORYTELLER)}
-              style={({ pressed }) => [
-                styles.card,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-                pressed && [
-                  styles.cardPressed,
-                  { backgroundColor: colors.surfaceDim, borderColor: colors.primary },
-                ],
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={STRINGS.storyteller.accessibilityLabel}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="mic" size={84} color={colors.primary} />
-              </View>
-              <AppText style={[styles.cardTitle, { color: colors.onSurface }]}>
-                {STRINGS.storyteller.title}
-              </AppText>
-              <AppText style={[styles.cardSubtitle, { color: colors.textMuted }]}>
-                {STRINGS.storyteller.subtitle}
-              </AppText>
-            </Pressable>
+              accessibilityLabel={STRINGS.storyteller.accessibilityLabel}
+              baseDelay={200}
+            />
           </Animated.View>
 
           {/* Listener Card */}
           <Animated.View entering={FadeInDown.delay(400).duration(600)} style={{ width: '100%' }}>
-            <Pressable
+            <RoleCard
+              title={STRINGS.listener.title}
+              subtitle={STRINGS.listener.subtitle}
+              icon="headset"
               onPress={() => handleSelect(ROLE_FAMILY)}
-              style={({ pressed }) => [
-                styles.card,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-                pressed && [
-                  styles.cardPressed,
-                  { backgroundColor: colors.surfaceDim, borderColor: colors.primary },
-                ],
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={STRINGS.listener.accessibilityLabel}>
-              <View style={styles.iconContainer}>
-                {/* Using headset as equivalent to standard headphones */}
-                <Ionicons name="headset" size={84} color={colors.primary} />
-              </View>
-              <AppText style={[styles.cardTitle, { color: colors.onSurface }]}>
-                {STRINGS.listener.title}
-              </AppText>
-              <AppText style={[styles.cardSubtitle, { color: colors.textMuted }]}>
-                {STRINGS.listener.subtitle}
-              </AppText>
-            </Pressable>
+              accessibilityLabel={STRINGS.listener.accessibilityLabel}
+              baseDelay={400}
+            />
           </Animated.View>
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+// Extracted Card Component for cleaner animation logic
+function RoleCard({
+  title,
+  subtitle,
+  icon,
+  onPress,
+  accessibilityLabel,
+}: {
+  title: string;
+  subtitle: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+  accessibilityLabel: string;
+  baseDelay: number;
+}) {
+  const { colors } = useHeritageTheme();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95, { damping: 10, stiffness: 300 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
+  };
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}>
+      <Animated.View
+        style={[
+          styles.card,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+          animatedStyle,
+        ]}>
+        <View style={styles.iconContainer}>
+          <Ionicons name={icon} size={84} color={colors.primary} />
+        </View>
+        <AppText style={[styles.cardTitle, { color: colors.onSurface }]}>{title}</AppText>
+        <AppText style={[styles.cardSubtitle, { color: colors.textMuted }]}>{subtitle}</AppText>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -166,9 +195,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  cardPressed: {
-    transform: [{ scale: 0.98 }],
-  },
   iconContainer: {
     marginBottom: 24,
     // Add optional hover/scale effect logic here if using Reanimated,
@@ -176,15 +202,15 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 24, // 3xl approx
-    fontFamily: 'Inter', // Display font
-    fontWeight: '700',
+    fontFamily: 'Fraunces_600SemiBold',
+    fontWeight: 'normal',
     textAlign: 'center',
     marginBottom: 8,
     letterSpacing: -0.5,
   },
   cardSubtitle: {
     fontSize: 18,
-    fontFamily: 'Inter',
+    fontFamily: 'System',
     fontWeight: '500',
     textAlign: 'center',
   },

@@ -9,7 +9,7 @@
 
 import { AppText } from '@/components/ui/AppText';
 import { useEffect, useState } from 'react';
-import { View, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@/components/ui/Icon';
 import { useQuery } from '@tanstack/react-query';
@@ -17,6 +17,8 @@ import { Container } from '@/components/ui/Container';
 import { CommentSection } from '@/features/family-listener/components/CommentSection';
 import { supabase } from '@/lib/supabase';
 import { useHeritageTheme } from '@/theme/heritage';
+import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
+import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 
 /**
  * Fetches story details for senior's own story.
@@ -87,13 +89,12 @@ export default function StoryCommentsScreen(): JSX.Element {
           <AppText style={[styles.errorTitle, { color: colors.onSurface }]}>
             Cannot load story
           </AppText>
-          <TouchableOpacity
+          <HeritageButton
+            title="Back"
             onPress={handleBack}
-            style={[styles.button, { backgroundColor: colors.primary }]}
-            accessibilityRole="button"
-            accessibilityLabel="Back">
-            <AppText style={[styles.buttonText, { color: colors.onPrimary }]}>Back</AppText>
-          </TouchableOpacity>
+            variant="primary"
+            style={{ marginTop: 24 }}
+          />
         </View>
       </Container>
     );
@@ -101,25 +102,12 @@ export default function StoryCommentsScreen(): JSX.Element {
 
   return (
     <Container>
-      {/* Header */}
-      <View
-        style={[styles.header, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-        <TouchableOpacity
-          onPress={handleBack}
-          style={[styles.backButton, { backgroundColor: `${colors.onSurface}10` }]}
-          accessibilityRole="button"
-          accessibilityLabel="Back">
-          <Ionicons name="arrow-back" size={24} color={colors.onSurface} />
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <AppText style={[styles.headerTitle, { color: colors.onSurface }]} numberOfLines={1}>
-            {story.title ?? 'Untitled Story'}
-          </AppText>
-          <AppText style={[styles.headerSubtitle, { color: colors.textMuted }]}>
-            Family Comments
-          </AppText>
-        </View>
-      </View>
+      {/* Heritage Header */}
+      <HeritageHeader
+        title={story.title ?? 'Untitled Story'}
+        subtitle="Family Comments"
+        showBack
+      />
 
       {/* Comment section (read-only for seniors) */}
       <CommentSection storyId={id!} currentUserId={currentUserId} readOnly={true} header={null} />
@@ -149,36 +137,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  button: {
-    marginTop: 24,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  backButton: {
-    padding: 8,
-    borderRadius: 9999,
-    marginRight: 8,
-  },
-  headerContent: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontFamily: 'Fraunces_600SemiBold',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-  },
+  // Removed old button/header styles as they are replaced by Heritage components
 });

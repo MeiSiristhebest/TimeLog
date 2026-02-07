@@ -5,16 +5,49 @@
  */
 
 import { AppText } from '@/components/ui/AppText';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
-import Animated from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { Ionicons } from '@/components/ui/Icon';
 
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { useHeritageTheme } from '@/theme/heritage';
 import { FAMILY_STRINGS, FamilyMemberMock } from '@/features/family/data/mockFamilyData';
 import { useFamilyMembersLogic } from '@/features/family/hooks/useFamilyLogic';
+import { useProfile } from '@/features/settings/hooks/useProfile';
+import { HeritageAlert } from '@/components/ui/HeritageAlert';
+import { useRouter } from 'expo-router';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function SpringPressable({ children, onPress, style, ...props }: any) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.9, { damping: 10, stiffness: 400 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 10, stiffness: 400 });
+  };
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={[style, animatedStyle]}
+      {...props}>
+      {children}
+    </AnimatedPressable>
+  );
+}
 
 function MemberCard({
   member,
@@ -60,9 +93,9 @@ function MemberCard({
         </View>
       </View>
       {member.role !== 'admin' && (
-        <Pressable onPress={() => onRemove(member.id, member.name)} style={styles.removeButton}>
-          <MaterialIcons name="close" size={20} color="#EF4444" />
-        </Pressable>
+        <SpringPressable onPress={() => onRemove(member.id, member.name)} style={styles.removeButton}>
+          <Ionicons name="close" size={20} color="#EF4444" />
+        </SpringPressable>
       )}
     </View>
   );
@@ -70,10 +103,34 @@ function MemberCard({
 
 export default function FamilyMembersScreen(): JSX.Element {
   const theme = useHeritageTheme();
+  const router = useRouter();
+  const { profile } = useProfile();
+  const [prompted, setPrompted] = useState(false);
 
   // Logic Separation
   const { state, actions } = useFamilyMembersLogic();
   const { members, scrollY, isLoading } = state;
+
+  useEffect(() => {
+    if (!profile?.isAnonymous || prompted) return;
+    setPrompted(true);
+    HeritageAlert.show({
+      title: 'Complete Your Account',
+      message: 'To manage family members, please set up a permanent account first.',
+      variant: 'warning',
+      primaryAction: {
+        label: 'Set Up Now',
+        onPress: () => {
+          const next = encodeURIComponent('/family-members');
+          router.replace(`/upgrade-account?next=${next}`);
+        },
+      },
+      secondaryAction: {
+        label: 'Not now',
+        onPress: () => router.back(),
+      },
+    });
+  }, [profile?.isAnonymous, prompted, router]);
 
   const renderMember = useCallback(
     ({ item }: { item: FamilyMemberMock }) => (
@@ -94,7 +151,7 @@ export default function FamilyMembersScreen(): JSX.Element {
       {isLoading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 }}>
           <Animated.View style={{ opacity: 0.6 }}>
-            <MaterialIcons name="hourglass-empty" size={32} color={theme.colors.primary} />
+            <Ionicons name="hourglass" size={32} color={theme.colors.primary} />
           </Animated.View>
           <AppText style={{ marginTop: 16, color: theme.colors.textMuted }}>
             {FAMILY_STRINGS.familyMembers.loadingText}
@@ -122,7 +179,7 @@ export default function FamilyMembersScreen(): JSX.Element {
           }
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <MaterialIcons name="group-off" size={48} color={`${theme.colors.onSurface}30`} />
+              <Ionicons name="people-outline" size={48} color={`${theme.colors.onSurface}30`} />
               <AppText style={[styles.emptyText, { color: `${theme.colors.onSurface}60` }]}>
                 {FAMILY_STRINGS.familyMembers.emptyText}
               </AppText>

@@ -1,5 +1,4 @@
 import * as Linking from 'expo-linking';
-
 import { supabase } from '@/lib/supabase';
 
 /**

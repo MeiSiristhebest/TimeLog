@@ -7,13 +7,11 @@
  * - Functional Sort Feature
  */
 
-import { AppText } from '@/components/ui/AppText';
 import type { AudioRecording } from '@/types/entities';
 import { useCallback } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@/components/ui/Icon';
-
 import { StoryList } from '@/features/story-gallery/components/StoryList';
 import { DeleteConfirmModal } from '@/features/story-gallery/components/DeleteConfirmModal';
 import { SortOptionsModal } from '@/features/story-gallery/components/SortOptionsModal';
@@ -22,9 +20,12 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { LazyTimelineLayout } from '@/lib/lazyComponents';
 import { TimelineStoryCard } from '@/features/story-gallery/components/TimelineStoryCard';
 import { FilterBar } from '@/features/story-gallery/components/FilterBar';
-
 import { useStoryGallery } from '@/features/story-gallery/hooks/useStoryGallery';
 import { GALLERY_STRINGS } from '@/features/story-gallery/data/mockGalleryData';
+import { AppText } from '@/components/ui/AppText';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function StoriesTab(): JSX.Element {
   const { colors } = useHeritageTheme();
@@ -53,6 +54,7 @@ export default function StoriesTab(): JSX.Element {
       // If focusedStoryId is set, that story is featured.
       // If NO focusedStoryId is set, the FIRST story (index 0) is featured by default.
       const isFeatured = focusedStoryId ? item.id === focusedStoryId : index === 0;
+      const isBeingListened = focusedStoryId ? item.id === focusedStoryId : false;
 
       return (
         <TimelineStoryCard
@@ -61,6 +63,7 @@ export default function StoriesTab(): JSX.Element {
           onSelect={actions.onSelectStory}
           index={index}
           variant={isFeatured ? 'featured' : 'default'}
+          isBeingListened={isBeingListened}
         />
       );
     },
@@ -77,12 +80,7 @@ export default function StoriesTab(): JSX.Element {
           </AppText>
           <AppText style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</AppText>
         </View>
-        <Pressable style={styles.sortButton} onPress={() => setSortModalVisible(true)}>
-          <AppText style={[styles.sortText, { color: colors.primary }]}>
-            {GALLERY_STRINGS.header.sortButton}
-          </AppText>
-          <Ionicons name="filter" size={18} color={colors.primary} />
-        </Pressable>
+        <SortButton onPress={() => setSortModalVisible(true)} />
       </View>
 
       {/* Filter Bar */}
@@ -97,10 +95,12 @@ export default function StoriesTab(): JSX.Element {
               onSelectStory={actions.onSelectStory}
               onPlayStory={actions.onPlayStory}
               onDeleteStory={actions.onDeleteStory}
+              onOffloadStory={actions.onOffloadStory}
               isLoading={isLoading}
               onUnavailableStoryTap={actions.onUnavailableStoryTap}
               renderItem={renderTimelineItem}
               ItemSeparatorComponent={null}
+              extraData={focusedStoryId}
             />
           </LazyTimelineLayout>
         ) : (
@@ -109,6 +109,7 @@ export default function StoriesTab(): JSX.Element {
             onSelectStory={actions.onSelectStory}
             onPlayStory={actions.onPlayStory}
             onDeleteStory={actions.onDeleteStory}
+            onOffloadStory={actions.onOffloadStory}
             isLoading={isLoading}
             onUnavailableStoryTap={actions.onUnavailableStoryTap}
           />
@@ -136,6 +137,35 @@ export default function StoriesTab(): JSX.Element {
         onTimeout={actions.onUndoTimeout}
       />
     </SafeAreaView>
+  );
+}
+
+// Interactive Sort Button
+function SortButton({ onPress }: { onPress: () => void }) {
+  const { colors } = useHeritageTheme();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95, { damping: 10, stiffness: 300 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
+  };
+
+  return (
+    <AnimatedPressable onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut}>
+      <Animated.View style={[styles.sortButton, animatedStyle]}>
+        <AppText style={[styles.sortText, { color: colors.primary }]}>
+          {GALLERY_STRINGS.header.sortButton}
+        </AppText>
+        <Ionicons name="filter" size={18} color={colors.primary} />
+      </Animated.View>
+    </AnimatedPressable>
   );
 }
 

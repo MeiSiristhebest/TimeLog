@@ -1,33 +1,48 @@
-import { AppText } from '@/components/ui/AppText';
-import { View, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@/components/ui/Icon';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
+import { BreathingGlow } from '@/components/ui/heritage/BreathingGlow';
 import { HomeNotification } from '@/features/home/components/HomeNotification';
 import { ActiveRecordingView } from '@/features/recorder/components/ActiveRecordingView';
 import { StorySavedView } from '@/features/recorder/components/StorySavedView';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useHomeLogic } from '@/features/home/hooks/useHomeLogic';
 import { HOME_STRINGS } from '@/features/home/data/mockHomeData';
+import { AppText } from '@/components/ui/AppText';
+import { ScrollView, StyleSheet, View, Pressable } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const RECORD_BUTTON_CONTAINER_SIZE = 142;
+const BREATHING_GLOW_SIZE = 140;
+const BREATHING_RING_SIZE = Math.round(BREATHING_GLOW_SIZE * 1.04);
+const BREATHING_GLOW_OFFSET = (RECORD_BUTTON_CONTAINER_SIZE - BREATHING_RING_SIZE) / 2;
 
 export default function HomeTab(): JSX.Element {
   const { colors } = useHeritageTheme();
 
   // Logic Separation: All business logic in hook
   const { state, actions } = useHomeLogic();
+
   const {
     recordingHandle,
     lastSavedId,
     currentAmplitude,
     currentQuestion,
+    isSpeaking,
+    words,
+    currentWordIndex,
     isCurrentTopicAnswered,
     formattedDate,
     greeting,
     weather,
     weatherIcon,
-    storyCategoryTitle,
     activities,
     hasUnread,
   } = state;
@@ -49,8 +64,11 @@ export default function HomeTab(): JSX.Element {
   if (lastSavedId) {
     return (
       <StorySavedView
-        onDismiss={() => actions.setLastSavedId(null)}
-        storyTitle={storyCategoryTitle}
+        onDismiss={() => {
+          actions.setLastSavedId(null);
+          actions.navigateToListen();
+        }}
+        storyTitle={currentQuestion?.text || HOME_STRINGS.questionCard.defaultQuestion}
         category={currentQuestion?.category}
       />
     );
@@ -86,9 +104,6 @@ export default function HomeTab(): JSX.Element {
             )}
           </View>
         </View>
-        <TouchableOpacity style={styles.settingsButton} onPress={actions.navigateToSettings}>
-          <Ionicons name="settings-sharp" size={24} color={colors.onSurface} />
-        </TouchableOpacity>
       </Animated.View>
 
       <ScrollView
@@ -131,11 +146,24 @@ export default function HomeTab(): JSX.Element {
                 style={{ transform: [{ rotate: '-12deg' }] }}
               />
             </View>
-            <View style={[styles.tape, { backgroundColor: `${colors.surfaceDim}80` }]} />
+            <View style={[styles.tape, { backgroundColor: `${colors.textMuted}80` }]} />
 
             <View>
               <AppText style={[styles.questionText, { color: colors.onSurface }]}>
-                {currentQuestion ? currentQuestion.text : HOME_STRINGS.questionCard.defaultQuestion}
+                {(words.length ? words : (currentQuestion?.text || HOME_STRINGS.questionCard.defaultQuestion).split(/\s+/))
+                  .map((word, index) => (
+                    <AppText
+                      key={`${word}-${index}`}
+                      style={[
+                        isSpeaking && index === currentWordIndex
+                          ? {
+                              color: colors.primary,
+                            }
+                          : { color: colors.onSurface },
+                      ]}>
+                      {word + (index === (words.length ? words.length - 1 : (currentQuestion?.text || '').split(/\s+/).length - 1) ? '' : ' ')}
+                    </AppText>
+                  ))}
               </AppText>
 
               {/* Answered Status Indicator */}
@@ -161,13 +189,33 @@ export default function HomeTab(): JSX.Element {
               )}
             </View>
 
-            <View style={{ marginTop: 8 }}>
+            <View
+              style={{
+                marginTop: 8,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                width: '100%',
+                paddingHorizontal: 12,
+              }}>
+              <HeritageButton
+                title="Play"
+                onPress={actions.replayQuestion}
+                variant="secondary"
+                size="small"
+                icon="volume-high-outline"
+                style={{ flex: 1, height: 48 }}
+                accessibilityLabel="Replay the question"
+              />
+
               <HeritageButton
                 title={HOME_STRINGS.questionCard.newQuestionButton}
                 onPress={actions.newTopic}
                 variant="outline"
-                size="medium"
-                icon="refresh"
+                size="small"
+                icon="arrow-forward"
+                style={{ flex: 1, height: 48 }}
                 accessibilityLabel="Get a new question prompt"
               />
             </View>
@@ -177,16 +225,19 @@ export default function HomeTab(): JSX.Element {
         {/* Record Button Area */}
         <Animated.View entering={FadeIn.delay(600).duration(800)} style={styles.recordArea}>
           <View style={styles.recordButtonContainer}>
-            <View style={[styles.recordGlow, { backgroundColor: `${colors.primary}30` }]} />
-            <TouchableOpacity
-              style={[styles.recordButton, { backgroundColor: colors.primary }]}
+            <View pointerEvents="none" style={styles.breathingLayer}>
+              <BreathingGlow
+                color={colors.primary}
+                size={BREATHING_GLOW_SIZE}
+                profile="home"
+                style={styles.breathingGlow}
+              />
+            </View>
+            <RecordButton
               onPress={actions.handleStartRecording}
-              activeOpacity={0.9}
-              accessibilityLabel="Start recording your story"
-              accessibilityRole="button"
-              accessibilityHint="Tap to begin recording audio">
-              <Ionicons name="mic" size={52} color={colors.onPrimary} />
-            </TouchableOpacity>
+              color={colors.primary}
+              onColor={colors.onPrimary}
+            />
           </View>
           <AppText style={[styles.tapToRecord, { color: colors.onSurface }]}>
             {HOME_STRINGS.recording.tapToRecord}
@@ -194,6 +245,44 @@ export default function HomeTab(): JSX.Element {
         </Animated.View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+// ... imports
+
+// Extracted Record Button with spring animation
+function RecordButton({
+  onPress,
+  color,
+  onColor,
+}: {
+  onPress: () => void;
+  color: string;
+  onColor: string;
+}) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    backgroundColor: color,
+  }));
+  const handlePressIn = () => {
+    scale.value = withSpring(0.9, { damping: 10, stiffness: 300 });
+  };
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
+  };
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      accessibilityRole="button"
+      accessibilityLabel="Start recording your story"
+      accessibilityHint="Tap to begin recording audio">
+      <Animated.View style={[styles.recordButton, animatedStyle]}>
+        <Ionicons name="mic" size={52} color={onColor} />
+      </Animated.View>
+    </AnimatedPressable>
   );
 }
 
@@ -212,7 +301,7 @@ const styles = StyleSheet.create({
   greeting: {
     fontFamily: 'Fraunces_600SemiBold',
     fontSize: 28, // md:text-3xl
-    lineHeight: 32,
+    lineHeight: 40,
     letterSpacing: -0.5,
   },
   dateRow: {
@@ -239,16 +328,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  settingsButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.03)',
-  },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 16,
     paddingBottom: 96, // Space for tab bar
-    gap: 24,
+    gap: 16,
   },
   clipIcon: {
     position: 'absolute',
@@ -258,61 +342,72 @@ const styles = StyleSheet.create({
   },
   tape: {
     position: 'absolute',
-    top: -12,
-    left: '50%',
-    marginLeft: -48, // w-24 / 2
-    width: 96,
-    height: 32,
-    transform: [{ rotate: '1deg' }],
+    top: -15,
+    width: 120,
+    height: 30,
+    alignSelf: 'center',
+    transform: [{ rotate: '-2deg' }],
+    borderRadius: 0,
+    zIndex: 10,
   },
   paperCard: {
     borderRadius: 24,
     borderWidth: 1,
-    padding: 32,
+    padding: 24,
     alignItems: 'center',
-    gap: 24,
+    gap: 16,
     elevation: 4,
   },
   questionText: {
     fontFamily: 'Fraunces_600SemiBold',
-    fontSize: 30, // text-3xl
+    fontSize: 26,
     textAlign: 'center',
     lineHeight: 36,
-    marginTop: 16,
+    marginTop: 12,
+    marginBottom: 6,
+    paddingHorizontal: 8,
   },
   recordArea: {
     alignItems: 'center',
-    gap: 12,
     marginTop: 24,
   },
   recordButtonContainer: {
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 140,
-    height: 140,
+    width: RECORD_BUTTON_CONTAINER_SIZE,
+    height: RECORD_BUTTON_CONTAINER_SIZE,
+    overflow: 'visible',
   },
-  recordGlow: {
-    position: 'absolute',
-    width: 130, // blurred glow
-    height: 130,
-    borderRadius: 65,
-    opacity: 0.8,
+  breathingLayer: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'visible',
   },
+  breathingGlow: {
+    left: BREATHING_GLOW_OFFSET,
+    top: BREATHING_GLOW_OFFSET,
+  },
+
   recordButton: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 100,
+    height: 100,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
     shadowColor: '#C26B4A',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.4,
     shadowRadius: 20,
     elevation: 10,
+    zIndex: 1,
   },
   tapToRecord: {
     fontSize: 18,
     fontWeight: '600',
+    lineHeight: 24,
+    marginTop: 16,
+    minHeight: 24,
+    textAlign: 'center',
   },
 });

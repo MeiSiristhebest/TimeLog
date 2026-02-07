@@ -10,7 +10,7 @@
 
 import { AppText } from '@/components/ui/AppText';
 import { useState, useEffect } from 'react';
-import { View, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@/components/ui/Icon';
 import { useQuery } from '@tanstack/react-query';
@@ -23,6 +23,11 @@ import { useReaction } from '@/features/family-listener/hooks/useReaction';
 import { fetchStoryById } from '@/features/family-listener/services/familyStoryService';
 import { supabase } from '@/lib/supabase';
 import { useHeritageTheme } from '@/theme/heritage';
+
+// ... imports
+import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
+import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 const STORY_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
@@ -37,7 +42,37 @@ function formatAbsoluteDate(timestamp: number): string {
   return STORY_DATE_FORMATTER.format(new Date(timestamp));
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function SpringPressable({ children, onPress, style, ...props }: any) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.9, { damping: 10, stiffness: 400 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 10, stiffness: 400 });
+  };
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={[style, animatedStyle]}
+      {...props}>
+      {children}
+    </AnimatedPressable>
+  );
+}
+
 export default function FamilyStoryPlayerScreen(): JSX.Element {
+  // ... (hooks and state)
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<string | undefined>();
@@ -119,13 +154,12 @@ export default function FamilyStoryPlayerScreen(): JSX.Element {
           <AppText style={[styles.errorSubtitle, { color: colors.textMuted }]}>
             {storyError?.message || 'Story does not exist or is inaccessible'}
           </AppText>
-          <TouchableOpacity
+          <HeritageButton
+            title="Back"
             onPress={handleBack}
-            style={[styles.button, { backgroundColor: colors.primary }]}
-            accessibilityRole="button"
-            accessibilityLabel="Back to story list">
-            <AppText style={[styles.buttonText, { color: colors.onPrimary }]}>Back</AppText>
-          </TouchableOpacity>
+            variant="primary"
+            style={{ marginTop: 24 }}
+          />
         </View>
       </Container>
     );
@@ -143,13 +177,12 @@ export default function FamilyStoryPlayerScreen(): JSX.Element {
           <AppText style={[styles.errorSubtitle, { color: colors.textMuted }]}>
             {playerState.error || 'Please try again later'}
           </AppText>
-          <TouchableOpacity
+          <HeritageButton
+            title="Retry"
             onPress={load}
-            style={[styles.button, { backgroundColor: colors.primary }]}
-            accessibilityRole="button"
-            accessibilityLabel="Retry">
-            <AppText style={[styles.buttonText, { color: colors.onPrimary }]}>Retry</AppText>
-          </TouchableOpacity>
+            variant="primary"
+            style={{ marginTop: 24 }}
+          />
         </View>
       </Container>
     );
@@ -173,22 +206,15 @@ export default function FamilyStoryPlayerScreen(): JSX.Element {
   if (showComments) {
     return (
       <Container>
-        {/* Header with back button */}
-        <View style={[styles.header, { borderColor: colors.border }]}>
-          <TouchableOpacity
-            onPress={toggleComments}
-            style={[styles.iconButton, { backgroundColor: `${colors.onSurface}10` }]}
-            accessibilityRole="button"
-            accessibilityLabel="Back to player">
-            <Ionicons name="arrow-back" size={24} color={colors.onSurface} />
-          </TouchableOpacity>
-          <AppText style={[styles.headerTitle, { color: colors.onSurface }]} numberOfLines={1}>
-            {story.title ?? 'Untitled Story'}
-          </AppText>
-        </View>
+        {/* Heritage Header [Modified] */}
+        <HeritageHeader
+          title={story.title ?? 'Untitled Story'}
+          showBack
+          onBack={toggleComments}
+        />
 
         {/* Comment section */}
-        <CommentSection storyId={id!} currentUserId={currentUserId} readOnly={false} />
+        <CommentSection storyId={id!} currentUserId={currentUserId} readOnly={false} header={null} />
       </Container>
     );
   }
@@ -196,27 +222,27 @@ export default function FamilyStoryPlayerScreen(): JSX.Element {
   // Main player view
   return (
     <Container>
-      {/* Back button */}
-      <TouchableOpacity
+      {/* Back button using SpringPressable */}
+      <SpringPressable
         onPress={handleBack}
         style={[styles.absoluteBackButton, { backgroundColor: `${colors.onSurface}10` }]}
         accessibilityRole="button"
         accessibilityLabel="Back to story list">
         <Ionicons name="arrow-back" size={28} color={colors.onSurface} />
-      </TouchableOpacity>
+      </SpringPressable>
 
       {/* Heart reaction button */}
       <View style={styles.topRightControls}>
         <HeartIcon isLiked={hasReacted} onToggle={toggleReaction} disabled={isReactionPending} />
 
-        {/* Comments button */}
-        <TouchableOpacity
+        {/* Comments button using SpringPressable */}
+        <SpringPressable
           onPress={toggleComments}
           style={[styles.iconButton, { backgroundColor: `${colors.onSurface}10` }]}
           accessibilityRole="button"
           accessibilityLabel="View comments">
           <Ionicons name="chatbubble-outline" size={24} color={colors.onSurface} />
-        </TouchableOpacity>
+        </SpringPressable>
       </View>
 
       {/* Main content */}
@@ -252,29 +278,25 @@ export default function FamilyStoryPlayerScreen(): JSX.Element {
           />
         </View>
 
-        {/* View comments button */}
-        <TouchableOpacity
+        {/* View comments button using HeritageButton */}
+        <HeritageButton
+          title="Comments"
+          icon="chatbubbles-outline"
           onPress={toggleComments}
-          style={[styles.commentsButton, { backgroundColor: `${colors.primary}15` }]}
-          accessibilityRole="button"
-          accessibilityLabel="View and add comments">
-          <Ionicons name="chatbubbles-outline" size={20} color={colors.primary} />
-          <AppText style={[styles.commentsButtonText, { color: colors.primary }]}>Comments</AppText>
-        </TouchableOpacity>
+          variant="secondary"
+          style={{ marginTop: 32 }}
+        />
       </View>
 
-      {/* Back to list button (for completed state) */}
+      {/* Back to list button (for completed state, uses HeritageButton) */}
       {playerState.state === 'completed' && (
         <View style={styles.bottomContainer}>
-          <TouchableOpacity
+          <HeritageButton
+            title="Back to story list"
             onPress={handleBack}
-            style={[styles.bottomButton, { borderColor: colors.primary }]}
-            accessibilityRole="button"
-            accessibilityLabel="Back to story list">
-            <AppText style={[styles.bottomButtonText, { color: colors.primary }]}>
-              Back to story list
-            </AppText>
-          </TouchableOpacity>
+            variant="outline"
+            style={{ width: '100%', maxWidth: 300 }}
+          />
         </View>
       )}
     </Container>

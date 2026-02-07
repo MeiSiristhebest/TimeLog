@@ -1,12 +1,11 @@
-import { AppText } from '@/components/ui/AppText';
-import { View, StyleSheet, Pressable } from 'react-native';
-import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@/components/ui/Icon';
-import Animated from 'react-native-reanimated';
-
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useDiscoveryLogic } from '@/features/discovery/hooks/useDiscoveryLogic';
+import { AppText } from '@/components/ui/AppText';
+import { Image } from 'expo-image';
+import { Pressable, StyleSheet, View } from 'react-native';
 import {
   DISCOVERY_STRINGS,
   MOCK_FAMILY_REQUEST,
@@ -55,7 +54,7 @@ export default function TopicsDiscoveryScreen(): JSX.Element {
             {/* Top: Icon */}
             <View style={styles.cardHeader}>
               <View style={[styles.iconCircle, { backgroundColor: `${meta.color}15` }]}>
-                <Ionicons name={meta.icon} size={40} color={meta.color} />
+                <Ionicons name={meta.icon as any} size={40} color={meta.color} />
               </View>
             </View>
 
@@ -64,7 +63,7 @@ export default function TopicsDiscoveryScreen(): JSX.Element {
               {/* Gold Badge */}
               <View style={styles.goldBadge}>
                 <Image
-                  source={{ uri: MOCK_FAMILY_REQUEST.avatar }}
+                  source={{ uri: MOCK_FAMILY_REQUEST.avatar || '' }}
                   style={styles.avatar}
                   contentFit="cover"
                 />
@@ -89,38 +88,71 @@ export default function TopicsDiscoveryScreen(): JSX.Element {
       {/* 3. Actions */}
       <View style={[styles.actionsContainer, { backgroundColor: colors.surfaceDim }]}>
         {/* Primary Record Button */}
-        <Pressable
+        <DiscoveryButton
           onPress={actions.handleSelectTopic}
-          style={({ pressed }) => [
-            styles.recordButton,
-            {
-              backgroundColor: colors.primary,
-              transform: [{ scale: pressed ? 0.96 : 1 }],
-              shadowColor: colors.primary,
-            },
-          ]}>
-          <Ionicons name="mic" size={32} color="#FFF" style={{ marginRight: 12 }} />
-          <AppText style={styles.recordButtonText}>
-            {DISCOVERY_STRINGS.actions.recordAnswer}
-          </AppText>
-        </Pressable>
+          variant="primary"
+          icon="mic"
+          label={DISCOVERY_STRINGS.actions.recordAnswer}
+        />
 
         {/* Secondary Try Another */}
-        <Pressable
+        <DiscoveryButton
           onPress={actions.handleNextCard}
-          style={({ pressed }) => [
-            styles.secondaryButton,
-            {
-              backgroundColor: pressed ? 'rgba(255,255,255,0.5)' : 'transparent',
-              transform: [{ scale: pressed ? 0.98 : 1 }],
-            },
-          ]}>
-          <AppText style={[styles.secondaryButtonText, { color: colors.textMuted }]}>
-            {DISCOVERY_STRINGS.actions.tryAnother}
-          </AppText>
-        </Pressable>
+          variant="secondary"
+          label={DISCOVERY_STRINGS.actions.tryAnother}
+        />
       </View>
     </SafeAreaView>
+  );
+}
+
+// Interactive Button Component with Spring Physics
+function DiscoveryButton({
+  onPress,
+  variant,
+  label,
+  icon
+}: {
+  onPress: () => void;
+  variant: 'primary' | 'secondary';
+  label: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+}) {
+  const { colors } = useHeritageTheme();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(variant === 'primary' ? 0.96 : 0.98, { damping: 10, stiffness: 300 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
+  };
+
+  // Styles based on variant
+  const isPrimary = variant === 'primary';
+
+  return (
+    <Pressable onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut}>
+      <Animated.View
+        style={[
+          isPrimary ? styles.recordButton : styles.secondaryButton,
+          isPrimary ? { backgroundColor: colors.primary, shadowColor: colors.primary } : { borderColor: 'transparent' },
+          animatedStyle
+        ]}
+      >
+        {icon && <Ionicons name={icon} size={32} color="#FFF" style={{ marginRight: 12 }} />}
+        <AppText
+          style={isPrimary ? styles.recordButtonText : [styles.secondaryButtonText, { color: colors.textMuted }]}
+        >
+          {label}
+        </AppText>
+      </Animated.View>
+    </Pressable>
   );
 }
 

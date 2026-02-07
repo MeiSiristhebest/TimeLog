@@ -4,7 +4,6 @@ import { Share } from 'react-native';
 import * as Linking from 'expo-linking';
 import * as Haptics from 'expo-haptics';
 import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
-
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { MOCK_FAMILY_MEMBERS, FAMILY_STRINGS } from '../data/mockFamilyData';
 import { devLog } from '@/lib/devLogger';

@@ -1,6 +1,6 @@
 import { AppText } from '@/components/ui/AppText';
 import { View, ScrollView, Pressable, TextInput, Modal, StyleSheet, FlatList } from 'react-native';
-
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +13,69 @@ import {
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { useHeritageTheme } from '@/theme/heritage';
 import { devLog } from '@/lib/devLogger';
+
+// Helper Components for Animations
+function SpringTab({ category, isSelected, onPress, colors }: any) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => (scale.value = withSpring(0.95, { damping: 10, stiffness: 300 }))}
+      onPressOut={() => (scale.value = withSpring(1, { damping: 10, stiffness: 300 }))}
+    >
+      <Animated.View style={[
+        styles.tab,
+        {
+          backgroundColor: isSelected ? colors.primary : 'transparent',
+          borderColor: isSelected ? colors.primary : colors.border,
+        },
+        animatedStyle
+      ]}>
+        <AppText
+          style={{
+            color: isSelected ? colors.onPrimary : colors.onSurface,
+            fontWeight: '500',
+          }}>
+          {category.icon} {category.name.split(' ')[0]}
+        </AppText>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+function SpringQuestionCard({ item, onPress, colors }: any) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => (scale.value = withSpring(0.98, { damping: 10, stiffness: 300 }))}
+      onPressOut={() => (scale.value = withSpring(1, { damping: 10, stiffness: 300 }))}
+    >
+      <Animated.View style={[
+        styles.questionCard,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          shadowColor: colors.primary,
+        },
+        animatedStyle
+      ]}>
+        <AppText style={[styles.questionText, { color: colors.onSurface }]}>{item}</AppText>
+        <View style={styles.useButton}>
+          <AppText style={{ color: colors.primary, fontWeight: '600' }}>Use this ›</AppText>
+        </View>
+      </Animated.View>
+    </Pressable>
+  );
+}
 
 export default function AskQuestionScreen(): JSX.Element {
   const router = useRouter();
@@ -82,22 +145,7 @@ export default function AskQuestionScreen(): JSX.Element {
 
   const renderQuestion = useCallback(
     ({ item }: { item: string }) => (
-      <Pressable
-        onPress={() => handleQuestionSelect(item)}
-        style={({ pressed }) => [
-          styles.questionCard,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            shadowColor: colors.primary,
-            opacity: pressed ? 0.9 : 1,
-          },
-        ]}>
-        <AppText style={[styles.questionText, { color: colors.onSurface }]}>{item}</AppText>
-        <View style={styles.useButton}>
-          <AppText style={{ color: colors.primary, fontWeight: '600' }}>Use this ›</AppText>
-        </View>
-      </Pressable>
+      <SpringQuestionCard item={item} onPress={() => handleQuestionSelect(item)} colors={colors} />
     ),
     [colors, handleQuestionSelect]
   );
@@ -134,25 +182,13 @@ export default function AskQuestionScreen(): JSX.Element {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.tabScroll}>
             {library?.categories.map((category) => (
-              <Pressable
+              <SpringTab
                 key={category.id}
+                category={category}
+                isSelected={selectedCategory === category.id}
                 onPress={() => setSelectedCategory(category.id)}
-                style={[
-                  styles.tab,
-                  {
-                    backgroundColor:
-                      selectedCategory === category.id ? colors.primary : 'transparent',
-                    borderColor: selectedCategory === category.id ? colors.primary : colors.border,
-                  },
-                ]}>
-                <AppText
-                  style={{
-                    color: selectedCategory === category.id ? colors.onPrimary : colors.onSurface,
-                    fontWeight: '500',
-                  }}>
-                  {category.icon} {category.name.split(' ')[0]}
-                </AppText>
-              </Pressable>
+                colors={colors}
+              />
             ))}
           </ScrollView>
         </View>
@@ -174,22 +210,15 @@ export default function AskQuestionScreen(): JSX.Element {
       </View>
 
       {/* Floating Action Button for Custom Question */}
-      <Pressable
-        onPress={() => {
+      <View style={{ position: 'absolute', bottom: 30, right: 20 }}>
+        <SpringFab onPress={() => {
           setQuestionText('');
           setModalVisible(true);
         }}
-        style={({ pressed }) => [
-          styles.fab,
-          {
-            backgroundColor: colors.primary,
-            shadowColor: colors.primary,
-            opacity: pressed ? 0.9 : 1,
-          },
-        ]}>
-        <Ionicons name="pencil" size={20} color={colors.onPrimary} />
-        <AppText style={[styles.fabText, { color: colors.onPrimary }]}>Write Custom</AppText>
-      </Pressable>
+          color={colors.primary}
+          label="Write Custom"
+        />
+      </View>
 
       {/* Edit/Send Modal */}
       <Modal
@@ -252,6 +281,26 @@ export default function AskQuestionScreen(): JSX.Element {
       </Modal>
     </View>
   );
+}
+
+function SpringFab({ onPress, color, label }: { onPress: () => void, color: string, label: string }) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => (scale.value = withSpring(0.9, { damping: 10, stiffness: 300 }))}
+      onPressOut={() => (scale.value = withSpring(1, { damping: 10, stiffness: 300 }))}
+    >
+      <Animated.View style={[styles.fab, { backgroundColor: color, shadowColor: color }, animatedStyle]}>
+        <Ionicons name="pencil" size={20} color="#FFF" />
+        <AppText style={[styles.fabText, { color: "#FFF" }]}>{label}</AppText>
+      </Animated.View>
+    </Pressable>
+  )
 }
 
 const styles = StyleSheet.create({
