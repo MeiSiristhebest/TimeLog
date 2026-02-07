@@ -6,20 +6,16 @@
 
 import { supabase } from '@/lib/supabase';
 import { devLog } from '@/lib/devLogger';
+import type { UserProfile } from '@/types/entities';
 
-export type UserProfile = {
-  id: string;
-  userId: string;
-  displayName: string | null;
-  avatarUrl: string | null;
-  role: 'storyteller' | 'family';
-  bio: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+export type { UserProfile };
 
 export type ProfileUpdate = {
   displayName?: string;
+  birthDate?: string;
+  language?: string;
+  fontScaleIndex?: number;
+  avatarUri?: string;
   avatarUrl?: string;
   role?: 'storyteller' | 'family';
   bio?: string;
@@ -29,9 +25,14 @@ type DatabaseProfile = {
   id: string;
   user_id: string;
   display_name: string | null;
+  birth_date?: string | null;
+  language?: string | null;
+  font_scale_index?: number | null;
+  avatar_uri?: string | null;
   avatar_url: string | null;
   role: 'storyteller' | 'family' | null;
   bio: string | null;
+  is_anonymous?: boolean | null;
   created_at: string;
   updated_at: string;
 };
@@ -62,15 +63,22 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
  * Update user profile
  */
 export async function updateProfile(userId: string, updates: ProfileUpdate): Promise<UserProfile> {
+  const payload: Record<string, string | number | boolean | null> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (updates.displayName !== undefined) payload.display_name = updates.displayName;
+  if (updates.birthDate !== undefined) payload.birth_date = updates.birthDate;
+  if (updates.language !== undefined) payload.language = updates.language;
+  if (updates.fontScaleIndex !== undefined) payload.font_scale_index = updates.fontScaleIndex;
+  if (updates.avatarUri !== undefined) payload.avatar_uri = updates.avatarUri;
+  if (updates.avatarUrl !== undefined) payload.avatar_url = updates.avatarUrl;
+  if (updates.role !== undefined) payload.role = updates.role;
+  if (updates.bio !== undefined) payload.bio = updates.bio;
+
   const { data, error } = await supabase
     .from('profiles')
-    .update({
-      display_name: updates.displayName,
-      avatar_url: updates.avatarUrl,
-      role: updates.role,
-      bio: updates.bio,
-      updated_at: new Date().toISOString(),
-    })
+    .update(payload)
     .eq('user_id', userId)
     .select()
     .single();
@@ -144,9 +152,14 @@ function mapToProfile(data: DatabaseProfile): UserProfile {
     id: data.id,
     userId: data.user_id,
     displayName: data.display_name,
+    birthDate: data.birth_date ?? null,
+    language: data.language ?? null,
+    fontScaleIndex: data.font_scale_index ?? null,
+    avatarUri: data.avatar_uri ?? null,
     avatarUrl: data.avatar_url,
     role: data.role || 'storyteller',
     bio: data.bio,
+    isAnonymous: data.is_anonymous ?? null,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, View, StyleSheet, Alert } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { AppText } from '@/components/ui/AppText';
 import { SettingsRow } from '../components/SettingsRow';
@@ -32,11 +32,12 @@ export function AppSettingsScreen(): JSX.Element {
   const STRINGS = SETTINGS_STRINGS.appSettings;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.surfaceDim }}>
+    <View className="flex-1" style={{ backgroundColor: colors.surfaceDim }}>
       <HeritageHeader title={STRINGS.title} showBack />
       <ScrollView
-        style={[styles.container, { backgroundColor: colors.surfaceDim }]}
-        contentContainerStyle={styles.contentContainer}
+        className="flex-1"
+        style={{ backgroundColor: colors.surfaceDim }}
+        contentContainerStyle={{ paddingTop: 8, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}>
         {/* Group 1: Account */}
         <SettingsSection title={STRINGS.sections.account}>
@@ -72,7 +73,7 @@ export function AppSettingsScreen(): JSX.Element {
         </SettingsSection>
 
         {/* Group 4: Actions */}
-        <View style={styles.actionGroup}>
+        <View className="mt-6 mb-6 gap-3">
           <HeritageButton
             title={STRINGS.items.switchAccount}
             onPress={handleSignOut}
@@ -89,53 +90,16 @@ export function AppSettingsScreen(): JSX.Element {
         </View>
 
         {/* Footer Links */}
-        <View style={styles.footerLinks}>
-          <AppText style={styles.footerLinkText}>{STRINGS.items.privacy}</AppText>
-          <AppText style={styles.footerDivider}>|</AppText>
-          <AppText style={styles.footerLinkText}>{STRINGS.items.terms}</AppText>
+        <View className="flex-row justify-center items-center mb-5">
+          <AppText className="text-xs font-medium text-[#576b95]">
+            {STRINGS.items.privacy}
+          </AppText>
+          <AppText className="mx-2 text-xs text-[#D1D1D6]">|</AppText>
+          <AppText className="text-xs font-medium text-[#576b95]">
+            {STRINGS.items.terms}
+          </AppText>
         </View>
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingTop: 8,
-    paddingBottom: 40,
-  },
-  actionGroup: {
-    marginTop: 24,
-    marginBottom: 24,
-    gap: 12,
-  },
-  actionButton: {
-    width: '100%',
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  footerLinks: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  footerLinkText: {
-    fontSize: 12,
-    color: '#576b95', // Link blue
-    fontWeight: '500',
-  },
-  footerDivider: {
-    marginHorizontal: 8,
-    color: '#D1D1D6',
-    fontSize: 12,
-  },
-});

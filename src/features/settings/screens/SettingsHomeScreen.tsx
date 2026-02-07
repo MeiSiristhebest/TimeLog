@@ -1,5 +1,4 @@
-import React from 'react';
-import { ScrollView, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
 import { useRouter, Link } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SettingsRow } from '../components/SettingsRow';
@@ -8,8 +7,16 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { useSettingsHome } from '../hooks/useSettingsLogic';
 import { SETTINGS_STRINGS } from '../data/mockSettingsData';
 import { SettingsSection } from '../components/SettingsSection';
+import { Pressable, ScrollView, View } from 'react-native';
+import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
+import { AppText } from '@/components/ui/AppText';
+import { useStories } from '@/features/story-gallery/hooks/useStories';
+import {
+  isProfilePromptDismissed,
+  setProfilePromptDismissed,
+} from '../services/profileOnboardingService';
 
-const NO_OP = () => {};
+const NO_OP = () => { };
 
 export function SettingsHomeScreen(): JSX.Element {
   const router = useRouter();
@@ -17,15 +24,29 @@ export function SettingsHomeScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
 
   // Use existing logic for profile data
-  const { userRole, profile, isProfileLoading } = useSettingsHome();
+  const { userRole, profile, isProfileLoading, sessionUserId } = useSettingsHome();
+  const { stories } = useStories();
+  const [promptDismissed, setPromptDismissed] = useState(isProfilePromptDismissed());
 
   const handleProfilePress = () => {
-    router.push('/(tabs)/settings/account-security');
+    router.push('/(tabs)/settings/edit-profile');
   };
 
   const displayName = isProfileLoading ? 'Loading...' : profile?.displayName || 'Set up profile';
   const roleLabel = userRole === 'storyteller' ? 'Storyteller' : 'Family Member';
   const avatarUrl = profile?.avatarUrl || undefined;
+
+  const profileIncomplete = useMemo(
+    () => !profile?.displayName || !profile?.birthDate || !profile?.language,
+    [profile]
+  );
+
+  const shouldShowProfilePrompt = stories.length > 0 && profileIncomplete && !promptDismissed;
+
+  const handleDismissPrompt = () => {
+    setProfilePromptDismissed(true);
+    setPromptDismissed(true);
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.surfaceDim }}>
@@ -44,12 +65,37 @@ export function SettingsHomeScreen(): JSX.Element {
         <View style={{ marginBottom: 8 }}>
           <UserProfileHeader
             displayName={displayName}
-            userId={roleLabel}
+            userId={sessionUserId || 'guest-user'}
             role={userRole}
             onPress={handleProfilePress}
             avatar={avatarUrl}
           />
         </View>
+
+        {shouldShowProfilePrompt ? (
+          <View
+            className="mx-4 mb-4 rounded-2xl border px-4 py-4"
+            style={{ backgroundColor: colors.surfaceCard, borderColor: colors.border }}>
+            <AppText className="text-base font-semibold mb-1" style={{ color: colors.onSurface }}>
+              Complete your profile
+            </AppText>
+            <AppText className="text-sm mb-3" style={{ color: colors.textMuted }}>
+              Add your birthday, language, and preferred text size for a more comfortable
+              experience.
+            </AppText>
+            <HeritageButton
+              title="Set Up Now"
+              onPress={handleProfilePress}
+              variant="primary"
+              fullWidth
+            />
+            <Pressable onPress={handleDismissPrompt} className="mt-3 items-center">
+              <AppText className="text-sm" style={{ color: colors.textMuted }}>
+                Skip for now
+              </AppText>
+            </Pressable>
+          </View>
+        ) : null}
 
         {/* TimeLog Functional Group */}
         <SettingsSection>

@@ -1,4 +1,5 @@
 import { mmkv } from '@/lib/mmkv';
+import { FONT_SCALE_LABELS, DEFAULT_FONT_SCALE_INDEX } from '@/theme/fontScale';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
@@ -7,7 +8,12 @@ const SCALE_KEY = 'display.fontScaleIndex';
 const THEME_MODES: ThemeMode[] = ['system', 'light', 'dark'];
 
 export const DEFAULT_THEME_MODE: ThemeMode = 'system';
-export const DEFAULT_FONT_SCALE_INDEX = 2;
+const MAX_FONT_SCALE_INDEX = FONT_SCALE_LABELS.length - 1;
+
+function clampScaleIndex(index: number): number {
+  if (!Number.isFinite(index)) return DEFAULT_FONT_SCALE_INDEX;
+  return Math.max(0, Math.min(MAX_FONT_SCALE_INDEX, Math.round(index)));
+}
 
 export function getDisplaySettings(): { themeMode: ThemeMode; fontScaleIndex: number } {
   const storedMode = mmkv.getString(THEME_KEY);
@@ -17,7 +23,7 @@ export function getDisplaySettings(): { themeMode: ThemeMode; fontScaleIndex: nu
 
   const scaleRaw = mmkv.getString(SCALE_KEY);
   const parsedScale = scaleRaw ? Number(scaleRaw) : Number.NaN;
-  const fontScaleIndex = Number.isFinite(parsedScale) ? parsedScale : DEFAULT_FONT_SCALE_INDEX;
+  const fontScaleIndex = clampScaleIndex(parsedScale);
 
   return { themeMode, fontScaleIndex };
 }
@@ -27,7 +33,7 @@ export function setThemeMode(mode: ThemeMode): void {
 }
 
 export function setFontScaleIndex(index: number): void {
-  mmkv.set(SCALE_KEY, String(index));
+  mmkv.set(SCALE_KEY, String(clampScaleIndex(index)));
 }
 
 export function resetDisplaySettings(): void {

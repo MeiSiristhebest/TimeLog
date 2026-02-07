@@ -1,8 +1,6 @@
 import { AppText } from '@/components/ui/AppText';
 import { ScrollView, View, ActivityIndicator } from 'react-native';
-
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
-import { EditProfileModal } from '../components/EditProfileModal';
 import { SettingsRow } from '../components/SettingsRow';
 import { SettingsSection } from '../components/SettingsSection';
 import { useHeritageTheme } from '@/theme/heritage';
@@ -14,19 +12,8 @@ export function AccountSecurityScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
 
   // Logic Separation
-  const {
-    profile,
-    isLoading,
-    profileLabel,
-    roleLabel,
-    showEditProfile,
-    setShowEditProfile,
-    isSigningOut,
-    confirmSignOut,
-    updateProfileData,
-    uploadProfileAvatar,
-    actions,
-  } = useAccountSecurityLogic();
+  const { isLoading, profileLabel, roleLabel, isSigningOut, confirmSignOut, actions } =
+    useAccountSecurityLogic();
 
   const STRINGS = SETTINGS_STRINGS.accountSecurity;
 
@@ -44,14 +31,14 @@ export function AccountSecurityScreen(): JSX.Element {
             value={profileLabel}
             iconName="person-circle-outline"
             iconColor={colors.sageGreen}
-            onPress={() => setShowEditProfile(true)}
+            onPress={() => actions.navigateTo('/(tabs)/settings/edit-profile')}
           />
           <SettingsRow
             label={STRINGS.sections.profile.role}
             value={roleLabel}
             iconName="id-card-outline"
             iconColor={colors.amberCustom}
-            onPress={() => actions.navigateTo('/role')}
+            onPress={() => actions.navigateTo('/(tabs)/settings/role')}
             isLast
           />
         </SettingsSection>
@@ -68,7 +55,7 @@ export function AccountSecurityScreen(): JSX.Element {
             label={STRINGS.sections.security.deviceCode}
             iconName="qr-code-outline"
             iconColor={colors.textMuted}
-            onPress={() => actions.navigateTo('/device-code')}
+            onPress={() => actions.navigateTo('/(tabs)/settings/device-code')}
           />
           <SettingsRow
             label={STRINGS.sections.security.deviceManagement}
@@ -85,6 +72,7 @@ export function AccountSecurityScreen(): JSX.Element {
             label={STRINGS.sections.signOut.label}
             destructive
             showChevron={false}
+            align="center"
             onPress={confirmSignOut}
             isLast
             rightElement={
@@ -92,14 +80,6 @@ export function AccountSecurityScreen(): JSX.Element {
             }
           />
         </View>
-
-        <EditProfileModal
-          visible={showEditProfile}
-          profile={profile}
-          onClose={() => setShowEditProfile(false)}
-          onSave={updateProfileData}
-          onUploadAvatar={uploadProfileAvatar}
-        />
 
         {isLoading ? (
           <AppText variant="caption" style={{ color: colors.textMuted }}>

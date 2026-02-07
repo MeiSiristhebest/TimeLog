@@ -19,7 +19,7 @@ type DisplaySettingsState = {
 
 export const useDisplaySettingsStore = create<DisplaySettingsState>((set) => ({
   themeMode: 'system',
-  fontScaleIndex: 2,
+  fontScaleIndex: 1,
   isLoaded: false,
   hydrate: () => {
     const settings = getDisplaySettings();
@@ -35,6 +35,6 @@ export const useDisplaySettingsStore = create<DisplaySettingsState>((set) => ({
   },
   reset: () => {
     resetDisplaySettings();
-    set({ themeMode: 'system', fontScaleIndex: 2 });
+    set({ themeMode: 'system', fontScaleIndex: 1 });
   },
 }));

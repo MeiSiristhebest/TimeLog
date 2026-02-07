@@ -12,7 +12,7 @@ describe('displaySettingsStore', () => {
   it('hydrate loads defaults', () => {
     (service.getDisplaySettings as jest.Mock).mockReturnValue({
       themeMode: 'system',
-      fontScaleIndex: 2,
+      fontScaleIndex: 1,
     });
 
     act(() => {
@@ -21,7 +21,7 @@ describe('displaySettingsStore', () => {
 
     const state = useDisplaySettingsStore.getState();
     expect(state.themeMode).toBe('system');
-    expect(state.fontScaleIndex).toBe(2);
+    expect(state.fontScaleIndex).toBe(1);
     expect(state.isLoaded).toBe(true);
   });
 });

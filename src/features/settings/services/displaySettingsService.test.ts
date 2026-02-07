@@ -24,7 +24,7 @@ describe('displaySettingsService', () => {
 
   it('defaults to system + standard when empty', () => {
     const settings = getDisplaySettings();
-    expect(settings).toEqual({ themeMode: 'system', fontScaleIndex: 2 });
+    expect(settings).toEqual({ themeMode: 'system', fontScaleIndex: 1 });
   });
 
   it('persists theme mode', () => {
@@ -40,6 +40,6 @@ describe('displaySettingsService', () => {
   it('reset restores defaults', () => {
     resetDisplaySettings();
     expect(mmkv.set).toHaveBeenCalledWith('display.themeMode', 'system');
-    expect(mmkv.set).toHaveBeenCalledWith('display.fontScaleIndex', '2');
+    expect(mmkv.set).toHaveBeenCalledWith('display.fontScaleIndex', '1');
   });
 });

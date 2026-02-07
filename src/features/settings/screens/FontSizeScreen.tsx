@@ -1,114 +1,251 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { AppText } from '@/components/ui/AppText';
-import { useHeritageTheme } from '@/theme/heritage';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Ionicons } from '@/components/ui/Icon';
+import {
+  DEFAULT_FONT_SCALE_INDEX,
+  FONT_SCALE_LABELS,
+  FONT_SCALE_STEPS,
+  useHeritageTheme,
+} from '@/theme/heritage';
 import { useDisplaySettingsLogic } from '../hooks/useSettingsLogic';
-import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
+import { useProfile } from '../hooks/useProfile';
 
 export function FontSizeScreen(): JSX.Element {
-  const { colors } = useHeritageTheme();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isDark } = useHeritageTheme();
   const { state, actions } = useDisplaySettingsLogic();
+  const { updateProfileData } = useProfile();
   const { fontScaleIndex } = state;
+  const [previewIndex, setPreviewIndex] = React.useState(fontScaleIndex);
 
-  // Mock Chat Messages for Preview
+  React.useEffect(() => {
+    setPreviewIndex(fontScaleIndex);
+  }, [fontScaleIndex]);
+
+  const palette = {
+    bg: isDark ? '#111111' : '#F2F2F2',
+    surface: isDark ? '#1E1E1E' : '#FFFFFF',
+    sentBubble: isDark ? '#2B7E48' : '#95EC69',
+    receivedBubble: isDark ? '#2C2C2C' : '#FFFFFF',
+    textPrimary: isDark ? '#FFFFFF' : '#000000',
+    textSecondary: isDark ? '#AAAAAA' : '#666666',
+    divider: isDark ? '#2a2a2a' : '#e5e5e5',
+    sliderTrack: isDark ? '#555555' : '#D1D1D1',
+    tick: isDark ? '#555555' : '#D1D1D1',
+    green: '#07C160',
+  } as const;
+
   const messages = [
-    { id: 1, type: 'received', text: 'This text size affects chat messages.' },
-    { id: 2, type: 'sent', text: 'And also story descriptions!' },
-    { id: 3, type: 'received', text: 'Adjust the slider below to find your preference.' },
+    { id: 1, type: 'sent' as const, text: 'Preview your font size' },
+    { id: 2, type: 'received' as const, text: 'Drag the slider below to adjust text size.' },
+    {
+      id: 3,
+      type: 'received' as const,
+      text: 'This changes reading and chat text size across the app instantly.',
+    },
   ];
 
-  return (
-    <View style={[styles.container, { backgroundColor: colors.surfaceDim }]}>
-      <HeritageHeader title="Font Size" showBack />
+  const maxIndex = FONT_SCALE_LABELS.length - 1;
+  const clampIndex = (index: number): number => {
+    return Math.max(0, Math.min(maxIndex, Math.round(index)));
+  };
 
-      {/* 1. Preview Area (Chat Style) */}
-      <View style={styles.previewContainer}>
-        <ScrollView contentContainerStyle={styles.chatContent}>
+  const currentLabel =
+    FONT_SCALE_LABELS[previewIndex] ?? FONT_SCALE_LABELS[DEFAULT_FONT_SCALE_INDEX];
+  const currentPreviewScale =
+    FONT_SCALE_STEPS[previewIndex] ?? FONT_SCALE_STEPS[DEFAULT_FONT_SCALE_INDEX];
+  const previewBodySize = Math.round(16 * currentPreviewScale);
+  const previewBodyLineHeight = Math.round(26 * currentPreviewScale);
+  const previewTitleSize = Math.round(17 * currentPreviewScale);
+  const headerTitleSize = Math.max(18, Math.round(18 * currentPreviewScale));
+  const headerButtonSize = Math.max(12, Math.round(14 * currentPreviewScale));
+  const helperSize = Math.max(13, Math.round(15 * currentPreviewScale));
+  const leftLabelSize = Math.max(12, Math.round(13 * currentPreviewScale));
+  const rightLabelSize = Math.max(24, Math.round(28 * currentPreviewScale));
+  const previewIconSize = Math.max(16, Math.round(18 * currentPreviewScale));
+  const previewAvatarIconSize = Math.max(18, Math.round(20 * currentPreviewScale));
+
+  const handleDone = async () => {
+    const next = clampIndex(previewIndex);
+    actions.setFontScaleIndex(next);
+    await updateProfileData({ fontScaleIndex: next });
+    router.back();
+  };
+
+  return (
+    <View className="flex-1" style={{ backgroundColor: palette.bg }}>
+      <View
+        className="px-4 pb-3 flex-row items-center justify-between"
+        style={{ paddingTop: insets.top + 10 }}>
+        <Pressable
+          onPress={() => router.back()}
+          className="h-10 w-10 items-center justify-center rounded-full">
+          <Ionicons name="chevron-back" size={22} color={palette.textPrimary} />
+        </Pressable>
+
+        <Text style={{ color: palette.textPrimary, fontSize: headerTitleSize, fontWeight: '500' }}>
+          Font Size
+        </Text>
+
+        <Pressable
+          onPress={handleDone}
+          className="px-4 h-8 rounded items-center justify-center"
+          style={{ backgroundColor: palette.green }}>
+          <Text style={{ fontSize: headerButtonSize, color: '#FFFFFF', fontWeight: '500' }}>
+            Done
+          </Text>
+        </Pressable>
+      </View>
+
+      <View className="flex-1">
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 8,
+            paddingBottom: 16,
+            gap: 14,
+          }}>
           {messages.map((msg) => (
             <View
               key={msg.id}
-              style={[
-                styles.bubble,
-                msg.type === 'sent'
-                  ? { alignSelf: 'flex-end', backgroundColor: '#95EC69' } // WeChat Green
-                  : { alignSelf: 'flex-start', backgroundColor: colors.surfaceCard },
-              ]}>
-              <AppText
+              className={`flex-row ${msg.type === 'sent' ? 'justify-end' : 'justify-start'} gap-3`}>
+              {msg.type === 'received' ? (
+                <View
+                  className="rounded items-center justify-center"
+                  style={{
+                    width: Math.round(40 * currentPreviewScale),
+                    height: Math.round(40 * currentPreviewScale),
+                    backgroundColor: palette.green,
+                  }}>
+                  <Ionicons name="chatbubble-ellipses" size={previewIconSize} color="#FFFFFF" />
+                </View>
+              ) : null}
+
+              <View
+                className="max-w-[75%] px-4 py-3 rounded-md"
                 style={{
-                  color: msg.type === 'sent' ? '#000' : colors.onSurface,
-                  lineHeight: undefined, // Let AppText handle scaling naturally
+                  backgroundColor:
+                    msg.type === 'sent' ? palette.sentBubble : palette.receivedBubble,
                 }}>
-                {msg.text}
-              </AppText>
+                {msg.type === 'sent' ? (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: 12,
+                      right: -6,
+                      width: 0,
+                      height: 0,
+                      borderTopWidth: 6,
+                      borderBottomWidth: 6,
+                      borderLeftWidth: 6,
+                      borderTopColor: 'transparent',
+                      borderBottomColor: 'transparent',
+                      borderLeftColor: palette.sentBubble,
+                    }}
+                  />
+                ) : (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: 12,
+                      left: -6,
+                      width: 0,
+                      height: 0,
+                      borderTopWidth: 6,
+                      borderBottomWidth: 6,
+                      borderRightWidth: 6,
+                      borderTopColor: 'transparent',
+                      borderBottomColor: 'transparent',
+                      borderRightColor: palette.receivedBubble,
+                    }}
+                  />
+                )}
+                <Text
+                  style={{
+                    color: msg.type === 'sent' ? '#000000' : palette.textPrimary,
+                    fontSize: previewBodySize,
+                    lineHeight: previewBodyLineHeight,
+                    fontWeight: msg.type === 'sent' ? '500' : '400',
+                  }}>
+                  {msg.text}
+                </Text>
+              </View>
+
+              {msg.type === 'sent' ? (
+                <View
+                  className="rounded bg-gray-300 items-center justify-center"
+                  style={{
+                    width: Math.round(40 * currentPreviewScale),
+                    height: Math.round(40 * currentPreviewScale),
+                  }}>
+                  <Ionicons name="person" size={previewAvatarIconSize} color="#FFFFFF" />
+                </View>
+              ) : null}
             </View>
           ))}
         </ScrollView>
       </View>
 
-      {/* 2. Controls Area */}
-      <View style={[styles.controlsContainer, { backgroundColor: colors.surfaceCard }]}>
-        <View style={styles.sliderHeader}>
-          <AppText style={{ fontSize: 14 }}>A</AppText>
-          <AppText style={{ fontSize: 24, fontWeight: 'bold' }}>A</AppText>
+      <View
+        className="px-6 pt-4 pb-8 border-t"
+        style={{
+          backgroundColor: palette.surface,
+          borderTopColor: palette.divider,
+        }}>
+        <View className="flex-row justify-between items-end mb-3 px-2">
+          <Text style={{ color: palette.textPrimary, fontSize: leftLabelSize }}>
+            A
+          </Text>
+          <Text style={{ color: palette.textPrimary, fontSize: previewTitleSize }}>
+            {currentLabel}
+          </Text>
+          <Text style={{ color: palette.textPrimary, fontSize: rightLabelSize }}>
+            A
+          </Text>
         </View>
 
-        <Slider
-          style={{ width: '100%', height: 40 }}
-          value={fontScaleIndex}
-          minimumValue={0}
-          maximumValue={6} // standard mappings 0-6
-          step={1}
-          onValueChange={actions.setFontScaleIndex}
-          minimumTrackTintColor={colors.primary} // active color
-          maximumTrackTintColor="#E5E5E5"
-          thumbTintColor="#FFFFFF" // White thumb with shadow typically
-        />
-        <AppText style={[styles.hint, { color: colors.textMuted }]}>
-          Standard size is recommended.
-        </AppText>
+        <View className="relative h-10 justify-center">
+          <View className="absolute left-[14px] right-[14px] flex-row justify-between">
+            {Array.from({ length: FONT_SCALE_LABELS.length }).map((_, index) => (
+              <View
+                key={index}
+                className="w-[1px] h-[8px]"
+                style={{ backgroundColor: palette.tick }}
+              />
+            ))}
+          </View>
+
+          <Slider
+            style={{ width: '100%', height: 40 }}
+            value={previewIndex}
+            minimumValue={0}
+            maximumValue={maxIndex}
+            step={1}
+            onValueChange={(value) => {
+              setPreviewIndex(clampIndex(value));
+            }}
+            onSlidingComplete={(value) => {
+              const next = clampIndex(value);
+              actions.setFontScaleIndex(next);
+              setPreviewIndex(next);
+              void updateProfileData({ fontScaleIndex: next });
+            }}
+            minimumTrackTintColor={palette.sliderTrack}
+            maximumTrackTintColor={palette.sliderTrack}
+            thumbTintColor={isDark ? '#4A4A4A' : '#FFFFFF'}
+          />
+        </View>
+
+        <Text
+          style={{ color: palette.textSecondary, fontSize: helperSize, textAlign: 'center', marginTop: 12 }}>
+          Changes apply immediately to reading and chat text.
+        </Text>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  previewContainer: {
-    flex: 1,
-  },
-  chatContent: {
-    padding: 16,
-    gap: 16,
-  },
-  bubble: {
-    maxWidth: '80%',
-    padding: 12,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  controlsContainer: {
-    padding: 24,
-    paddingBottom: 48,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(0,0,0,0.1)',
-  },
-  sliderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 12,
-    paddingHorizontal: 10,
-  },
-  hint: {
-    textAlign: 'center',
-    marginTop: 16,
-    fontSize: 14,
-  },
-});

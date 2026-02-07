@@ -27,12 +27,20 @@ jest.mock('../components/SettingsCard', () => ({
 jest.mock('../store/displaySettingsStore', () => ({
   useDisplaySettingsStore: () => ({
     themeMode: 'system',
-    fontScaleIndex: 2,
+    fontScaleIndex: 1,
   }),
 }));
 
 jest.mock('@/theme/heritage', () => ({
-  FONT_SCALE_LABELS: ['Small', 'Medium', 'Standard', 'Large', 'Extra Large', 'Huge', 'Max'],
+  FONT_SCALE_LABELS: [
+    'Small',
+    'Standard',
+    'Large',
+    'Extra Large',
+    'Huge',
+    'Massive',
+    'Maximum',
+  ],
   useHeritageTheme: () => ({
     colors: {
       surface: '#ffffff',

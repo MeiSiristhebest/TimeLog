@@ -9,7 +9,6 @@ import { ACCOUNT_SECURITY_STRINGS } from '../data/mockAccountData';
 export function useAccountSecurity() {
   const router = useRouter();
   const { profile, isLoading, updateProfileData, uploadProfileAvatar } = useProfile();
-  const [showEditProfile, setShowEditProfile] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const roleLabel = profile?.role === 'family' ? 'Family' : 'Storyteller';
@@ -53,8 +52,6 @@ export function useAccountSecurity() {
     isLoading,
     profileLabel,
     roleLabel,
-    showEditProfile,
-    setShowEditProfile,
     isSigningOut,
     confirmSignOut,
     updateProfileData,

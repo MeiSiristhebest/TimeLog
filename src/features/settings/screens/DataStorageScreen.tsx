@@ -1,5 +1,4 @@
 import { ScrollView, Switch, View } from 'react-native';
-
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { useHeritageTheme } from '@/theme/heritage';
 import { SettingsRow } from '../components/SettingsRow';

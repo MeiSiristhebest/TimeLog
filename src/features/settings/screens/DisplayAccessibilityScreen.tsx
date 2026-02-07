@@ -1,14 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { ScrollView, View, Switch, StyleSheet } from 'react-native';
+import { Switch, ScrollView, View } from 'react-native';
 import { Link } from 'expo-router';
-
 import { SettingsRow } from '../components/SettingsRow';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useDisplaySettingsLogic } from '../hooks/useSettingsLogic';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
+import { useProfile } from '../hooks/useProfile';
+import { getLanguageLabel, getSystemLocale } from '../utils/languageOptions';
 
 export function DisplayAccessibilityScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
+  const { profile } = useProfile();
 
   // Logic Separation
   const { state } = useDisplaySettingsLogic();
@@ -24,11 +26,15 @@ export function DisplayAccessibilityScreen(): JSX.Element {
     [themeMode]
   );
 
+  const systemLocale = getSystemLocale();
+  const languageValue = getLanguageLabel(profile?.language ?? systemLocale, systemLocale);
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.surfaceDim }}>
+    <View className="flex-1" style={{ backgroundColor: colors.surfaceDim }}>
       <HeritageHeader title="Interface & Display" showBack />
       <ScrollView
-        style={{ flex: 1, backgroundColor: colors.surfaceDim }}
+        className="flex-1"
+        style={{ backgroundColor: colors.surfaceDim }}
         contentContainerStyle={{ paddingTop: 16, gap: 16 }}>
         {/* 1. Appearance Group */}
         <SettingsSectionContainer colors={colors}>
@@ -53,11 +59,9 @@ export function DisplayAccessibilityScreen(): JSX.Element {
           <Link href="/(tabs)/settings/font-size" asChild>
             <SettingsRow label="Font Size" />
           </Link>
-          <SettingsRow
-            label="Multi-language"
-            value="Follow System"
-            onPress={NO_OP} // Placeholder
-          />
+          <Link href="/(tabs)/settings/language" asChild>
+            <SettingsRow label="Multi-language" value={languageValue} />
+          </Link>
           <SettingsRow
             label="Translate"
             onPress={NO_OP} // Placeholder
@@ -76,12 +80,6 @@ const SettingsSectionContainer = ({
 }: {
   children: React.ReactNode;
   colors: any;
-}) => <View style={[styles.section, { backgroundColor: colors.surfaceCard }]}>{children}</View>;
+}) => <View className="mb-0 overflow-hidden rounded-lg mx-4" style={{ backgroundColor: colors.surfaceCard }}>{children}</View>;
 
-const NO_OP = () => {};
-
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: 0,
-  },
-});
+const NO_OP = () => { };

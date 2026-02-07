@@ -1,7 +1,6 @@
 import { AppText } from '@/components/ui/AppText';
-import { View, Switch, StyleSheet } from 'react-native';
+import { View, Switch } from 'react-native';
 import Animated from 'react-native-reanimated';
-
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { HeritageTimePicker } from '@/components/ui/HeritageTimePicker';
@@ -73,7 +72,7 @@ export function NotificationsScreen(): JSX.Element {
             />
             <View
               style={{
-                height: StyleSheet.hairlineWidth,
+                height: 0.5,
                 backgroundColor: colors.border,
                 marginLeft: 56,
               }}
@@ -104,7 +103,7 @@ export function NotificationsScreen(): JSX.Element {
             />
             <View
               style={{
-                height: StyleSheet.hairlineWidth,
+                height: 0.5,
                 backgroundColor: colors.border,
                 marginLeft: 56,
               }}

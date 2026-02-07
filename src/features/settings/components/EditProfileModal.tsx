@@ -8,27 +8,25 @@
 import { AppText } from '@/components/ui/AppText';
 import { useCallback, useEffect, useReducer, useState } from 'react';
 import {
-  View,
   Modal,
+  Platform,
+  Alert,
+  View,
   Pressable,
-  Image,
   TextInput,
-  StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
-  Alert,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
-
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { useHeritageTheme } from '@/theme/heritage';
 import type { UserProfile, ProfileUpdate } from '../services/profileService';
 import { editProfileReducer, initialState } from '../reducers/editProfileReducer';
 import { devLog } from '@/lib/devLogger';
+import { Image } from 'expo-image';
 
 // Lazy import for expo-image-picker to avoid crash in Expo Go
 let ImagePicker: typeof import('expo-image-picker') | null = null;
@@ -178,65 +176,62 @@ export function EditProfileModal({
       onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={[styles.container, { backgroundColor: theme.colors.surface }]}>
+        className="flex-1"
+        style={{ backgroundColor: theme.colors.surface }}>
         {/* Header */}
-        <View style={styles.header}>
-          <Pressable onPress={onClose} style={styles.closeButton}>
-            <MaterialIcons name="close" size={28} color={theme.colors.onSurface} />
+        <View className="flex-row items-center justify-between px-4 pt-4 pb-3 border-b border-black/5">
+          <Pressable onPress={onClose} className="p-2">
+            <Ionicons name="close" size={28} color={theme.colors.onSurface} />
           </Pressable>
-          <AppText style={[styles.headerTitle, { color: theme.colors.onSurface }]}>
+          <AppText className="text-xl font-serif font-semibold">
             Edit Profile
           </AppText>
-          <View style={{ width: 44 }} />
+          <View className="w-11" />
         </View>
 
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={{ padding: 24, alignItems: 'center' }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
           {/* Avatar */}
-          <Pressable onPress={handlePickImage} style={styles.avatarContainer}>
+          <Pressable onPress={handlePickImage} className="relative mb-2">
             {avatarUri ? (
-              <Image source={{ uri: avatarUri }} style={styles.avatar} />
+              <Image source={{ uri: avatarUri }} className="w-[120px] h-[120px] rounded-full border-4 border-white" />
             ) : (
               <View
-                style={[
-                  styles.avatarPlaceholder,
-                  { backgroundColor: `${theme.colors.primary}20` },
-                ]}>
-                <MaterialIcons name="person" size={48} color={theme.colors.primary} />
+                className="w-[120px] h-[120px] rounded-full items-center justify-center"
+                style={{ backgroundColor: `${theme.colors.primary}20` }}>
+                <Ionicons name="person" size={48} color={theme.colors.primary} />
               </View>
             )}
             {isUploadingAvatar ? (
-              <View style={styles.avatarOverlay}>
+              <View className="absolute inset-0 rounded-full items-center justify-center bg-black/50">
                 <ActivityIndicator color="#fff" />
               </View>
             ) : (
-              <View style={[styles.editBadge, { backgroundColor: theme.colors.primary }]}>
-                <MaterialIcons name="camera-alt" size={18} color="#fff" />
+              <View className="absolute bottom-0 right-0 w-10 h-10 rounded-full items-center justify-center border-[3px] border-white" style={{ backgroundColor: theme.colors.primary }}>
+                <Ionicons name="camera" size={18} color="#fff" />
               </View>
             )}
           </Pressable>
-          <AppText style={[styles.avatarHint, { color: `${theme.colors.onSurface}80` }]}>
+          <AppText className="text-sm mb-8" style={{ color: `${theme.colors.onSurface}80` }}>
             {isImagePickerAvailable
               ? 'Tap to change photo'
               : 'Avatar upload requires development build'}
           </AppText>
 
           {/* Display Name */}
-          <View style={styles.fieldContainer}>
-            <AppText style={[styles.label, { color: theme.colors.onSurface }]}>
+          <View className="w-full mb-5">
+            <AppText className="text-base font-semibold mb-2" style={{ color: theme.colors.onSurface }}>
               Display Name
             </AppText>
             <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: `${theme.colors.primary}08`,
-                  borderColor: theme.colors.border,
-                  color: theme.colors.onSurface,
-                },
-              ]}
+              className="w-full h-14 rounded-xl border px-4 text-lg"
+              style={{
+                backgroundColor: `${theme.colors.primary}08`,
+                borderColor: theme.colors.border,
+                color: theme.colors.onSurface,
+              }}
               value={displayName}
               onChangeText={(text) => dispatch({ type: 'SET_DISPLAY_NAME', payload: text })}
               placeholder="Enter your name"
@@ -247,26 +242,22 @@ export function EditProfileModal({
           </View>
 
           {/* Role Selector */}
-          <View style={styles.fieldContainer}>
-            <AppText style={[styles.label, { color: theme.colors.onSurface }]}>Role</AppText>
-            <View style={styles.roleContainer}>
+          <View className="w-full mb-5">
+            <AppText className="text-base font-semibold mb-2" style={{ color: theme.colors.onSurface }}>Role</AppText>
+            <View className="flex-row gap-3">
               {ROLES.map((r) => (
                 <Pressable
                   key={r.value}
                   onPress={() => dispatch({ type: 'SET_ROLE', payload: r.value })}
-                  style={[
-                    styles.roleOption,
-                    {
-                      backgroundColor:
-                        role === r.value ? theme.colors.primary : `${theme.colors.primary}10`,
-                      borderColor: theme.colors.primary,
-                    },
-                  ]}>
+                  className="flex-1 py-3.5 rounded-xl border-2 items-center"
+                  style={{
+                    backgroundColor:
+                      role === r.value ? theme.colors.primary : `${theme.colors.primary}10`,
+                    borderColor: theme.colors.primary,
+                  }}>
                   <AppText
-                    style={[
-                      styles.roleText,
-                      { color: role === r.value ? '#fff' : theme.colors.primary },
-                    ]}>
+                    className="text-base font-semibold"
+                    style={{ color: role === r.value ? '#fff' : theme.colors.primary }}>
                     {r.label}
                   </AppText>
                 </Pressable>
@@ -288,103 +279,3 @@ export function EditProfileModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-  },
-  closeButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontFamily: 'Fraunces_600SemiBold',
-  },
-  content: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginBottom: 8,
-  },
-  avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 4,
-    borderColor: '#fff',
-  },
-  avatarPlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 60,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  editBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#fff',
-  },
-  avatarHint: {
-    fontSize: 14,
-    marginBottom: 32,
-  },
-  fieldContainer: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    width: '100%',
-    height: 56,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    fontSize: 18,
-  },
-  roleContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  roleOption: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 2,
-    alignItems: 'center',
-  },
-  roleText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

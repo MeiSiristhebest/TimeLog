@@ -178,12 +178,39 @@ export function useDataStorageLogic() {
 // Hook for Family Sharing
 export function useFamilySharingLogic() {
   const router = useRouter();
+  const { profile } = useProfile();
+
+  const navigateWithUpgradeCheck = useCallback(
+    (route: string) => {
+      if (profile?.isAnonymous) {
+        HeritageAlert.show({
+          title: 'Complete Your Account',
+          message:
+            'To share or link family members, please set up a permanent account first.',
+          variant: 'warning',
+          primaryAction: {
+            label: 'Set Up Now',
+            onPress: () => {
+              const next = encodeURIComponent(route);
+              router.push(`/upgrade-account?next=${next}`);
+            },
+          },
+          secondaryAction: { label: 'Not now' },
+        });
+        return;
+      }
+
+      router.push(route as any);
+    },
+    [profile?.isAnonymous, router]
+  );
+
   return {
     actions: {
-      navigateToFamilyMembers: () => router.push('/family-members'),
-      navigateToInvite: () => router.push('/invite'),
-      navigateToAcceptInvite: () => router.push('/accept-invite'),
-      navigateToAskQuestion: () => router.push('/(tabs)/family/ask-question'),
+      navigateToFamilyMembers: () => navigateWithUpgradeCheck('/family-members'),
+      navigateToInvite: () => navigateWithUpgradeCheck('/invite'),
+      navigateToAcceptInvite: () => navigateWithUpgradeCheck('/accept-invite'),
+      navigateToAskQuestion: () => navigateWithUpgradeCheck('/(tabs)/family/ask-question'),
     },
   };
 }

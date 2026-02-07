@@ -10,7 +10,7 @@ const mockHydrate = jest.fn();
 jest.mock('../store/displaySettingsStore', () => ({
   useDisplaySettingsStore: () => ({
     themeMode: 'system',
-    fontScaleIndex: 2,
+    fontScaleIndex: 1,
     isLoaded: true,
     setThemeMode: mockSetThemeMode,
     setFontScaleIndex: mockSetFontScaleIndex,
@@ -44,7 +44,15 @@ jest.mock('@/components/ui/heritage/HeritageHeader', () => ({
 }));
 
 jest.mock('@/theme/heritage', () => ({
-  FONT_SCALE_LABELS: ['Small', 'Medium', 'Standard', 'Large', 'Extra Large', 'Huge', 'Max'],
+  FONT_SCALE_LABELS: [
+    'Small',
+    'Standard',
+    'Large',
+    'Extra Large',
+    'Huge',
+    'Massive',
+    'Maximum',
+  ],
   useHeritageTheme: () => ({
     colors: {
       surface: '#ffffff',
@@ -56,6 +64,17 @@ jest.mock('@/theme/heritage', () => ({
       error: '#ff0000',
     },
   }),
+}));
+
+jest.mock('../hooks/useProfile', () => ({
+  useProfile: () => ({
+    profile: { language: 'en' },
+  }),
+}));
+
+jest.mock('../utils/languageOptions', () => ({
+  getLanguageLabel: () => 'English',
+  getSystemLocale: () => 'en',
 }));
 
 describe('DisplayAccessibilityScreen', () => {
