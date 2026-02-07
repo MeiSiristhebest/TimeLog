@@ -30,6 +30,13 @@ coverage/
 # .agentvibes/
 # .claude/
 # .codex/
+.agent/
+.codex/
+.mcp.json
+.shared/
+.sisyphus/
+.skill/
+.tmp*
 
 # macOS
 .DS_Store
