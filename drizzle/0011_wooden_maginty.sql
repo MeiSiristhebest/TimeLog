@@ -46,3 +46,6 @@ CREATE TABLE `transcript_segments` (
 	`synced_at` integer,
 	`created_at` integer NOT NULL
 );
+--> statement-breakpoint
+ALTER TABLE `audio_recordings` ADD `transcription` text;--> statement-breakpoint
+ALTER TABLE `audio_recordings` ADD `cover_image_path` text;

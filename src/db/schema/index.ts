@@ -7,8 +7,10 @@ export const appSettings = sqliteTable('app_settings', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
+export * from './localProfiles';
 export * from './audioRecordings';
 export * from './syncQueue';
 export * from './activityEvents';
 export * from './storyReactions';
 export * from './familyQuestions';
+export * from './transcriptSegments';

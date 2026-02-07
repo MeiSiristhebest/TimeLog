@@ -78,6 +78,20 @@
       "when": 1768558729355,
       "tag": "0010_add_story_reactions",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1770020078172,
+      "tag": "0011_wooden_maginty",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1770346926615,
+      "tag": "0012_confused_korath",
+      "breakpoints": true
     }
   ]
 }

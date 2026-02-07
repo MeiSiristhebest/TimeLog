@@ -25,3 +25,13 @@ export const familyQuestions = sqliteTable(
     ),
   })
 );
+
+export const QUESTION_CATEGORIES = {
+  GENERAL: 'general',
+  CHILDHOOD: 'childhood',
+  FAMILY_HISTORY: 'family_history',
+  WISDOM: 'wisdom',
+  FUN: 'fun',
+} as const;
+
+export type QuestionCategory = (typeof QUESTION_CATEGORIES)[keyof typeof QUESTION_CATEGORIES];

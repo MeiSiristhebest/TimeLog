@@ -11,7 +11,7 @@ export type SyncQueueStatus = 'pending' | 'processing' | 'failed';
 /**
  * Sync operation types.
  */
-export type SyncOperationType = 'upload_recording' | 'update_metadata' | 'create_profile';
+export type SyncOperationType = 'upload_recording' | 'update_metadata' | 'create_profile' | 'upload_transcript_segment';
 
 /**
  * Persistent queue for offline-first sync operations.
@@ -22,7 +22,7 @@ export const syncQueue = sqliteTable('sync_queue', {
 
   // Queue item type
   type: text('type', {
-    enum: ['upload_recording', 'update_metadata', 'create_profile'],
+    enum: ['upload_recording', 'update_metadata', 'create_profile', 'upload_transcript_segment'],
   }).notNull(),
 
   // Recording reference (nullable for non-recording operations)

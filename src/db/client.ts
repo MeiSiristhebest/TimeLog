@@ -1,6 +1,5 @@
 import * as SQLite from 'expo-sqlite';
 import { drizzle } from 'drizzle-orm/expo-sqlite';
-
 import * as schema from './schema';
 
 // Single source of truth for SQLite access.

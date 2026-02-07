@@ -42,5 +42,10 @@ export const audioRecordings = sqliteTable('audio_recordings', {
   deletedAt: integer('deleted_at'), // Unix timestamp in milliseconds
   // Story 4.5: Last time comments were read (ISO timestamp, nullable)
   // Used to compute unread comment count for senior's stories
+  // Story 4.5: Last time comments were read (ISO timestamp, nullable)
+  // Used to compute unread comment count for senior's stories
   lastCommentReadAt: text('last_comment_read_at'),
+  // Story Editing Features
+  transcription: text('transcription'), // Full edited transcription
+  coverImagePath: text('cover_image_path'), // Custom cover image path
 });
