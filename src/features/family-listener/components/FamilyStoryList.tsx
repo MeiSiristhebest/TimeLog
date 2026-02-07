@@ -12,7 +12,7 @@
 
 import { AppText } from '@/components/ui/AppText';
 import { useCallback } from 'react';
-import { FlatList, View, RefreshControl, StyleSheet } from 'react-native';
+import { FlatList, RefreshControl, View } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { FamilyStoryCard } from './FamilyStoryCard';
 import { SkeletonCard } from './SkeletonCard';
@@ -33,7 +33,7 @@ type FamilyStoryListProps = {
  */
 function LoadingState(): JSX.Element {
   return (
-    <View style={styles.loadingContainer}>
+    <View className="p-4">
       <SkeletonCard />
       <SkeletonCard />
       <SkeletonCard />
@@ -48,9 +48,13 @@ function ErrorState({ message }: { message: string }): JSX.Element {
   const { colors } = useHeritageTheme();
 
   return (
-    <View style={styles.errorContainer}>
-      <AppText style={[styles.errorTitle, { color: colors.error }]}>Failed to load</AppText>
-      <AppText style={[styles.errorMessage, { color: colors.textMuted }]}>{message}</AppText>
+    <View className="flex-1 items-center justify-center p-8">
+      <AppText
+        className="mb-2 text-center text-xl font-semibold"
+        style={{ color: colors.error, fontFamily: 'Fraunces_600SemiBold' }}>
+        Failed to load
+      </AppText>
+      <AppText className="text-center text-base" style={{ color: colors.textMuted }}>{message}</AppText>
     </View>
   );
 }
@@ -66,7 +70,6 @@ export function FamilyStoryList({
   const { colors } = useHeritageTheme();
 
   // Handle navigation to story detail/player
-
   const handlePlayStory = useCallback(
     (storyId: string) => {
       router.push({
@@ -110,7 +113,7 @@ export function FamilyStoryList({
       data={stories}
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
-      contentContainerStyle={styles.listContent}
+      contentContainerStyle={{ padding: 16 }}
       showsVerticalScrollIndicator={false}
       // Pull-to-refresh (AC: 5 - manual refresh option)
       refreshControl={
@@ -129,28 +132,3 @@ export function FamilyStoryList({
     />
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    padding: 16,
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  errorTitle: {
-    marginBottom: 8,
-    textAlign: 'center',
-    fontSize: 20,
-    fontFamily: 'Fraunces_600SemiBold',
-  },
-  errorMessage: {
-    textAlign: 'center',
-    fontSize: 16,
-  },
-  listContent: {
-    padding: 16,
-  },
-});

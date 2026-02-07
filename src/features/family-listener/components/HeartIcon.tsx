@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { Pressable, View } from '@/tw';
 import Svg, { Path } from 'react-native-svg';
 import Animated, {
   useAnimatedStyle,
@@ -8,12 +7,11 @@ import Animated, {
   withSequence,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { Pressable, View } from 'react-native';
 
-/**
- * Heritage Memoir colors
- */
-const SOFT_CORAL = '#B85A3B'; // Deep Terracotta
+const SOFT_CORAL = '#e57a5d';
 const HEART_GRAY = '#94a3b8'; // slate-400
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface HeartIconProps {
   /** Whether the story is currently liked */
@@ -25,8 +23,6 @@ interface HeartIconProps {
   /** Size of the heart icon (default: 32) */
   size?: number;
 }
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /**
  * Heart Icon with animated fill transition and haptic feedback

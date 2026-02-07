@@ -1,3 +1,6 @@
+import { fetchWithErrorHandling } from '@/lib/api/client';
+import { ApiError } from '@/lib/api/types';
+
 export type WeatherCondition = 'sunny' | 'cloudy' | 'rainy' | 'snowy' | 'partly-cloudy' | 'unknown';
 
 export type WeatherServiceResult = {
@@ -34,24 +37,30 @@ const mapWeatherCode = (code: string): WeatherCondition => {
   return 'unknown';
 };
 
+const WEATHER_API_URL = process.env.EXPO_PUBLIC_WEATHER_API_URL || 'https://wttr.in/?format=j1';
+
 export async function fetchWeatherData(): Promise<WeatherServiceResult> {
-  const response = await fetch('https://wttr.in/?format=j1', {
-    headers: { Accept: 'application/json' },
-  });
+  try {
+    const data = (await fetchWithErrorHandling(WEATHER_API_URL, {
+      headers: { Accept: 'application/json' },
+    })) as WttrResponse;
 
-  if (!response.ok) {
-    throw new Error('Weather service unavailable');
+    // Use default error handling from client, but add specific validation
+    const current = data.current_condition?.[0];
+
+    if (!current) {
+      throw new ApiError('Invalid weather data structure', 500, 'INVALID_DATA');
+    }
+
+    return {
+      temperature: parseInt(current.temp_C, 10),
+      condition: mapWeatherCode(current.weatherCode),
+    };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError('Failed to fetch weather data', 500, 'UNKNOWN_ERROR');
   }
-
-  const data = (await response.json()) as WttrResponse;
-  const current = data.current_condition?.[0];
-
-  if (!current) {
-    throw new Error('Invalid weather data');
-  }
-
-  return {
-    temperature: parseInt(current.temp_C, 10),
-    condition: mapWeatherCode(current.weatherCode),
-  };
 }
+

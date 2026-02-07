@@ -3,9 +3,25 @@
 
 import 'react-native-gesture-handler/jestSetup';
 
-jest.mock('@react-native-async-storage/async-storage', () =>
-  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
-);
+let mockAsyncStorage;
+try {
+  mockAsyncStorage = require('@react-native-async-storage/async-storage/jest/async-storage-mock');
+} catch {
+  mockAsyncStorage = {
+    setItem: jest.fn(),
+    getItem: jest.fn(),
+    removeItem: jest.fn(),
+    clear: jest.fn(),
+    getAllKeys: jest.fn(() => []),
+    multiSet: jest.fn(),
+    multiGet: jest.fn(() => []),
+    multiRemove: jest.fn(),
+  };
+}
+
+jest.mock('@react-native-async-storage/async-storage', () => mockAsyncStorage, {
+  virtual: true,
+});
 
 // Mock react-native-mmkv
 jest.mock('react-native-mmkv', () => {
@@ -143,6 +159,10 @@ jest.mock('drizzle-orm/sqlite-core', () => {
     integer: jest.fn(() => createChainableColumn()),
     text: jest.fn(() => createChainableColumn()),
     boolean: jest.fn(() => createChainableColumn()),
+    real: jest.fn(() => createChainableColumn()),
+    index: jest.fn(() => ({
+      on: jest.fn(() => ({})),
+    })),
     sqliteTable: jest.fn(() => ({})),
   };
 });

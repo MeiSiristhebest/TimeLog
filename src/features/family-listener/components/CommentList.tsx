@@ -73,16 +73,16 @@ export function CommentList({
   );
 
   const itemSeparator = useCallback(
-    () => <View style={[styles.divider, { backgroundColor: colors.border }]} />,
+    () => <View className="h-[1px] mx-4" style={{ backgroundColor: colors.border }} />,
     [colors.border]
   );
 
   // Loading state
   if (isLoading && comments.length === 0) {
     return (
-      <View style={styles.centerContainer}>
+      <View className="flex-1 items-center justify-center py-8">
         <ActivityIndicator size="large" color={colors.primary} />
-        <AppText style={[styles.messageText, { color: colors.textMuted }]}>
+        <AppText className="mt-2 text-base text-center px-8" style={{ color: colors.textMuted }}>
           Loading comments...
         </AppText>
       </View>
@@ -92,12 +92,14 @@ export function CommentList({
   // Empty state
   if (comments.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <View style={[styles.iconContainer, { backgroundColor: `${colors.primary}20` }]}>
+      <View className="flex-1 items-center justify-center py-8">
+        <View
+          className="w-16 h-16 rounded-full items-center justify-center mb-4"
+          style={{ backgroundColor: `${colors.primary}20` }}>
           <Ionicons name="chatbubble-outline" size={32} color={colors.primary} />
         </View>
-        <AppText style={[styles.titleText, { color: colors.onSurface }]}>No comments yet</AppText>
-        <AppText style={[styles.messageText, { color: colors.textMuted }]}>
+        <AppText className="text-lg font-medium text-center" style={{ color: colors.onSurface }}>No comments yet</AppText>
+        <AppText className="mt-2 text-base text-center px-8" style={{ color: colors.textMuted }}>
           {readOnly ? "Family hasn't left any comments yet" : 'Be the first to comment!'}
         </AppText>
       </View>
@@ -110,8 +112,8 @@ export function CommentList({
       data={comments}
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
+      style={{ flex: 1 }}
+      contentContainerStyle={{ paddingVertical: 8 }}
       ItemSeparatorComponent={itemSeparator}
       showsVerticalScrollIndicator={false}
       refreshControl={
@@ -127,44 +129,6 @@ export function CommentList({
     />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingVertical: 8,
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 32,
-  },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  titleText: {
-    fontSize: 18,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  messageText: {
-    marginTop: 8,
-    fontSize: 16,
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
-  divider: {
-    height: 1,
-    marginHorizontal: 16,
-  },
-});
 
 // Default export for React.lazy() compatibility
 export default CommentList;

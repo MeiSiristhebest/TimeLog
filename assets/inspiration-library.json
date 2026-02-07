@@ -18,71 +18,125 @@
       ]
     },
     {
-      "id": "career",
-      "name": "Career & Work",
-      "icon": "💼",
-      "questions": [
-        "What was your first job like?",
-        "Tell me about a challenging project you completed",
-        "Who was your most memorable colleague?",
-        "What was your proudest moment at work?",
-        "How did you choose your career?",
-        "What was the best advice you received about work?",
-        "Tell me about a lesson you learned at work",
-        "What was a typical day like at your job?",
-        "Did you have any mentors?",
-        "What skills did you develop over your career?"
-      ]
-    },
-    {
       "id": "family",
-      "name": "Family Stories",
-      "icon": "👨‍👩‍👧",
+      "name": "Family & Relationships",
+      "icon": "👨‍👩‍👧‍👦",
       "questions": [
         "How did you meet your spouse?",
-        "Tell me about your wedding day",
-        "What was it like when I was born?",
+        "What is your favorite holiday and why?",
         "Tell me about your parents",
-        "What family traditions are most meaningful to you?",
-        "Tell me about your siblings",
-        "What was your favorite family vacation?",
-        "What was dinner time like in your family?",
-        "Tell me about your grandparents",
-        "What values did your parents teach you?"
+        "What is your favorite thing about being a parent/grandparent?",
+        "Who was your role model growing up?",
+        "Tell me about a family tradition you cherish",
+        "What was family dinner like in your house?",
+        "Who is the funniest person in our family?",
+        "What is the best gift you ever received?"
       ]
     },
     {
-      "id": "experiences",
-      "name": "Life Experiences",
-      "icon": "🌟",
+      "id": "career",
+      "name": "Work & Career",
+      "icon": "💼",
       "questions": [
-        "What was the happiest moment of your life?",
-        "Tell me about a time you were very brave",
-        "What was the most beautiful place you visited?",
-        "What was a turning point in your life?",
-        "Tell me about a time you helped someone",
-        "What was the most delicious meal you ever had?",
-        "Tell me about a time you learned something new",
-        "What was your biggest adventure?",
-        "Tell me about a friendship that changed you",
-        "What was a difficult time that made you stronger?"
+        "What was your first job?",
+        "What was your dream when you were young?",
+        "What was the hardest job you ever had?",
+        "What did you learn from your career?",
+        "Who was your favorite colleague?",
+        "What are you most proud of in your work life?",
+        "If you could do it all over again, would you choose the same career?"
       ]
     },
     {
       "id": "wisdom",
-      "name": "Wisdom & Advice",
-      "icon": "💡",
+      "name": "Life Wisdom",
+      "icon": "🦉",
       "questions": [
-        "What is the best advice you would give?",
-        "What do you wish you knew when you were young?",
-        "What makes a good life?",
-        "How do you stay positive during hard times?",
+        "What is the most important lesson your parents taught you?",
+        "What do you want your descendants to remember about you?",
+        "What was the biggest challenge you faced in life?",
+        "What advice would you share with your children or grandchildren?",
+        "What does happiness mean to you?",
         "What are you most grateful for?",
-        "What has working hard taught you?",
-        "What does family mean to you?",
-        "What brings you the most joy?",
-        "What would you do differently if you could?",
-        "What do you hope for the future?"
+        "If you could give your younger self one piece of advice, what would it be?"
+      ]
+    },
+    {
+      "id": "travel",
+      "name": "Travel & Adventure",
+      "icon": "✈️",
+      "questions": [
+        "What is the most beautiful place you have ever visited?",
+        "Tell me about a travel mishap that is funny now.",
+        "Where is one place you still want to go?",
+        "What was your first big trip?",
+        "Do you prefer the beach or the mountains?"
+      ]
+    },
+    {
+      "id": "education",
+      "name": "School & Learning",
+      "icon": "🎓",
+      "questions": [
+        "Who was your favorite teacher and why?",
+        "What was your favorite subject in school?",
+        "Did you enjoy school?",
+        "What is something you learned outside of school?"
+      ]
+    },
+    {
+      "id": "hobbies",
+      "name": "Hobbies & Interests",
+      "icon": "🎨",
+      "questions": [
+        "How did you get into your favorite hobby?",
+        "What do you do to relax?",
+        "Is there a hobby you wish you had picked up?",
+        "What kind of music do you like?"
+      ]
+    },
+    {
+      "id": "celebrations",
+      "name": "Celebrations",
+      "icon": "🎉",
+      "questions": [
+        "What is your favorite family tradition?",
+        "How did you celebrate birthdays growing up?",
+        "What was your best birthday ever?",
+        "What is your favorite holiday food?"
+      ]
+    },
+    {
+      "id": "food",
+      "name": "Food & Cooking",
+      "icon": "🍳",
+      "questions": [
+        "Is there a family recipe that is special to you?",
+        "What was your favorite meal as a child?",
+        "Do you like to cook?",
+        "What is the strangest thing you have ever eaten?"
+      ]
+    },
+    {
+      "id": "friendship",
+      "name": "Friendship",
+      "icon": "🤝",
+      "questions": [
+        "Tell me about a friend who changed your life.",
+        "Who was your first best friend?",
+        "How do you make new friends?",
+        "What creates a strong friendship?"
+      ]
+    },
+    {
+      "id": "history",
+      "name": "Living History",
+      "icon": "📜",
+      "questions": [
+        "What historical event made the biggest impact on you?",
+        "What was life like before the internet?",
+        "What invention changed your life the most?",
+        "How has the world changed since you were young?"
       ]
     }
   ]

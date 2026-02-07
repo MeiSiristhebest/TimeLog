@@ -1,9 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter , useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useLocalSearchParams } from 'expo-router';
-
 import {
   startRecordingStream,
   type RecordingHandle,
@@ -124,6 +122,10 @@ export function useHomeLogic() {
 
   const {
     currentQuestion,
+    isSpeaking,
+    words,
+    currentWordIndex,
+    replay,
     stop: stopTTS,
     newTopic,
   } = useTTS({
@@ -147,8 +149,10 @@ export function useHomeLogic() {
     stopTTS();
     try {
       const handle = await startRecordingStream({
-        onSilence: () => {},
-        onSilenceThreshold: () => {},
+        topicId: currentQuestion?.id,
+        userId: sessionUserId ?? undefined,
+        onSilence: () => { },
+        onSilenceThreshold: () => { },
         onMetering: (metering) => {
           updateAmplitude(metering);
         },
@@ -170,9 +174,14 @@ export function useHomeLogic() {
     if (!recordingHandle) return;
     try {
       const finalized = await recordingHandle.stop();
-      await enqueueRecording(finalized.id, finalized.filePath);
-      await playSuccess();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      // Parallelize DB op and UI feedback (Vercel best practice)
+      await Promise.all([
+        enqueueRecording(finalized.id, finalized.filePath),
+        playSuccess(),
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      ]);
+
       setLastSavedId(finalized.id);
     } catch (error) {
       const message = error instanceof Error ? error.message : HOME_STRINGS.recording.stopError;
@@ -195,6 +204,9 @@ export function useHomeLogic() {
         lastSavedId,
         currentAmplitude,
         currentQuestion,
+        isSpeaking,
+        words,
+        currentWordIndex,
         isCurrentTopicAnswered,
         formattedDate,
         greeting,
@@ -209,7 +221,9 @@ export function useHomeLogic() {
         handleStartRecording,
         handleStopRecording,
         newTopic,
+        replayQuestion: replay,
         navigateToSettings: () => router.push('/(tabs)/settings'),
+        navigateToListen: () => router.push('/(tabs)/gallery'),
         navigateToStory: (storyId: string) => router.push(`/story/${storyId}`),
       },
     }),
@@ -218,6 +232,9 @@ export function useHomeLogic() {
       lastSavedId,
       currentAmplitude,
       currentQuestion,
+      isSpeaking,
+      words,
+      currentWordIndex,
       isCurrentTopicAnswered,
       formattedDate,
       greeting,
@@ -229,6 +246,7 @@ export function useHomeLogic() {
       handleStartRecording,
       handleStopRecording,
       newTopic,
+      replay,
       router,
     ]
   );

@@ -16,7 +16,7 @@ export const HOME_STRINGS = {
   questionCard: {
     defaultQuestion: 'What was your favorite toy?',
     answeredBadge: 'Answered',
-    newQuestionButton: 'New Question',
+    newQuestionButton: 'Next',
   },
   recording: {
     tapToRecord: 'Tap to Record',

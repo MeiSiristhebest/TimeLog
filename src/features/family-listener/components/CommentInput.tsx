@@ -9,8 +9,7 @@
 
 import { AppText } from '@/components/ui/AppText';
 import React, { useCallback, useState } from 'react';
-import { View, TextInput, TouchableOpacity } from 'react-native';
-import { ActivityIndicator, Keyboard } from 'react-native';
+import { Keyboard, View, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import { useHeritageTheme } from '../../../theme/heritage';
 

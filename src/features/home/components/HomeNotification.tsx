@@ -13,11 +13,11 @@
  * <div class="group relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-2xl border border-amber-border/30 bg-[#FFFDF5] ...">
  */
 
-import { AppText } from '@/components/ui/AppText';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Image } from 'expo-image';
 import { Ionicons } from '@/components/ui/Icon';
 import { useHeritageTheme } from '@/theme/heritage';
+import { AppText } from '@/components/ui/AppText';
+import { TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
 
 interface HomeNotificationProps {
   onPress: () => void;
@@ -40,37 +40,38 @@ export function HomeNotification({
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={onPress}
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.surfaceCream,
-          borderColor: colors.amberDeep + '4D', // 30% opacity (hex 4D) roughly
-        },
-      ]}
+      className="mt-2 flex-row items-center justify-between rounded-2xl border p-4 pr-3 shadow-sm elevation-[1]"
+      style={{
+        backgroundColor: colors.surfaceCream,
+        borderColor: colors.amberDeep + '4D', // 30% opacity
+        shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2
+      }}
       accessibilityRole="button"
       accessibilityLabel={`${actorName} ${actionText} "${storyTitle}". Tap to see details.`}>
       {/* Left accent border */}
-      <View style={[styles.accentBorder, { backgroundColor: colors.amberDeep }]} />
+      <View
+        className="absolute bottom-0 left-0 top-0 w-1.5"
+        style={{ backgroundColor: colors.amberDeep }}
+      />
 
-      <View style={styles.content}>
+      <View className="flex-1 flex-row items-center gap-3 pl-2">
         {/* Avatar */}
         <View
-          style={[
-            styles.avatarContainer,
-            {
-              backgroundColor: colors.primary + '1A', // primary/10
-              borderColor: colors.onPrimary,
-            },
-          ]}>
-          <Image source={{ uri: avatarUrl }} style={styles.avatar} contentFit="cover" />
+          className="h-10 w-10 overflow-hidden rounded-full border-2 shadow-sm elevation-[1]"
+          style={{
+            backgroundColor: colors.primary + '1A', // primary/10
+            borderColor: colors.onPrimary,
+            shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2
+          }}>
+          <Image source={{ uri: avatarUrl }} className="h-full w-full" contentFit="cover" />
         </View>
 
         {/* Text */}
-        <View style={styles.textContainer}>
-          <AppText style={[styles.mainText, { color: colors.onSurface }]}>
+        <View className="flex-1">
+          <AppText className="text-sm font-bold leading-tight" style={{ color: colors.onSurface }}>
             {`${actorName} ${actionText} "${storyTitle}".`}
           </AppText>
-          <AppText style={[styles.subText, { color: colors.textFaint }]}>Tap to see.</AppText>
+          <AppText className="mt-0.5 text-sm font-normal" style={{ color: colors.textFaint }}>Tap to see.</AppText>
         </View>
       </View>
 
@@ -79,72 +80,3 @@ export function HomeNotification({
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16, // p-4
-    paddingRight: 12, // pr-3
-    borderRadius: 16, // rounded-2xl
-    borderWidth: 1,
-    overflow: 'hidden',
-    // shadow-sm
-    // shadow-sm
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 2,
-    // elevation: 2,
-    // @ts-ignore
-    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-    marginTop: 8,
-  },
-  accentBorder: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 6, // w-1.5
-  },
-  content: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12, // gap-3
-    paddingLeft: 8, // pl-2
-  },
-  avatarContainer: {
-    width: 40, // w-10
-    height: 40, // h-10
-    borderRadius: 20, // rounded-full
-    borderWidth: 2,
-    overflow: 'hidden',
-    // shadow-sm
-    // shadow-sm
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 2,
-    // @ts-ignore
-    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-  },
-  avatar: {
-    width: '100%',
-    height: '100%',
-  },
-  textContainer: {
-    flex: 1,
-  },
-  mainText: {
-    fontSize: 14, // text-sm
-    fontWeight: '700', // font-bold
-    lineHeight: 18, // leading-tight
-  },
-  subText: {
-    fontSize: 14,
-    fontWeight: '400', // font-normal
-    marginTop: 2,
-  },
-});

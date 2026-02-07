@@ -8,9 +8,6 @@
  * Story 4.4: Push Notification & Deep Link (AC: 3) - Added settings link
  */
 
-import { AppText } from '@/components/ui/AppText';
-import { useState, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import {
   requestNotificationPermission,
@@ -21,6 +18,9 @@ import {
 } from '@/lib/notifications';
 import { useHeritageTheme } from '@/theme/heritage';
 import { devLog } from '@/lib/devLogger';
+import { AppText } from '@/components/ui/AppText';
+import { useState, useEffect } from 'react';
+import { View, TouchableOpacity } from 'react-native';
 
 type NotificationPromptProps = {
   onDismiss: () => void;
@@ -82,49 +82,49 @@ export function NotificationPrompt({
   if (isDenied && !canAskAgain) {
     return (
       <View
+        className="mx-4 mt-4 rounded-xl p-4 border shadow-sm elevation-[1]"
         style={[
-          styles.container,
           {
             backgroundColor: `${colors.error}10`, // Soft red background
             borderColor: `${colors.error}30`,
           },
         ]}>
-        <View style={styles.contentRow}>
+        <View className="flex-row items-start gap-3">
           {/* Icon */}
           <Ionicons name="notifications-off-outline" size={24} color={colors.error} />
 
           {/* Content */}
-          <View style={styles.textContainer}>
-            <AppText style={[styles.title, { color: colors.onSurface }]}>
+          <View className="flex-1">
+            <AppText className="mb-1 text-base font-semibold" style={{ color: colors.onSurface, fontFamily: 'Fraunces_600SemiBold' }}>
               Notification permission denied
             </AppText>
-            <AppText style={[styles.message, { color: colors.textMuted }]}>
+            <AppText className="mb-3 text-sm" style={{ color: colors.textMuted }}>
               Please enable notifications in system settings to receive new story alerts
             </AppText>
 
             {/* Action buttons */}
-            <View style={styles.buttonRow}>
+            <View className="flex-row gap-3">
               {/* Dismiss button */}
               <TouchableOpacity
                 onPress={onDismiss}
+                className="flex-row items-center gap-2 rounded-lg px-4 py-2 border"
                 style={[
-                  styles.button,
-                  styles.outlineButton,
                   { borderColor: colors.border, backgroundColor: colors.surface },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Set up later">
-                <AppText style={[styles.buttonText, { color: colors.onSurface }]}>Later</AppText>
+                <AppText className="text-sm font-medium" style={{ color: colors.onSurface }}>Later</AppText>
               </TouchableOpacity>
 
               {/* Open settings button */}
               <TouchableOpacity
                 onPress={handleOpenSettings}
-                style={[styles.button, styles.primaryButton, { backgroundColor: colors.primary }]}
+                className="flex-row items-center gap-2 rounded-lg px-4 py-2 shadow-sm elevation-[1]"
+                style={{ backgroundColor: colors.primary, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 }}
                 accessibilityRole="button"
                 accessibilityLabel="Open system settings">
                 <Ionicons name="settings-outline" size={16} color={colors.onPrimary} />
-                <AppText style={[styles.buttonText, { color: colors.onPrimary }]}>
+                <AppText className="text-sm font-medium" style={{ color: colors.onPrimary }}>
                   Open Settings
                 </AppText>
               </TouchableOpacity>
@@ -137,56 +137,55 @@ export function NotificationPrompt({
 
   return (
     <View
+      className="mx-4 mt-4 rounded-xl p-4 border shadow-sm elevation-[1]"
       style={[
-        styles.container,
         {
           backgroundColor: `${colors.warning}10`, // Soft amber background
           borderColor: `${colors.warning}30`,
         },
       ]}>
-      <View style={styles.contentRow}>
+      <View className="flex-row items-start gap-3">
         {/* Icon */}
         <Ionicons name="notifications-outline" size={24} color={colors.warning} />
 
         {/* Content */}
-        <View style={styles.textContainer}>
-          <AppText style={[styles.title, { color: colors.onSurface }]}>
+        <View className="flex-1">
+          <AppText className="mb-1 text-base font-semibold" style={{ color: colors.onSurface, fontFamily: 'Fraunces_600SemiBold' }}>
             Turn on notifications to get new stories instantly
           </AppText>
-          <AppText style={[styles.message, { color: colors.textMuted }]}>
+          <AppText className="mb-3 text-sm" style={{ color: colors.textMuted }}>
             {"We'll"} notify you when a new story is recorded
           </AppText>
 
           {/* Action buttons */}
-          <View style={styles.buttonRow}>
+          <View className="flex-row gap-3">
             {/* Dismiss button */}
             <TouchableOpacity
               onPress={onDismiss}
+              className="flex-row items-center gap-2 rounded-lg px-4 py-2 border"
               style={[
-                styles.button,
-                styles.outlineButton,
                 { borderColor: colors.border, backgroundColor: colors.surface },
               ]}
               accessibilityRole="button"
               accessibilityLabel="Set up notifications later">
-              <AppText style={[styles.buttonText, { color: colors.onSurface }]}>Later</AppText>
+              <AppText className="text-sm font-medium" style={{ color: colors.onSurface }}>Later</AppText>
             </TouchableOpacity>
 
             {/* Enable button */}
             <TouchableOpacity
               onPress={handleRequestPermission}
               disabled={isRequesting}
+              className="flex-row items-center gap-2 rounded-lg px-4 py-2 shadow-sm elevation-[1]"
               style={[
-                styles.button,
-                styles.primaryButton,
                 {
                   backgroundColor: colors.primary,
                   opacity: isRequesting ? 0.7 : 1,
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2
                 },
               ]}
               accessibilityRole="button"
               accessibilityLabel="Enable notification permission">
-              <AppText style={[styles.buttonText, { color: colors.onPrimary }]}>
+              <AppText className="text-sm font-medium" style={{ color: colors.onPrimary }}>
                 {isRequesting ? 'Requesting...' : 'Enable Notifications'}
               </AppText>
             </TouchableOpacity>
@@ -196,61 +195,3 @@ export function NotificationPrompt({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  contentRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  title: {
-    marginBottom: 4,
-    fontSize: 16,
-    fontFamily: 'Fraunces_600SemiBold',
-  },
-  message: {
-    marginBottom: 12,
-    fontSize: 14,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  outlineButton: {
-    borderWidth: 1,
-  },
-  primaryButton: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  buttonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-});

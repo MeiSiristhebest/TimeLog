@@ -3,77 +3,6 @@
 > A simple, open format for guiding coding agents. This file follows the [agents.md](https://agents.md/) specification.
 
 ---
-
-<skills_system priority="1">
-
-## Available Skills
-
-<!-- SKILLS_TABLE_START -->
-<usage>
-When users ask you to perform tasks, check if any of the available skills below can help complete the task more effectively. Skills provide specialized capabilities and domain knowledge.
-
-How to use skills:
-- Invoke: Bash("openskills read <skill-name>")
-- The skill content will load with detailed instructions on how to complete the task
-- Base directory provided in output for resolving bundled resources (references/, scripts/, assets/)
-
-Usage notes:
-- Only use skills listed in <available_skills> below
-- Do not invoke a skill that is already loaded in your context
-- Each skill invocation is stateless
-</usage>
-
-<available_skills>
-
-<skill>
-<name>changelog-generator</name>
-<description>Automatically creates user-facing changelogs from git commits by analyzing commit history, categorizing changes, and transforming technical commits into clear, customer-friendly release notes. Turns hours of manual changelog writing into minutes of automated generation.</description>
-<location>global</location>
-</skill>
-
-<skill>
-<name>doc-coauthoring</name>
-<description>Guide users through a structured workflow for co-authoring documentation. Use when user wants to write documentation, proposals, technical specs, decision docs, or similar structured content. This workflow helps users efficiently transfer context, refine content through iteration, and verify the doc works for readers. Trigger when user mentions writing docs, creating proposals, drafting specs, or similar documentation tasks.</description>
-<location>global</location>
-</skill>
-
-<skill>
-<name>frontend-design</name>
-<description>Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.</description>
-<location>global</location>
-</skill>
-
-<skill>
-<name>internal-comms</name>
-<description>A set of resources to help me write all kinds of internal communications, using the formats that my company likes to use. Claude should use this skill whenever asked to write some sort of internal communications (status reports, leadership updates, 3P updates, company newsletters, FAQs, incident reports, project updates, etc.).</description>
-<location>global</location>
-</skill>
-
-<skill>
-<name>pdf</name>
-<description>Comprehensive PDF manipulation toolkit for extracting text and tables, creating new PDFs, merging/splitting documents, and handling forms. When Claude needs to fill in a PDF form or programmatically process, generate, or analyze PDF documents at scale.</description>
-<location>global</location>
-</skill>
-
-<skill>
-<name>skill-creator</name>
-<description>Guide for creating effective skills. This skill should be used when users want to create a new skill (or update an existing skill) that extends Claude's capabilities with specialized knowledge, workflows, or tool integrations.</description>
-<location>global</location>
-</skill>
-
-<skill>
-<name>theme-factory</name>
-<description>Toolkit for styling artifacts with a theme. These artifacts can be slides, docs, reportings, HTML landing pages, etc. There are 10 pre-set themes with colors/fonts that you can apply to any artifact that has been creating, or can generate a new theme on-the-fly.</description>
-<location>global</location>
-</skill>
-
-</available_skills>
-<!-- SKILLS_TABLE_END -->
-
-</skills_system>
-
----
-
 ## Project Overview
 
 **TimeLog** is a voice-first elderly storytelling app that helps seniors record life stories through AI-guided interviews. It uses a **Local-First** architecture with offline-first design, voice AI integration, and family sharing capabilities.
@@ -344,9 +273,45 @@ maestro test tests/e2e/*.yaml
 - ❌ Default VAD settings - use Elderly Profile (3-5s pause).
 - ❌ Forgetting disk space check before recording.
 - ❌ Logging sensitive data to Sentry.
+- ❌ Manual `useCssElement` wrapping for NativeWind v5 (Fails to merge styles). Use `cssInterop` instead.
 
 ### Environment
 
 - **OS**: Windows 11
 - **Shell**: PowerShell 7+
-- **IDE**: Google Antigravity / VS Code
+
+## Styling Rules (Evidence-Based)
+
+### Default: NativeWind v5
+- Use `className` for ALL static components
+- Leverage `@/tw/animated` for animated components
+
+### When to Use StyleSheet:
+1. ✅ Performance-critical paths (Recorder, WaveformVisualizer)
+2. ✅ Complex computed styles requiring calculations
+3. ✅ Type-safe style objects
+
+### Animated Components:
+```tsx
+// ✅ Correct Pattern
+import { Animated } from '@/tw/animated';
+<Animated.View className="..." entering={FadeIn} />
+
+// ✅ For complex animations
+const animatedStyle = useAnimatedStyle(() => ({
+  transform: [{ scale: scale.value }]
+}));
+<Animated.View className="..." style={animatedStyle} />
+
+// ❌ NEVER
+<Animated.View className="...">
+  <RegularComponent /> {/* Regular components inside won't animate! */}
+</Animated.View>
+```
+
+### Mixing is OK:
+
+```tsx
+<View className="p-4 bg-white" style={dynamicStyle} />
+```
+

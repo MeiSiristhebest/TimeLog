@@ -1,3 +1,11 @@
+import { AppText } from '@/components/ui/AppText';
+import { View, TouchableOpacity, Animated, StyleSheet } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Ionicons } from '@/components/ui/Icon';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { NotificationData } from '@/lib/notifications';
+import { useHeritageTheme } from '@/theme/heritage';
+
 /**
  * NotificationBanner - In-app notification banner for foreground notifications.
  *
@@ -6,14 +14,6 @@
  *
  * Story 4.4: Push Notification & Deep Link (AC: 4)
  */
-
-import { AppText } from '@/components/ui/AppText';
-import { View, TouchableOpacity, Animated, StyleSheet } from 'react-native';
-import { useEffect, useRef } from 'react';
-import { Ionicons } from '@/components/ui/Icon';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { NotificationData } from '@/lib/notifications';
-import { useHeritageTheme } from '@/theme/heritage';
 
 interface NotificationBannerProps {
   /** Notification title */
@@ -37,58 +37,36 @@ export function NotificationBanner({
 }: NotificationBannerProps): JSX.Element {
   const insets = useSafeAreaInsets();
   const { colors } = useHeritageTheme();
-  const slideAnim = useRef(new Animated.Value(-100)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  const translateY = useSharedValue(-150); // Start off-screen
+  const opacity = useSharedValue(0);
 
   // Slide in animation on mount
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [slideAnim, opacityAnim]);
+    translateY.value = withTiming(0, { duration: 300 });
+    opacity.value = withTiming(1, { duration: 300 });
+  }, [translateY, opacity]);
 
-  const handlePress = () => {
-    // Slide out animation before navigating
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: -100,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onPress(data);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: opacity.value,
+  }));
+
+  const animateOut = (callback: () => void) => {
+    opacity.value = withTiming(0, { duration: 200 });
+    translateY.value = withTiming(-150, { duration: 200 }, (finished) => {
+      if (finished) {
+        runOnJS(callback)();
+      }
     });
   };
 
+  const handlePress = () => {
+    animateOut(() => onPress(data));
+  };
+
   const handleDismiss = () => {
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: -100,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onDismiss();
-    });
+    animateOut(() => onDismiss());
   };
 
   // Determine icon based on notification type
@@ -101,13 +79,12 @@ export function NotificationBanner({
 
   return (
     <Animated.View
+      className="absolute left-4 right-4 z-[1000]"
       style={[
-        styles.container,
         {
           top: insets.top + 8,
-          transform: [{ translateY: slideAnim }],
-          opacity: opacityAnim,
         },
+        animatedStyle,
       ]}>
       <TouchableOpacity
         onPress={handlePress}
@@ -115,8 +92,8 @@ export function NotificationBanner({
         accessibilityRole="button"
         accessibilityLabel={`${title}. ${body}. Tap to view`}
         accessibilityHint="Tap to open the related story"
+        className="rounded-[20px] p-4 flex-row items-center border-l-4 shadow-lg elevation-10"
         style={[
-          styles.banner,
           {
             backgroundColor: colors.surface,
             shadowColor: colors.shadow,
@@ -124,16 +101,21 @@ export function NotificationBanner({
           },
         ]}>
         {/* Icon */}
-        <View style={[styles.iconContainer, { backgroundColor: `${colors.primary}15` }]}>
+        <View
+          className="w-12 h-12 rounded-full justify-center items-center mr-3.5"
+          style={{ backgroundColor: `${colors.primary}15` }}>
           <Ionicons name={getIcon()} size={22} color={colors.primary} />
         </View>
 
         {/* Content */}
-        <View style={styles.content}>
-          <AppText style={[styles.title, { color: colors.onSurface }]} numberOfLines={1}>
+        <View className="flex-1">
+          <AppText
+            className="text-[17px] font-semibold mb-1"
+            style={{ color: colors.onSurface, fontFamily: 'Fraunces_600SemiBold' }}
+            numberOfLines={1}>
             {title}
           </AppText>
-          <AppText style={[styles.body, { color: colors.textMuted }]} numberOfLines={2}>
+          <AppText className="text-sm" style={{ color: colors.textMuted }} numberOfLines={2}>
             {body}
           </AppText>
         </View>
@@ -144,57 +126,11 @@ export function NotificationBanner({
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           accessibilityRole="button"
           accessibilityLabel="Dismiss notification"
-          style={[styles.dismissButton, { backgroundColor: `${colors.onSurface}10` }]}>
+          className="w-8 h-8 rounded-full justify-center items-center ml-2.5"
+          style={{ backgroundColor: `${colors.onSurface}10` }}>
           <Ionicons name="close" size={16} color={colors.onSurface} />
         </TouchableOpacity>
       </TouchableOpacity>
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    zIndex: 1000,
-  },
-  banner: {
-    borderRadius: 20,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 10,
-    borderLeftWidth: 4,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 17,
-    fontFamily: 'Fraunces_600SemiBold',
-    marginBottom: 3,
-  },
-  body: {
-    fontSize: 14,
-  },
-  dismissButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 10,
-  },
-});

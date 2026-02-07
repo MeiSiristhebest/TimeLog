@@ -1,0 +1,1470 @@
+Time Log
+An Offline-First Architecture for Resilient Voice Interaction
+in Older Adults
+Project Proposal
+By
+TIANXIANGMEI 652115553
+YIFEIBI 652115555
+Project Advisor
+Asst. Prof. NopponChoosri,Ph.D.
+DepartmentofSoftwareEngineering
+CollegeofArts,MediaandTechnology
+ChiangMaiUniversity
+January2026
+
+Document History
+DocumentName Date Reviewer Responsible Version
+Setupproject
+structure. Wrote
+TimeLogProject TIANXIANG Introduction:
+Nov25,2025 YIFEIBI
+ProposalV1.0.docx MEI background,problem,
+objectives,and
+significance.
+CompletedLiterature
+Review. Analyzed
+TimeLogProject TIANXIANG
+Nov30,2025 YIFEIBI digitaldivide,
+ProposalV1.1.docx MEI
+competitors,and
+solutiongaps.
+Builta3-layer
+architecture.
+TimeLogProject TIANXIANG Developedaudio
+Dec07,2025 YIFEIBI
+ProposalV1.2.docx MEI transport,voice
+detection,and
+cognitivechain.
+AppliedISO/IEC
+29110. Introduced
+TimeLogProject TIANXIANG
+Dec14,2025 YIFEIBI Agile–UCDmodel.
+ProposalV1.3.docx MEI
+Verifiedstabilityand
+voicepipeline.
+Defined4core
+TimeLogProject TIANXIANG modules. Mapped
+Dec21,2025 YIFEIBI
+ProposalV1.4.docx MEI userjourneyand
+projecttimeline.
+i
+
+Document History (Continued)
+DocumentName Date Reviewer Responsible Version
+TimeLogProject TIANXIANG FinalizedConclusion
+Dec24,2025 YIFEIBI
+ProposalV1.5.docx MEI andReferences.
+Scoperefinedto
+TimeLogProject TIANXIANG MVP;Terminology
+Jan03,2026 YIFEIBI
+ProposalV1.6.docx MEI aligned(Feature
+1/2/3).
+Featurespecs
+granularity;
+TimeLogProject TIANXIANG
+Jan06,2026 YIFEIBI Consistencyfixes;
+ProposalV1.7.docx MEI
+Multi-perspective
+audit.
+ii
+
+Abstract
+While voice interfaces promise natural interaction for older adults, current cloud-dependent
+solutionsfailpreciselywheretheyareneededmost: inreal-worldenvironmentswithunstable
+connectivity. TimeLogisamobileappthatseparateslocalrecording(whichalwaysworks)
+fromcloud-basedAIfeatures(whichrunonlywhentheinternetisstable). Whenthenetwork
+drops,theappprovidesaclearlocalaudiocuetoreassuretheuserthatitisstilllistening.
+TheMVPsupportsthreecorefeatures: (i)GuidedInterviewwithoptionalfollow-upprompts,
+(ii)anoffline-capableStoryGalleryforreplayingrecordings,and(iii)alocal“TopicLibrary”
+containing pre-seeded and family-submitted interview questions that guide the user without
+needingareal-timecall.
+We describe the system design and outline an exploratory within-subjects evaluation (10–
+15 participants) against a standard voice recorder. The primary goal is to verify recording
+survivability(whetherthefileissavedlocally)andtogatherpreliminaryusabilityfeedback.
+Secondary measures include usability (System Usability Scale) and perceived workload
+(NASA-TLX). This work contributes (1) a reference architecture for fault-tolerant voice
+interfaces,and(2)initialevidenceontheefficacyoflocal-firstfallbacksinreducingcognitive
+loadforolderadults.
+Keywords: Older Adults, Voice Interaction, Offline-First, Local-First Architecture, Smart
+Recording,Resilience.
+iii
+
+Contents
+DocumentHistory i
+Abstract iii
+ListofFigures viii
+ListofTables ix
+Chapter1. Introduction 1
+1.1 BackgroundandMotivation . . . . . . . . . . . . . . . . . . . . . . . . . 1
+1.2 ProblemStatement . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 1
+1.3 TargetUsersandValueProposition . . . . . . . . . . . . . . . . . . . . . . 2
+1.3.1 ResearchMethodology . . . . . . . . . . . . . . . . . . . . . . . . 3
+1.3.2 PrimaryUserPersona . . . . . . . . . . . . . . . . . . . . . . . . 3
+1.3.3 UserMotivationandValueProposition . . . . . . . . . . . . . . . 3
+1.3.4 UsageScenarios . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+1.4 ResearchObjectives . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+1.5 SignificanceoftheStudy . . . . . . . . . . . . . . . . . . . . . . . . . . . 5
+1.5.1 KeyContributionsandTestableHypotheses . . . . . . . . . . . . . 6
+Chapter2. LiteratureReview 7
+2.1 AcademicLiteratureReview . . . . . . . . . . . . . . . . . . . . . . . . . 7
+2.1.1 TheDigitalDivideandPsychologicalBarriers . . . . . . . . . . . 7
+2.1.2 HCIDesignPrinciplesforAgingPopulations . . . . . . . . . . . . 7
+2.1.3 GenerativeAIasaProactiveAssistant . . . . . . . . . . . . . . . . 8
+2.1.4 SynthesizedUserBarriers . . . . . . . . . . . . . . . . . . . . . . 8
+2.1.5 SummaryandResearchGap . . . . . . . . . . . . . . . . . . . . . 9
+2.2 ReviewofCommercialSolutions . . . . . . . . . . . . . . . . . . . . . . . 11
+2.2.1 AnalysisofGenericSolutions . . . . . . . . . . . . . . . . . . . . 11
+2.2.2 CompetitorAnalysis . . . . . . . . . . . . . . . . . . . . . . . . . 12
+2.2.3 GapAnalysisandProposedDifferentiation . . . . . . . . . . . . . 14
+2.3 MarketContextandBusinessPositioning . . . . . . . . . . . . . . . . . . 15
+2.3.1 MarketLandscape . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+2.3.2 TimeLogPositioning . . . . . . . . . . . . . . . . . . . . . . . . . 15
+Chapter3. SystemDesignandImplementation 17
+3.1 ArchitecturalOverview . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+3.2 PresentationLayer: Accessibility-FirstInterface . . . . . . . . . . . . . . . 18
+3.3 HumanFactorsDesignRationale . . . . . . . . . . . . . . . . . . . . . . . 19
+iv
+
+3.4 IntelligenceLayer: SmartRecordingPipeline . . . . . . . . . . . . . . . . 20
+3.4.1 Low-latencyAudioTransport . . . . . . . . . . . . . . . . . . . . 20
+3.4.2 On-deviceVoiceActivityDetection . . . . . . . . . . . . . . . . . 20
+3.4.3 CognitiveProcessingChain(“Ear–Brain–Mouth”) . . . . . . . . . 21
+3.5 PersistenceLayer: SmartDataManagement . . . . . . . . . . . . . . . . . 21
+3.6 TechnologySelectionRationale . . . . . . . . . . . . . . . . . . . . . . . 23
+3.7 UserOnboardingandIdentityManagement . . . . . . . . . . . . . . . . . 23
+Chapter4. DevelopmentProcessandQualityAssurance 25
+4.1 ISO/IEC29110-4-1:2019BasicProfile(VerySmallEntities) . . . . . . . . 25
+4.1.1 ProjectManagement(PM)Process . . . . . . . . . . . . . . . . . . 25
+4.1.2 SoftwareImplementation(SI)Process . . . . . . . . . . . . . . . . 26
+4.2 IterativePrototypingModel . . . . . . . . . . . . . . . . . . . . . . . . . . 26
+4.3 QualityAssuranceFramework . . . . . . . . . . . . . . . . . . . . . . . . 27
+4.3.1 StabilityandAccessibilityVerification . . . . . . . . . . . . . . . 27
+4.3.2 VoicePipelineRobustness . . . . . . . . . . . . . . . . . . . . . . 27
+4.3.3 NetworkResilienceAssurance . . . . . . . . . . . . . . . . . . . . 27
+4.3.4 EthicalCompliance . . . . . . . . . . . . . . . . . . . . . . . . . . 28
+4.4 SoftwareConfigurationManagement . . . . . . . . . . . . . . . . . . . . . 28
+4.5 EvaluationPlan . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 28
+Chapter5. ProjectScopeandSpecifications 31
+5.1 WhatThisProjectDelivers . . . . . . . . . . . . . . . . . . . . . . . . . . 31
+5.2 DesignPrinciples . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 31
+5.3 TechnicalObjectives . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 31
+5.4 ScopePrioritization(MoSCoWMethod) . . . . . . . . . . . . . . . . . . . 32
+5.4.1 Must-Have(TheMVP) . . . . . . . . . . . . . . . . . . . . . . . . 32
+5.4.2 Should-Have(Cycle2Extensions) . . . . . . . . . . . . . . . . . . 32
+5.4.3 Won’t-Have(ExplicitExclusions) . . . . . . . . . . . . . . . . . . 32
+5.5 SystemArchitecture . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 33
+5.6 FeatureSpecifications . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 34
+5.6.1 Feature1: GuidedInterview(StoryRecording) . . . . . . . . . . . 34
+5.6.2 Feature2: StoryGallery(StoryReview) . . . . . . . . . . . . . . . 35
+5.6.3 Feature3: TopicLibrary(TopicSelection) . . . . . . . . . . . . . 35
+5.7 ReferenceUserJourney(HappyPath) . . . . . . . . . . . . . . . . . . . . 36
+5.8 ProjectTimeline . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 38
+5.9 ValidationScope(PrototypeLimitations) . . . . . . . . . . . . . . . . . . 39
+Chapter6. DiscussionandConclusion 40
+6.1 Limitations . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 40
+v
+
+6.1.1 TechnicalLimitations . . . . . . . . . . . . . . . . . . . . . . . . . 40
+6.1.2 StudyLimitations . . . . . . . . . . . . . . . . . . . . . . . . . . . 40
+6.1.3 TechnologyPortability . . . . . . . . . . . . . . . . . . . . . . . . 41
+6.2 FutureWork . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 41
+6.3 Conclusion . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 42
+References 43
+vi
+
+List of Figures
+1.1 Conceptual illustration of the usability gap. The diagram illustrates the de-
+signintent: keepinginteractionstepsminimalandpredictableunderconnec-
+tivitychanges. ThetransientspikeinTimeLog’scurve(green)at“Network
+Loss” represents the momentary attention shift when the Sound Cue plays,
+followedbyreassuranceastheuserrealizesrecordingcontinuesuninterrupted. 2
+1.2 Primary User Persona: Wang Xiuying (fictional composite persona). A 78-
+year-oldretiredliteratureteacherrepresentingthetargetusergroup. Shelives
+aloneafterherhusbandpassedaway,withhertwochildrenworkinginother
+cities. Her greatest joy is video-calling her four grandchildren on holidays.
+Sheisproudofherrichlifeexperienceandfeelsitwouldbeagreatregretif
+herstorieswerenotpasseddown. . . . . . . . . . . . . . . . . . . . . . . 3
+2.1 InterfaceofStoryWorthshowingthetext-basedemailprompt. . . . . . . . 12
+2.2 Remento’sphoto-elicitedvoicerecordingworkflow. . . . . . . . . . . . . . 13
+2.3 HereAfter AI’s avatar-based structured interview interface designed for
+posthumousdigitallegacycreation. . . . . . . . . . . . . . . . . . . . . . 14
+3.1 The Holistic Reference Architecture decouples latency-sensitive AI from
+reliability-critical data paths. This diagram illustrates the complete, long-
+term technical vision for the Time Log ecosystem. Note on Scope: For the
+MVP implementation presented in this proposal (see Section 5.4), develop-
+ment strictly focuses on the Acquisition (Voice Interface) and Infrastructure
+(Offline Resilience) layers. Advanced modules shown here, such as the
+Mood Tagger and Emotion Selector, serve as architectural placeholders for
+futureworkandareexplicitlyexcludedfromthecurrentvalidationscope. . 18
+3.2 The Dual-Track Authentication Architecture. Two distinct pathways (Im-
+plicit for elders and Explicit for families) are bridged via a local device
+pairing code. This design aims to enforce per-user access control while
+minimizingauthenticationstepsforolderusers. . . . . . . . . . . . . . . . 24
+4.1 ISO/IEC 29110 Process Flow. The diagram illustrates the Basic Profile
+tailoredspecificallyfortheTimeLogdevelopmentlifecycle. . . . . . . . . 25
+5.1 TimeLogSystemArchitecture: LocalLoopmaintainsresponsiveness,while
+CloudLoopaddsintelligence. Thecorerecordingloop(Record→Store→
+Replay) is entirely local. The Cloud Loop (transcription, Auto-Generated
+Questions) is an optional enhancement that runs only when connectivity
+permits. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 34
+5.2 The User Journey & System Resilience Map. Illustrating the hybrid oper-
+ational modes: from the ‘Green’ online state to the ‘Red’ offline fallback
+state,mediatedbytheSoundCueandbackgroundsynchronization. . . . . . 37
+vii
+
+5.3 Project Gantt Chart. The timeline illustrates the 17-week development
+scheduleandcriticalmilestones. . . . . . . . . . . . . . . . . . . . . . . . 39
+viii
+
+List of Tables
+1.1 SuccessMetricsandValidationTargets. . . . . . . . . . . . . . . . . . . . 5
+2.1 Traceability Matrix. Each barrier (from Section 2.1.4) maps to specific
+designfeaturesandtheircorrespondingimplementationcomponents. . . . . 11
+2.2 CompetitiveFeatureGapAnalysis. . . . . . . . . . . . . . . . . . . . . . . 15
+3.1 MappingofDesignFeaturestoHumanFactorsPrinciples. . . . . . . . . . 19
+3.2 LatencyBudgetAllocationfortheLow-LatencyVoicePipeline. . . . . . . 20
+3.3 TechnologyStackandSelectionRationale. . . . . . . . . . . . . . . . . . . 23
+4.1 MappingofHypothesestoMeasurementsandDataSources. . . . . . . . . 30
+5.1 Development Timeline. The 17-week schedule allocates time across Foun-
+dation,MVPImplementation,SystemRefinement,andValidationphases. . 38
+ix
+
+Chapter 1. Introduction
+1.1 Background and Motivation
+Theglobalpopulationisagingrapidly. Adultsaged65andabovenowrepresentanincreas-
+inglyactivesegmentofsmartphoneusers. However,age-relatedchanges—suchasdeclining
+vision, reduced hand steadiness, slower thinking speed, and shorter memory span—make
+standard smartphone apps difficult to use [1], [2], [3]. Research reports that older adults
+complete fewer tasks and feel more anxious when using typical mobile apps, especially for
+creativeactivitieslikewritingorrecording[3],[4],[5].
+Beyond these physical challenges, older adults have a strong psychological need to share
+their life stories. According to psychologist Erik Erikson, seniors seek “Generativity”—a
+desiretoleavealegacyandpasswisdomtoyoungergenerations[6],[7]. Priorworkreports
+associationsbetweenstructuredreminiscenceactivitiesandimprovedwellbeingoutcomesin
+olderadults[8],[9]. Thisnaturaldesiretosharestories,combinedwithitspotentialbenefits,
+suggeststhatmanyolderadultswouldusedigitalstorytellingtools—ifonlythesetoolswere
+easier to use. Yet, current tools often impose interaction complexity that can limit adoption
+andsustaineduse.
+Interface-leveladaptations—suchaslargertextorhighercontrastdisplays—helpwithvision
+problems but do not fully address interaction complexity: apps with too many menus and
+stepsexhaustolderusersmentally[1],[10],[11],[12]. Asaresult,manyseniorsgiveupon
+creativedigitalactivitiesentirely[13].
+Voice assistants like Siri and Alexa reduce typing demands, but they still require users to
+giveprecisecommands[14]. Thesesystemsalsocannotrememberpastconversationsorask
+helpful follow-up questions—features that are essential for natural storytelling [14], [15].
+Most importantly, few current mobile apps combine natural conversation with the ability to
+keepworkingwheninternetconnectionsarepoor—acommonprobleminreal-worlduse.
+This project addresses this gap by developing Time Log, a voice-first mobile application
+for low-friction story recording. The system targets one-tap initiation and reliable local
+persistence, so that older adults can continue recording even when internet connections are
+unstable.
+1.2 Problem Statement
+Despitehighsmartphoneownership,olderadultsfacethreespecificbarrierswhenrecording
+lifestories:
+1
+
+1. Cognitive Overload: Multi-step menus in standard apps strain working memory,
+leadingtoearlyabandonment[3],[4],[10].
+2. LackofScaffolding: Passivevoicerecordersdonotprovideprompts,oftenresulting
+in“writer’sblock”orsilence[14],[15],[16].
+3. Network Fragility: Most voice agents depend on constant connectivity. Network
+latency or outages disrupt the conversational flow and can lead to data loss, causing
+significantuseranxiety[10],[17].
+Time Log addresses these gaps by prioritizing a “record-first, process-later” workflow. The
+system captures audio locally to prevent loss, reconciling with cloud services only when
+connectionstabilityreturns.
+MVP Definition: The MVP integrates three Must-Have features (Guided Interview, Story
+Gallery, Topic Library) and the local-first infrastructure described in Section 5.3. The
+system preserves local recording and replay even under complete connectivity loss. Online
+AI prompting is an optional enhancement enabled only when connection quality meets
+predefinedthresholds.
+Figure1.1: Conceptual illustration of the usability gap. The diagram illustrates the design intent:
+keeping interaction steps minimal and predictable under connectivity changes. The
+transientspikeinTimeLog’scurve(green)at“NetworkLoss”representsthemomentary
+attention shift when the Sound Cue plays, followed by reassurance as the user realizes
+recordingcontinuesuninterrupted.
+1.3 Target Users and Value Proposition
+WedefinetheprimaryusergroupforTimeLogbasedonamixed-methodsresearchapproach
+combiningdeskresearchandqualitativeinterviews.
+2
+
+1.3.1 ResearchMethodology
+The investigation began with a foundational question: “What are the primary barriers
+preventing older adults from using digital tools to preserve and share their life stories?” To
+answerthis,weusedamixed-methodsapproach. First,DeskResearchanalyzedauthoritative
+sources including the World Health Organization (WHO), Nielsen Norman Group (NN/g),
+and the Pew Research Center. This provided a quantitative, evidence-based understanding
+of the physiological, cognitive, and psychological changes associated with aging. Second,
+Qualitative Interviews were conducted with participants matching the target demographic
+(aged65+). Theseinterviewshighlightedakeybarrier: fearofmakingirreversiblemistakes.
+As one participant (Mr. Li, 75) stated: “I’m just afraid of tapping the wrong thing... I don’t
+daretotouchanythingelse.”
+1.3.2 PrimaryUserPersona
+Tosynthesizethesefindings,wedevelopedadetailedUserPersonatoembodythegoalsand
+frustrationsofthetargetuser(seeFigure1.2).
+Figure1.2: Primary User Persona: Wang Xiuying (fictional composite persona). A 78-year-old
+retired literature teacher representing the target user group. She lives alone after her
+husbandpassed away, with her two children workingin other cities. Her greatest joyis
+video-callingherfourgrandchildrenonholidays. Sheisproudofherrichlifeexperience
+andfeelsitwouldbeagreatregretifherstorieswerenotpasseddown.
+1.3.3 UserMotivationandValueProposition
+Basedonthepersonaanalysis,threeprimarymotivationsdrivethetargetusers:
+3
+
+• Legacy: To record their life stories and family history for future generations while
+theirmemoryisstillclear.
+• Connection: To build deeper emotional bonds with family beyond simple daily
+greetings,bridgingthegapcausedbygeographicdistance.
+• Empowerment: To independently accomplish a “high-tech” task, proving to them-
+selvesandtheirfamilythattheyarestillcapable.
+Time Log addresses these motivations by providing a low-barrier platform that transforms
+thecomplextaskofdigitalstorytellingintoasimple,voice-firstinteraction.
+1.3.4 UsageScenarios
+Threerepresentativescenariosillustratethesystem’sintendeduse:
+1. Daily Routine: Wang Xiuying receives a gentle notification in the morning and taps
+once to start a short voice recording session. When online, the app may play a brief
+follow-upquestion;whenoffline,itrecordswithoutprompts.
+2. Family-Initiated: Her grandson’s pre-submitted question appears on her device:
+“Grandma, what was your favorite food when you were little?” This personalized
+promptmotivateshertorespond.
+3. Weak-Network Environment: During a power outage affecting her internet, Wang
+Xiuyingcontinuesrecording. ThesystemautomaticallyswitchestoOfflineMode,and
+herstoryisqueuedlocallyandsynchronizedtothecloudonceconnectivityisrestored.
+1.4 Research Objectives
+This project aims to design, implement, and validate Time Log as a resilient platform for
+narrativepreservation. Thespecificengineeringobjectivesare:
+1. Develop a Voice-First Interface with Minimal Tactile Demand: Design a voice-
+firstrecordingflowthatsupportsshort,optionalfollow-uppromptswhenconnectivity
+permits,andfallsbacktouninterruptedlocalrecordingwhenitdoesnot. Theinterface
+will support simplified “One-Tap” interaction, reducing the cognitive load of input
+formulation[3],[4].
+2. Implement Smart Recording: When the network is stable, the app can play short
+follow-up prompts generated by an LLM; when it is not, it records locally without
+prompts. Prompts are tuned to tolerate the slow speech patterns of older adults [14],
+[16].
+4
+
+3. Implement Offline Mode and Data Consistency: The system falls back from an
+interactive mode to a local recording mode during network degradation, and to sync
+recordingswhenconnectivityreturns[10],[11].
+4. Conduct Rigorous Mixed-Methods Evaluation: Evaluate whether Time Log im-
+proves usability and resilience compared with a standard voice recorder under both
+stable and unstable networks, through an exploratory within-subjects study with 10–
+15participants.
+SuccessmetricsaresummarizedinTable1.1.
+Table1.1: SuccessMetricsandValidationTargets.
+Metric TargetCriteria MeasurementMethod
+DesignGoal: <2000ms AutomatedTimestampLogging
+SystemLatency
+(understablenetwork) (VAD-EndtoTTS-Start)
+Target: ≥90% SessionLogAnalysis(NarrativeSaved
+TaskCompletion
+(exploratory) vs. Attempted)
+StandardizedSUSQuestionnaire
+UsabilityScore SUSScore≥75
+(BenchmarkedagainstDefaultRecorder)
+SuccessCriterion:
+CognitiveLoad NASA-TLXScore NASA-TLXComparativeAnalysis
+Reduction
+1.5 Significance of the Study
+Beyond its immediate utility, Time Log serves as a proof-of-concept validation for resilient
+gerontechnology,contributingtothefieldinthreekeydimensions:
+1. Architectural Contribution—Validating Offline-First Interaction: This project
+proposes and will evaluate a hybrid architecture that prioritizes local responsiveness
+over cloud intelligence, aiming to provide a replicable design pattern for handling
+latency-sensitivevoiceinteractionsinunstablenetworkenvironments.
+2. EmpiricalContribution—QuantifyingEaseofUse: BybenchmarkingNASA-TLX
+scores,thisprojectwillprovideinitialevidenceonwhethershort,optionalpromptscan
+reduceperceivedworkloadinreminiscencesessionsforolderadults[15],[18].
+5
+
+3. Societal Contribution—Enabling Access to Oral History: The system lowers the
+technical barrier for digital archiving, enabling the autonomous preservation of inter-
+generationalnarrativesthatwouldotherwisebelost[13],[19].
+1.5.1 KeyContributionsandTestableHypotheses
+Tovalidatetheproposedarchitecture,thisresearchpositsthreetestablehypotheses:
+1. H1 (Resilience): Under impaired networks (e.g., 5–10% packet loss with elevated
+network delay), Time Log yields a higher proportion of retrievable local recordings
+and successful post-recovery synchronization than a cloud-dependent condition that
+disableslocalfallback.
+2. H2 (Cognitive Load): Compared with a standard voice recorder, Time Log reduces
+NASA-TLXandimprovesnarrativecontinuity(e.g.,fewerlongsilences,longerunin-
+terruptedstorysegments).
+3. H3 (Psychological safety): The Sound Cue + explicit online/offline state signalling
+reducesinterruption-inducedanxietyanddropoutduringnetworkfailures.
+6
+
+Chapter 2. Literature Review
+2.1 Academic Literature Review
+ThissectionreviewsresearchinthreeareasrelevanttoTimeLog: theevolvingdigitaldivide
+among older adults, established Human-Computer Interaction (HCI) principles for ageing
+populations,andtheemergingroleofGenerativeAIingeriatriccare.
+2.1.1 TheDigitalDivideandPsychologicalBarriers
+Smartphone adoption among adults aged 65+ has steadily increased. However, research
+showsthata“second-level”digitaldividepersists—definednotbyaccessbutbydisparities
+in functional and cognitive usage. This gap blocks digital participation in later life. Large-
+scale analyses have demonstrated strong associations between low digital competence and
+reducedsocialengagement,heightenedpsychologicaldistress,andpoorerhealthtrajectories
+amongolderadults[2],[18].
+These inequalities are not solely technological but cognitive in nature. Age-related declines
+inworkingmemory,attentionalcontrol,andprocessingspeedmakeconventionalmulti-step
+interfaces disproportionately difficult to navigate. Studies on technology-related anxiety
+indicate that procedural complexity and unfamiliar interaction patterns significantly reduce
+adoption among older users [3]. Rural living environments and limited informal digital
+support worsen digital exclusion and contribute to social isolation [11]. Functional digital
+inequality is thus a multidimensional challenge shaped by cognitive, emotional, and envi-
+ronmentalconstraints.
+2.1.2 HCIDesignPrinciplesforAgingPopulations
+Human–computerinteraction(HCI)researchoverthepasttwodecadeshasproducedwidely
+adoptedgerontechnologyguidelinesaimedatreducingperceptualandmotorbarriers. These
+includeenlargedtypefaces,high-contrastcolourpalettes,simplifiedvisualhierarchies,min-
+imisation of fine-grained gestures, and a general emphasis on recognition rather than recall
+[1], [4], [5], [10]. Such recommendations have been shown to improve basic usability and
+immediatetaskcomprehension.
+However, perceptual optimisation alone is insufficient. Older users often struggle less
+with the presentation layer than with deeper architectural features—such as hierarchical
+navigation, mode switching, fragmented interaction flows, and tasks requiring explicit file
+management[4],[10]. Studiesonanxietyandresistancetochangerevealthatwheninterfaces
+requiresequentialdecision-makingorunstructuredinput,drop-offincreasessubstantially[3],
+7
+
+[13]. Thishighlightsastructurallimitation: standardinterfacedesignswerenotdesignedfor
+thecognitiveageingprofile.
+2.1.3 GenerativeAIasaProactiveAssistant
+Advancesinlargelanguagemodels(LLMs)haveenabledashiftfromrigid,command-based
+tools to conversational agents capable of sustaining context, interpreting ambiguous input,
+and adapting responses to user preferences [14], [17]. In the context of ageing populations,
+recent studies report high acceptability of AI-powered companions for tasks such as daily
+check-ins, medication reminders, emotional support, and general wellbeing management
+[15],[20]. Systemsdesignedspecificallyforolderadults—suchasspecializedchatbotsused
+inhealthcareandelderlycareenvironments—demonstrateimprovedengagementrelativeto
+traditionalvoiceassistants. Thisisparticularlytrueamonguserswithlimiteddigitalliteracy
+[20],[21].
+Despitetheseencouragingfindings,threenotablegapsremaininexistingdeployments:
+• Limited focus on autobiographical memory and narrative preservation: Current
+systems prioritise health monitoring or informational tasks, with little emphasis on
+long-termmemorycaptureorintergenerationalcommunication[15],[22].
+• Lack of guided prompting with offline fallback: While LLM chatbots maintain
+context,publiclydocumentedsystemsrarelysupportprolongedreminiscencesessions
+withoptionalscaffoldingthatcontinuesworkingunderintermittentconnectivity[14],
+[17].
+• Fragility under network instability: Existing AI companions typically rely on
+continuous,high-bandwidthcloudconnectivity. Inruralorinstitutionalenvironments
+withintermittentconnectivity,thesesystemsmayfailentirelyratherthanswitchingto
+alocalrecordingmodetopreservetheuser’snarrative[17].
+These limitations show that current generative systems, while technically advanced, remain
+unsuitedforfullyautonomous,privacy-sensitive,narrative-centeredusecases.
+2.1.4 SynthesizedUserBarriers
+Combiningtheinsightsfromtheprecedingliteraturereviewwiththequalitativeuserresearch
+described in Chapter 1, we identified a prioritized list of common barriers. These barriers
+servedasthemandateforthesubsequentdesignphaseandarecategorisedintothreedomains:
+A.PhysiologicalChallenges.
+8
+
+• Challenge A.1: Barrier to Interface Readability. Declining vision and decreased
+contrastsensitivitymakestandardUItextandelementsdifficulttoread[1].
+• ChallengeA.2: BarriertoTouchInteractionAccuracy. Reducedfinemotorcontrol
+leadstoahigherrorratewheninteractingwithsmalltouchtargets[4].
+B.CognitiveChallenges.
+• ChallengeB.1: CognitiveOverloadduetoProceduralComplexity. Limitedwork-
+ingmemorymakesitdifficultforuserstotrackmulti-step,non-lineartasks[1].
+• ChallengeB.2: AttentionDiversionduetoInformationInterference. Aninability
+toinhibitirrelevantinformationmeansthatpop-ups,animations,andotherdistractions
+caneasilyderailtheuser’staskflow[1].
+C.AttitudinalandPsychologicalChallenges.
+• Challenge C.1: Fear and Risk Aversion towards Unknown Actions. Fear of
+making irreversible mistakes is a major psychological barrier to technology adoption
+among older adults. As one participant noted: “I’m just afraid of tapping the wrong
+thing... Idon’tdaretotouchanythingelse.”
+• Challenge C.2: Intrinsic Motivation for Independence. Users have a strong desire
+toremainindependentandnotfeellikea“burden”totheirchildren. Asoneinterviewee
+expressed: “Ifeelbadaboutalwaysbotheringmychildrenforhelp.”
+• Challenge C.3: Rejection of Stigmatizing Labels. Users resent products that feel
+patronizingorlabelthemas“old,”whichcanunderminedignityandself-worth[5].
+ThesesevensynthesizedchallengesdirectlyinformedthedesigndecisionsdetailedinChap-
+ter3.
+2.1.5 SummaryandResearchGap
+Theliteraturerevealscontributionsfromthreelargelyindependentstrands:
+• Digital inclusion studies document functional, cognitive, and environmental barriers
+totechnologyadoptionamongolderpopulations;
+• HCI research provides perceptual and interaction design principles tailored to age-
+relateddecline;
+9
+
+• Generative AI work suggests the feasibility of proactive, adaptive conversational
+assistance.
+However, a broad architectural gap remains: current systems function as isolated silos—
+either prioritising offline reliability without AI intelligence, or offering cloud-based AI
+withoutconnectivityresilience. TimeLogexploresapracticalwaytointegrate:
+• A voice-first interaction flow with pause-on-speech prompts and one-tap fallback to
+localrecording;
+• Context-aware follow-up prompts that are short, optional, and rule-guided (no emo-
+tion detection or personalization in MVP), designed to sustain reminiscence-oriented
+storytelling;
+• A connectivity-aware architecture that implements Offline Mode: the system adap-
+tivelydisablesactivecloudservicesunderweaknetworkconditions,revertingtolocal-
+firstdatabufferingtomaintaincapturecontinuityandreduceinterruptionrisk;
+• Accessibilityfeaturesinformedbysenior-friendlydesignguidelines(e.g.,largertouch
+targets, high-contrast visuals, minimal navigation depth, immediate auditory feed-
+back).
+In the MVP, Time Log integrates (i) one-tap voice recording with an always-available local
+fallback, (ii) short, optional follow-up prompts (no emotion detection), and (iii) automatic
+switching to offline capture under weak connectivity. We hypothesize that this design will
+improveperceivedreliabilityandreduceusereffortduringreminiscencesessions.
+Tosystematicallyaddressthesegaps,thekeyfindingsfromtheliteraturereviewaretranslated
+intoactionabledesignrequirementsfortheTimeLogsystem,assummarizedinTable2.1.
+10
+
+Table2.1: Traceability Matrix. Each barrier (from Section 2.1.4) maps to specific design features
+andtheircorrespondingimplementationcomponents.
+Finding(fromliterature) Derivedrequirement Systemsupport(module)
+Olderadultsstrugglewith
+hierarchicalnavigation Single-stepflowwithone-tap
+Presentation+Feature1
+andrecall-heavy start,minimizingmemoryload.
+workflows.
+Command-driven
+Proactiveconversational
+assistantsrequireprecise
+scaffoldingwithadaptive Feature1(Scaffolding)
+queryformulationand
+follow-upprompts.
+lacklong-termscaffolding.
+OfflineMode,local-first
+Cloud-firstsystemsfail
+persistence,andbackground
+catastrophicallyunder Feature1(Core)+Feature2
+syncingwhenthenetwork
+intermittentconnectivity.
+becomesavailable.
+Uncertaintyduringerrors Explicitstatesignalling+
+Presentation+Feature1
+increasesanxietyand locallygeneratedauditory
+(SoundCue)
+abandonment. reassurance.
+2.2 Review of Commercial Solutions
+To identify specific research gaps and define the design specifications for Time Log, this
+studyconductsacriticalanalysisofthecurrentmarketlandscape,rangingfromgenerictools
+tospecializedreminiscenceplatforms.
+2.2.1 AnalysisofGenericSolutions
+Wefirstexaminethemainstreamtoolscurrentlyusedbyolderadults—namelyphysicalphoto
+albumsandinstantmessagingapplications(e.g.,WeChat,LINE).
+Fragmentation and Lack of Archival Structure. Messaging applications support day-to-
+day communication but produce highly ephemeral and unstructured content streams. Mem-
+ories shared in chat threads are quickly buried due to continuous message flow, making
+retrieval and long-term preservation difficult. This effect—often called the “scroll-away
+effect”—limitstheirsuitabilityforsystematicmemorydocumentation.
+Absence of Narrative Elicitation. Similarly, photo galleries function as passive storage
+systems: while images are retained, the accompanying narratives are rarely captured. With-
+11
+
+out tools that prompt contextual recall, users experience what archival studies describe as
+“contextloss,”wheretheprovenanceandpersonalmeaningofimagesfadeovertime.
+2.2.2 CompetitorAnalysis
+The current market landscape can be categorised into three representative paradigms: text-
+based, voice-recording–based, and avatar-based memory systems. The following analysis
+focusesonStoryWorth,Remento,andHereAfterAIasexemplars.
+1. StoryWorth: AsynchronousText-BasedModel
+Overview: StoryWorth delivers weekly writing prompts through email and compiles user-
+submittedresponsesintoprintedbooks.
+Assessment: While the physical output provides strong tangible value, the system relies
+heavilyonkeyboard-basedtextentry. Forolderadultsexperiencingpresbyopia,arthritis,or
+limited digital proficiency, this creates a substantial psychomotor barrier and increases cog-
+nitive load associated with drafting and editing written narratives. As a result, engagement
+isdependentonliteracyandtypingabilityratherthanoralexpressiveness.
+Figure2.1: InterfaceofStoryWorthshowingthetext-basedemailprompt.
+2. Remento: Photo-ElicitedVoiceRecording
+Overview: Remento asks users to upload photos and record narrated memories, which are
+transcribedusingspeech-to-textsystems.
+Assessment: Thevoice-firstapproachlowersphysicaleffortandreducesinteractionfriction.
+However, the platform functions primarily as a one-directional recorder. The absence of
+conversational feedback leads to a “monologue effect,” where users must independently
+sustain narrative momentum. For many older adults—particularly those with declining
+workingmemory—thisincreasescognitiveburdeninsteadofreducingit.
+12
+
+Figure2.2: Remento’sphoto-elicitedvoicerecordingworkflow.
+3. HereAfterAI:Avatar-BasedDigitalLegacySystems
+Overview: HereAfter AI conducts structured interviews to create an interactive avatar,
+whichfamilymemberscanqueryaftertheuser’sdeath.
+Assessment: Although technically sophisticated, the system’s design foregrounds posthu-
+mouscommunication. Priorstudiesondeathanxietyandmortalitysaliencesuggestthatsuch
+framing may evoke discomfort or avoidance, particularly in cultures emphasizing present-
+oriented wellbeing over posthumous preservation. Consequently, while suitable for digital
+legacycreation,itmaybemisalignedwithusersseekingapresent-focusedexperience.
+13
+
+Figure2.3: HereAfter AI’s avatar-based structured interview interface designed for posthumous
+digitallegacycreation.
+2.2.3 GapAnalysisandProposedDifferentiation
+Across these exemplars, we observe a trade-off: text-based systems raise motor demands,
+while simple voice recorders provide limited scaffolding for sustained recall. Time Log
+mitigatesthisbyintegratingthreerequirementsintooneworkflow:
+• Interactional Scaffolding—From monologue-style recording to light conversa-
+tional scaffolding: Time Log provides optional, connectivity-aware guidance. We
+willevaluatewhetherthisguidancelowersperceivedworkloadandincreasesnarrative
+continuityrelativetothecontrolconditions.
+• Wellbeing-Oriented Positioning: Unlike digital-legacy–focused platforms, Time
+Logemphasizesthewellbeingbenefitsofreminiscence—suchasperceivedconnection
+and engagement—aligning the system with established principles of reminiscence
+workratherthanend-of-lifedocumentation.
+• Adaptive Workflows for Cognitive Accessibility: Combining structured prompts
+with minimal, predictable UI cues, the system shifts from a technology-centric work-
+flow to a user-centric design. Tasks adjust dynamically to cognitive, perceptual, and
+emotionalneeds,reducingrelianceonproceduralknowledge. (Photo-basedelicitation
+isreservedforfuturework.)
+14
+
+Table2.2: CompetitiveFeatureGapAnalysis.
+Dimension StoryWorth Remento HereAfterAI TimeLog
+Turn-based
+Interaction Keyboard- Turn-BasedVoice
+One-wayvoice (Batch
+Modality basedtext (Streaming)
+Processing)
+Cognitive Medium High Low(Guided
+High(Drafting)
+Load (Self-directed) (Onboarding) Dialogue)
+Guidance StaticEmail None(Visual Pre-scripted
+SmartRecording
+Mechanism Prompts only) Interview
+Psychological Family Memory Posthumous Wellbeing&
+Framing Archival Capture Legacy Reminiscence
+Tangible Self-ServicePrintable
+Printedbook QR-linkedcard None
+Output Assets(PDF)
+2.3 Market Context and Business Positioning
+Beyond functional differentiation, Time Log targets an older-adult segment in the emerging
+“Silver Tech” market—a segment growing as populations age and digital literacy among
+seniorsincreases.
+2.3.1 MarketLandscape
+Thelifestorypreservationmarketcurrentlyexhibitsafragmentedstructure:
+• PremiumServices: PlatformslikeStoryWorthoffersubscription-basedmodels(pric-
+ing varies by region and time), targeting affluent Western families willing to pay for
+professionallycuratedphysicalbooks.
+• DIY Tools: Generic voice memo applications offer zero guidance, resulting in high
+abandonmentratesasdocumentedinSection2.1.
+• Institutional Solutions: Institutional deployments are emerging, but publicly avail-
+ableevidenceonaffordabilityandscalabilityremainslimited.
+2.3.2 TimeLogPositioning
+Time Log addresses an underserved segment: families seeking an accessible, privacy-first
+solutionwithoutpremiumpricingorcomplexonboarding. Weoutlinepotentialdeployment
+15
+
+contexts (family use and institutional settings) to inform modular design; detailed business
+modelingisoutofscope:
+• Family Use: Core recording and offline functionality with limited cloud storage,
+reducingbarrierstoadoption.
+• Multi-generational Families: Extended features (expanded storage, priority queue,
+exportoptions)forfamiliesspanningmultiplelocations.
+• Institutional Settings: Potential bulk deployments for care facilities, motivating
+modulararchitecturewithOfflineModesupport.
+Detailedbusinessmodelingisbeyondthescopeofthisresearchproject.
+16
+
+Chapter 3. System Design and Implementation
+This chapter outlines the architectural and implementation framework underpinning Time
+Log. We design the system around three non-functional requirements derived from the
+cognitive,motor,andenvironmentalconstraintsidentifiedinChapters1–2:
+• OfflineMode: Maintainingdataintegrityandbasicrecordingcapabilitiesevenwhen
+advancedAIfeaturesareunavailableduetonetworkinstability.
+• Minimisation of Cognitive and Psychomotor Demands: Reducing the need for
+preciseinputs.
+• Preservation of Conversational Fluidity: Supporting responsive turn-taking when
+connectivitypermits.
+3.1 Architectural Overview
+TimeLogadoptsalayeredarchitecturewithtwoprimarytiersandtwocross-cuttingconcerns
+(seeFigure3.1):
+1. Presentation Layer: A simplified, high-contrast mobile interface designed for older
+adults(ElderInterface).
+2. IntelligenceLayer: Optionalonlinepromptingservice.
+Cross-cuttingConcerns:
+• Privacy Model: Following the Principle of Data Minimization, the system processes
+audio temporarily in the cloud and persists it only on the local device; end-to-end
+encryptionisplannedforfuturereleases.
+• Family Access: Explicit opt-in is required before sharing, authentication and media
+backup.
+Figure 3.1 shows how specific functional modules (defined in Section 5.6) are distributed
+across the client and cloud to maintain operational continuity. This separation of concerns
+allows the system to decouple the latency-sensitive AI path from the reliability-critical data
+path,enablingtheimplementationoftheSmartRecordingstrategiesproposedinthisstudy.
+17
+
+Figure3.1: The Holistic Reference Architecture decouples latency-sensitive AI from reliability-
+criticaldatapaths. Thisdiagramillustratesthecomplete, long-termtechnicalvisionfor
+the Time Log ecosystem. Note on Scope: For the MVP implementation presented in
+this proposal (see Section 5.4), development strictly focuses on the Acquisition (Voice
+Interface)andInfrastructure(OfflineResilience)layers. Advancedmodulesshownhere,
+such as the Mood Tagger and Emotion Selector, serve as architectural placeholders for
+futureworkandareexplicitlyexcludedfromthecurrentvalidationscope.
+3.2 Presentation Layer: Accessibility-First Interface
+The frontend is developed using React Native to ensure cross-platform deployment across
+iOS and Android. The interface prioritizes simplicity: a single, high-contrast “Elder Inter-
+face”designedforone-tapvoicerecording,minimizingnavigationcomplexity.
+Drawing from gerontechnology guidelines, the interface is designed with the following
+accessibilitymechanisms:
+• VisualAdaptation: Theinterfacewillprovidescalabletypographyandhigh-contrast
+themes to accommodate presbyopia and age-related reductions in contrast sensitivity
+[4],[10].
+• Multimodal Feedback: To compensate for sensory decline and reduce operational
+uncertainty,thesystemwillprovide:
+– Hapticcues: Vibrationfeedbackwillconfirmsuccessfulinteractions.
+18
+
+– Visual waveform: A real-time waveform display will provide immediate visual
+confirmationofvoicecapture.
+– Status notifications: Non-intrusive “Toast” notifications will provide transient
+status updates (e.g., “Saved successfully”) without interrupting the narrative
+flow.
+These mechanisms reduce perceptual and cognitive effort, directly addressing the usability
+barriersidentifiedinChapter2.
+3.3 Human Factors Design Rationale
+These design decisions come from established Human Factors and UX principles. Table
+3.1 maps five key design features to their theoretical justifications and the specific user
+challengestheyaddress.
+Table3.1: MappingofDesignFeaturestoHumanFactorsPrinciples.
+DesignFeature Justification(PrincipleandRationale) Challenges
+Fitts’sLaw. Maximizingtouchtargetsize
+Oversized(48pt+)
+reducesphysicalandcognitiveeffort, A.2,C.1
+Full-WidthButtons
+minimizingerrors.
+ReducingCognitiveLoad. Eachscreenpresents
+Linear,Single-Task
+oneprimaryaction,eliminatingdecision B.1
+ScreenDesign
+paralysisandworkingmemoryburden.
+UniversalUndoand ForgivingDesign. Makingerrorseasily
+Gentle reversiblecreatesapsychological“safetynet,” C.1
+Confirmations loweringanxietyandencouragingexploration.
+Accessibility. Voicebypassesphysicalbarriers
+Voice-Firstas
+(vision,motorcontrol)andalignswiththe A.1,A.2,C.2
+PrimaryInteraction
+naturalstorytellingstyle.
+Empowering, EmotionalDesign. Asupportivetone(e.g.,
+RespectfulUX “Wonderful! Thismemoryissafelykept.”) C.2,C.3
+Writing buildsuserconfidenceandself-esteem.
+19
+
+3.4 Intelligence Layer: Smart Recording Pipeline
+Theintelligencelayerintroducesanoptional, SmartRecordingmodel,replacingcommand-
+driven interaction with naturalistic dialogue when network conditions are stable. This layer
+operates only when connectivity permits, so that the core recording experience remains
+uninterrupted.
+3.4.1 Low-latencyAudioTransport
+ThesystemwillintegrateLiveKit(WebRTC)tomanagefastaudiodelivery. Asanengineer-
+ing goal, we aim to keep prompt response times low enough to feel responsive when online
+promptsareenabled;thisdoesnotaffectthecoreofflinerecordingexperience.
+Table 3.2 summarizes an indicative latency budget for the online prompting mode (when
+enabled).
+Table3.2: LatencyBudgetAllocationfortheLow-LatencyVoicePipeline.
+Stage Budget(ms,indicative)
+On-deviceVAD+pause-on-speechdetection ∼50
+StreamingSTT(Ear) ∼300–500
+LLMreasoning(Brain) ∼400–700
+StreamingTTStime-to-first-audio(Mouth) ∼200–400
+Transport&overhead ∼100–200
+Note: These targets assume optimal 4G/Wi-Fi conditions. Under degraded networks, end-
+to-end latency may exceed 3–5 seconds. Mitigation: If the AI pipeline does not respond
+within 2 seconds, the system times out and transitions to offline recording mode, preventing
+awkwardsilences.
+3.4.2 On-deviceVoiceActivityDetection
+An on-device VAD model operates locally, providing precise speech boundary detection
+withoutnetworkreliance. Thisdesignisintendedtosupportrapidpause-on-speechhandling
+by stopping TTS playback when user speech is detected; we will measure response latency
+understableandimpairednetworks.
+20
+
+3.4.3 CognitiveProcessingChain(“Ear–Brain–Mouth”)
+1. Speech-to-Text (Ear): User speech is converted to text via a cloud API (Deepgram
+Nova-3).
+2. Prompt Generation (Brain): Follow-up questions are generated via an LLM API
+(e.g.,GoogleGemini).
+3. Text-to-Speech (Mouth): Prompts are played aloud via a TTS API (e.g., Deepgram
+Aura).
+Note: Thesearethird-partycloudservices,notcustomimplementations. Thisprojectfocuses
+onintegratingtheseAPIsintoacohesiveuserexperience,notonbuildingspeechorlanguage
+models. As defined in the architecture (Section 5.4), this entire pipeline is non-blocking: if
+anycomponentfailsortimesout,thesystemstrictlydegradestolocalrecordingmodewithout
+interruptingtheuser.
+3.5 Persistence Layer: Smart Data Management
+To prioritize availability and data survivability under network constraints, Time Log imple-
+mentsanOfflineModestrategytohandlenetworkvolatility.
+Local-FirstExecution: Allnarrativedata(audioandmetadata)isstoredlocallyusingExpo
+SQLite managed via Drizzle ORM. So even if the AI pipeline fails, the core recording
+functionremainsavailable.
+AdaptiveOperationalModes:
+• Online Mode: The system streams audio to the Cloud AI to deliver near-real-time
+promptswhenthenetworkisstable(VisualStatus: Green).
+• Offline Mode: Instead of freezing, the system transitions to Offline/Weak-Signal
+Mode. The visual status indicator shifts to Red, and the Sound Cue is triggered
+promptly (design target: median ∼ 200 ms) to reassure the user that the app is still
+listening,allowingthemtofinishtheirstorywithoutpanic.
+Mode Switching Policy: The app monitors connection quality and switches to local-only
+recordingwhentheconnectionbecomesunstable. Topreventmodeflickeringfromtransient
+packet loss, the system enforces a stability check: Offline Mode is triggered only after 3
+consecutive failed probes within a 2-second window. Exact thresholds will be calibrated
+duringpilottesting.
+Sound Cue: The Sound Cue is a locally cached audio asset triggered to resolve ambiguity
+abouttheapp’sstate. Itisactivatedunderthreespecificconditions:
+21
+
+1. Network Degradation: 3 consecutive failed connection probes within a 2-second
+window.
+2. AITimeout: NoresponsefromtheAIpipeline>2000msafteruserspeechends.
+3. ManualActivation: Usermanuallytoggles”OfflineMode”.
+Our design target is a median time-to-cue below 200 ms from trigger detection, complying
+with”immediateresponse”guidelines[23].
+Automatic Sync: The sync layer saves changes locally first and queues uploads via a
+TransactionalSyncQueue. Abackgroundservicemonitorsnetworkstatusandautomatically
+processesthequeuewhentheconnectionreturns. Ifuploadfails,therecordingremainsfully
+accessibleon-device.
+AuditableDataFlowandRetention.
+• Auditable Data Flow: Raw audio is captured and stored locally (encrypted at rest).
+When online prompting is enabled, the client may transmit short audio segments to
+third-party services for transcription and prompt generation. Consent is obtained at
+first launch via an informed-consent screen; users may disable cloud features at any
+time via Settings without affecting local recording. The primary recording remains
+locallystoredandissyncedtothecloudwhenavailable.
+• Privacy Model: The system adheres to the Principle of Data Minimization: audio
+senttothecloudforpromptingisprocessedephemerallyandexplicitlyexcludedfrom
+modeltrainingretentionpolicies. Theroadmapincludesend-to-endencryption.
+• FamilyAccess: Explicitopt-inisrequiredbeforesharing.
+– DefaultPolicy: Offlinebydefault: audioisstoredlocally;uploadsforbackup/sharing
+occur only after the user completes a session, connectivity is restored, and the
+userexplicitlyoptsin.
+– DataRetention: Wheresupported,wewillenablethelowest-retentionconfigura-
+tionavailableandlogtheconfiguredsetting(provider,plan,andretentionmode)
+aspartofthestudyrecord. Studymetadataispseudonymized(hasheduserIDs);
+no direct identifiers are transmitted to third-party inference providers. Any raw
+audiousedforanalysisisstoredsecurelyanddeletedaftertheanalysisperiod(6
+months)unlessexplicitconsentforarchivalisgranted.
+Unlike existing commercial solutions reviewed in Section 2.2, Time Log prioritizes data
+safetyandcontinuityoverforcedonlinefunctionality.
+22
+
+3.6 Technology Selection Rationale
+Table3.3: TechnologyStackandSelectionRationale.
+Component Technology Rationale
+Cross-platformcompatibilityand
+Framework ReactNative(Expo)
+rapiditeration.
+Statictypingtopreventruntime
+Language TypeScript
+errorsandensurecodestability.
+High-performancestylingfor
+Styling NativeWind
+accessibleinterfaces.
+Low-latencyinfrastructureto
+TransportLayer LiveKit(WebRTC) supportoptionalpromptingwhen
+thenetworkisstable.
+Supportsgeneratingbrief,
+AILogic Gemini3.0Flash context-awarefollow-upprompts
+fromthecurrentsessioncontext.
+Localexecutionforimmediate
+VADEngine SileroVAD(On-Device) interruptionhandling(minimal
+networkdependency).
+Reliablelocal-firstcapabilitywith
+Database ExpoSQLite+Supabase acloudbackendfordelayed
+synchronization.
+Type-safedatabaseoperationswith
+ORM DrizzleORM
+SQLiteforoffline-firstpersistence.
+Real-timeerrortrackingtosupport
+Monitoring Sentry
+stabilityforseniors.
+3.7 User Onboarding and Identity Management
+To balance security with usability for older adults, the system provides two sign-in paths: a
+low-frictionpathforprimaryusersandastandardpathforfamilymembers(Figure3.2).
+• TrackA:TheElderPath(ImplicitAuthentication)
+Designedfor“Zero-Friction”access,thistrackusesAnonymousAuthentication. Upon
+the first launch and role selection, the system generates a persistent cryptographic
+session linked to the device’s secure storage. This removes the need for password
+23
+
+management, enabling the “One-Tap” experience where the user is authenticated
+automaticallyinthebackground.
+– Device Pairing: A unique, short-lived 6-digit Device Code is generated locally
+toserveasabindinganchorforfamilymembers.
+• TrackB:TheFamilyPath(ExplicitAuthentication)
+Family members authenticate via standard credentials (Email/Password) to assume
+administrative control. Post-MVP, a Magic Link can be offered as an optional passwordless
+fallback for quick re-entry. Access to the elder’s data is granted strictly through a Device
+Binding Protocol: the family member enters the elder’s Device Code, triggering a
+backendtransactionthatmapsthetwodistinctsessionsintoashared,encryptedFamily
+Circle.
+• AccountRecoveryProtocol(EdgeCases)
+– Device Loss: A family member can generate a verified ”Recovery Code” from
+theFamilyDashboardtore-linkanewdevicetotheexistingelderprofile.
+– No Family Contact: Elders can opt-in to a trusted-contact recovery method
+(email/SMS)duringinitialsetupifnofamilymemberisavailable.
+Session Persistence: Both tracks will periodically refresh long-lived tokens with auto-
+renewalmechanisms,sothatusersarenotloggedoutunexpectedly,maintainingtheillusion
+ofan“always-on”service.
+Figure3.2: TheDual-TrackAuthenticationArchitecture. Twodistinctpathways(Implicitforelders
+and Explicit for families) are bridged via a local device pairing code. This design aims
+toenforceper-useraccesscontrolwhileminimizingauthenticationstepsforolderusers.
+24
+
+Chapter 4. Development Process and Quality Assurance
+This chapter describes the software development process used to meet the reliability, acces-
+sibility,andusersafetyrequirementsforolderadultsidentifiedinChapters1–3. Theproject
+adaptstheformalstructureoftheISO/IEC29110BasicProfilewithanIterativePrototyping
+approach driven by User-Centred Design (UCD) principles. This achieves quality without
+slowingdowntherapidtestingessentialfortechnologydesignedforolderadults.
+4.1 ISO/IEC 29110-4-1:2019 Basic Profile (Very Small Entities)
+The Basic Profile is selected for its lightweight yet fully auditable structure, designed for
+teams of ≤ 6 members delivering reliable and usability-critical systems. All mandatory
+artefacts—plans,requirements, designrecords, testresults, andacceptance documents—are
+producedandarchivedintheprojectrepository.
+Figure4.1: ISO/IEC29110ProcessFlow. ThediagramillustratestheBasicProfiletailoredspecifi-
+callyfortheTimeLogdevelopmentlifecycle.
+4.1.1 ProjectManagement(PM)Process
+The PM process comprises four mandatory activities, each producing verifiable artefacts
+alignedwithISO29110requirements.
+1. Project Planning: Definition of scope, 17-week Gantt schedule, resource allocation,
+andariskregistryfocusedonincorrectAIoutputandnetworklatency/instability.
+25
+
+2. ProjectPlanExecution: TaskexecutiontrackedviaGitHubProjects,withfortnightly
+sprintcommitmentsandartefact-linkedupdates.
+3. Project Assessment and Control: Fortnightly “Plan-vs-Actual” reviews; deviations
+triggerdocumentedcorrectiveactionstopreventtechnical-debtaccumulation.
+4. Project Closure: Formal delivery of the software system and archival of all ISO
+artefacts,includingrequirementstraceabilitymatrices,testrecords,usabilitydatasets,
+andtheacceptancestatement.
+4.1.2 SoftwareImplementation(SI)Process
+TheSoftwareImplementationprocessgovernsthetechnicalexecutionandtransformationof
+userrequirementsintoafunctionalsystem.
+1. Initiation: Setup of React Native + Expo environment, CI/CD pipelines, and version
+control.
+2. RequirementsAnalysis: ExtractionoftraceableUserStoriesandacceptancecriteria
+fromHFEfindings(motorimpairment,contrastneeds,fearofmisoperation).
+3. Architecture and Design: Specification of the layered architecture and WCAG-
+compliantinterfacecomponents.
+4. Construction: Type-safeTypeScriptimplementationintegratingWebRTC,on-device
+VAD,andlocal-firstdatasynchronizationservices.
+5. IntegrationandTest: Validationofthevoicepipelinewithpause-on-speechprompts,
+OfflineFallbacklogic,andearlyheuristicevaluationagainstgerontechnologycriteria.
+6. ProductDelivery: Releaseofvalidatedbuildswithinstallationguidesandtestreports
+forfielddeployment.
+4.2 Iterative Prototyping Model
+Instead of a rigid Waterfall or full Scrum, we adopt an Iterative Prototyping approach.
+The development is divided into two major cycles: Cycle 1 delivers the MVP (Must-Have
+features), and Cycle 2 incorporates user feedback and ‘Should-Have’ extensions. Older
+adults need to see and test real features early—especially abstract features like data syncing
+that are hard to explain without a working demo. Mid-cycle testing by users aged 65+
+identifiesusabilityproblemsearlybeforefreezingcorefeatures.
+26
+
+4.3 Quality Assurance Framework
+Quality assurance addresses not only functional correctness but also psychological safety, a
+keydeterminantoftechnologyadoptionforolderadults.
+4.3.1 StabilityandAccessibilityVerification
+• GlobalErrorBoundaries: ReactErrorBoundariespreventapplicationcrashes(e.g.,
+blankscreenstate)bygracefullyhandlingruntimeerrorsinthecomponenttree.
+• Conversational Recovery: Technical error codes are replaced with natural-language
+promptstoreduceanxietyandmaintainuserconfidence.
+• AccessibilityConformance: ThesystemtargetsWCAG2.1AA,andadoptsselected
+AAA criteria (e.g., contrast ≥ 7:1 and touch targets ≥ 48 dp), verified through
+automatedchecksandmanualaudits.
+4.3.2 VoicePipelineRobustness
+Speech Processing: Validated against elderly-specific speech patterns, specifically slow
+speechrates(≤120wpm)andprolongedhesitationpauses(≥2s),sothattheVADdoesnot
+interruptprematurely.
+4.3.3 NetworkResilienceAssurance
+TovalidatetheChapter3“OfflineMode”strategy,thefollowingtestswillbeconducted:
+• Throttling Tests: The system is tested under simulated packet loss (5–10%) and
+elevatednetworkdelay(>2000ms).
+• Mode Switching & Resilience Verification: This test will validate that the app
+transitionstoofflinecapturewithoutfreezing,andwillrecordthedistributionoftime-
+to-cueafterdegradationisdetected(designtarget: <200msfromdetection). The“3G
+Poor” profile will be used (1 Mbps down, 5% packet loss, 400 ms additional delay).
+Wewilllogtheappliedprofileandverifyitviarepeatedping/throughputchecksbefore
+eachsession.
+PerformanceTargets(Non-functional):
+• Appcold-start: <3seconds.
+• Mode-switchlatency(SoundCuetrigger): <200msfromdegradationdetection.
+• Localdatabasewrite: Everyutteranceispersistedbeforeacknowledgement.
+27
+
+4.3.4 EthicalCompliance
+All user studies involving older adults will adhere to strict ethical research standards. The
+protocolincludesobtaininginformedconsentfromparticipants(orguardians),pseudonymiz-
+ingdata,andprovidingtherighttowithdrawfromthestudyatanytime.
+4.4 Software Configuration Management
+ArigorousSoftwareConfigurationManagement(SCM)strategyestablishestraceabilityand
+reliabledeployment.
+• Version Control and Branching: Adopts the Git Flow model (main / develop /
+feature/*/hotfix/*). PullRequest–basedmergingenablestraceablechangecontrol.
+• Commit Discipline: All commits follow the Conventional Commits 1.0.0 standard
+(feat,fix,refactor,chore)toensuresemantichistoryclarity.
+• ContinuousIntegration/ContinuousDeployment(CI/CD):
+– Build: ExpoEASBuildensuresdeterministicbinarygeneration.
+– Deploy: Over-the-Air (OTA) Updates enable rapid distribution of usability
+patches to elderly testers, significantly shortening the feedback loop compared
+totraditionalAppStorereleasecycles.
+4.5 Evaluation Plan
+To validate the research hypotheses defined in Chapter 1, a rigorous user study will be
+conductedfollowingtheISO/IEC25062CommonIndustryFormatforusabilitytests.
+1. ExperimentalDesign: Thisevaluationwillincludetwodistinctcomponents:
+(a)TechnicalStressTest(H1—Automated): Recordingsurvivabilitywillbeverified
+viascriptedfailureinjectionundersimulatednetworkimpairment(5–10%packetloss,
+2000+ ms delay). Time Log is compared against a cloud-only baseline with local
+persistencedisabled. Thistestrunsautomatedscriptswithouthumanparticipants;the
+metricisfileintegritypost-recovery.
+(b) User Lab Study (H2, H3—Human Participants): We use a within-subjects
+designwithcounterbalancedordering(A/B,BA):(A)standardvoicerecorder(control)
+and (B) Time Log (experimental). Each participant completes a 10-minute reminis-
+cence task per condition using a standardized topic (e.g., “Describe your childhood
+28
+
+home”). Network perturbations are introduced at a fixed point (5 minutes into the
+session)toobserveuserresponsetostatechanges.
+2. Measures: MeasuresaresummarizedinTable4.1.
+3. Hypotheses:
+• H1(Resilience): Underimpairednetworks,TimeLogyieldsahigherproportion
+of locally recoverable recordings and successful post-recovery synchronization
+thanacloud-onlybaseline(nolocalfallback).
+• H2 (Cognitive Load): Compared with a standard voice recorder, Time Log
+reduces perceived workload (NASA-TLX) and reduces interaction overhead
+duringreminiscencetasks.
+• H3 (Psychological safety): Explicit state signaling and the Sound Cue reduce
+interruption-induced anxiety and increase perceived reliability, particularly dur-
+ingnetworkfailures.
+4. Recordingrecoverabilityisdefinedas: (i)anaudiofileexistslocally,(ii)anintegrity
+check passes (checksum), and (iii) session metadata (timestamp, duration) is written
+atsessionend.
+5. OutcomeMeasures:
+• (i)SUS: SystemUsabilityScale.
+• (ii)NASA-TLX:Perceivedworkload.
+• (iii)InteractionEfficiency: Numberofmanualinterventions;timetoresumeafter
+disruptions.
+• (iv)PerceivedReliability&Anxiety: Measuredusingabriefpost-taskquestion-
+naire.
+• (v)NarrativeContinuity: Definedbytwooperationalmetrics:
+– SilentGap: Apause ≥3secondswhereVADdetectsnospeech.
+– UninterruptedSegment: Acontinuousblockofspeechbetweentwosilent
+gaps.
+– ContinuityScore: Ratiooftotalspeechtimetototalsessiontime.
+6. Psychometric: NASA-TLX (Workload) and SUS (Usability) scores collected after
+eachcondition.
+29
+
+Table4.1: MappingofHypothesestoMeasurementsandDataSources.
+Hypothesis CoreFeature Metric(Success/Fail) DataSource
+(i)Recordingsurvivability
+(intactlocalfiles/sessions
+initiated),(ii)Post-recovery
+Local-First syncsuccess(%ofqueued AutomatedStress
+H1: Resilience
+Persistence sessionssyncedwithin5min Test(viaMaestro)
+afteraverified
+network-recoveryevent),(iii)
+Time-to-syncdistribution.
+NASA-TLX;Narrative
+Continuity(silent-gaprate;
+Post-Task
+uninterruptedsegmentlength);
+H2: Questionnaire;
+SmartRecording FalseInterruptionRate
+Offloading VADTimestamp
+(percentageofprompttriggers
+Logs
+duringuserpauses<3sand
+non-speechnoise).
+Perceivedreliabilityandstate
+H3: anxiety(pre-registered5–7 Post-task
+Psychological SoundCue Likertitems);task Questionnaire;
+safety completion/abandonmentrate SessionLogs
+undernetworkfailures.
+Analysis: This is an exploratory usability study. We will compare SUS scores between
+conditions and report descriptive statistics. Qualitative feedback from post-task interviews
+willsupplementthequantitativedata.
+SampleSize: Weplantorecruit10–15participants,arealistictargetforasingle-researcher
+graduation project. This provides sufficient data for exploratory analysis while remaining
+achievablewithintheprojecttimeline.
+Controls & Threats to Validity: To mitigate learning effects, condition order (A/B) is
+counterbalanced (AB/BA). Device model and microphone settings are standardized. Net-
+work conditions are enforced via reproducible Apple Network Link Conditioner profiles
+applying identical impairment sequences (randomized start times) for every participant to
+ensurereproducibility. Hearing/voicecharacteristicsarerecordedascovariates.
+30
+
+Chapter 5. Project Scope and Specifications
+5.1 What This Project Delivers
+Attheendofthisproject,wewilldeliveraworkingmobileappwiththreefeatures:
+1. One-TapRecording: Theusertapsoncetostartrecording. Whenonline,theappasks
+follow-upquestions;whenoffline,itrecordssilently.
+2. Offline Playback: All recordings are saved locally. The user can browse and replay
+themwithoutinternet.
+3. Pre-seeded Family Questions: The app shows pre-loaded questions (stored locally,
+notlive). Theusertapstoreply.
+Not In Scope This Semester: Real-time family messaging, emotion detection, photo anal-
+ysis,customAImodeltraining.
+5.2 Design Principles
+Three design principles, derived from gerontechnology literature and the identified interac-
+tionbarriers,guideourarchitecture:
+• Zero Data Loss: Local SQLite database ensures recording survivability even during
+totalnetworkfailure.
+• InstantStartup: Apptargetsaloadtimeof<2secondsbyreadinglocalcachefirst;
+nospinnerblocking.
+• Background Sync: File uploads happen automatically in the background when the
+networkreturns.
+5.3 Technical Objectives
+Theprojectpursuesfourmeasurableobjectives:
+• Easy Story Recording via helpful AI prompts (switching to simple recording when
+internetisunavailable).
+• Simple Search and Replay: Browsing and replaying stories in a local gallery
+(metadata-basedsearchinMVP).
+31
+
+• Topic Library: Providing pre-loaded and family-submitted questions to guide story-
+telling(one-waynotification,noreal-timeinteraction).
+• ReliableDataSafetythroughofflinestorageandfamily-verifiedpersonaldetails.
+5.4 Scope Prioritization (MoSCoW Method)
+To ensure feasibility within the 17-week timeframe, we apply the MoSCoW prioritization
+methodtodefinesystemboundaries.
+5.4.1 Must-Have(TheMVP)
+Thesefeaturesrepresentthecriticalpath. Ifanyarenotdelivered,theprojectfailsvalidation.
+ThissubsetconstitutestheMinimumViableProduct(MVP):
+• Feature 1: Guided Interview — Local recording with optional AI prompts (falling
+backtosilentrecordingwhenoffline).
+• Feature2: StoryGallery—Localmetadataretrievalandofflineplayback.
+• Feature 3: Topic Library — A set of pre-loaded and family-submitted questions
+(e.g.,“Tellmeaboutyourchildhood”)storedlocallytoguidetheuser.
+• Infrastructure: Local-firstpersistence,offlinestatehandling,andbackgroundsync.
+5.4.2 Should-Have(Cycle2Extensions)
+High-valuefeaturesimplementedonlyafterMVPisstable:
+• Gallerysearchandfilters.
+• Automatedcloudsyncenhancements(iflocalsyncisverified).
+• EnhancedTopicLibraryinteractions.
+5.4.3 Won’t-Have(ExplicitExclusions)
+Featuresexplicitlyexcludedfromthisproject:
+• Real-timeemotionanalysis.
+• Photo-basedmemoryelicitation(ComputerVision).
+• Multi-usersocialtimelines.
+• RAG-basedpersonalizationormodelfine-tuning.
+32
+
+Deliverables.
+• PlanningArtifacts: ProjectPlan,RiskRegistry,TraceabilityMatrix.
+• EngineeringArtifacts: SoftwareRequirementSpecification(SRS),SoftwareDesign
+Document (SDD). Product: Cross-platform binaries (.apk/.ipa), complete source
+code,anddeploymentdocumentation.
+ExplicitScopeLimitations.
+• TargetPopulation(PrimaryUserProfile): Adultsaged65+who:
+– Social Context: Live independently or in care facilities, often experiencing
+“social contraction” (reduced social circles) and desiring stronger connection
+withgeographicallydistantfamilymembers.
+– Cognitive/Motor Profile: Experience normal age-related decline (e.g., mild
+presbyopia, slight hand tremors) but retain the cognitive capacity for coherent
+storytelling(excludesseveredementia).
+– Motivation: Possess a latent desire to document family history but are currently
+deterredbythefrictionofwritingortyping.
+• Implementation Constraints: Definition of scope, 17-week Gantt schedule, re-
+source allocation, and a risk registry focused on incorrect outputs and network la-
+tency/instability. The system will employ transient cloud processing; audio data sent
+to third-party providers is handled using available enterprise configurations to reduce
+retentionwherepossible.
+• Privacy Model: Access is limited to the user and invited family members through
+authenticationandaccesscontrols.
+• Intelligence Scope: In this version, prompts rely on simple, structured user profiles.
+Retrieval-Augmented Generation (RAG) and model personalization are reserved for
+futurework. Nouseraudioisretainedformodeltraining.
+5.5 System Architecture
+TimeLogemploysalayeredarchitecture(seeFigure5.1)comprisingtwologicalloops:
+1. The Local Loop (Edge): Handles on-device Voice Activity Detection (VAD) and
+audio persistence using the device’s local database. This loop aims to keep the UI
+responsiveregardlessofnetworkstatus.
+33
+
+2. The Cloud Loop (Sync): Handles Speech-to-Text (STT) and LLM reasoning. This
+loopisactiveonlywhenthenetworkisstable,providingintelligencewithoutbecoming
+asinglepointoffailure.
+Figure5.1: TimeLogSystemArchitecture: LocalLoopmaintainsresponsiveness,whileCloudLoop
+addsintelligence. Thecorerecordingloop(Record→Store→Replay)isentirelylocal.
+The Cloud Loop (transcription, Auto-Generated Questions) is an optional enhancement
+thatrunsonlywhenconnectivitypermits.
+5.6 Feature Specifications
+ThefollowingsectionsdetailthethreeMVPfeaturesdefinedinSection5.3:
+5.6.1 Feature1: GuidedInterview(StoryRecording)
+The primary interface allows users to record their stories stress-free. It is designed to be
+forgivingofmistakesandnetworkfailures.
+• F1.1 One-Tap Recording: Users tap a single large button to start recording immedi-
+ately.
+• F1.2PauseandResume: Userscanpauserecording(e.g.,tocoughorrest)andresume
+whenready.
+• F1.3DurationDisplay: Thescreenclearlyshowshowlongthecurrentrecordinghas
+lasted(e.g.,“02:35”).
+34
+
+• F1.4VisualWaveform: Ananimatedwaveformprovidesvisualconfirmationthatthe
+microphoneiscapturingsound.
+• F1.5 AI Follow-up Prompts: When online, the app plays a short follow-up audio
+question(e.g.,“Tellmemore”)iftheuserfallssilentfortoolong.
+• F1.6 Topic Refresh: If users dislike the current topic, they can tap “Next” to get a
+newoneimmediately.
+• F1.7 Free Recording Mode: Users can choose to record freely without any AI
+questionsorprompts.
+• F1.8NetworkStatusIndicator: AcleariconshowswhethertheappisOnline(Green)
+orOffline(Red).
+• F1.9 State Change Chime: A sound plays whenever the network status changes,
+alertingtheuserwithoutthemneedingtolookatthescreen.
+• F1.10EndConfirmation: Tapping“Stop”triggersaconfirmationprompt(“Areyou
+sureyouaredone?”) topreventaccidentalstops.
+5.6.2 Feature2: StoryGallery(StoryReview)
+Asimplified,high-contrastplayerthatletsusersfindandlistentotheirpastrecordingseasily.
+• F2.1RecordingList: Userscanscrollthroughalistofalltheirsavedstories.
+• F2.2 Date Grouping: Stories are automatically organized by time (“Today”, “This
+Week”,“Older”).
+• F2.3One-TapPlayback: Tappinganystorycardstartsplayingitimmediately.
+• F2.4SeekControl: Alargesliderallowsuserstojumptoanypartoftherecording.
+• F2.5 Delete with Confirmation: Users can delete a recording, but must confirm the
+actionfirsttoavoidaccidents.
+• F2.6 Story Details: Each card displays the recording date, duration, and the topic
+discussed.
+5.6.3 Feature3: TopicLibrary(TopicSelection)
+Alocallibraryofquestionstohelpuserswhodon’tknowwhattotalkabout.
+• F3.1TopicBrowsing: Userscanbrowsealistofpre-loadedinterviewquestions.
+35
+
+• F3.2CategoryFilter: Topicsareorganizedintosimplecategories(e.g.,“Childhood”,
+“Work”,“Travel”).
+• F3.3FamilyTopics: Questionssubmittedbyfamilymembersappearatthetopofthe
+list.
+• F3.4TopicShuffle: Userscantapabuttontoseearandomnewtopic.
+• F3.5 Reply Status: Topics that have already been answered display a visual check-
+mark.
+Note: To ensure system stability and timely delivery within the semester, this MVP inten-
+tionally excludes complex features such as real-time emotion analysis, photo recognition,
+andsocialtimelines.
+5.7 Reference User Journey (Happy Path)
+Pre-scenario: Wang Xiuying (78) lives alone in Shanghai while her grandson studies in
+London. She feels lonely but finds scheduling video calls difficult due to time zones. She
+often thinks about sharing stories but doesn’t know where to start or fears the technology is
+toocomplicatedforher.
+Pre-condition: The application has been installed and successfully paired with the family
+accountbyacaregiver.
+Figure5.2summarizestheintendedresilienceflowunderadverseconditions:
+1. Initiation (The Trigger): A “Toast” notification appears on her iPad: “Time Log
+suggests: Whatwasyourfavoritefoodwhenyouwereyoung?” Thispromptmotivates
+hertoopentheapp. Theappthengreetsherwithafriendlyinterface.
+2. Engagement&Interruption: Grandmabeginsnarratingnaturally. Midwaythrough,
+thenetworkconnectiondrops—acommonreal-worldedgecase.
+3. Auto-Offline Mode: Instead of freezing, the system transitions automatically to the
+“Offline/Weak-SignalMode.” ThevisualstatusindicatorshiftstoRed,andtheSound
+Cueistriggeredpromptlytoreassureherthattheappisstilllistening,allowingherto
+finishherstorywithoutpanic.
+4. Async Synchronization: Once connectivity is restored, the sync worker uploads the
+cachedaudioforcloudprocessing.
+36
+
+5. Family Delivery: After connectivity returns, the recording is uploaded and becomes
+available to the family member who asked the question. The interaction cycle com-
+pleteswhenthegrandsonlistenstotherecording.
+Figure5.2: TheUserJourney&SystemResilienceMap. Illustratingthehybridoperationalmodes:
+from the ‘Green’ online state to the ‘Red’ offline fallback state, mediated by the Sound
+Cueandbackgroundsynchronization.
+37
+
+5.8 Project Timeline
+Table5.1: Development Timeline. The 17-week schedule allocates time across Foundation, MVP
+Implementation,SystemRefinement,andValidationphases.
+Phase Dates KeyActivities
+Foundation Nov27–Dec17 RequirementAnalysis,UIPrototype(Figma),DevSetup.
+ImplementationofMust-Havefeatures(GuidedInterview,
+MVP StoryGallery,TopicLibrary);Establishmentofthe
+Dec18–Jan28
+Implementation offline-firstdataloop. Milestone: End-to-End
+ConversationalPrototype.
+DevelopmentofShould-Havefeatures(Gallery
+System enhancements,TopicLibraryinteractions);Integrationof
+Jan29–Mar04
+Refinement advancedintelligencelayerssubjecttovelocity.
+Milestone: Feature-FrozenBeta.
+Validation& Older-adultusabilitytests,bugfixes,stabilizationbuffer
+Mar05–Mar25
+Delivery (1week),finalevaluation.
+Timeline Risk Mitigation: Given the complex integration of cloud-based AI services, the
+development timeline is aggressive. To mitigate delivery risks, the project adopts a strict
+MoSCoWprioritizationstrategy(asdefinedinSection5.3). Non-criticalfeatures—advanced
+gallerysearchandsocialinteractions—willbeproactivelydescopedifthecorestabilization
+phase (Validation) requires more time. This approach keeps the critical path—the three
+core MVP Features (Guided Interview, Story Gallery, Topic Library)—robust for the final
+defense.
+Note: Features in the System Refinement phase serve as a conceptual buffer; valid user
+testingcanproceedwithMVPImplementationdeliverablesalone.
+38
+
+Figure5.3: Project Gantt Chart. The timeline illustrates the 17-week development schedule and
+criticalmilestones.
+5.9 Validation Scope (Prototype Limitations)
+Forthefinalevaluation,thefollowingintentionallimitationsapply:
+• Family Notifications: The backend for family notifications uses pre-set scripted
+questions triggered at fixed intervals to isolate variables and ensure consistent test
+conditionsacrossparticipants.
+• CoreContributionFocus: Thecorecontributionliesintheclient-sideresilienceand
+voiceinteractiondesign,notinthebackendmessageroutinginfrastructure.
+• AIPrompting: Promptsrelyonstructureduserprofiles;noemotiondetection,RAG,
+ormodelpersonalizationisimplemented.
+This scoping focuses the validation on the core architectural hypothesis (H1–H3) without
+dependenciesoncomplexbackendsystems.
+39
+
+Chapter 6. Discussion and Conclusion
+6.1 Limitations
+While the proposed system introduces a hybrid architecture for accessible narrative preser-
+vation,ithasseverallimitations.
+6.1.1 TechnicalLimitations
+• Third-Party API Dependency: The cloud-based intelligence layer relies on exter-
+nal providers (Deepgram for STT, Google Gemini for LLM inference, LiveKit for
+WebRTC).ChangesinAPIpricing,termsofservice,orunexpecteddeprecationcould
+impactsystemviability. Themodulararchitectureisdesignedtoreduceswitchingcost,
+thoughprovidersubstitutionwouldstillrequirere-validationoflatencyandquality.
+• Latency Variability: The system targets sub-second response times under typical
+connectivity; under severely degraded networks, Time Log disables live prompting
+andpreservescaptureviaofflinemode.
+• Speech Recognition Accuracy: Automatic speech recognition (ASR) performance
+varies with regional accents, dialects, and non-standard speech patterns common
+among older adults. While the system supports traditional listening with human
+post-processing,real-timetranscriptaccuracymayrequireiterativetuningforspecific
+linguisticcommunities.
+6.1.2 StudyLimitations
+• Sample Size and Demographics: The planned evaluation involves 10–15 partici-
+pants, which limits generalizability across diverse cultural and linguistic populations.
+This sample size is appropriate for exploratory usability research within a graduation
+projectscope.
+• AccountRecoveryAssumption: Reliablerecoverymaydependontheavailabilityof
+atrustedfamilycontact;thisassumptionmaynotholdforsociallyisolatedusers.
+• Geographic and Cultural Context: The primary user research and persona devel-
+opment were conducted within a Chinese urban context. User motivations, family
+dynamics,andtechnologyattitudesmaydiffersignificantlyinotherculturalsettings.
+• Short-TermEvaluation: Theproposedstudymeasuresimmediateusabilityandtask
+completion. Long-term adoption, sustained engagement, and the wellbeing effects of
+regularuseremainunvalidatedwithintheprojectscope.
+40
+
+• Non-Therapeutic Scope: Time Log is designed for storytelling, not as a therapeutic
+or medical intervention. While prior research suggests associations between reminis-
+cence activities and wellbeing, therapeutic outcomes are outside the validation scope
+ofthisMVP.
+6.1.3 TechnologyPortability
+Thesystemisdesignedwithswappablecomponentstoreducevendorlock-in:
+• Speech Services: Currently Deepgram; can be replaced with Google Cloud Speech,
+Azure,oropen-sourceWhisperifpricingoravailabilitychanges.
+• LLM:CurrentlyGoogleGemini;canbereplacedwithOpenAI,AnthropicClaude,or
+localmodels.
+• Backend: Currently Supabase; can be migrated to Firebase or self-hosted Post-
+greSQL.
+Thismodularityreducesvendorlock-inandallowsadaptationtofuturetechnologychanges.
+6.2 Future Work
+Weidentifyseveraldirectionsforfuturedevelopment:
+1. FamilyDashboard: Aweb-basedinterfaceforfamilymemberstoreviewrecordings,
+submit questions, and manage shared content. The current architecture already sup-
+portsfamilyauthenticationanddevicepairing;extendingthistoadedicateddashboard
+isanaturalnextstep.
+2. Animated Agent Feedback: A vector-animated avatar (e.g., an Owl companion) to
+providevisualstatecues—listening,thinking,speaking—reducingrelianceontextand
+buildingemotionalconnectionwithusers.
+3. RAG-Based Personalization: Future versions could use Retrieval-Augmented Gen-
+eration (RAG) to tailor prompts based on previous recordings (e.g., “Last week you
+mentioned your grandmother. Tell me more about her”). The current local-first
+architecture already stores transcripts locally, providing a foundation for this feature
+withoutrefactoring.
+4. Real-Time Family Chat: Expanding the current pre-seeded “Topic Library” into
+a live bidirectional channel where family members could send questions dynami-
+cally and receive audio responses in real-time. The existing WebRTC infrastructure
+(LiveKit)canbeextendedtosupportthis.
+41
+
+5. Multimodal Elicitation: Integrating Computer Vision to allow users to photograph
+olditemsandgeneratecontext-specificquestions.
+6. Longitudinal Studies: Conducting long-term deployment to measure the wellbeing
+impactofreminiscence.
+6.3 Conclusion
+This project proposes and prototypes Time Log, a voice-first application designed to make
+digital storytelling accessible to older adults. By decoupling the recording interface from
+networkdependency,TimeLogmitigatestheriskofstorylossunderpoorconnectivity. The
+planned exploratory evaluation (10–15 participants) will test whether local-first persistence
+improvesrecordingsurvivability(H1),whetheroptionalpromptsreduceperceivedworkload
+(H2), and whether the Sound Cue lowers anxiety during network failures (H3). Beyond
+technical resilience, the system embraces a user-centric philosophy: it adapts technology
+to the senior, rather than forcing the senior to adapt to the technology. It is intended to
+support needs related to legacy, connection, and independence. Time Log is designed to
+lower technical barriers to preserving family memories—helping older adults share their
+stories,onememoryatatime.
+42
+
+References
+[1] M.A.Farage,K.W.Miller,F.Ajayi,andD.Hutchins,“Designprinciplestoaccommodateolderadults,”
+GlobalJournalofHealthScience,vol.4,no.2,pp.2–25,Feb.2012.DOI:10.5539/gjhs.v4n2p2
+[2] C. Augner and M. Augner, “Digital divide in elderly: Self-rated computer skills are associated with
+highereducation,bettercognitiveabilitiesandincreasedmentalhealth,”EuropeanJournalofPsychia-
+try,vol.36,no.3,pp.176–181,2022.DOI:10.1016/j.ejpsy.2022.03.003
+[3] T.-H.Tsai,W.-Y.Lin,Y.-S.Chang,P.-C.Chang,andM.-Y.Lee,“Technologyanxietyandresistanceto
+changebehavioralstudyofawearablecardiacwarmingsystemusinganextendedtamforolderadults,”
+PLoSOne,vol.15,no.1,e0227270,Jan.2020.DOI:10.1371/journal.pone.0227270
+[4] S.ZhangandJ.Song,“Anempiricalinvestigationintothepreferencesoftheelderlyforuserinterface
+design in personal electronic health record systems,” Frontiers in Digital Health, vol. 5, 2024. DOI:
+10.3389/fdgth.2023.1289904
+[5] W. Wannapipat and W. Wiersma, “Bridging the digital divide: User interface design principles for
+enhancing elderly learners’ engagement with educational technology,” in Proc. Int. Conf. Innovative
+TechnologiesandLearning(ICITL2025),ser.LNCS,vol.15913,Cham,Switzerland:Springer,2025,
+pp.284–293.DOI:10.1007/978‐3‐031‐98185‐2_30
+[6] D.P.McAdamsandE.deSt.Aubin,“Atheoryofgenerativityanditsassessmentthroughself-report,
+behavioralacts,andnarrativethemesinautobiography,”JournalofPersonalityandSocialPsychology,
+vol.62,no.6,pp.1003–1015,1992.DOI:10.1037/0022‐3514.62.6.1003
+[7] F.Villar,“Successfulageinganddevelopment:Thecontributionofgenerativityinolderage,”Ageing&
+Society,vol.32,no.7,pp.1087–1105,2012.DOI:10.1017/S0144686X11000973
+[8] M. Pinquart and S. Forstmeier, “Effects of reminiscence interventions on psychosocial outcomes: A
+meta-analysis,”Aging&MentalHealth,vol.16,no.5,pp.541–558,2012.DOI:10.1080/13607863.
+2011.651434
+[9] A.Lazar,H.Thompson,andG.Demiris,“Asystematicreviewoftheuseoftechnologyforreminiscence
+therapy,” Health Education & Behavior, vol. 41, no. 1 Suppl, 51S–61S, Oct. 2014. DOI: 10.1177/
+1090198114537067
+[10] A.Fan,L.Chen,R.Zhang,andR.Lao,“Researchonelderly-friendlydesignofmobileapplicationuser
+interface,” in Proc. SPIE 12612, Int. Conf. Artificial Intelligence and Industrial Design (AIID 2022),
+Bellingham,WA,USA:SPIE,2023,p.1261204.DOI:10.1117/12.2673004
+[11] M. G. Diana, M. L. Mascia, Ł. Tomczyk, and M. P. Penna, “The digital divide and the elderly: How
+urbanandruralrealitiesshapewell-beingandsocialinclusionintheSardiniancontext,”Sustainability,
+vol.17,no.4,p.1718,2025.DOI:10.3390/su17041718
+[12] H.Zhang,S.Yang,andY.Lin,“Astudyontherelationshipbetweentechnologicalaffordanceofage-
+appropriate smart wearable devices and the well-being of older adults,” Frontiers in Public Health,
+vol.13,2025.DOI:10.3389/fpubh.2025.1672136
+[13] D.Zhu,A.A.Mahmud,W.Liu,andD.Wang,“Digitalstorytellingforpeoplewithcognitiveimpairment
+usingavailablemobileapps:Systematicsearchinappstoresandcontentanalysis,”JMIRAging,vol.7,
+no.1,e64525,2024.DOI:10.2196/64525
+[14] S.K.Dam,C.S.Hong,Y.Qiao,andC.Zhang,“AcompletesurveyonLLM-basedAIchatbots,”arXiv
+preprintarXiv:2406.16937,2024.DOI:10.48550/arXiv.2406.16937
+43
+
+[15] K.Loveys,M.Prina,C.Axford,etal.,“Artificialintelligenceforolderpeoplereceivinglong-termcare:
+Asystematicreviewofacceptabilityandeffectivenessstudies,”TheLancetHealthyLongevity,vol.3,
+no.4,e286–e297,Apr.2022.DOI:10.1016/S2666‐7568(22)00034‐4
+[16] J. T. Hancock, M. Naaman, and K. Levy, “AI-mediated communication: Definition, research agenda,
+andethicalconsiderations,”JournalofComputer-MediatedCommunication,vol.25,no.1,pp.89–100,
+2020.DOI:10.1093/jcmc/zmz022
+[17] M.A.Khan,I.U.Din,N.A.Khan,S.Hassan,andA.Almogren,“AdaptivegenerativeAIforelderly-
+assistedlivingenvironments:Aproactiveapproach,”inProc.20247thInt.Conf.InternetAppl.Protoc.
+Serv.(NETAPPS),Piscataway,NJ,USA:IEEE,Jan.2025,pp.1–6.DOI:10.1109/NETAPPS63333.2024.
+10823634
+[18] R. Yang, S. Gao, and Y. Jiang, “Digital divide as a determinant of health in the u.s. older adults:
+Prevalence,trends,andriskfactors,”BMCGeriatrics,vol.24,no.1027,2024.DOI:10.1186/s12877‐
+024‐05612‐y
+[19] I. F. da Silva, F. N. Diniz, A. C. Amaro, T. Silva, G. Andrade, and I. S. Santos, “Perpetua: A multi-
+platformsystemfordigitalstorytellingbetweengrandparentsandgrandchildren,”WorkingwithOlder
+People,2025.DOI:10.1108/WWOP‐07‐2025‐0034
+[20] S.A.Al-Somali,“Integratingartificialintelligence(AI)inhealthcare:Advancingolderadults’health
+management in saudi arabia through AI-powered chatbots,” PeerJ Computer Science, vol. 11, e2773,
+2025.DOI:10.7717/peerj‐cs.2773
+[21] O.Çaylı,“AnAI-poweredenhancedelderlycare(silvercompanion),”OrcleverProceedingsofResearch
+andDevelopment,vol.5,no.1,pp.668–673,2024.DOI:10.56038/oprd.v5i1.617
+[22] K. Fear and C. Gleber, “Shaping the future of older adult care: ChatGPT, advanced AI, and the
+transformationofclinicalpractice,”JMIRAging,vol.6,e51776,2023.DOI:10.2196/51776
+[23] J.Nielsen,“Enhancingtheexplanatorypowerofusabilityheuristics,”inProc.CHI’94:Conf.Human
+FactorsinComputingSystems,NewYork,NY,USA:ACM,1994,pp.152–158.DOI:10.1145/191666.
+191729
+44
+

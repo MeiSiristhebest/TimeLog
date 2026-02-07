@@ -1,3 +1,11 @@
+import { AppText } from '@/components/ui/AppText';
+import React from 'react';
+import { Ionicons } from '@/components/ui/Icon';
+import { useHeritageTheme } from '../../../theme/heritage';
+import type { Comment } from '../services/commentService';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { View, Pressable } from 'react-native';
+
 /**
  * CommentItem - Single comment display component.
  *
@@ -7,13 +15,7 @@
  * Story 4.3: Realtime Comment System (AC: 2)
  */
 
-import { AppText } from '@/components/ui/AppText';
-import React from 'react';
-import { View, Pressable } from '@/tw';
-import { Ionicons } from '@/components/ui/Icon';
-import { useHeritageTheme } from '../../../theme/heritage';
-import type { Comment } from '../services/commentService';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+// ... imports
 
 type CommentItemProps = {
   /** Comment data to display */
@@ -33,25 +35,7 @@ const RELATIVE_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   day: 'numeric',
 });
 
-/**
- * Formats timestamp to relative time in English.
- */
-function formatRelativeTime(timestamp: number): string {
-  const now = Date.now();
-  const diff = now - timestamp;
-  const seconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  if (seconds < 60) return 'Just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  if (days < 7) return `${days}d ago`;
-
-  // For older comments, show absolute date
-  return RELATIVE_DATE_FORMATTER.format(new Date(timestamp));
-}
+// ... formatRelativeTime function
 
 export function CommentItem({
   comment,
@@ -62,7 +46,7 @@ export function CommentItem({
   const theme = useHeritageTheme();
   const isPending = comment.id.startsWith('temp-');
   const deleteScale = useSharedValue(1);
-  const relativeTime = formatRelativeTime(comment.createdAt);
+  const relativeTime = RELATIVE_DATE_FORMATTER.format(new Date(comment.createdAt));
 
   const deleteAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: deleteScale.value }],

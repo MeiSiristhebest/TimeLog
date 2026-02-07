@@ -5,11 +5,11 @@
  * Story 5.1: Home Contextual Insights (AC: 1)
  */
 
-import { AppText } from '@/components/ui/AppText';
-import { View, Pressable } from 'react-native';
 import Animated, { useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
 import { Activity } from '../services/activityService';
 import { useHeritageTheme } from '@/theme/heritage';
+import { AppText } from '@/components/ui/AppText';
+import { View, Pressable } from 'react-native';
 
 interface ActivityCardProps {
   activity: Activity;

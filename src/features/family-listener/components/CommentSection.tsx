@@ -10,8 +10,7 @@
 import { AppText } from '@/components/ui/AppText';
 import type { ReactNode } from 'react';
 import React from 'react';
-import { View } from '@/tw';
-import { KeyboardAvoidingView, Platform } from 'react-native';
+import { Platform, View, KeyboardAvoidingView } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import { useHeritageTheme } from '../../../theme/heritage';
 import { useComments } from '../hooks/useComments';

@@ -13,15 +13,22 @@ export type TopicQuestion = {
   text: string;
   /** Optional category for grouping questions */
   category?:
-    | 'childhood'
-    | 'family'
-    | 'career'
-    | 'memories'
-    | 'wisdom'
-    | 'general'
-    | 'milestones'
-    | 'adventures'
-    | 'reflections';
+  | 'childhood'
+  | 'family'
+  | 'career'
+  | 'memories'
+  | 'wisdom'
+  | 'general'
+  | 'milestones'
+  | 'adventures'
+  | 'reflections'
+  | 'travel'
+  | 'education'
+  | 'hobbies'
+  | 'celebrations'
+  | 'food'
+  | 'friendship'
+  | 'history';
   /** Whether this is a family-submitted question */
   isFromFamily?: boolean;
   /** Family member name if submitted by family */
@@ -56,6 +63,7 @@ export type AudioRecording = {
   userId?: string | null;
   deviceId?: string | null;
   title?: string | null;
+  coverImagePath?: string | null;
   isDeleted?: boolean;
   deletedAt?: number | null;
 };
@@ -72,11 +80,30 @@ export type User = {
 };
 
 /**
+ * Full user profile details (local + cloud).
+ */
+export type UserProfile = {
+  id: string;
+  userId: string;
+  displayName: string | null;
+  birthDate: string | null;
+  language: string | null;
+  fontScaleIndex: number | null;
+  avatarUri: string | null;
+  avatarUrl: string | null;
+  role: 'storyteller' | 'family';
+  bio: string | null;
+  isAnonymous: boolean | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/**
  * Sync queue item for offline operations.
  */
 export type SyncQueueItem = {
   id: string;
-  type: 'upload_recording' | 'update_metadata' | 'create_profile';
+  type: 'upload_recording' | 'update_metadata' | 'create_profile' | 'upload_transcript_segment';
   recordingId?: string | null;
   payload: string; // JSON string
   createdAt: number;

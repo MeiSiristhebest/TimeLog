@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { View } from '@/tw';
+import { View } from 'react-native';
 
 // Heritage Palette skeleton colors
 const SKELETON_PULSE = '#EDE5D8'; // Surface Dim

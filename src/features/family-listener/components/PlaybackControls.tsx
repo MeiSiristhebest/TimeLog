@@ -9,11 +9,11 @@
  * Story 4.2: Secure Streaming Player (AC: 2)
  */
 
-import { AppText } from '@/components/ui/AppText';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import Slider from '@react-native-community/slider';
 import { useHeritageTheme } from '@/theme/heritage';
+import { AppText } from '@/components/ui/AppText';
+import { View, TouchableOpacity } from 'react-native';
 
 type PlaybackControlsProps = {
   /** Whether audio is currently playing */
@@ -68,23 +68,25 @@ export function PlaybackControls({
   };
 
   return (
-    <View style={styles.container}>
+    <View className="w-full items-center">
       {/* Time Display */}
-      <View style={styles.timeRow}>
+      <View className="w-full flex-row justify-between px-2 mb-2">
         <AppText
-          style={[styles.timeText, { color: colors.onSurface }]}
+          className="text-base"
+          style={{ color: colors.onSurface }}
           accessibilityLabel={`Current time ${formatTime(positionMs)}`}>
           {formatTime(positionMs)}
         </AppText>
         <AppText
-          style={[styles.timeText, { color: colors.textMuted }]}
+          className="text-base"
+          style={{ color: colors.textMuted }}
           accessibilityLabel={`Total duration ${formatTime(durationMs)}`}>
           {formatTime(durationMs)}
         </AppText>
       </View>
 
       {/* Seek Bar */}
-      <View style={styles.sliderContainer}>
+      <View className="w-full mb-8">
         <Slider
           value={positionMs}
           minimumValue={0}
@@ -93,7 +95,7 @@ export function PlaybackControls({
           minimumTrackTintColor={colors.primary}
           maximumTrackTintColor={colors.border}
           thumbTintColor={colors.primary}
-          style={styles.slider}
+          style={{ width: '100%', height: 40 }}
           accessibilityLabel={`Playback progress ${formatTime(positionMs)} / ${formatTime(durationMs)}`}
           accessibilityRole="adjustable"
         />
@@ -103,12 +105,10 @@ export function PlaybackControls({
       <TouchableOpacity
         onPress={onPlayPause}
         disabled={isBuffering}
-        style={[
-          styles.playButton,
-          {
-            backgroundColor: isBuffering ? colors.border : colors.primary,
-          },
-        ]}
+        className="w-[72px] h-[72px] items-center justify-center rounded-full"
+        style={{
+          backgroundColor: isBuffering ? colors.border : colors.primary,
+        }}
         accessibilityRole="button"
         accessibilityLabel={isBuffering ? 'Loading' : getButtonLabel()}
         accessibilityState={{ disabled: isBuffering }}>
@@ -121,51 +121,15 @@ export function PlaybackControls({
 
       {/* Buffering indicator text */}
       {isBuffering && (
-        <AppText style={[styles.statusText, { color: colors.textMuted }]}>Loading...</AppText>
+        <AppText className="mt-3 text-base" style={{ color: colors.textMuted }}>Loading...</AppText>
       )}
 
       {/* Completion message */}
       {isCompleted && !isBuffering && (
-        <AppText style={[styles.statusText, { color: colors.textMuted }]}>
+        <AppText className="mt-3 text-base" style={{ color: colors.textMuted }}>
           Playback completed
         </AppText>
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  timeRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    marginBottom: 8,
-  },
-  timeText: {
-    fontSize: 16,
-  },
-  sliderContainer: {
-    width: '100%',
-    marginBottom: 32,
-  },
-  slider: {
-    width: '100%',
-    height: 40,
-  },
-  playButton: {
-    width: 72,
-    height: 72,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 36,
-  },
-  statusText: {
-    marginTop: 12,
-    fontSize: 16,
-  },
-});
