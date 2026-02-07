@@ -2,7 +2,7 @@
  * Mock Data for Auth & Security Features
  */
 
-import { MaterialIcons } from '@expo/vector-icons';
+// import { MaterialIcons } from '@expo/vector-icons';
 
 export const AUTH_STRINGS = {
   role: {
@@ -111,7 +111,7 @@ export type ConsentItem = {
   title: string;
   description: string;
   consentedAt: string;
-  icon: keyof typeof MaterialIcons.glyphMap;
+  icon: any; // keyof typeof Ionicons.glyphMap
 };
 
 export const MOCK_CONSENT_ITEMS: ConsentItem[] = [
@@ -121,7 +121,7 @@ export const MOCK_CONSENT_ITEMS: ConsentItem[] = [
     description:
       'Short audio clips are sent to our AI service to generate follow-up questions and transcripts. Full recordings remain local first.',
     consentedAt: '2026-01-15',
-    icon: 'psychology',
+    icon: 'hardware-chip',
   },
   {
     id: 'cloud_storage',
@@ -136,6 +136,6 @@ export const MOCK_CONSENT_ITEMS: ConsentItem[] = [
     title: 'Family Sharing',
     description: 'Connected family members can listen to your stories and leave comments.',
     consentedAt: '2026-01-15',
-    icon: 'family-restroom',
+    icon: 'people',
   },
 ];

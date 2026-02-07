@@ -4,7 +4,6 @@ import { Share } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
-
 import { getStoredRole, setStoredRole } from '@/features/auth/services/roleStorage';
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { showSuccessToast } from '@/components/ui/feedback/toast';
@@ -16,6 +15,8 @@ import {
   revokeDevice,
   DeviceSummary,
 } from '../services/deviceCodesService';
+import { signInAnonymously } from '../services/anonymousAuthService';
+import { supabase } from '@/lib/supabase';
 import { devLog } from '@/lib/devLogger';
 
 // Hook for Role Screen Logic
@@ -28,8 +29,25 @@ export function useRoleLogic() {
   const ROLE_FAMILY = 'family';
 
   useEffect(() => {
-    getStoredRole()
-      .then((role) => {
+    async function checkAuthState() {
+      try {
+        // Check for existing session first
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session) {
+          devLog.info('[useRoleLogic] Found existing session, redirecting to app');
+          const role = await getStoredRole();
+
+          if (role === ROLE_STORYTELLER) {
+            router.replace('/device-code');
+          } else {
+            router.replace('/(tabs)');
+          }
+          return;
+        }
+
+        // No session, check stored role for routing
+        const role = await getStoredRole();
         if (role === ROLE_STORYTELLER) {
           router.replace('/device-code');
           return;
@@ -38,16 +56,42 @@ export function useRoleLogic() {
           router.replace('/(tabs)');
           return;
         }
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    checkAuthState();
   }, []);
 
   const handleSelect = async (role: string) => {
-    await setStoredRole(role);
-    if (role === ROLE_STORYTELLER) {
-      router.replace('/device-code');
-    } else {
-      router.replace('/(tabs)');
+    try {
+      await setStoredRole(role);
+
+      if (role === ROLE_STORYTELLER) {
+        // Check if user already has a session
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+          // Auto sign in anonymously for storytellers (only if no session exists)
+          devLog.info('[useRoleLogic] Signing in storyteller anonymously');
+          await signInAnonymously();
+        } else {
+          devLog.info('[useRoleLogic] Using existing session:', session.user.id);
+        }
+
+        router.replace('/device-code');
+      } else {
+        // Family users need to login
+        router.replace('/(tabs)');
+      }
+    } catch (error) {
+      devLog.error('[useRoleLogic] Failed to handle role selection:', error);
+      HeritageAlert.show({
+        title: 'Error',
+        message: 'Failed to continue. Please try again.',
+        variant: 'error',
+      });
     }
   };
 
@@ -170,9 +214,9 @@ export function useDeviceCodeLogic() {
 
   const formattedCode = codeData
     ? {
-        part1: codeData.code.substring(0, 3),
-        part2: codeData.code.substring(3, 6),
-      }
+      part1: codeData.code.substring(0, 3),
+      part2: codeData.code.substring(3, 6),
+    }
     : { part1: '...', part2: '...' };
 
   return {

@@ -1,5 +1,9 @@
 import { supabase } from '@/lib/supabase';
 import { checkDeviceCodeRateLimit, recordDeviceCodeAttempt } from './deviceCodeRateLimiter';
+import {
+  getStoredDeviceCode,
+  setStoredDeviceCode,
+} from './deviceCodeStorage';
 
 export type DeviceCodeResult = {
   code: string;
@@ -23,8 +27,16 @@ export type DeviceSummary = {
 };
 
 export async function generateDeviceCode(): Promise<DeviceCodeResult> {
+  // 1. Check local storage first
+  const stored = getStoredDeviceCode();
+  if (stored) {
+    return stored;
+  }
+
+  // 2. Rate limit check
   await checkDeviceCodeRateLimit('device-code-global');
 
+  // 3. Generate new code via RPC
   const { data, error } = await supabase.rpc('generate_device_code');
   if (error) {
     if (error.message.includes('rate_limit_exceeded')) {
@@ -40,10 +52,15 @@ export async function generateDeviceCode(): Promise<DeviceCodeResult> {
     throw new Error('Unable to generate a device code right now.');
   }
 
-  return {
+  const result = {
     code: row.code,
     expiresAt: row.expires_at,
   };
+
+  // 4. Persist new code
+  setStoredDeviceCode(result);
+
+  return result;
 }
 
 export async function listFamilyDevices(): Promise<DeviceSummary[]> {
