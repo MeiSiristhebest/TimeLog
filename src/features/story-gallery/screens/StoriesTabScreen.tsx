@@ -9,7 +9,7 @@
 
 import type { AudioRecording } from '@/types/entities';
 import { useCallback } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@/components/ui/Icon';
 import { StoryList } from '@/features/story-gallery/components/StoryList';
@@ -43,6 +43,8 @@ export default function StoriesTabScreen(): JSX.Element {
     sortModalVisible,
     setSortModalVisible,
     focusedStoryId,
+    searchQuery,
+    setSearchQuery,
     actions,
   } = useStoryGallery();
 
@@ -79,6 +81,27 @@ export default function StoriesTabScreen(): JSX.Element {
           <AppText style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</AppText>
         </View>
         <SortButton onPress={() => setSortModalVisible(true)} />
+      </View>
+
+      {/* Search */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder={GALLERY_STRINGS.header.searchPlaceholder}
+          placeholderTextColor={`${colors.onSurface}55`}
+          style={[
+            styles.searchInput,
+            {
+              borderColor: colors.border,
+              color: colors.onSurface,
+              backgroundColor: colors.surfaceCard,
+            },
+          ]}
+          autoCapitalize="none"
+          autoCorrect={false}
+          clearButtonMode="while-editing"
+        />
       </View>
 
       {/* Filter Bar */}
@@ -184,6 +207,17 @@ const styles = StyleSheet.create({
   sortText: {
     fontSize: 15,
     fontWeight: '600',
+  },
+  searchContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 10,
+  },
+  searchInput: {
+    height: 46,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    fontSize: 16,
   },
   content: {
     flex: 1,

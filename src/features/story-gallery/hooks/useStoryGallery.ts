@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { asc } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
@@ -11,16 +11,80 @@ import {
 } from '@/components/ui/feedback/toast';
 import { FilterCategory, GALLERY_STRINGS, mapRawCategoryToFilter } from '../data/mockGalleryData';
 import { SortOption } from '../components/SortOptionsModal';
-import { getQuestionById } from '@/features/recorder/data/topicQuestions';
+import { getQuestionById, TOPIC_QUESTIONS } from '@/features/recorder/data/topicQuestions';
 import { db } from '@/db/client';
 import { transcriptSegments } from '@/db/schema';
 
+const SEARCH_DEBOUNCE_MS = 180;
+
 export function useStoryGallery() {
   const router = useRouter();
-  const { stories, isLoading } = useStories();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery.trim());
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
+
+  const matchingTopicIds = useMemo(() => {
+    const normalizedQuery = debouncedSearchQuery.trim().toLowerCase();
+    if (!normalizedQuery) {
+      return [];
+    }
+
+    const matched = new Set<string>();
+
+    TOPIC_QUESTIONS.forEach((question) => {
+      const text = question.text.trim().toLowerCase();
+      const rawCategory = (question.category ?? 'general').trim().toLowerCase();
+      const mappedCategory = mapRawCategoryToFilter(rawCategory);
+      const categoryTokens = [rawCategory, rawCategory.replace(/_/g, ' '), mappedCategory];
+
+      const matchesText = text.includes(normalizedQuery);
+      const matchesCategory = categoryTokens.some(
+        (token) => token.includes(normalizedQuery) || normalizedQuery.includes(token)
+      );
+
+      if (matchesText || matchesCategory) {
+        matched.add(question.id);
+      }
+    });
+
+    return [...matched];
+  }, [debouncedSearchQuery]);
   const { data: segments } = useLiveQuery(
     db.select().from(transcriptSegments).orderBy(asc(transcriptSegments.storyId), asc(transcriptSegments.segmentIndex))
   );
+
+  const matchingStoryIds = useMemo(() => {
+    const normalizedQuery = debouncedSearchQuery.trim().toLowerCase();
+    if (!normalizedQuery) {
+      return [];
+    }
+
+    const matched = new Set<string>();
+    (segments ?? []).forEach((segment) => {
+      const text = segment.text.trim().toLowerCase();
+      if (!text) {
+        return;
+      }
+      if (text.includes(normalizedQuery)) {
+        matched.add(segment.storyId);
+      }
+    });
+
+    return [...matched];
+  }, [debouncedSearchQuery, segments]);
+
+  const { stories, isLoading } = useStories({
+    searchQuery: debouncedSearchQuery,
+    matchingTopicIds,
+    matchingStoryIds,
+  });
 
   // Local State
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -211,6 +275,8 @@ export function useStoryGallery() {
     sortModalVisible,
     setSortModalVisible,
     focusedStoryId, // Exported for UI
+    searchQuery,
+    setSearchQuery,
     // Actions
     actions: {
       onSelectStory: handleSelectStory, // Now sets focus

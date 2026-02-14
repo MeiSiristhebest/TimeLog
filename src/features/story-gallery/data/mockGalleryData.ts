@@ -21,9 +21,10 @@ export const GALLERY_STRINGS = {
     title: 'My Stories',
     subtitleSuffix: ' memories recorded',
     sortButton: 'Sort',
+    searchPlaceholder: 'Search title, transcript, or topic',
   },
   emptyState: {
-    message: 'No stories found',
+    message: 'No stories found for this search',
   },
   toasts: {
     unavailable: 'Content unavailable offline',

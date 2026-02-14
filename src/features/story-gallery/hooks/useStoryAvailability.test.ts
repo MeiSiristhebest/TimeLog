@@ -6,6 +6,11 @@
 import { hasLocalFile, isStoryPlayable } from './useStoryAvailability';
 import type { AudioRecording, SyncStatus } from '@/types/entities';
 
+jest.mock('@/lib/sync-engine/store', () => ({
+  useSyncStore: (selector: (state: { isOnline: boolean }) => unknown) =>
+    selector({ isOnline: true }),
+}));
+
 // Mock story factory
 const createMockStory = (overrides: Partial<AudioRecording> = {}): AudioRecording => ({
   id: 'test-id-123',
