@@ -1,5 +1,6 @@
 import { createAudioPlayer, AudioPlayer, AudioStatus, setAudioModeAsync } from 'expo-audio';
 import { devLog } from '@/lib/devLogger';
+import { resolveDecryptedAudioPath, type DecryptedAudioHandle } from '@/lib/audioEncryption';
 
 export type PlayerOutputMode = 'speaker' | 'earpiece';
 
@@ -25,6 +26,7 @@ export interface PlayerStatus {
 class PlayerService {
   private player: AudioPlayer | null = null;
   private currentUri: string | null = null;
+  private decryptedHandle: DecryptedAudioHandle | null = null;
   private onStatusUpdate: ((status: PlayerStatus) => void) | null = null;
   private hasConfiguredPlaybackMode = false;
   private outputMode: PlayerOutputMode = 'speaker';
@@ -74,13 +76,19 @@ class PlayerService {
         this.player = null;
         this.currentUri = null;
       }
+      if (this.decryptedHandle) {
+        await this.decryptedHandle.cleanup();
+        this.decryptedHandle = null;
+      }
 
       this.onStatusUpdate = onStatusUpdate;
 
       devLog.info('[PlayerService] Creating new AudioPlayer for:', uri);
 
       // Create new player - strict mode off implies it might throw if native module missing
-      this.player = createAudioPlayer(uri);
+      const decrypted = await resolveDecryptedAudioPath(uri);
+      this.decryptedHandle = decrypted.path === uri ? null : decrypted;
+      this.player = createAudioPlayer(decrypted.path);
       this.currentUri = uri;
 
       // Subscribe to status updates
@@ -144,6 +152,11 @@ class PlayerService {
   }
 
   cleanup(): void {
+    if (this.decryptedHandle) {
+      const handle = this.decryptedHandle;
+      this.decryptedHandle = null;
+      void handle.cleanup();
+    }
     if (this.player) {
       try {
         this.player.pause();

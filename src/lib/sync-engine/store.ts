@@ -12,13 +12,15 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
 import { supabase } from '@/lib/supabase';
-import type { SyncEventType, TranscriptSegmentSyncPayload } from '@/types/entities';
+import { isCloudAiEnabledLocally } from '@/lib/cloudPolicy';
+import type { SyncEventType, TranscriptSegmentSyncPayload, ProfileSyncPayload } from '@/types/entities';
 import { syncQueueService } from '@/lib/sync-engine/queue';
 import { SyncTransport } from './transport';
 import { recordSyncEvent } from './metrics';
 import { playOfflineSyncCue, playOnlineSyncCue } from './soundCues';
 import { resolveUploadAsset } from './transcode';
 import { devLog } from '../devLogger';
+import { resolveDecryptedAudioPath } from '@/lib/audioEncryption';
 
 type SyncStore = {
   // Network state
@@ -47,6 +49,7 @@ type SyncStore = {
       transcodeStatus?: 'pending' | 'ready' | 'fallback_wav' | 'failed';
     }
   ) => Promise<void>;
+  enqueueProfileUpsert: (payload: ProfileSyncPayload) => Promise<void>;
   updateQueueLength: () => Promise<void>;
   initializeListeners: () => void;
   cleanupListeners: () => void;
@@ -82,12 +85,33 @@ function toSupabaseAudioRecordingPatch(updates: Record<string, unknown>): Record
   return patch;
 }
 
+function toSupabaseProfilePatch(payload: ProfileSyncPayload): Record<string, unknown> {
+  const patch: Record<string, unknown> = {
+    updated_at: payload.updatedAt,
+  };
+
+  if (payload.displayName !== undefined) patch.display_name = payload.displayName;
+  if (payload.birthDate !== undefined) patch.birth_date = payload.birthDate;
+  if (payload.language !== undefined) patch.language = payload.language;
+  if (payload.fontScaleIndex !== undefined) patch.font_scale_index = payload.fontScaleIndex;
+  if (payload.avatarUri !== undefined) patch.avatar_uri = payload.avatarUri;
+  if (payload.avatarUrl !== undefined) patch.avatar_url = payload.avatarUrl;
+  if (payload.role !== undefined) patch.role = payload.role;
+  if (payload.bio !== undefined) patch.bio = payload.bio;
+
+  return patch;
+}
+
 type CloudSyncEligibility = {
   eligible: boolean;
   userId: string | null;
 };
 
 async function resolveCloudSyncEligibility(): Promise<CloudSyncEligibility> {
+  if (!isCloudAiEnabledLocally()) {
+    return { eligible: false, userId: null };
+  }
+
   if (!supabase.auth?.getUser) {
     return { eligible: false, userId: null };
   }
@@ -336,6 +360,17 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
       }
     },
 
+    enqueueProfileUpsert: async (payload: ProfileSyncPayload) => {
+      await syncQueueService.enqueueProfileUpsert(payload);
+      await get().updateQueueLength();
+
+      if (get().isOnline) {
+        void get().processQueue().catch((error) => {
+          devLog.warn('[sync-store] Failed to process queue after profile enqueue', error);
+        });
+      }
+    },
+
     // Process sync queue (drain all eligible items)
     processQueue: async () => {
       const { isOnline, isProcessingQueue, appState } = get();
@@ -361,7 +396,8 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
             const needsCloudSession =
               item.type === 'upload_recording' ||
               item.type === 'update_metadata' ||
-              item.type === 'upload_transcript_segment';
+              item.type === 'upload_transcript_segment' ||
+              item.type === 'create_profile';
 
             if (needsCloudSession) {
               const cloudEligibility = await resolveCloudSyncEligibility();
@@ -394,10 +430,17 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
               const storagePath = `${cloudEligibility.userId}/${payload.recordingId}.${uploadExtension}`;
 
               // Calculate MD5 checksum before upload
-              const localChecksum = await transport.calculateMd5Checksum(uploadPath);
+              const decryptedUpload = await resolveDecryptedAudioPath(uploadPath);
+              let localChecksum = '';
+              try {
+                const readableUploadPath = decryptedUpload.path;
+                localChecksum = await transport.calculateMd5Checksum(readableUploadPath);
 
-              // Upload path/format is fixed at enqueue-time for deterministic retries.
-              await transport.uploadFile(uploadPath, AUDIO_STORAGE_BUCKET, storagePath);
+                // Upload path/format is fixed at enqueue-time for deterministic retries.
+                await transport.uploadFile(readableUploadPath, AUDIO_STORAGE_BUCKET, storagePath);
+              } finally {
+                await decryptedUpload.cleanup();
+              }
 
               // Keep cloud row storage path aligned with synced file.
               await updateRemoteAudioRecording(payload.recordingId, {
@@ -467,8 +510,35 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
                 eventType: 'delete_file_success',
               });
             } else if (item.type === 'create_profile') {
-              // Profile sync is not wired yet; keep queue drain non-blocking.
-              devLog.warn('[sync-store] create_profile queue item skipped (not implemented)');
+              const payload = JSON.parse(item.payload) as ProfileSyncPayload;
+              const patch = toSupabaseProfilePatch(payload);
+
+              const { data, error } = await supabase
+                .from('profiles')
+                .update(patch)
+                .eq('user_id', payload.userId)
+                .select('id')
+                .maybeSingle();
+
+              if (error) {
+                throw new Error(error.message);
+              }
+
+              if (!data) {
+                const { error: upsertError } = await supabase
+                  .from('profiles')
+                  .upsert(
+                    {
+                      user_id: payload.userId,
+                      ...patch,
+                    },
+                    { onConflict: 'user_id' }
+                  );
+
+                if (upsertError) {
+                  throw new Error(upsertError.message);
+                }
+              }
             } else {
               throw new Error(`Unsupported sync queue item type: ${item.type}`);
             }

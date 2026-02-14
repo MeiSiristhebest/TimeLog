@@ -133,6 +133,7 @@ export async function offloadStory(id: string): Promise<boolean> {
       if (fileInfo.exists) {
         await FileSystem.deleteAsync(recording.filePath);
       }
+      await FileSystem.deleteAsync(getAnalysisPath(recording.filePath), { idempotent: true });
     } catch (fsError) {
       devLog.warn('[storyService] Failed to delete local file', fsError);
       // Continue to update DB anyway since we effectively lost the file locally
@@ -169,6 +170,7 @@ export async function permanentlyDeleteStory(id: string): Promise<void> {
     if (recording.filePath && recording.filePath !== 'OFFLOADED') {
       try {
         await FileSystem.deleteAsync(recording.filePath, { idempotent: true });
+        await FileSystem.deleteAsync(getAnalysisPath(recording.filePath), { idempotent: true });
       } catch (e) {
         devLog.warn('[storyService] Failed to delete local file during permanent delete', e);
       }
@@ -226,4 +228,13 @@ export async function updateStoryMetadata(
     devLog.error('[storyService] updateStoryMetadata failed:', error);
     throw error;
   }
+}
+function getAnalysisPath(filePath: string): string {
+  if (filePath.toLowerCase().endsWith('.enc')) {
+    return `${filePath}.analysis.json`;
+  }
+  if (filePath.toLowerCase().endsWith('.wav')) {
+    return filePath.replace(/\.wav$/i, '.analysis.json');
+  }
+  return `${filePath}.analysis.json`;
 }

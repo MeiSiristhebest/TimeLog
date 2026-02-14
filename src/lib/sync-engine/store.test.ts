@@ -10,6 +10,7 @@ const mockMaybeSingle = jest.fn();
 const mockSelect = jest.fn(() => ({ maybeSingle: mockMaybeSingle }));
 const mockUpdate = jest.fn(() => ({ eq: mockUpdateEq }));
 const mockUpsert = jest.fn();
+const mockIsCloudAiEnabledLocally = jest.fn();
 
 // Mock dependencies
 jest.mock('@/lib/sync-engine/queue');
@@ -49,6 +50,9 @@ jest.mock('./transcode', () => ({
     extension: 'opus',
   })),
 }));
+jest.mock('@/lib/cloudPolicy', () => ({
+  isCloudAiEnabledLocally: (...args: unknown[]) => mockIsCloudAiEnabledLocally(...args),
+}));
 
 // Mock NetInfo
 jest.mock('@react-native-community/netinfo', () => ({
@@ -62,6 +66,7 @@ describe('SyncStore', () => {
     mockUpdateEq.mockReturnValue({ select: mockSelect });
     mockMaybeSingle.mockResolvedValue({ data: { id: 'rec-123' }, error: null });
     mockUpsert.mockResolvedValue({ error: null });
+    mockIsCloudAiEnabledLocally.mockReturnValue(true);
     // Reset store state
     useSyncStore.setState({
       isOnline: false,
@@ -318,6 +323,104 @@ describe('SyncStore', () => {
       );
       expect(syncQueueService.dequeue).toHaveBeenCalledWith('queue-item-transcript-1');
     });
+
+    it('should process create_profile queue items with update path', async () => {
+      useSyncStore.setState({ isOnline: true, appState: 'active' });
+
+      const mockItem = {
+        id: 'queue-item-profile-1',
+        type: 'create_profile',
+        payload: JSON.stringify({
+          userId: 'user-123',
+          displayName: 'Updated Name',
+          updatedAt: '2026-02-14T10:00:00.000Z',
+        }),
+        status: 'pending',
+        retryCount: 0,
+        createdAt: Date.now(),
+        lastError: null,
+        nextRetryAt: Date.now(),
+      };
+
+      (syncQueueService.peekNext as jest.Mock).mockResolvedValueOnce(mockItem).mockResolvedValueOnce(null);
+      (syncQueueService.markProcessing as jest.Mock).mockResolvedValue(undefined);
+      (syncQueueService.dequeue as jest.Mock).mockResolvedValue(undefined);
+      (syncQueueService.getQueueLength as jest.Mock).mockResolvedValue(0);
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: 'profile-1' }, error: null });
+
+      await useSyncStore.getState().processQueue();
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ display_name: 'Updated Name' })
+      );
+      expect(syncQueueService.dequeue).toHaveBeenCalledWith('queue-item-profile-1');
+    });
+
+    it('should fallback to upsert when create_profile update misses row', async () => {
+      useSyncStore.setState({ isOnline: true, appState: 'active' });
+
+      const mockItem = {
+        id: 'queue-item-profile-2',
+        type: 'create_profile',
+        payload: JSON.stringify({
+          userId: 'user-123',
+          displayName: 'New Profile',
+          updatedAt: '2026-02-14T10:00:00.000Z',
+        }),
+        status: 'pending',
+        retryCount: 0,
+        createdAt: Date.now(),
+        lastError: null,
+        nextRetryAt: Date.now(),
+      };
+
+      (syncQueueService.peekNext as jest.Mock).mockResolvedValueOnce(mockItem).mockResolvedValueOnce(null);
+      (syncQueueService.markProcessing as jest.Mock).mockResolvedValue(undefined);
+      (syncQueueService.dequeue as jest.Mock).mockResolvedValue(undefined);
+      (syncQueueService.getQueueLength as jest.Mock).mockResolvedValue(0);
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      mockUpsert.mockResolvedValueOnce({ error: null });
+
+      await useSyncStore.getState().processQueue();
+
+      expect(mockUpsert).toHaveBeenCalledWith(
+        expect.objectContaining({ user_id: 'user-123', display_name: 'New Profile' }),
+        { onConflict: 'user_id' }
+      );
+      expect(syncQueueService.dequeue).toHaveBeenCalledWith('queue-item-profile-2');
+    });
+
+    it('should mark create_profile item failed when remote sync fails', async () => {
+      useSyncStore.setState({ isOnline: true, appState: 'active' });
+
+      const mockItem = {
+        id: 'queue-item-profile-3',
+        type: 'create_profile',
+        payload: JSON.stringify({
+          userId: 'user-123',
+          displayName: 'Broken',
+          updatedAt: '2026-02-14T10:00:00.000Z',
+        }),
+        status: 'pending',
+        retryCount: 0,
+        createdAt: Date.now(),
+        lastError: null,
+        nextRetryAt: Date.now(),
+      };
+
+      (syncQueueService.peekNext as jest.Mock).mockResolvedValueOnce(mockItem).mockResolvedValueOnce(null);
+      (syncQueueService.markProcessing as jest.Mock).mockResolvedValue(undefined);
+      (syncQueueService.markFailed as jest.Mock).mockResolvedValue(undefined);
+      (syncQueueService.getQueueLength as jest.Mock).mockResolvedValue(0);
+      mockMaybeSingle.mockResolvedValueOnce({ data: null, error: { message: 'profile update failed' } });
+
+      await useSyncStore.getState().processQueue();
+
+      expect(syncQueueService.markFailed).toHaveBeenCalledWith(
+        'queue-item-profile-3',
+        'profile update failed'
+      );
+    });
   });
 
   describe('Enqueue Recording', () => {
@@ -350,6 +453,46 @@ describe('SyncStore', () => {
       await useSyncStore.getState().enqueueRecording('rec-123', '/path/to/file.wav');
 
       expect(syncQueueService.enqueueRecordingUpload).not.toHaveBeenCalled();
+    });
+
+    it('marks recording local_only when cloud AI is disabled even for formal users', async () => {
+      mockIsCloudAiEnabledLocally.mockReturnValueOnce(false);
+      (syncQueueService.isRecordingQueued as jest.Mock).mockResolvedValue(false);
+      (syncQueueService.markRecordingLocalOnly as jest.Mock).mockResolvedValue(undefined);
+      (syncQueueService.getQueueLength as jest.Mock).mockResolvedValue(0);
+
+      await useSyncStore.getState().enqueueRecording('rec-disabled', '/path/to/file.wav');
+
+      expect(syncQueueService.markRecordingLocalOnly).toHaveBeenCalledWith('rec-disabled', {
+        uploadPath: '/path/to/file.opus',
+        uploadExtension: 'opus',
+        transcodeStatus: 'ready',
+      });
+      expect(syncQueueService.enqueueRecordingUpload).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Enqueue Profile Upsert', () => {
+    it('should enqueue profile upsert and trigger processing when online', async () => {
+      useSyncStore.setState({ isOnline: true, appState: 'active' });
+      (syncQueueService.enqueueProfileUpsert as jest.Mock).mockResolvedValue(undefined);
+      (syncQueueService.getQueueLength as jest.Mock).mockResolvedValue(1);
+
+      const processQueueSpy = jest.spyOn(useSyncStore.getState(), 'processQueue');
+
+      await useSyncStore.getState().enqueueProfileUpsert({
+        userId: 'user-123',
+        displayName: 'Storyteller',
+        updatedAt: '2026-02-14T10:00:00.000Z',
+      });
+
+      expect(syncQueueService.enqueueProfileUpsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user-123',
+          displayName: 'Storyteller',
+        })
+      );
+      expect(processQueueSpy).toHaveBeenCalled();
     });
   });
 });

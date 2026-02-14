@@ -142,6 +142,26 @@ describe('SyncQueueService', () => {
     });
   });
 
+  describe('enqueueProfileUpsert', () => {
+    it('should insert queue item with create_profile operation', async () => {
+      await syncQueueService.enqueueProfileUpsert({
+        userId: 'user-1',
+        displayName: 'Storyteller',
+        updatedAt: '2026-02-14T10:00:00.000Z',
+      });
+
+      expect(db.insert).toHaveBeenCalledWith(syncQueue);
+      const insertMock = (db.insert as jest.Mock).mock.results[0].value as ChainableMock;
+      expect(insertMock.values).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'create_profile',
+          priority: 2,
+          status: 'pending',
+        })
+      );
+    });
+  });
+
   describe('peekNext', () => {
     it('should return null if no eligible items', async () => {
       // Mock empty result

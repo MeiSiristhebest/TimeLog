@@ -148,3 +148,16 @@ export type TranscriptSegmentSyncPayload = {
   syncedAt?: number;
   createdAt: number;
 };
+
+export type ProfileSyncPayload = {
+  userId: string;
+  displayName?: string | null;
+  birthDate?: string | null;
+  language?: string | null;
+  fontScaleIndex?: number | null;
+  avatarUri?: string | null;
+  avatarUrl?: string | null;
+  role?: 'storyteller' | 'family' | null;
+  bio?: string | null;
+  updatedAt: string;
+};

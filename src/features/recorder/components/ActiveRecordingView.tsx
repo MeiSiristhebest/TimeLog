@@ -122,7 +122,7 @@ export function ActiveRecordingView({
             <View style={styles.headerCenter}>
               <RecordingModeSwitcher
                 mode="basic"
-                disabled={!canSwitchToAi || controlsDisabled}
+                disabled={controlsDisabled}
                 onSwitch={(mode) => {
                   if (mode === 'ai') onSwitchToAi();
                 }}

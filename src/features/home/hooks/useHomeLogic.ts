@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, DeviceEventEmitter } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {
@@ -32,9 +32,11 @@ import type { DialogMode } from '@/features/recorder/services/AiDialogOrchestrat
 import { getCloudSettings } from '@/features/settings/services/cloudSettingsService';
 import { useProfile } from '@/features/settings/hooks/useProfile';
 import { resolveUploadAsset, type UploadAsset } from '@/lib/sync-engine/transcode';
+import { secureRecordingAssetsAtRest } from '@/lib/audioEncryption';
 import { devLog } from '@/lib/devLogger';
 import { APP_ROUTES, toStoryRoute } from '@/features/app/navigation/routes';
 import { HOME_STRINGS, MONTH_NAMES } from '../data/mockHomeData';
+import { isCloudAiEnabledLocally } from '@/lib/cloudPolicy';
 
 type RecordingMode = 'basic' | 'ai';
 const RECORDING_MODE_KEY = 'recording.mode';
@@ -170,6 +172,7 @@ export function useHomeLogic() {
     const stored = mmkv.getString(RECORDING_MODE_KEY);
     return stored === 'ai' || stored === 'basic' ? stored : 'basic';
   });
+  const recordingModeRef = useRef<RecordingMode>(recordingMode);
 
   const { currentAmplitude, updateAmplitude } = useAudioAmplitude();
   const weather = useWeather();
@@ -178,12 +181,14 @@ export function useHomeLogic() {
   const [isRecorderOnline, setIsRecorderOnline] = useState(syncEngineOnline);
   const recorderOnlineRef = useRef(syncEngineOnline);
   const networkQualityServiceRef = useRef<NetworkQualityService | null>(null);
-  const [cloudAIEnabled, setCloudAIEnabled] = useState(true);
-  const cloudAIEnabledRef = useRef(true);
+  const [cloudAIEnabled, setCloudAIEnabled] = useState(false);
+  const cloudAIEnabledRef = useRef(false);
   const cloudDialogModeRef = useRef<DialogMode>('DIALOG');
   const cloudDialogConnectedRef = useRef(false);
   const cloudDialogConnectInFlightRef = useRef(false);
   const recordingHandleRef = useRef<RecordingHandle | null>(null);
+  const isRecordingPausedRef = useRef(false);
+  const recordingPausedAtMsRef = useRef<number | null>(null);
   const isStartingRecordingRef = useRef(false);
   const isStoppingRecordingRef = useRef(false);
   const isPauseTransitioningRef = useRef(false);
@@ -220,7 +225,7 @@ export function useHomeLogic() {
         setCloudAIEnabled(settings.cloudAIEnabled);
       })
       .catch((error) => {
-        devLog.warn('[useHomeLogic] Failed to resolve cloud settings; using default enabled', error);
+        devLog.warn('[useHomeLogic] Failed to resolve cloud settings; using default disabled', error);
       });
 
     return () => {
@@ -233,12 +238,24 @@ export function useHomeLogic() {
   }, [cloudAIEnabled]);
 
   useEffect(() => {
+    recordingModeRef.current = recordingMode;
+  }, [recordingMode]);
+
+  useEffect(() => {
     recorderOnlineRef.current = isRecorderOnline;
   }, [isRecorderOnline]);
 
   useEffect(() => {
     recordingHandleRef.current = recordingHandle;
   }, [recordingHandle]);
+
+  useEffect(() => {
+    isRecordingPausedRef.current = isRecordingPaused;
+  }, [isRecordingPaused]);
+
+  useEffect(() => {
+    recordingPausedAtMsRef.current = recordingPausedAtMs;
+  }, [recordingPausedAtMs]);
 
   useEffect(() => {
     if (!recordingHandle) {
@@ -361,6 +378,7 @@ export function useHomeLogic() {
 
     if (!canEnableAiMode) {
       setRecordingMode('basic');
+      recordingModeRef.current = 'basic';
       mmkv.set(RECORDING_MODE_KEY, 'basic');
     }
   }, [recordingMode, recordingHandle, isStartingRecording, canEnableAiMode]);
@@ -384,6 +402,7 @@ export function useHomeLogic() {
       .catch((error: unknown) => {
         devLog.warn('[useHomeLogic] Failed to connect cloud dialog from reactive connector', error);
         setRecordingMode('basic');
+        recordingModeRef.current = 'basic';
         mmkv.set(RECORDING_MODE_KEY, 'basic');
         showErrorToast('AI agent is unavailable. Staying in Classic mode.');
       })
@@ -420,6 +439,42 @@ export function useHomeLogic() {
     return () => clearInterval(interval);
   }, [recordingHandle, recordingStartedAtMs, recordingPausedAtMs, recordingTotalPausedMs]);
 
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener(
+      'recording-interruption',
+      (event: { recordingId?: string; isPaused?: boolean }) => {
+        const activeId = recordingHandleRef.current?.metadata.id;
+        if (!activeId || event.recordingId !== activeId) {
+          return;
+        }
+
+        if (event.isPaused) {
+          if (!isRecordingPausedRef.current) {
+            setIsRecordingPaused(true);
+          }
+          if (!recordingPausedAtMsRef.current) {
+            const now = Date.now();
+            setRecordingPausedAtMs(now);
+            recordingPausedAtMsRef.current = now;
+          }
+          return;
+        }
+
+        const pausedAt = recordingPausedAtMsRef.current;
+        if (pausedAt) {
+          setRecordingTotalPausedMs((current) => current + (Date.now() - pausedAt));
+        }
+        setRecordingPausedAtMs(null);
+        recordingPausedAtMsRef.current = null;
+        if (isRecordingPausedRef.current) {
+          setIsRecordingPaused(false);
+        }
+      }
+    );
+
+    return () => subscription.remove();
+  }, []);
+
   // Recording Actions
   const handleStartRecording = useCallback(async () => {
     if (
@@ -436,9 +491,9 @@ export function useHomeLogic() {
     stopTTS();
 
     const canStartAiMode = recordingMode === 'ai' && isAiAvailable && recorderOnlineRef.current;
-    let activeRecordingMode: RecordingMode = canStartAiMode ? 'ai' : 'basic';
     if (recordingMode === 'ai' && !canStartAiMode) {
       setRecordingMode('basic');
+      recordingModeRef.current = 'basic';
       mmkv.set(RECORDING_MODE_KEY, 'basic');
       showErrorToast('AI mode is unavailable now. Switched to Classic mode.');
     }
@@ -448,7 +503,7 @@ export function useHomeLogic() {
         topicId: currentQuestion?.id,
         userId: sessionUserId ?? undefined,
         onSilence: () => {
-          if (activeRecordingMode !== 'ai') {
+          if (recordingModeRef.current !== 'ai') {
             return;
           }
 
@@ -466,7 +521,7 @@ export function useHomeLogic() {
           void replay();
         },
         onSilenceThreshold: () => {
-          if (activeRecordingMode !== 'ai') {
+          if (recordingModeRef.current !== 'ai') {
             return;
           }
 
@@ -492,23 +547,6 @@ export function useHomeLogic() {
           updateAmplitude(metering);
         },
       });
-
-      if (
-        activeRecordingMode === 'ai' &&
-        cloudAIEnabledRef.current &&
-        hasCloudAiInfra &&
-        recorderOnlineRef.current
-      ) {
-        try {
-          await connectCloudDialog(handle.metadata.id);
-        } catch (error) {
-          activeRecordingMode = 'basic';
-          setRecordingMode('basic');
-          mmkv.set(RECORDING_MODE_KEY, 'basic');
-          devLog.warn('[useHomeLogic] Cloud dialog unavailable, falling back to classic mode', error);
-          showErrorToast('AI agent is unavailable. Switched to Classic mode.');
-        }
-      }
 
       setRecordingHandle(handle);
       setIsRecordingPaused(false);
@@ -545,7 +583,6 @@ export function useHomeLogic() {
     hasCloudAiInfra,
     isAiAvailable,
     startWaitingForAiResponse,
-    connectCloudDialog,
   ]);
 
   const handleStopRecording = useCallback(async () => {
@@ -570,6 +607,18 @@ export function useHomeLogic() {
         devLog.warn('[useHomeLogic] Post-recording transcode failed; fallback to wav upload', error);
         return { localPath: finalized.filePath, extension: 'wav' as const };
       });
+      const securedAssets = await secureRecordingAssetsAtRest({
+        recordingId: finalized.id,
+        filePath: finalized.filePath,
+        uploadPath: uploadAsset.localPath,
+        uploadExtension: uploadAsset.extension,
+      }).catch((error: unknown) => {
+        devLog.warn('[useHomeLogic] Failed to encrypt recording assets; keeping plaintext fallback', error);
+        return {
+          encryptedFilePath: finalized.filePath,
+          encryptedUploadPath: uploadAsset.localPath,
+        };
+      });
 
       if (currentQuestion?.isFromFamily) {
         try {
@@ -581,8 +630,8 @@ export function useHomeLogic() {
 
       // Parallelize DB op and UI feedback (Vercel best practice)
       await Promise.all([
-        enqueueRecording(finalized.id, finalized.filePath, {
-          uploadPath: uploadAsset.localPath,
+        enqueueRecording(finalized.id, securedAssets.encryptedFilePath, {
+          uploadPath: securedAssets.encryptedUploadPath,
           uploadExtension: uploadAsset.extension,
           transcodeStatus: uploadAsset.extension === 'opus' ? 'ready' : 'fallback_wav',
         }),
@@ -675,8 +724,33 @@ export function useHomeLogic() {
   }, [recordingHandle, recordingPausedAtMs]);
 
   const setRecordingModeAndPersist = useCallback((mode: RecordingMode) => {
+    const effectiveCloudAiEnabled = isCloudAiEnabledLocally();
+
+    if (effectiveCloudAiEnabled !== cloudAIEnabled) {
+      setCloudAIEnabled(effectiveCloudAiEnabled);
+    }
+
+    if (mode === 'ai') {
+      devLog.info('[useHomeLogic] AI mode gate check', {
+        hasCloudAiInfra,
+        cloudAIEnabledInMemory: cloudAIEnabled,
+        cloudAIEnabledEffective: effectiveCloudAiEnabled,
+        isRecorderOnline,
+      });
+    }
+
+    if (mode === 'ai' && !hasCloudAiInfra) {
+      showErrorToast('AI mode is not configured on this build.');
+      return;
+    }
+
+    if (mode === 'ai' && !effectiveCloudAiEnabled) {
+      showErrorToast('Enable Cloud AI Processing in Settings > Data & Storage first.');
+      return;
+    }
+
     if (mode === 'ai' && !isAiAvailable) {
-      showErrorToast('AI mode requires cloud AI support.');
+      showErrorToast('AI mode is temporarily unavailable.');
       return;
     }
 
@@ -686,6 +760,7 @@ export function useHomeLogic() {
     }
 
     setRecordingMode(mode);
+    recordingModeRef.current = mode;
     mmkv.set(RECORDING_MODE_KEY, mode);
     if (mode === 'ai') {
       return;
@@ -698,6 +773,8 @@ export function useHomeLogic() {
     }
   }, [
     isAiAvailable,
+    hasCloudAiInfra,
+    cloudAIEnabled,
     isRecorderOnline,
     isCloudDialogConnected,
     disconnectCloudDialog,

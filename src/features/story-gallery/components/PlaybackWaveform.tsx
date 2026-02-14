@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { View, LayoutChangeEvent, useWindowDimensions } from 'react-native';
-import * as FileSystem from 'expo-file-system/legacy';
 import { Canvas, Path, Skia, Group } from '@shopify/react-native-skia';
-import { ExpoAudioStreamModule, AudioAnalysis } from '@siteed/expo-audio-studio';
+import { AudioAnalysis } from '@siteed/expo-audio-studio';
 import { useHeritageTheme } from '@/theme/heritage';
 import { devLog } from '@/lib/devLogger';
+import { loadWaveformAnalysis } from '../services/waveformAnalysisService';
 
 interface PlaybackWaveformProps {
     uri: string;
@@ -15,18 +15,6 @@ interface PlaybackWaveformProps {
     height?: number;
     color?: string;
     progressColor?: string;
-}
-
-type AudioAnalysisExtractor = {
-    extractAudioAnalysis?: (options: { fileUri: string }) => Promise<AudioAnalysis>;
-};
-
-async function extractAudioAnalysis(fileUri: string): Promise<AudioAnalysis> {
-    const module = ExpoAudioStreamModule as AudioAnalysisExtractor;
-    if (typeof module.extractAudioAnalysis !== 'function') {
-        throw new Error('Audio analysis extraction is unavailable in this build.');
-    }
-    return module.extractAudioAnalysis({ fileUri });
 }
 
 /**
@@ -60,13 +48,6 @@ export function PlaybackWaveform({
     const activeColor = progressColor || theme.colors.primary;
     const inactiveColor = color || `${theme.colors.primary}55`;
 
-    const getAnalysisPath = (fileUri: string) => {
-        if (fileUri.endsWith('.wav')) {
-            return fileUri.replace(/\.wav$/i, '.analysis.json');
-        }
-        return `${fileUri}.analysis.json`;
-    };
-
     useEffect(() => {
         const timer = setTimeout(() => setPaintReady(true), 90);
         return () => clearTimeout(timer);
@@ -79,35 +60,10 @@ export function PlaybackWaveform({
             if (!uri) return;
 
             try {
-                const analysisPath = getAnalysisPath(uri);
-
-                // 1) Try cache first
-                try {
-                    const info = await FileSystem.getInfoAsync(analysisPath);
-                    if (info.exists) {
-                        const cached = await FileSystem.readAsStringAsync(analysisPath);
-                        const parsed = JSON.parse(cached) as AudioAnalysis;
-                        if (isMounted) {
-                            setAnalysis(parsed);
-                        }
-                        return;
-                    }
-                } catch (cacheError) {
-                    devLog.warn('[PlaybackWaveform] Cache read failed, falling back to extraction:', cacheError);
-                }
-
-                // 2) Extract analysis from file
-                const result = await extractAudioAnalysis(uri);
+                const result = await loadWaveformAnalysis(uri);
 
                 if (isMounted) {
                     setAnalysis(result);
-                }
-
-                // 3) Cache analysis for next time
-                try {
-                    await FileSystem.writeAsStringAsync(analysisPath, JSON.stringify(result));
-                } catch (writeError) {
-                    devLog.warn('[PlaybackWaveform] Cache write failed:', writeError);
                 }
             } catch (error) {
                 devLog.error('[PlaybackWaveform] Failed to load analysis:', error);

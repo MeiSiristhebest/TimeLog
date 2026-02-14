@@ -47,6 +47,15 @@ async function ensureOpusFromWav(wavPath: string): Promise<string | null> {
 }
 
 export async function resolveUploadAsset(filePath: string): Promise<UploadAsset> {
+  const normalizedPath = filePath.toLowerCase();
+  if (normalizedPath.endsWith('.opus.enc')) {
+    return { localPath: filePath, extension: 'opus' };
+  }
+
+  if (normalizedPath.endsWith('.wav.enc')) {
+    return { localPath: filePath, extension: 'wav' };
+  }
+
   if (filePath.toLowerCase().endsWith('.opus')) {
     return { localPath: filePath, extension: 'opus' };
   }

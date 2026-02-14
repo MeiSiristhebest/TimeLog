@@ -42,6 +42,9 @@ function isLocalFilePath(path: string): boolean {
 }
 
 function getAnalysisPath(filePath: string): string {
+  if (filePath.toLowerCase().endsWith('.enc')) {
+    return `${filePath}.analysis.json`;
+  }
   if (filePath.toLowerCase().endsWith('.wav')) {
     return filePath.replace(/\.wav$/i, '.analysis.json');
   }

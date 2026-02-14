@@ -3,7 +3,9 @@ import { useSyncStore } from '@/lib/sync-engine/store';
 // Import type for safety
 import type { SyncQueueItem } from '@/types/entities';
 
-const mockUpdateEq = jest.fn(async () => ({ error: null }));
+const mockMaybeSingle = jest.fn(async () => ({ data: { id: 'rec-1' }, error: null }));
+const mockSelect = jest.fn(() => ({ maybeSingle: mockMaybeSingle }));
+const mockUpdateEq = jest.fn(() => ({ select: mockSelect }));
 const mockUpdate = jest.fn(() => ({ eq: mockUpdateEq }));
 
 // Define the shape of our mocked service including the test helper
@@ -50,7 +52,10 @@ jest.mock('@/lib/sync-engine/transport', () => {
 jest.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
-      getUser: jest.fn(async () => ({ data: { user: null }, error: null })),
+      getUser: jest.fn(async () => ({
+        data: { user: { id: 'user-123', app_metadata: { provider: 'email' } } },
+        error: null,
+      })),
     },
     from: jest.fn((table: string) => {
       if (table === 'audio_recordings') {
@@ -61,10 +66,16 @@ jest.mock('@/lib/supabase', () => ({
   },
 }));
 
+jest.mock('@/lib/cloudPolicy', () => ({
+  isCloudAiEnabledLocally: jest.fn(async () => true),
+}));
+
 describe('Sync engine processQueue', () => {
   beforeEach(() => {
     mockUpdate.mockClear();
     mockUpdateEq.mockClear();
+    mockSelect.mockClear();
+    mockMaybeSingle.mockClear();
     const state = useSyncStore.getState();
     state.setOnline(true);
     state.setAppState('active');

@@ -492,7 +492,7 @@ export async function startRecordingStream(
     intervalAnalysis: 100, // 100ms updates for metering
     enableProcessing: true, // Required for metering/analysis
     keepAwake: true, // Maintains background audio session (requires dev build)
-    autoResumeAfterInterruption: false,
+    autoResumeAfterInterruption: true,
     ios: {
       audioSession: {
         category: 'PlayAndRecord',
@@ -505,6 +505,11 @@ export async function startRecordingStream(
     },
     onRecordingInterrupted: (event: RecordingInterruptionEvent) => {
       isCurrentlyPaused = event.isPaused;
+      DeviceEventEmitter.emit('recording-interruption', {
+        recordingId: metadata.id,
+        reason: event.reason,
+        isPaused: event.isPaused,
+      });
 
       void db
         .update(audioRecordings)

@@ -16,6 +16,8 @@ const mockNewTopic = jest.fn();
 const mockConnectCloudDialog = jest.fn();
 const mockDisconnectCloudDialog = jest.fn();
 const mockStartWaitingForAiResponse = jest.fn();
+const mockShowErrorToast = jest.fn();
+const mockIsCloudAiEnabledLocally = jest.fn(() => true);
 
 let capturedRecordingOptions: Record<string, unknown> | undefined;
 let mockDialogMode: 'DIALOG' | 'DEGRADED' | 'SILENT' = 'DIALOG';
@@ -99,7 +101,7 @@ jest.mock('@/features/auth/store/authStore', () => ({
 }));
 
 jest.mock('@/components/ui/feedback/toast', () => ({
-  showErrorToast: jest.fn(),
+  showErrorToast: (...args: unknown[]) => mockShowErrorToast(...args),
 }));
 
 jest.mock('@/lib/mmkv', () => ({
@@ -147,9 +149,27 @@ jest.mock('@/features/settings/services/cloudSettingsService', () => ({
   getCloudSettings: jest.fn(),
 }));
 
+jest.mock('@/lib/cloudPolicy', () => ({
+  isCloudAiEnabledLocally: () => mockIsCloudAiEnabledLocally(),
+}));
+
+jest.mock('@/features/settings/hooks/useProfile', () => ({
+  useProfile: () => ({
+    profile: null,
+    isLoading: false,
+    error: null,
+    updateProfileData: jest.fn(),
+    uploadProfileAvatar: jest.fn(),
+    refetch: jest.fn(),
+  }),
+}));
+
 describe('cloud ai main-flow integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockShowErrorToast.mockReset();
+    mockIsCloudAiEnabledLocally.mockReset();
+    mockIsCloudAiEnabledLocally.mockReturnValue(true);
     mockGetMMKVString.mockReturnValue('ai');
     process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
     process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'anon-key';
@@ -187,13 +207,28 @@ describe('cloud ai main-flow integration', () => {
   });
 
   it('wires cloud loop into recording start and timeout trigger path', async () => {
-    const { result } = renderHook(() => useHomeLogic());
+    mockCloudConnected = false;
+    const { result, rerender } = renderHook(() => useHomeLogic());
+
+    await waitFor(() => {
+      expect(result.current.state.cloudAIEnabled).toBe(true);
+    });
+    await act(async () => {
+      result.current.actions.setRecordingMode('ai');
+    });
+    await waitFor(() => {
+      expect(result.current.state.recordingMode).toBe('ai');
+    });
 
     await act(async () => {
       await result.current.actions.handleStartRecording();
     });
 
-    expect(mockConnectCloudDialog).toHaveBeenCalledWith('rec-cloud-1');
+    await waitFor(() => {
+      expect(mockConnectCloudDialog).toHaveBeenCalledWith('rec-cloud-1');
+    });
+    mockCloudConnected = true;
+    rerender({});
     expect(capturedRecordingOptions).toBeDefined();
 
     const onSilenceThreshold = capturedRecordingOptions?.onSilenceThreshold as (() => void) | undefined;
@@ -232,8 +267,8 @@ describe('cloud ai main-flow integration', () => {
     });
 
     expect(mockConnectCloudDialog).not.toHaveBeenCalled();
-    expect(mockReplay).toHaveBeenCalled();
-    expect(mockNewTopic).toHaveBeenCalled();
+    expect(mockReplay).not.toHaveBeenCalled();
+    expect(mockNewTopic).not.toHaveBeenCalled();
     expect(mockStartWaitingForAiResponse).not.toHaveBeenCalled();
   });
 
@@ -241,6 +276,16 @@ describe('cloud ai main-flow integration', () => {
     mockDialogMode = 'DEGRADED';
 
     const { result } = renderHook(() => useHomeLogic());
+
+    await waitFor(() => {
+      expect(result.current.state.cloudAIEnabled).toBe(true);
+    });
+    await act(async () => {
+      result.current.actions.setRecordingMode('ai');
+    });
+    await waitFor(() => {
+      expect(result.current.state.recordingMode).toBe('ai');
+    });
 
     await act(async () => {
       await result.current.actions.handleStartRecording();
@@ -279,14 +324,68 @@ describe('cloud ai main-flow integration', () => {
 
   it('still attempts cloud dialog connection when auth store user id is temporarily unavailable', async () => {
     mockSessionUserId = undefined;
+    mockCloudConnected = false;
 
     const { result } = renderHook(() => useHomeLogic());
+
+    await waitFor(() => {
+      expect(result.current.state.cloudAIEnabled).toBe(true);
+    });
+    await act(async () => {
+      result.current.actions.setRecordingMode('ai');
+    });
+    await waitFor(() => {
+      expect(result.current.state.recordingMode).toBe('ai');
+    });
 
     await act(async () => {
       await result.current.actions.handleStartRecording();
     });
 
-    expect(mockConnectCloudDialog).toHaveBeenCalledWith('rec-cloud-1');
+    await waitFor(() => {
+      expect(mockConnectCloudDialog).toHaveBeenCalledWith('rec-cloud-1');
+    });
+  });
+
+  it('can reconnect cloud dialog after switching ai -> classic -> ai during active recording', async () => {
+    mockCloudConnected = false;
+    const { result, rerender } = renderHook(() => useHomeLogic());
+
+    await waitFor(() => {
+      expect(result.current.state.cloudAIEnabled).toBe(true);
+    });
+    await act(async () => {
+      result.current.actions.setRecordingMode('ai');
+    });
+
+    await act(async () => {
+      await result.current.actions.handleStartRecording();
+    });
+
+    await waitFor(() => {
+      expect(mockConnectCloudDialog).toHaveBeenCalledWith('rec-cloud-1');
+    });
+
+    mockCloudConnected = true;
+    rerender({});
+
+    await act(async () => {
+      result.current.actions.setRecordingMode('basic');
+    });
+    await waitFor(() => {
+      expect(mockDisconnectCloudDialog).toHaveBeenCalled();
+    });
+
+    mockCloudConnected = false;
+    rerender({});
+
+    await act(async () => {
+      result.current.actions.setRecordingMode('ai');
+    });
+
+    await waitFor(() => {
+      expect(mockConnectCloudDialog).toHaveBeenCalledTimes(2);
+    });
   });
 
   it('ignores duplicate start requests while recording bootstrap is in flight', async () => {
@@ -353,5 +452,26 @@ describe('cloud ai main-flow integration', () => {
     });
 
     expect(result.current.state.recordingHandle?.metadata.id).toBe('rec-cloud-1');
+  });
+
+  it('blocks ai switch immediately after local cloud toggle is turned off', async () => {
+    mockGetMMKVString.mockReturnValue('basic');
+    mockIsCloudAiEnabledLocally.mockReturnValue(false);
+
+    const { result } = renderHook(() => useHomeLogic());
+
+    await waitFor(() => {
+      expect(result.current.state.cloudAIEnabled).toBe(true);
+    });
+
+    await act(async () => {
+      result.current.actions.setRecordingMode('ai');
+    });
+
+    expect(result.current.state.recordingMode).toBe('basic');
+    expect(mockShowErrorToast).toHaveBeenCalledWith(
+      'Enable Cloud AI Processing in Settings > Data & Storage first.'
+    );
+    expect(mockConnectCloudDialog).not.toHaveBeenCalled();
   });
 });

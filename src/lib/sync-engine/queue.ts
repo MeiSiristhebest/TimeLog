@@ -8,7 +8,7 @@ import { eq, and, lte, lt, gte } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { syncQueue, audioRecordings } from '@/db/schema';
 import { generateId } from '@/utils/id';
-import type { SyncQueueItem, TranscriptSegmentSyncPayload } from '@/types/entities';
+import type { SyncQueueItem, TranscriptSegmentSyncPayload, ProfileSyncPayload } from '@/types/entities';
 
 const MAX_RETRY_COUNT = 5;
 const BASE_BACKOFF_MS = 2000; // 2 seconds
@@ -141,6 +141,22 @@ class SyncQueueService {
       recordingId: record.storyId,
       priority: 3, // Transcript segments are lower priority than metadata
       payload: JSON.stringify(record),
+      createdAt: now,
+      retryCount: 0,
+      status: 'pending',
+      nextRetryAt: now,
+    });
+  }
+
+  async enqueueProfileUpsert(payload: ProfileSyncPayload): Promise<void> {
+    const id = generateId();
+    const now = Date.now();
+
+    await db.insert(syncQueue).values({
+      id,
+      type: 'create_profile',
+      priority: 2,
+      payload: JSON.stringify(payload),
       createdAt: now,
       retryCount: 0,
       status: 'pending',
@@ -312,6 +328,26 @@ class SyncQueueService {
       .where(eq(syncQueue.recordingId, recordingId))
       .limit(1);
     return items.length > 0;
+  }
+
+  async hasPendingProfileUpsert(userId: string): Promise<boolean> {
+    const items = await db
+      .select({ payload: syncQueue.payload })
+      .from(syncQueue)
+      .where(and(eq(syncQueue.type, 'create_profile'), eq(syncQueue.status, 'pending')));
+
+    for (const item of items) {
+      try {
+        const parsed = JSON.parse(item.payload) as Partial<ProfileSyncPayload>;
+        if (parsed.userId === userId) {
+          return true;
+        }
+      } catch {
+        // Ignore malformed payload rows and continue scanning.
+      }
+    }
+
+    return false;
   }
 
   /**
