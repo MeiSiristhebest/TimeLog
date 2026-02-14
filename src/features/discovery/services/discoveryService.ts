@@ -7,6 +7,8 @@
 
 import { supabase } from '@/lib/supabase';
 import { devLog } from '@/lib/devLogger';
+import { TOPIC_QUESTIONS } from '@/features/recorder/data/topicQuestions';
+import { getUnansweredQuestions, type FamilyQuestion } from '@/features/family-listener/services/questionService';
 
 export interface DiscoveryQuestion {
     id: string;
@@ -29,13 +31,6 @@ interface DiscoveryQuestionRow {
     created_at?: string;
 }
 
-interface FamilyQuestionRow {
-  id: string;
-  question_text: string;
-  category: string | null;
-  created_at: string;
-}
-
 /**
  * Transform raw DB row to DiscoveryQuestion
  */
@@ -50,14 +45,27 @@ function transformQuestion(row: DiscoveryQuestionRow): DiscoveryQuestion {
     };
 }
 
-function transformFamilyQuestion(row: FamilyQuestionRow): DiscoveryQuestion {
+function transformFamilyQuestion(row: FamilyQuestion): DiscoveryQuestion {
   return {
     id: row.id,
-    text: row.question_text,
+    text: row.questionText,
     category: row.category ?? 'family',
     priority: 0,
-    tags: ['family'],
-    createdAt: row.created_at,
+    tags: ['family', 'family_prompt'],
+    createdAt: row.createdAt,
+  };
+}
+
+function transformLocalPresetQuestion(
+  question: (typeof TOPIC_QUESTIONS)[number],
+  index: number
+): DiscoveryQuestion {
+  return {
+    id: `preset-${question.id}`,
+    text: question.text,
+    category: question.category ?? 'general',
+    priority: Math.max(0, TOPIC_QUESTIONS.length - index),
+    tags: ['preset', question.category ?? 'general'],
   };
 }
 
@@ -91,6 +99,52 @@ function scoreForPriority(question: DiscoveryQuestion): number {
   return familyBoost + question.priority;
 }
 
+function normalizeQuestionText(text: string): string {
+  return text.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function dedupeByQuestionText(questions: DiscoveryQuestion[]): DiscoveryQuestion[] {
+  const seen = new Set<string>();
+  const deduped: DiscoveryQuestion[] = [];
+
+  questions.forEach((question) => {
+    const key = normalizeQuestionText(question.text);
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduped.push(question);
+    }
+  });
+
+  return deduped;
+}
+
+function sortQuestions(a: DiscoveryQuestion, b: DiscoveryQuestion): number {
+  const priorityDelta = scoreForPriority(b) - scoreForPriority(a);
+  if (priorityDelta !== 0) return priorityDelta;
+
+  const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+  const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+  return bTime - aTime;
+}
+
+function buildLocalPresetQuestions(
+  limit: number,
+  expandedCategories?: string[]
+): DiscoveryQuestion[] {
+  const categorySet = expandedCategories ? new Set(expandedCategories) : null;
+
+  return TOPIC_QUESTIONS
+    .filter((question) => {
+      if (!categorySet) {
+        return true;
+      }
+      const normalizedCategory = (question.category ?? 'general').toLowerCase();
+      return categorySet.has(normalizedCategory);
+    })
+    .map((question, index) => transformLocalPresetQuestion(question, index))
+    .slice(0, limit);
+}
+
 /**
  * Fetch discovery questions from Supabase
  * Ordered by priority (descending) then creation date (newest first)
@@ -105,72 +159,63 @@ export async function fetchDiscoveryQuestions(
     categories?: string[],
     seniorUserId?: string
 ): Promise<DiscoveryQuestion[]> {
+    const expandedCategories = expandCategories(categories);
+    const localPresetQuestions = buildLocalPresetQuestions(limit, expandedCategories);
+
     try {
-        const expandedCategories = expandCategories(categories);
+      let discoveryQuery = supabase
+        .from('discovery_questions')
+        .select('id, question_text, category, priority, tags, created_at')
+        .order('priority', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
-        let query = supabase
-            .from('discovery_questions')
-            .select('id, question_text, category, priority, tags, created_at')
-            .order('priority', { ascending: false })
-            .order('created_at', { ascending: false })
-            .limit(limit);
+      if (expandedCategories && expandedCategories.length > 0) {
+        discoveryQuery = discoveryQuery.in('category', expandedCategories);
+      }
 
-        // F3.2: Apply category filter if provided
-        if (expandedCategories && expandedCategories.length > 0) {
-            query = query.in('category', expandedCategories);
+      const [discoveryResult, familyResult] = await Promise.allSettled([
+        discoveryQuery,
+        seniorUserId ? getUnansweredQuestions(seniorUserId) : Promise.resolve([] as FamilyQuestion[]),
+      ]);
+
+      const remoteDiscoveryQuestions: DiscoveryQuestion[] = [];
+      const familyQuestions: DiscoveryQuestion[] = [];
+
+      if (discoveryResult.status === 'fulfilled') {
+        if (discoveryResult.value.error) {
+          devLog.error('[discoveryService] Failed to fetch discovery questions:', discoveryResult.value.error);
+        } else {
+          remoteDiscoveryQuestions.push(
+            ...(discoveryResult.value.data ?? []).map((row: DiscoveryQuestionRow) => transformQuestion(row))
+          );
         }
+      } else {
+        devLog.error('[discoveryService] Discovery query rejected:', discoveryResult.reason);
+      }
 
-        const familyQueryPromise = seniorUserId
-          ? (() => {
-              let familyQuery = supabase
-                .from('family_questions')
-                .select('id, question_text, category, created_at')
-                .eq('senior_user_id', seniorUserId)
-                .is('answered_at', null)
-                .order('created_at', { ascending: false })
-                .limit(limit);
+      if (familyResult.status === 'fulfilled') {
+        const filteredFamilyRows = expandedCategories && expandedCategories.length > 0
+          ? familyResult.value.filter((row) =>
+            expandedCategories.includes((row.category ?? 'general').toLowerCase())
+          )
+          : familyResult.value;
 
-              if (expandedCategories && expandedCategories.length > 0) {
-                familyQuery = familyQuery.in('category', expandedCategories);
-              }
+        familyQuestions.push(...filteredFamilyRows.map((row) => transformFamilyQuestion(row)));
+      } else {
+        devLog.error('[discoveryService] Family query rejected:', familyResult.reason);
+      }
 
-              return familyQuery;
-            })()
-          : Promise.resolve({ data: [], error: null });
+      const mergedLibrary = dedupeByQuestionText([
+        ...localPresetQuestions,
+        ...remoteDiscoveryQuestions,
+      ]).sort(sortQuestions);
 
-        const [{ data, error }, { data: familyData, error: familyError }] = await Promise.all([
-          query,
-          familyQueryPromise,
-        ]);
-
-        if (error) {
-            devLog.error('[discoveryService] Failed to fetch questions:', error);
-            throw error;
-        }
-
-        if (familyError) {
-          devLog.error('[discoveryService] Failed to fetch family questions:', familyError);
-        }
-
-        const merged = [
-          ...(familyData || []).map((row: FamilyQuestionRow) => transformFamilyQuestion(row)),
-          ...(data || []).map((row: DiscoveryQuestionRow) => transformQuestion(row)),
-        ];
-
-        const deduped = Array.from(new Map(merged.map((item) => [item.id, item])).values());
-
-        return deduped.sort((a: DiscoveryQuestion, b: DiscoveryQuestion) => {
-          const priorityDelta = scoreForPriority(b) - scoreForPriority(a);
-          if (priorityDelta !== 0) return priorityDelta;
-
-          const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-          const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-          return bTime - aTime;
-        });
+      // Family prompts are always pinned to top after dedupe.
+      return dedupeByQuestionText([...familyQuestions, ...mergedLibrary]).slice(0, limit);
     } catch (error) {
-        devLog.error('[discoveryService] Error fetching discovery questions:', error);
-        // Return empty array on error, caller should handle fallback
-        return [];
+      devLog.error('[discoveryService] Error fetching discovery questions:', error);
+      return localPresetQuestions;
     }
 }
 
@@ -185,22 +230,5 @@ export async function fetchDiscoveryQuestionsByCategory(
     category: string,
     limit = 50
 ): Promise<DiscoveryQuestion[]> {
-    try {
-        const { data, error } = await supabase
-            .from('discovery_questions')
-            .select('id, question_text, category, priority, tags')
-            .eq('category', category)
-            .order('priority', { ascending: false })
-            .limit(limit);
-
-        if (error) {
-            devLog.error('[discoveryService] Failed to fetch questions by category:', error);
-            throw error;
-        }
-
-        return (data || []).map((row: DiscoveryQuestionRow) => transformQuestion(row));
-    } catch (error) {
-        devLog.error('[discoveryService] Error fetching questions by category:', error);
-        return [];
-    }
+    return fetchDiscoveryQuestions(limit, [category]);
 }

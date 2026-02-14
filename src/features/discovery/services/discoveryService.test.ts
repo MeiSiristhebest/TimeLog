@@ -1,6 +1,7 @@
 import { fetchDiscoveryQuestions } from './discoveryService';
 
 const mockFrom = jest.fn();
+const mockGetUnansweredQuestions = jest.fn();
 
 const mockDiscoveryLimit = jest.fn();
 const mockDiscoveryOrder = jest.fn();
@@ -36,9 +37,14 @@ jest.mock('@/lib/supabase', () => ({
   },
 }));
 
+jest.mock('@/features/family-listener/services/questionService', () => ({
+  getUnansweredQuestions: (...args: unknown[]) => mockGetUnansweredQuestions(...args),
+}));
+
 describe('fetchDiscoveryQuestions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetUnansweredQuestions.mockResolvedValue([]);
 
     mockFrom.mockImplementation((table: string) => {
       if (table === 'family_questions') {
@@ -83,8 +89,14 @@ describe('fetchDiscoveryQuestions', () => {
 
     const result = await fetchDiscoveryQuestions();
 
-    expect(result[0]?.id).toBe('family');
-    expect(result[1]?.id).toBe('normal');
+    const familyQuestion = result.find((question) => question.id === 'family');
+    const normalQuestion = result.find((question) => question.id === 'normal');
+
+    expect(familyQuestion).toBeTruthy();
+    expect(normalQuestion).toBeTruthy();
+    expect(result.findIndex((question) => question.id === 'family')).toBeLessThan(
+      result.findIndex((question) => question.id === 'normal')
+    );
   });
 
   it('merges unanswered family questions for a senior and keeps them at top', async () => {
@@ -102,23 +114,59 @@ describe('fetchDiscoveryQuestions', () => {
       error: null,
     });
 
-    mockFamilyLimit.mockResolvedValue({
-      data: [
-        {
-          id: 'family-1',
-          question_text: 'Question from daughter',
-          category: 'family',
-          created_at: '2026-01-03T00:00:00Z',
-        },
-      ],
-      error: null,
-    });
+    mockGetUnansweredQuestions.mockResolvedValue([
+      {
+        id: 'family-1',
+        seniorUserId: 'senior-123',
+        familyUserId: 'family-user-1',
+        questionText: 'Question from daughter',
+        category: 'family',
+        createdAt: '2026-01-03T00:00:00Z',
+        answeredAt: null,
+      },
+    ]);
 
     const result = await fetchDiscoveryQuestions(100, undefined, 'senior-123');
 
     expect(result[0]?.id).toBe('family-1');
     expect(result[0]?.tags).toContain('family');
-    expect(result[1]?.id).toBe('lib-1');
-    expect(mockFrom).toHaveBeenCalledWith('family_questions');
+    expect(result.some((item) => item.id === 'lib-1')).toBe(true);
+    expect(mockGetUnansweredQuestions).toHaveBeenCalledWith('senior-123');
+  });
+
+  it('returns local preset questions when remote fetch fails', async () => {
+    mockDiscoveryLimit.mockResolvedValue({
+      data: null,
+      error: { message: 'network down' },
+    });
+
+    const result = await fetchDiscoveryQuestions();
+
+    expect(result.length).toBeGreaterThan(0);
+    expect(result.some((item) => item.id.startsWith('preset-'))).toBe(true);
+  });
+
+  it('dedupes local and remote by normalized question text', async () => {
+    mockDiscoveryLimit.mockResolvedValue({
+      data: [
+        {
+          id: 'remote-dup',
+          question_text: '  What was your favorite game as a child?  ',
+          category: 'childhood',
+          priority: 999,
+          tags: [],
+          created_at: '2026-01-01T00:00:00Z',
+        },
+      ],
+      error: null,
+    });
+
+    const result = await fetchDiscoveryQuestions();
+    const matchingText = result.filter(
+      (item) => item.text.trim().toLowerCase() === 'what was your favorite game as a child?'
+    );
+
+    expect(matchingText).toHaveLength(1);
+    expect(matchingText[0]?.id).toBe('preset-q-001');
   });
 });

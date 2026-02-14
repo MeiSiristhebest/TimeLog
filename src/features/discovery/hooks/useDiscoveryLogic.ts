@@ -15,6 +15,18 @@ import type { QuestionCategory } from '@/db/schema/familyQuestions';
 import { QUESTION_CATEGORIES } from '@/db/schema/familyQuestions';
 import { useAuthStore } from '@/features/auth/store/authStore';
 
+export function getRandomNextIndex(currentIndex: number, deckSize: number): number {
+  if (deckSize <= 1 || currentIndex < 0) {
+    return currentIndex;
+  }
+
+  let nextIndex = currentIndex;
+  while (nextIndex === currentIndex) {
+    nextIndex = Math.floor(Math.random() * deckSize);
+  }
+  return nextIndex;
+}
+
 export function useDiscoveryLogic() {
   const router = useRouter();
   const theme = useHeritageTheme();
@@ -91,7 +103,7 @@ export function useDiscoveryLogic() {
     // Animate out
     cardTranslateY.value = withTiming(-20, { duration: theme.animationDurations.CARD_FLIP_OUT });
     cardOpacity.value = withTiming(0, { duration: theme.animationDurations.CARD_FLIP_OUT }, () => {
-      runOnJS(setCurrentIndex)((currentIndex + 1) % deck.length);
+      runOnJS(setCurrentIndex)(getRandomNextIndex(currentIndex, deck.length));
       // Reset position instantly
       cardTranslateY.value = 20;
 

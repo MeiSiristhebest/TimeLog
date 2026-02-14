@@ -99,6 +99,13 @@
       "when": 1770545327881,
       "tag": "0013_wide_black_bolt",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1771068495477,
+      "tag": "0014_dry_naoko",
+      "breakpoints": true
     }
   ]
 }

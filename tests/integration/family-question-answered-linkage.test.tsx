@@ -157,6 +157,17 @@ jest.mock('@/features/settings/services/cloudSettingsService', () => ({
   })),
 }));
 
+jest.mock('@/features/settings/hooks/useProfile', () => ({
+  useProfile: () => ({
+    profile: null,
+    isLoading: false,
+    error: null,
+    updateProfileData: jest.fn(),
+    uploadProfileAvatar: jest.fn(),
+    refetch: jest.fn(),
+  }),
+}));
+
 describe('family question answered linkage integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -201,9 +212,9 @@ describe('family question answered linkage integration', () => {
     expect(mockResolveUploadAsset).toHaveBeenCalledWith('file:///recordings/rec-123.wav');
     expect(mockEnqueueRecording).toHaveBeenCalledWith(
       'rec-123',
-      'file:///recordings/rec-123.wav',
+      'file:///recordings/rec-123.wav.enc',
       {
-        uploadPath: 'file:///recordings/rec-123.opus',
+        uploadPath: 'file:///recordings/rec-123.opus.enc',
         uploadExtension: 'opus',
         transcodeStatus: 'ready',
       }

@@ -12,6 +12,7 @@ export const familyQuestions = sqliteTable(
     seniorUserId: text('senior_user_id').notNull(),
     familyUserId: text('family_user_id').notNull(),
     questionText: text('question_text').notNull(),
+    category: text('category').notNull().default('general'),
     createdAt: integer('created_at').notNull(), // Unix timestamp
     answeredAt: integer('answered_at'), // NULL = unanswered
     recordingId: text('recording_id'), // Link to answer recording
