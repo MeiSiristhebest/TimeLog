@@ -4,7 +4,20 @@ const expoConfig = require('eslint-config-expo/flat');
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ['dist/*', '.expo/*', '.expo/**'],
+    ignores: [
+      'dist/*',
+      '.expo/*',
+      '.expo/**',
+      '.venv/**',
+      '.agent/**',
+      '.codex/**',
+      '.skill/**',
+      '_bmad/**',
+      '_bmad-output/**',
+      'agents/**',
+      'android/**',
+      'ios/**',
+    ],
   },
   {
     plugins: {
@@ -30,6 +43,7 @@ module.exports = defineConfig([
     files: ['**/*.test.ts', '**/*.test.tsx', 'jest-setup.js', '**/devLogger.ts'],
     rules: {
       'no-console': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
   {

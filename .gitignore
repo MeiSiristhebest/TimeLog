@@ -24,6 +24,7 @@ android
 coverage/
 *.lcov
 .jest-cache/
+scripts/*.log
 
 # AI Agent state (ephemeral)
 # .agent/

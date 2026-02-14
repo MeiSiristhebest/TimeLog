@@ -7,28 +7,27 @@ AI-powered voice assistant for helping elderly users record life stories through
 - **Elderly-Tuned VAD**: 3-5 second pause tolerance for slower speech patterns
 - **Multi-Language Support**: Auto-detects Thai and English
 - **Warm Conversation Style**: Patient, gentle, and encouraging
-- **Context-Aware**: Remembers conversation history for natural follow-ups
+- **Context-Aware**: Uses LiveKit AgentSession conversation context
 - **High-Quality Audio**: Deepgram STT/TTS with emotional voice
 
 ## 🛠️ Technology Stack
 
 | Component | Technology | Purpose |
 |:----------|:-----------|:--------|
-| **Runtime** | Python 3.12 | Modern async support |
+| **Runtime** | Python 3.12+ | Modern async support |
 | **Agent Framework** | LiveKit Agents SDK | Real-time voice processing |
-| **STT** | Deepgram Nova-2 | Speech recognition (multi-language) |
+| **STT** | Deepgram Nova-3 | Speech recognition (multi-language) |
 | **TTS** | Deepgram Aura | Natural emotional voice |
 | **VAD** | Silero | Voice activity detection |
-| **LLM** | Google Gemini 2.0 Flash | Conversation generation |
+| **LLM** | Google Gemini (via livekit-plugins-google) | Conversation generation |
+| **Turn Detection** | MultilingualModel | Better end-of-turn detection |
 
 ## 📋 Prerequisites
 
 - Python 3.12+
 - LiveKit Cloud account (free tier: 1000 agent minutes/month)
 - Deepgram API key ([Get one here](https://deepgram.com))
-- **ONE of the following**:
-  - Google Gemini API key ([Get one here](https://ai.google.dev)) - Recommended for development
-  - Google Cloud Project with Vertex AI enabled ([Setup guide](VERTEX_AI_SETUP.md)) - Recommended for production
+- Google Gemini API key ([Get one here](https://ai.google.dev))
 
 ## 🚀 Quick Start
 
@@ -48,34 +47,24 @@ cp .env.example .env
 
 **Required variables**:
 
-**Option 1: Direct Gemini API (Development)**
+**Required variables**
 ```bash
 LIVEKIT_URL=wss://time-log-wuk3kw5e.livekit.cloud
 LIVEKIT_API_KEY=your-livekit-api-key
 LIVEKIT_API_SECRET=your-livekit-secret
 DEEPGRAM_API_KEY=your-deepgram-api-key
 GEMINI_API_KEY=your-gemini-api-key
-USE_VERTEX_AI=false
+AGENT_LLM_MODEL=gemini-2.5-flash
+AGENT_STT_MODEL=nova-3
+AGENT_TTS_MODEL=aura-asteria-en
+AGENT_MIN_SILENCE_DURATION=3.0
+AGENT_LANGUAGE=multi
 ```
-
-**Option 2: Vertex AI (Production)**
-```bash
-LIVEKIT_URL=wss://time-log-wuk3kw5e.livekit.cloud
-LIVEKIT_API_KEY=your-livekit-api-key
-LIVEKIT_API_SECRET=your-livekit-secret
-DEEPGRAM_API_KEY=your-deepgram-api-key
-USE_VERTEX_AI=true
-VERTEX_PROJECT_ID=your-gcp-project-id
-VERTEX_LOCATION=us-central1
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
-```
-
-📖 **详细的 Vertex AI 设置指南**: [VERTEX_AI_SETUP.md](VERTEX_AI_SETUP.md)
 
 ### 3. Run Locally (Development)
 
 ```bash
-python story_agent.py start
+python story_agent.py
 ```
 
 The agent will connect to your LiveKit room and wait for participants.
@@ -144,7 +133,7 @@ pytest tests/
 
 ```bash
 # Start agent in background
-python story_agent.py start &
+python story_agent.py &
 
 # Run integration tests
 pytest tests/integration/
@@ -155,13 +144,11 @@ kill %1
 
 ## 📊 Monitoring
 
-The agent logs all events in structured format:
+The agent logs startup events in structured format:
 
 ```
 2026-01-31 12:00:00 - TimeLogStoryAgent - INFO - Agent starting for room: story-001
-2026-01-31 12:00:01 - TimeLogStoryAgent - INFO - Participant joined: user-123
-2026-01-31 12:00:05 - TimeLogStoryAgent - INFO - User said: สวัสดีครับ
-2026-01-31 12:00:06 - TimeLogStoryAgent - INFO - AI response: สวัสดีค่ะ ยินดีที่ได้รู้จักนะคะ
+2026-01-31 12:00:01 - story_agent - INFO - Agent starting for room: story-001
 ```
 
 **Production Monitoring**:
@@ -177,7 +164,7 @@ The agent logs all events in structured format:
 vad = silero.VAD.load(
     min_speech_duration=0.3,  # 300ms minimum speech
     min_silence_duration=3.0,  # 3 seconds pause (adjust 3.0-5.0)
-    padding_duration=0.2,      # 200ms padding
+    prefix_padding_duration=0.2,  # 200ms padding
 )
 ```
 
@@ -190,7 +177,7 @@ vad = silero.VAD.load(
 
 ```python
 stt = deepgram.STT(
-    model="nova-2",          # Latest Deepgram model
+    model="nova-3",          # Latest Deepgram model
     language="multi",        # Auto-detect Thai/English
     smart_format=True,       # Auto-capitalize, punctuate
 )
@@ -235,7 +222,7 @@ AGENT_LANGUAGE=en     # English only
 ### Agent won't start
 
 **Error**: `ValueError: DEEPGRAM_API_KEY environment variable is required`
-**Solution**: Check your `.env` file has all required keys
+**Solution**: Check your `.env` file has `DEEPGRAM_API_KEY` and `GEMINI_API_KEY`
 
 ### No audio from agent
 

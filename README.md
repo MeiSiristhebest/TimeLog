@@ -32,6 +32,16 @@ TimeLog is a modern mobile application designed to bridge the gap between elderl
 - **State**: [Zustand](https://docs.pmnd.rs/zustand/getting-started/introduction)
 - **Monitoring**: [Sentry](https://sentry.io/)
 
+### Voice Agent (Python)
+
+- **Runtime**: Python 3.12+
+- **Framework**: LiveKit Agents 1.x (`livekit-agents==1.4.1`)
+- **RTC SDK**: LiveKit Python SDK (`livekit==1.0.25`)
+- **STT/TTS**: Deepgram plugins (`livekit-plugins-deepgram==1.4.1`)
+- **VAD**: Silero plugin (`livekit-plugins-silero==1.4.1`)
+- **LLM**: Google Gemini plugin (`livekit-plugins-google==1.4.1`)
+- **Turn Detection**: Multilingual model (`livekit-plugins-turn-detector==1.4.1`)
+
 ---
 
 ## 🚀 Getting Started
@@ -66,6 +76,10 @@ TimeLog is a modern mobile application designed to bridge the gap between elderl
    npx expo start
    ```
 
+### Voice Agent Setup (Optional)
+
+If you want to run the Python voice agent locally, see `agents/README.md`.
+
 ### Running Tests
 
 ```bash
@@ -86,6 +100,7 @@ npm test
 │   ├── db/              # Drizzle Schema & Client
 │   └── hooks/           # Custom React hooks
 ├── drizzle/             # Database migrations
+├── agents/              # Python LiveKit voice agent (1.x)
 └── tests/               # Integration tests
 ```
 

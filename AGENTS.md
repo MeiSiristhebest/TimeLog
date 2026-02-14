@@ -224,7 +224,7 @@ TimeLog/
 npm test
 
 # Run specific test
-npx vitest run -t "<test name>"
+npx jest -t "<test name>"
 
 # Run E2E tests (Maestro)
 maestro test tests/e2e/*.yaml

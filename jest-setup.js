@@ -23,20 +23,38 @@ jest.mock('@react-native-async-storage/async-storage', () => mockAsyncStorage, {
   virtual: true,
 });
 
+// Some RN/web-adjacent deps expect browser-like event APIs.
+if (typeof global.window === 'undefined') {
+  global.window = global;
+}
+if (typeof global.window.dispatchEvent !== 'function') {
+  global.window.dispatchEvent = jest.fn();
+}
+if (typeof global.window.addEventListener !== 'function') {
+  global.window.addEventListener = jest.fn();
+}
+if (typeof global.window.removeEventListener !== 'function') {
+  global.window.removeEventListener = jest.fn();
+}
+
 // Mock react-native-mmkv
 jest.mock('react-native-mmkv', () => {
   const store = new Map();
+  const createStore = () => ({
+    set: jest.fn((key, value) => store.set(key, value)),
+    getString: jest.fn(key => store.get(key)),
+    getNumber: jest.fn(key => store.get(key)),
+    getBoolean: jest.fn(key => store.get(key)),
+    delete: jest.fn(key => store.delete(key)),
+    remove: jest.fn(key => store.delete(key)),
+    contains: jest.fn(key => store.has(key)),
+    clearAll: jest.fn(() => store.clear()),
+    getAllKeys: jest.fn(() => Array.from(store.keys())),
+  });
+
   return {
-    MMKV: jest.fn().mockImplementation(() => ({
-      set: jest.fn((key, value) => store.set(key, value)),
-      getString: jest.fn(key => store.get(key)),
-      getNumber: jest.fn(key => store.get(key)),
-      getBoolean: jest.fn(key => store.get(key)),
-      delete: jest.fn(key => store.delete(key)),
-      contains: jest.fn(key => store.has(key)),
-      clearAll: jest.fn(() => store.clear()),
-      getAllKeys: jest.fn(() => Array.from(store.keys())),
-    })),
+    MMKV: jest.fn().mockImplementation(createStore),
+    createMMKV: jest.fn().mockImplementation(createStore),
   };
 });
 // Mock expo-file-system
@@ -170,22 +188,93 @@ jest.mock('drizzle-orm/sqlite-core', () => {
 // Mock Drizzle ORM
 jest.mock('drizzle-orm', () => ({
   eq: jest.fn(),
+  and: jest.fn((...args) => args.filter(Boolean)),
+  desc: jest.fn(column => ({ column, direction: 'desc' })),
+  asc: jest.fn(column => ({ column, direction: 'asc' })),
+  isNull: jest.fn(column => ({ column, op: 'isNull' })),
+  isNotNull: jest.fn(column => ({ column, op: 'isNotNull' })),
+  lte: jest.fn((left, right) => ({ left, right, op: 'lte' })),
+  lt: jest.fn((left, right) => ({ left, right, op: 'lt' })),
+  gte: jest.fn((left, right) => ({ left, right, op: 'gte' })),
+  count: jest.fn(column => ({ column, op: 'count' })),
+  sql: jest.fn((strings, ...values) => ({ strings, values })),
 }));
+
+// Mock expo-audio for player store/service tests.
+jest.mock('expo-audio', () => {
+  const listeners = new Map();
+  const player = {
+    isLoaded: true,
+    addListener: jest.fn((event, callback) => {
+      listeners.set(event, callback);
+      return { remove: jest.fn(() => listeners.delete(event)) };
+    }),
+    play: jest.fn(),
+    pause: jest.fn(),
+    seekTo: jest.fn(),
+    setPlaybackRate: jest.fn(),
+    remove: jest.fn(() => listeners.clear()),
+  };
+
+  return {
+    AudioPlayer: jest.fn(),
+    createAudioPlayer: jest.fn(() => player),
+    AudioStatus: {},
+  };
+});
 
 // Mock @siteed/expo-audio-studio
 let mockAudioAnalysisCallback = null;
+let mockRecorderStatus = {
+  isRecording: false,
+  isPaused: false,
+  durationMs: 0,
+  size: 0,
+  interval: 100,
+  intervalAnalysis: 100,
+  mimeType: 'audio/wav',
+};
 jest.mock('@siteed/expo-audio-studio', () => ({
   ExpoAudioStreamModule: {
     getPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true })),
     requestPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true })),
-    startRecording: jest.fn(() => Promise.resolve()),
-    stopRecording: jest.fn(() => Promise.resolve({
-      fileUri: 'file:///test/doc-dir/recordings/rec_test.wav',
-      durationMs: 5000,
-      size: 160000,
-    })),
-    pauseRecording: jest.fn(() => Promise.resolve()),
-    resumeRecording: jest.fn(() => Promise.resolve()),
+    startRecording: jest.fn(() => {
+      mockRecorderStatus = {
+        ...mockRecorderStatus,
+        isRecording: true,
+        isPaused: false,
+      };
+      return Promise.resolve();
+    }),
+    stopRecording: jest.fn(() => {
+      mockRecorderStatus = {
+        ...mockRecorderStatus,
+        isRecording: false,
+        isPaused: false,
+      };
+      return Promise.resolve({
+        fileUri: 'file:///test/doc-dir/recordings/rec_test.wav',
+        durationMs: 5000,
+        size: 160000,
+      });
+    }),
+    pauseRecording: jest.fn(() => {
+      mockRecorderStatus = {
+        ...mockRecorderStatus,
+        isRecording: false,
+        isPaused: true,
+      };
+      return Promise.resolve();
+    }),
+    resumeRecording: jest.fn(() => {
+      mockRecorderStatus = {
+        ...mockRecorderStatus,
+        isRecording: true,
+        isPaused: false,
+      };
+      return Promise.resolve();
+    }),
+    status: jest.fn(() => mockRecorderStatus),
   },
   addAudioAnalysisListener: jest.fn((callback) => {
     mockAudioAnalysisCallback = callback;
