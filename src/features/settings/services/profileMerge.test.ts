@@ -30,7 +30,8 @@ describe('mergeRemoteIntoLocal', () => {
     bio: null,
     isAnonymous: false,
     createdAt: new Date(1000).toISOString(),
-    updatedAt: new Date(3000).toISOString(),
+    // Must exceed 2-minute clock skew tolerance in profileMerge.ts
+    updatedAt: new Date(123000).toISOString(),
   };
 
   it('merges remote values when remote is newer', () => {
@@ -43,7 +44,7 @@ describe('mergeRemoteIntoLocal', () => {
     expect(merged.avatarUrl).toBe('https://remote/avatar.jpg');
     expect(merged.role).toBe('family');
     expect(merged.isAnonymous).toBe(false);
-    expect(merged.updatedAt).toBe(3000);
+    expect(merged.updatedAt).toBe(123000);
   });
 
   it('returns local when remote is older', () => {

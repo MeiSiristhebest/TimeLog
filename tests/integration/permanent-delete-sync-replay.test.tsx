@@ -136,6 +136,10 @@ jest.mock('@/lib/sync-engine/transport', () => ({
   })(),
 }));
 
+jest.mock('@/lib/cloudPolicy', () => ({
+  isCloudAiEnabledLocally: jest.fn(() => true),
+}));
+
 function getDeleteFileMock(): jest.Mock {
   const transportModule = jest.requireMock('@/lib/sync-engine/transport') as {
     __mockDeleteFile: jest.Mock;
