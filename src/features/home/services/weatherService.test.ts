@@ -68,12 +68,18 @@ describe('weatherService.fetchWeatherData', () => {
     );
   });
 
-  it('throws CONFIG_ERROR when weather API URL is missing', async () => {
+  it('falls back to wttr endpoint when weather API URL is missing', async () => {
     delete process.env.EXPO_PUBLIC_WEATHER_API_URL;
+    mockFetchWithRetry.mockResolvedValue({
+      current_condition: [{ temp_C: '19', weatherCode: '116' }],
+    });
 
-    await expect(fetchWeatherData()).rejects.toEqual(
+    const result = await fetchWeatherData();
+    expect(result).toEqual({ temperature: 19, condition: 'partly-cloudy' });
+    expect(mockFetchWithRetry).toHaveBeenCalledWith(
+      'https://wttr.in/?format=j1',
       expect.objectContaining({
-        code: 'CONFIG_ERROR',
+        method: 'GET',
       })
     );
   });

@@ -22,6 +22,7 @@ export function NotificationsScreen(): JSX.Element {
     quietStart,
     quietEnd,
     isLoading,
+    isSaving,
     scrollY,
     showStartPicker,
     showEndPicker,
@@ -136,9 +137,11 @@ export function NotificationsScreen(): JSX.Element {
 
         <View style={{ padding: 16 }}>
           <HeritageButton
-            title={SETTINGS_STRINGS.notifications.save.button}
+            title={isSaving ? 'Saving...' : SETTINGS_STRINGS.notifications.save.button}
             onPress={actions.saveSettings}
             fullWidth
+            loading={isSaving}
+            disabled={isSaving}
           />
         </View>
       </Animated.ScrollView>

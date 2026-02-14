@@ -1,11 +1,16 @@
 import type { LocalProfile } from './localProfileService';
 import type { UserProfile } from './profileService';
 
+const CLOCK_SKEW_TOLERANCE_MS = 2 * 60 * 1000;
+
 export function mergeRemoteIntoLocal(local: LocalProfile, remote: UserProfile): LocalProfile {
   const remoteUpdatedAt = Date.parse(remote.updatedAt);
   const localUpdatedAt = local.updatedAt;
 
-  if (Number.isFinite(remoteUpdatedAt) && remoteUpdatedAt > localUpdatedAt) {
+  if (
+    Number.isFinite(remoteUpdatedAt) &&
+    remoteUpdatedAt > localUpdatedAt + CLOCK_SKEW_TOLERANCE_MS
+  ) {
     return {
       ...local,
       displayName: remote.displayName ?? local.displayName,

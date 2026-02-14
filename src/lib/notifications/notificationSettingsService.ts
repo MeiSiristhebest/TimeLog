@@ -6,6 +6,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { devLog } from '@/lib/devLogger';
+import { mmkv } from '@/lib/mmkv';
 
 export interface NotificationSettings {
   userId: string;
@@ -16,10 +17,46 @@ export interface NotificationSettings {
   gentleRemindersEnabled: boolean; // Story 5.3: Gentle Nudge
 }
 
-/**
- * Get notification settings for a user
- */
-export async function getNotificationSettings(
+const NOTIFICATION_SETTINGS_KEY_PREFIX = 'notifications.settings.';
+
+function getLocalSettingsKey(userId: string): string {
+  return `${NOTIFICATION_SETTINGS_KEY_PREFIX}${userId}`;
+}
+
+function readLocalSettings(userId: string): NotificationSettings | null {
+  try {
+    const raw = mmkv.getString(getLocalSettingsKey(userId));
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<NotificationSettings>;
+    if (
+      parsed.userId === userId &&
+      typeof parsed.timeZone === 'string' &&
+      typeof parsed.notificationsEnabled === 'boolean' &&
+      typeof parsed.gentleRemindersEnabled === 'boolean'
+    ) {
+      return {
+        userId,
+        quietHoursStart: parsed.quietHoursStart ?? null,
+        quietHoursEnd: parsed.quietHoursEnd ?? null,
+        timeZone: parsed.timeZone,
+        notificationsEnabled: parsed.notificationsEnabled,
+        gentleRemindersEnabled: parsed.gentleRemindersEnabled,
+      };
+    }
+  } catch (error) {
+    devLog.warn('[notificationSettingsService] Failed to parse local settings cache', error);
+  }
+  return null;
+}
+
+function writeLocalSettings(settings: NotificationSettings): void {
+  mmkv.set(getLocalSettingsKey(settings.userId), JSON.stringify(settings));
+}
+
+async function fetchRemoteNotificationSettings(
   userId: string
 ): Promise<NotificationSettings | null> {
   const { data, error } = await supabase
@@ -32,7 +69,7 @@ export async function getNotificationSettings(
     return null;
   }
 
-  return {
+  const remote: NotificationSettings = {
     userId: data.user_id,
     quietHoursStart: data.quiet_hours_start,
     quietHoursEnd: data.quiet_hours_end,
@@ -40,13 +77,12 @@ export async function getNotificationSettings(
     notificationsEnabled: data.notifications_enabled,
     gentleRemindersEnabled: data.gentle_reminders_enabled ?? true,
   };
+  writeLocalSettings(remote);
+  return remote;
 }
 
-/**
- * Update notification settings
- */
-export async function updateNotificationSettings(settings: NotificationSettings): Promise<void> {
-  const { error } = await supabase.from('user_notification_settings').upsert({
+async function syncRemoteNotificationSettings(settings: NotificationSettings): Promise<void> {
+  const payload = {
     user_id: settings.userId,
     quiet_hours_start: settings.quietHoursStart,
     quiet_hours_end: settings.quietHoursEnd,
@@ -54,12 +90,83 @@ export async function updateNotificationSettings(settings: NotificationSettings)
     notifications_enabled: settings.notificationsEnabled,
     gentle_reminders_enabled: settings.gentleRemindersEnabled,
     updated_at: new Date().toISOString(),
-  });
+  };
 
-  if (error) {
-    devLog.error('[notificationSettingsService] Failed to update settings:', error);
-    throw error;
+  const { error } = await supabase
+    .from('user_notification_settings')
+    .upsert(payload, { onConflict: 'user_id' });
+
+  if (!error) {
+    return;
   }
+
+  // Backward compatibility: older schemas may not have gentle_reminders_enabled yet.
+  const missingGentleColumn =
+    typeof error.message === 'string' &&
+    error.message.toLowerCase().includes('gentle_reminders_enabled');
+  if (missingGentleColumn) {
+    const legacyPayload = {
+      user_id: settings.userId,
+      quiet_hours_start: settings.quietHoursStart,
+      quiet_hours_end: settings.quietHoursEnd,
+      time_zone: settings.timeZone,
+      notifications_enabled: settings.notificationsEnabled,
+      updated_at: new Date().toISOString(),
+    };
+    const { error: legacyError } = await supabase
+      .from('user_notification_settings')
+      .upsert(legacyPayload, { onConflict: 'user_id' });
+    if (!legacyError) {
+      return;
+    }
+    devLog.warn(
+      '[notificationSettingsService] Failed to update settings remotely (legacy retry), kept local cache',
+      legacyError
+    );
+    return;
+  }
+
+  devLog.warn('[notificationSettingsService] Failed to update settings remotely, kept local cache:', error);
+}
+
+export function getCachedNotificationSettings(userId: string): NotificationSettings | null {
+  return readLocalSettings(userId);
+}
+
+export async function refreshNotificationSettings(userId: string): Promise<NotificationSettings | null> {
+  const remote = await fetchRemoteNotificationSettings(userId);
+  if (remote) {
+    return remote;
+  }
+
+  return readLocalSettings(userId);
+}
+
+/**
+ * Get notification settings for a user
+ */
+export async function getNotificationSettings(
+  userId: string
+): Promise<NotificationSettings | null> {
+  const local = readLocalSettings(userId);
+  if (local) {
+    void refreshNotificationSettings(userId).catch((error) => {
+      devLog.warn('[notificationSettingsService] Background refresh failed', error);
+    });
+    return local;
+  }
+
+  return refreshNotificationSettings(userId);
+}
+
+/**
+ * Update notification settings
+ */
+export async function updateNotificationSettings(settings: NotificationSettings): Promise<void> {
+  writeLocalSettings(settings);
+  void syncRemoteNotificationSettings(settings).catch((error) => {
+    devLog.warn('[notificationSettingsService] Background remote save failed, local cache retained', error);
+  });
 }
 
 /**

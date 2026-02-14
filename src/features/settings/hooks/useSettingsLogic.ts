@@ -16,7 +16,8 @@ import { useAccountSecurity } from './useAccountSecurity';
 import { useCloudSettings } from './useCloudSettings';
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import {
-  getNotificationSettings,
+  getCachedNotificationSettings,
+  refreshNotificationSettings,
   updateNotificationSettings,
   getDeviceTimeZone,
 } from '@/lib/notifications/notificationSettingsService';
@@ -32,6 +33,7 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { devLog } from '@/lib/devLogger';
 import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useProfile } from './useProfile';
+import { useCurrentUserId } from '@/features/auth/hooks/useCurrentUserId';
 import { APP_ROUTES, toUpgradeAccountRoute } from '@/features/app/navigation/routes';
 import { PERMISSION_CONTEXT } from '@/features/permissions/permissionPolicy';
 
@@ -243,11 +245,14 @@ export function useFamilySharingLogic() {
 // Hook for Notifications
 export function useNotificationsLogic() {
   const sessionUserId = useAuthStore((state) => state.sessionUserId);
+  const { currentUserId } = useCurrentUserId({ enabled: !sessionUserId });
+  const activeUserId = sessionUserId ?? currentUserId ?? null;
   const [enabled, setEnabled] = useState(true);
   const [gentleReminders, setGentleReminders] = useState(true);
   const [quietStart, setQuietStart] = useState(new Date());
   const [quietEnd, setQuietEnd] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler({
@@ -257,53 +262,88 @@ export function useNotificationsLogic() {
   });
 
   const loadSettings = useCallback(async () => {
-    if (!sessionUserId) {
-      setEnabled(false);
+    const applyDefaults = () => {
+      const start = new Date();
+      start.setHours(21, 0, 0, 0);
+      setQuietStart(start);
+
+      const end = new Date();
+      end.setHours(9, 0, 0, 0);
+      setQuietEnd(end);
+    };
+
+    const applySettings = (
+      settings: {
+        notificationsEnabled: boolean;
+        gentleRemindersEnabled: boolean;
+        quietHoursStart: string | null;
+        quietHoursEnd: string | null;
+      } | null
+    ) => {
+      if (!settings) {
+        setEnabled(false);
+        setGentleReminders(true);
+        applyDefaults();
+        return;
+      }
+
+      setEnabled(settings.notificationsEnabled);
+      setGentleReminders(settings.gentleRemindersEnabled);
+
+      if (settings.quietHoursStart) {
+        const [hour, minute] = settings.quietHoursStart.split(':');
+        const start = new Date();
+        start.setHours(parseInt(hour, 10), parseInt(minute, 10), 0, 0);
+        setQuietStart(start);
+      } else {
+        applyDefaults();
+      }
+
+      if (settings.quietHoursEnd) {
+        const [hour, minute] = settings.quietHoursEnd.split(':');
+        const end = new Date();
+        end.setHours(parseInt(hour, 10), parseInt(minute, 10), 0, 0);
+        setQuietEnd(end);
+      } else {
+        const end = new Date();
+        end.setHours(9, 0, 0, 0);
+        setQuietEnd(end);
+      }
+    };
+
+    if (!activeUserId) {
+      applySettings(null);
       setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
+    const cached = getCachedNotificationSettings(activeUserId);
+    if (cached) {
+      applySettings(cached);
+      setIsLoading(false);
+    } else {
+      applyDefaults();
+    }
+
     try {
-      const settings = await getNotificationSettings(sessionUserId);
-
+      const settings = await refreshNotificationSettings(activeUserId);
       if (settings) {
-        setEnabled(settings.notificationsEnabled);
-        setGentleReminders(settings.gentleRemindersEnabled);
-
-        if (settings.quietHoursStart) {
-          const [hour, minute] = settings.quietHoursStart.split(':');
-          const start = new Date();
-          start.setHours(parseInt(hour), parseInt(minute), 0, 0);
-          setQuietStart(start);
-        }
-
-        if (settings.quietHoursEnd) {
-          const [hour, minute] = settings.quietHoursEnd.split(':');
-          const end = new Date();
-          end.setHours(parseInt(hour), parseInt(minute), 0, 0);
-          setQuietEnd(end);
-        }
-      } else {
-        const start = new Date();
-        start.setHours(21, 0, 0, 0);
-        setQuietStart(start);
-
-        const end = new Date();
-        end.setHours(9, 0, 0, 0);
-        setQuietEnd(end);
+        applySettings(settings);
       }
     } catch (error: unknown) {
       devLog.error('[NotificationsScreen] Failed to load notification settings:', error);
-      HeritageAlert.show({
-        title: SETTINGS_STRINGS.notifications.save.errorTitle,
-        message: SETTINGS_STRINGS.notifications.save.loadError,
-        variant: 'error',
-      });
+      if (!cached) {
+        HeritageAlert.show({
+          title: SETTINGS_STRINGS.notifications.save.errorTitle,
+          message: SETTINGS_STRINGS.notifications.save.loadError,
+          variant: 'error',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [sessionUserId]);
+  }, [activeUserId]);
 
   useEffect(() => {
     void loadSettings();
@@ -376,14 +416,15 @@ export function useNotificationsLogic() {
   };
 
   async function saveSettings() {
-    if (!sessionUserId) return;
+    if (!activeUserId) return;
 
+    setIsSaving(true);
     try {
       const quietStartTime = `${quietStart.getHours().toString().padStart(2, '0')}:${quietStart.getMinutes().toString().padStart(2, '0')}`;
       const quietEndTime = `${quietEnd.getHours().toString().padStart(2, '0')}:${quietEnd.getMinutes().toString().padStart(2, '0')}`;
 
       await updateNotificationSettings({
-        userId: sessionUserId,
+        userId: activeUserId,
         notificationsEnabled: enabled,
         gentleRemindersEnabled: gentleReminders,
         quietHoursStart: quietStartTime,
@@ -403,6 +444,8 @@ export function useNotificationsLogic() {
         message: SETTINGS_STRINGS.notifications.save.errorMessage,
         variant: 'error',
       });
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -413,6 +456,7 @@ export function useNotificationsLogic() {
       quietStart,
       quietEnd,
       isLoading,
+      isSaving,
       scrollY,
       showStartPicker,
       showEndPicker,

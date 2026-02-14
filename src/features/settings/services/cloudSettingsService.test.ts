@@ -42,7 +42,7 @@ describe('cloudSettingsService', () => {
   it('returns defaults when no settings are stored', async () => {
     const settings = await getCloudSettings();
 
-    expect(settings.cloudAIEnabled).toBe(true);
+    expect(settings.cloudAIEnabled).toBe(false);
     expect(typeof settings.lastUpdated).toBe('string');
   });
 
@@ -77,7 +77,7 @@ describe('cloudSettingsService', () => {
     );
   });
 
-  it('throws when Supabase upsert fails', async () => {
+  it('keeps local setting when Supabase upsert fails', async () => {
     mockGetSession.mockResolvedValue({
       data: { session: { user: { id: 'user-123' } } },
       error: null,
@@ -87,6 +87,10 @@ describe('cloudSettingsService', () => {
       error: { message: 'boom' },
     });
 
-    await expect(saveCloudSettings(true)).rejects.toThrow('boom');
+    const result = await saveCloudSettings(true);
+    expect(result.cloudAIEnabled).toBe(true);
+    expect(JSON.parse(mmkv.getString('@timelog/cloud_settings') ?? '{}')).toMatchObject({
+      cloudAIEnabled: true,
+    });
   });
 });

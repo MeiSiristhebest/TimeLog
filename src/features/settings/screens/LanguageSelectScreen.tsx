@@ -3,10 +3,12 @@ import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useProfile } from '../hooks/useProfile';
 import { buildLanguageOptions, getLanguageLabel, getSystemLocale } from '../utils/languageOptions';
+import { getLatestLocalProfile, updateLocalProfile } from '../services/localProfileService';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, TextInput, View } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { devLog } from '@/lib/devLogger';
 
 export function LanguageSelectScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
@@ -29,6 +31,16 @@ export function LanguageSelectScreen(): JSX.Element {
   const selected = params.current ?? profile?.language ?? systemLocale;
 
   const handleSelect = async (code: string) => {
+    try {
+      await updateProfileData({ language: code });
+    } catch (error) {
+      devLog.warn('[LanguageSelectScreen] Profile update failed, applying local language fallback', error);
+      const latest = await getLatestLocalProfile();
+      if (latest) {
+        await updateLocalProfile(latest.id, { language: code });
+      }
+    }
+
     if (params.from === 'edit-profile') {
       router.replace({
         pathname: '/(tabs)/settings/edit-profile',
@@ -36,8 +48,6 @@ export function LanguageSelectScreen(): JSX.Element {
       });
       return;
     }
-
-    await updateProfileData({ language: code });
     router.back();
   };
 

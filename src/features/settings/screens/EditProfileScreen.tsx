@@ -6,7 +6,7 @@ import { useProfile } from '../hooks/useProfile';
 import { useDisplaySettingsStore } from '../store/displaySettingsStore';
 import { getLanguageLabel, getSystemLocale } from '../utils/languageOptions';
 import { getLatestLocalProfile, updateLocalProfile } from '../services/localProfileService';
-import * as FileSystem from 'expo-file-system/legacy';
+import { persistAvatarAssetUri } from '../services/avatarStorageService';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -28,11 +28,6 @@ import { requestMediaLibraryWithRationale } from '@/utils/permissions';
 
 let ImagePicker: typeof import('expo-image-picker') | null = null;
 let imagePickerPromise: Promise<typeof import('expo-image-picker') | null> | null = null;
-type FileSystemWithDirectories = typeof FileSystem & {
-  documentDirectory?: string | null;
-  cacheDirectory?: string | null;
-};
-const fileSystemWithDirectories = FileSystem as FileSystemWithDirectories;
 
 function loadImagePicker(): Promise<typeof import('expo-image-picker') | null> {
   if (ImagePicker) return Promise.resolve(ImagePicker);
@@ -49,27 +44,6 @@ function loadImagePicker(): Promise<typeof import('expo-image-picker') | null> {
     });
 
   return imagePickerPromise;
-}
-
-async function persistAvatarAssetUri(uri: string): Promise<string> {
-  const baseDir =
-    fileSystemWithDirectories.documentDirectory ?? fileSystemWithDirectories.cacheDirectory;
-  if (!baseDir) {
-    return uri;
-  }
-
-  const avatarDir = `${baseDir}avatars/`;
-  const info = await FileSystem.getInfoAsync(avatarDir);
-  if (!info.exists) {
-    await FileSystem.makeDirectoryAsync(avatarDir, { intermediates: true });
-  }
-
-  const extMatch = uri.match(/\.(jpg|jpeg|png|webp|heic)(?:\?|$)/i);
-  const extension = extMatch?.[1]?.toLowerCase() ?? 'jpg';
-  const targetUri = `${avatarDir}avatar_${Date.now()}.${extension}`;
-  await FileSystem.copyAsync({ from: uri, to: targetUri });
-
-  return targetUri;
 }
 
 export function EditProfileScreen(): JSX.Element {

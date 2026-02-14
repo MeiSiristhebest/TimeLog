@@ -12,6 +12,8 @@ const mockGetProfile = jest.fn();
 const mockUpdateProfile = jest.fn();
 const mockIsAnonymousUser = jest.fn();
 const mockSetFontScaleIndex = jest.fn();
+const mockEnqueueProfileUpsert = jest.fn();
+const mockHasPendingProfileUpsert = jest.fn();
 
 jest.mock('@/features/auth/store/authStore', () => ({
   useAuthStore: (selector: (state: { sessionUserId: string }) => string) =>
@@ -40,6 +42,13 @@ jest.mock('../store/displaySettingsStore', () => ({
     selector({ setFontScaleIndex: mockSetFontScaleIndex }),
 }));
 
+jest.mock('@/lib/sync-engine/queue', () => ({
+  syncQueueService: {
+    enqueueProfileUpsert: (...args: unknown[]) => mockEnqueueProfileUpsert(...args),
+    hasPendingProfileUpsert: (...args: unknown[]) => mockHasPendingProfileUpsert(...args),
+  },
+}));
+
 function Harness({
   onReady,
 }: {
@@ -63,6 +72,8 @@ describe('useProfile integration', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockEnqueueProfileUpsert.mockResolvedValue(undefined);
+    mockHasPendingProfileUpsert.mockResolvedValue(false);
   });
 
   it('updates locally without calling cloud when anonymous', async () => {
@@ -177,5 +188,61 @@ describe('useProfile integration', () => {
 
     expect(mockUpdateLocalProfile).toHaveBeenCalled();
     expect(mockUpdateProfile).toHaveBeenCalledWith('user-1', { displayName: 'New Name' });
+  });
+
+  it('enqueues profile sync when remote update fails', async () => {
+    mockIsAnonymousUser.mockResolvedValue(false);
+    const now = Date.now();
+    mockGetLocalProfile.mockResolvedValue({
+      id: 'user-1',
+      displayName: 'Storyteller',
+      birthDate: null,
+      language: 'en',
+      fontScaleIndex: 1,
+      avatarUri: null,
+      avatarUrl: null,
+      role: 'storyteller',
+      isAnonymous: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+    mockUpdateLocalProfile.mockResolvedValue({
+      id: 'user-1',
+      displayName: 'Queued Name',
+      birthDate: null,
+      language: 'en',
+      fontScaleIndex: 1,
+      avatarUri: null,
+      avatarUrl: null,
+      role: 'storyteller',
+      isAnonymous: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+    mockGetProfile.mockResolvedValue(null);
+    mockUpdateProfile.mockRejectedValue(new Error('network down'));
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+      },
+    });
+    let updateFn: ((updates: ProfileUpdate) => Promise<void>) | undefined;
+    render(<Harness onReady={(fn) => (updateFn = fn)} />, {
+      wrapper: createWrapper(queryClient),
+    });
+
+    await waitFor(() => {
+      expect(updateFn).toBeTruthy();
+    });
+
+    await updateFn!({ displayName: 'Queued Name' });
+
+    expect(mockEnqueueProfileUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        displayName: 'Queued Name',
+      })
+    );
   });
 });

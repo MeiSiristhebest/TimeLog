@@ -16,7 +16,7 @@ type UseCloudSettingsResult = {
 };
 
 export function useCloudSettings(): UseCloudSettingsResult {
-  const [cloudAIEnabled, setCloudAIEnabledState] = useState(true);
+  const [cloudAIEnabled, setCloudAIEnabledState] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load settings on mount
@@ -64,6 +64,6 @@ export async function getCloudAIEnabled(): Promise<boolean> {
     return settings.cloudAIEnabled;
   } catch (error) {
     devLog.error('Failed to get cloud settings:', error);
-    return true;
+    return false;
   }
 }

@@ -4,7 +4,7 @@
  * Manages user profile state with loading and error handling.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import {
   getProfile,
@@ -28,6 +28,8 @@ import { useDisplaySettingsStore } from '../store/displaySettingsStore';
 import { getSystemLocale } from '../utils/languageOptions';
 import { DEFAULT_FONT_SCALE_INDEX } from '@/theme/heritage';
 import { useCurrentUserId } from '@/features/auth/hooks/useCurrentUserId';
+import { syncQueueService } from '@/lib/sync-engine/queue';
+import type { ProfileSyncPayload } from '@/types/entities';
 
 type UseProfileResult = {
   profile: UserProfile | null;
@@ -49,6 +51,7 @@ export function useProfile(): UseProfileResult {
   const [isAnonymous, setIsAnonymous] = useState<boolean>(true);
   const setFontScaleIndex = useDisplaySettingsStore((state) => state.setFontScaleIndex);
   const systemLocale = getSystemLocale();
+  const hasLoadedProfileRef = useRef(false);
 
   const mapLocalToProfile = useCallback(
     (local: LocalProfile): UserProfile => ({
@@ -91,26 +94,18 @@ export function useProfile(): UseProfileResult {
       return;
     }
 
-    if (!profile) {
+    if (!hasLoadedProfileRef.current) {
       setIsLoading(true);
     }
     setError(null);
 
     try {
-      let anonymous = true;
-      try {
-        anonymous = await isAnonymousUser();
-      } catch (err) {
-        devLog.warn('[useProfile] Failed to determine anonymous status, defaulting to true', err);
-      }
-      setIsAnonymous(anonymous);
-
       let local = await getLocalProfile(userId);
       if (!local) {
         local = await ensureLocalProfile(userId, {
           displayName: 'Storyteller',
           role: 'storyteller',
-          isAnonymous: anonymous,
+          isAnonymous: true,
           language: systemLocale,
           fontScaleIndex: DEFAULT_FONT_SCALE_INDEX,
         });
@@ -125,26 +120,63 @@ export function useProfile(): UseProfileResult {
         }
       }
 
-      if (!anonymous) {
-        const remote = await getProfile(userId);
-        if (remote) {
-          const merged = mergeRemoteIntoLocal(local, remote);
-          if (merged.updatedAt !== local.updatedAt) {
-            local = await upsertLocalProfile(merged);
-          }
-        }
-      }
-
+      setIsAnonymous(local.isAnonymous);
       setProfile(mapLocalToProfile(local));
       if (local.fontScaleIndex !== null && local.fontScaleIndex !== undefined) {
         setFontScaleIndex(local.fontScaleIndex);
       }
+      setIsLoading(false);
+
+      void (async () => {
+        let localSnapshot = local;
+        let resolvedAnonymous = localSnapshot.isAnonymous;
+
+        try {
+          resolvedAnonymous = await isAnonymousUser();
+          if (resolvedAnonymous !== localSnapshot.isAnonymous) {
+            localSnapshot = await updateLocalProfile(userId, {
+              isAnonymous: resolvedAnonymous,
+            });
+            setProfile(mapLocalToProfile(localSnapshot));
+          }
+          setIsAnonymous(resolvedAnonymous);
+        } catch (err) {
+          devLog.warn('[useProfile] Failed to refresh anonymous status, keeping local value', err);
+        }
+
+        if (resolvedAnonymous) {
+          return;
+        }
+
+        try {
+          const hasPendingProfileSync = await syncQueueService.hasPendingProfileUpsert(userId);
+          if (hasPendingProfileSync) {
+            devLog.info('[useProfile] Skipping remote merge while local profile sync is pending');
+            return;
+          }
+
+          const remote = await getProfile(userId);
+          if (remote) {
+            const merged = mergeRemoteIntoLocal(localSnapshot, remote);
+            if (merged.updatedAt !== localSnapshot.updatedAt) {
+              const nextLocal = await upsertLocalProfile(merged);
+              setProfile(mapLocalToProfile(nextLocal));
+              if (nextLocal.fontScaleIndex !== null && nextLocal.fontScaleIndex !== undefined) {
+                setFontScaleIndex(nextLocal.fontScaleIndex);
+              }
+            }
+          }
+        } catch (remoteErr) {
+          devLog.warn('[useProfile] Remote fetch failed, keeping local profile', remoteErr);
+        }
+      })();
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch profile'));
     } finally {
+      hasLoadedProfileRef.current = true;
       setIsLoading(false);
     }
-  }, [resolveUserId, profile, setFontScaleIndex, systemLocale, mapLocalToProfile]);
+  }, [resolveUserId, setFontScaleIndex, systemLocale, mapLocalToProfile]);
 
   useEffect(() => {
     fetchProfile();
@@ -211,6 +243,24 @@ export function useProfile(): UseProfileResult {
             } catch (remoteErr) {
               // Local-first: keep local save successful even if remote sync fails.
               devLog.warn('[useProfile] Remote profile sync failed, keeping local changes', remoteErr);
+              const queuePayload: ProfileSyncPayload = {
+                userId,
+                displayName: local.displayName,
+                birthDate: local.birthDate,
+                language: local.language,
+                fontScaleIndex: local.fontScaleIndex,
+                avatarUri: local.avatarUri,
+                avatarUrl: local.avatarUrl,
+                role: local.role,
+                bio: updates.bio ?? null,
+                updatedAt: new Date(local.updatedAt).toISOString(),
+              };
+
+              try {
+                await syncQueueService.enqueueProfileUpsert(queuePayload);
+              } catch (queueErr) {
+                devLog.warn('[useProfile] Failed to enqueue profile retry after remote sync error', queueErr);
+              }
             }
           }
         }

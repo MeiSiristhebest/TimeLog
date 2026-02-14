@@ -155,7 +155,7 @@ export default function HomeTabScreen(): JSX.Element {
             <AppText style={[styles.dateText, { color: colors.textMuted }]}>
               {formattedDate}
             </AppText>
-            {!weather.isLoading && !weather.error && (
+            {!weather.isLoading && (
               <>
                 <View style={[styles.dot, { backgroundColor: `${colors.textMuted}50` }]} />
                 <View style={styles.weatherContainer}>
@@ -166,7 +166,7 @@ export default function HomeTabScreen(): JSX.Element {
                     accessibilityLabel={`Weather: ${weather.condition}`}
                   />
                   <AppText style={[styles.weatherText, { color: colors.textMuted }]}>
-                    {weather.temperature}
+                    {weather.error ? '--' : weather.temperature}
                     {HOME_STRINGS.weather.unit}
                   </AppText>
                 </View>

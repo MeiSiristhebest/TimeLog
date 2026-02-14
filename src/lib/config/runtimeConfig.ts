@@ -41,3 +41,13 @@ export function getRequiredWeatherApiUrl(): string {
 
   return value;
 }
+
+export function getWeatherApiUrl(): string {
+  const value = normalizeValue(process.env.EXPO_PUBLIC_WEATHER_API_URL);
+  if (value) {
+    return value;
+  }
+
+  // Local fallback for dev/prod when env isn't configured.
+  return 'https://wttr.in/?format=j1';
+}

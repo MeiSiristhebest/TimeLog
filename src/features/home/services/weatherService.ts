@@ -1,8 +1,7 @@
 import { fetchWithRetry } from '@/lib/api/client';
 import { ApiError } from '@/lib/api/types';
 import {
-  getRequiredWeatherApiUrl,
-  RuntimeConfigError,
+  getWeatherApiUrl,
 } from '@/features/app/config/runtimeConfig';
 
 export type WeatherCondition = 'sunny' | 'cloudy' | 'rainy' | 'snowy' | 'partly-cloudy' | 'unknown';
@@ -43,7 +42,7 @@ const mapWeatherCode = (code: string): WeatherCondition => {
 
 export async function fetchWeatherData(): Promise<WeatherServiceResult> {
   try {
-    const weatherApiUrl = getRequiredWeatherApiUrl();
+    const weatherApiUrl = getWeatherApiUrl();
 
     const data = (await fetchWithRetry(weatherApiUrl, {
       headers: { Accept: 'application/json' },
@@ -66,9 +65,6 @@ export async function fetchWeatherData(): Promise<WeatherServiceResult> {
       condition: mapWeatherCode(current.weatherCode),
     };
   } catch (error) {
-    if (error instanceof RuntimeConfigError) {
-      throw new ApiError(error.message, 500, 'CONFIG_ERROR');
-    }
     if (error instanceof ApiError) {
       throw error;
     }

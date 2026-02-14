@@ -1,13 +1,12 @@
-import { mmkv } from '@/lib/mmkv';
 import { supabase } from '@/lib/supabase';
 import { devLog } from '@/lib/devLogger';
-
-const CLOUD_SETTINGS_KEY = '@timelog/cloud_settings';
-
-export type CloudSettings = {
-  cloudAIEnabled: boolean;
-  lastUpdated: string;
-};
+import {
+  CLOUD_SETTINGS_KEY,
+  DEFAULT_CLOUD_SETTINGS,
+  type CloudSettings,
+  readCloudSettingsFromStorage,
+  writeCloudSettingsToStorage,
+} from '@/lib/cloudPolicy';
 
 type SupabaseSessionResult = {
   data: { session: { user: { id: string } } | null };
@@ -32,26 +31,11 @@ function getSupabaseClient(client?: SupabaseClientLike): SupabaseClientLike | nu
 }
 
 function readLocalSettings(): CloudSettings | null {
-  const stored = mmkv.getString(CLOUD_SETTINGS_KEY);
-  if (!stored) return null;
-
-  try {
-    const parsed = JSON.parse(stored) as Partial<CloudSettings>;
-    if (typeof parsed.cloudAIEnabled === 'boolean' && typeof parsed.lastUpdated === 'string') {
-      return {
-        cloudAIEnabled: parsed.cloudAIEnabled,
-        lastUpdated: parsed.lastUpdated,
-      };
-    }
-  } catch (error) {
-    devLog.warn('[cloudSettingsService] Failed to parse stored settings', error);
-  }
-
-  return null;
+  return readCloudSettingsFromStorage();
 }
 
 function writeLocalSettings(settings: CloudSettings): void {
-  mmkv.set(CLOUD_SETTINGS_KEY, JSON.stringify(settings));
+  writeCloudSettingsToStorage(settings);
 }
 
 export async function getCloudSettings(): Promise<CloudSettings> {
@@ -61,7 +45,7 @@ export async function getCloudSettings(): Promise<CloudSettings> {
   }
 
   const fallback: CloudSettings = {
-    cloudAIEnabled: true,
+    cloudAIEnabled: DEFAULT_CLOUD_SETTINGS.cloudAIEnabled,
     lastUpdated: new Date().toISOString(),
   };
   writeLocalSettings(fallback);
@@ -111,7 +95,8 @@ export async function saveCloudSettings(
   );
 
   if (error) {
-    throw new Error(error.message);
+    devLog.warn('[cloudSettingsService] Remote sync failed, keeping local cloud setting', error);
+    return settings;
   }
 
   return settings;

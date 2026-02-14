@@ -60,12 +60,32 @@ jest.mock('@/theme/heritage', () => ({
       surfaceCard: '#ffffff',
       onSurface: '#111111',
       textMuted: '#666666',
+      primary: '#4a90e2',
+      onPrimary: '#ffffff',
+      disabled: '#cccccc',
+      error: '#ef4444',
+      shadow: '#000000',
       iconBlue: '#4a90e2',
       iconOrange: '#f59e0b',
       iconRed: '#ef4444',
     },
     typography: {
       body: 24,
+    },
+    spacing: {
+      md: 12,
+      lg: 16,
+      xl: 20,
+    },
+    radius: {
+      md: 12,
+      lg: 16,
+    },
+    animation: {
+      press: {
+        damping: 20,
+        stiffness: 300,
+      },
     },
   }),
 }));
