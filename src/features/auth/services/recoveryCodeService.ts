@@ -18,6 +18,16 @@ export type RecoveryCode = {
     revokedAt: string | null;
 };
 
+type RecoveryCodeRow = {
+  id: string;
+  user_id: string;
+  code: string;
+  created_at: string;
+  expires_at: string;
+  is_active: boolean;
+  revoked_at: string | null;
+};
+
 /**
  * Generate a new recovery code for the current user.
  * Auto-revokes any existing active codes.
@@ -147,7 +157,7 @@ function generateCodeFormat(): string {
 }
 
 // Helper: Map database row to RecoveryCode type
-function mapToRecoveryCode(data: any): RecoveryCode {
+function mapToRecoveryCode(data: RecoveryCodeRow): RecoveryCode {
     return {
         id: data.id,
         userId: data.user_id,

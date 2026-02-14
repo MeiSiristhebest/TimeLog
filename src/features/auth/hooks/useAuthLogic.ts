@@ -15,6 +15,7 @@ import {
   revokeDevice,
   DeviceSummary,
 } from '../services/deviceCodesService';
+import { generateRecoveryCode, getActiveRecoveryCode } from '../services/recoveryCodeService';
 import { signInAnonymously } from '../services/anonymousAuthService';
 import { useActiveSession } from './useActiveSession';
 import { devLog } from '@/lib/devLogger';
@@ -129,7 +130,8 @@ export function useRoleLogic() {
 // Hook for Recovery Code Logic
 export function useRecoveryCodeLogic() {
   const scrollY = useSharedValue(0);
-  const [recoveryCode, setRecoveryCode] = useState<string | null>('RCV-482-917');
+  const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
+  const [isLoadingCode, setIsLoadingCode] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const scrollHandler = useAnimatedScrollHandler({
@@ -137,6 +139,51 @@ export function useRecoveryCodeLogic() {
       scrollY.value = event.contentOffset.y;
     },
   });
+
+  const toErrorMessage = (error: unknown): string => {
+    if (error instanceof Error) {
+      const normalizedMessage = error.message.toLowerCase();
+      if (normalizedMessage.includes('logged in') || normalizedMessage.includes('authenticated')) {
+        return 'Please sign in to manage your recovery code.';
+      }
+      return error.message;
+    }
+    return 'Something went wrong while handling your recovery code. Please try again.';
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadActiveCode() {
+      setIsLoadingCode(true);
+      try {
+        const activeCode = await getActiveRecoveryCode();
+        if (!mounted) {
+          return;
+        }
+        setRecoveryCode(activeCode?.code ?? null);
+      } catch (error) {
+        devLog.error('[useRecoveryCodeLogic] Failed to load active recovery code:', error);
+        if (mounted) {
+          HeritageAlert.show({
+            title: 'Unable to load code',
+            message: toErrorMessage(error),
+            variant: 'error',
+          });
+        }
+      } finally {
+        if (mounted) {
+          setIsLoadingCode(false);
+        }
+      }
+    }
+
+    void loadActiveCode();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleGenerateCode = async () => {
     HeritageAlert.show({
@@ -147,12 +194,21 @@ export function useRecoveryCodeLogic() {
         label: AUTH_STRINGS.recoveryCode.alerts.generate.confirm,
         onPress: async () => {
           setIsGenerating(true);
-          // TODO: Call API to generate new recovery code
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          const newCode = `RCV-${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}`;
-          setRecoveryCode(newCode);
-          setIsGenerating(false);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          try {
+            const nextCode = await generateRecoveryCode();
+            setRecoveryCode(nextCode.code);
+            showSuccessToast('Recovery code updated');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } catch (error) {
+            devLog.error('[useRecoveryCodeLogic] Failed to generate recovery code:', error);
+            HeritageAlert.show({
+              title: 'Failed to generate code',
+              message: toErrorMessage(error),
+              variant: 'error',
+            });
+          } finally {
+            setIsGenerating(false);
+          }
         },
       },
       secondaryAction: { label: AUTH_STRINGS.recoveryCode.alerts.generate.cancel },
@@ -180,7 +236,7 @@ export function useRecoveryCodeLogic() {
   };
 
   return {
-    state: { recoveryCode, isGenerating, scrollY },
+    state: { recoveryCode, isLoadingCode, isGenerating, scrollY },
     actions: { handleGenerateCode, handleCopyCode, handleShareCode, scrollHandler },
   };
 }

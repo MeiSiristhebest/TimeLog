@@ -6,7 +6,7 @@
 
 import { AppText } from '@/components/ui/AppText';
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import { Animated } from '@/tw/animated';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
@@ -20,7 +20,7 @@ export default function RecoveryCodeScreen(): JSX.Element {
 
   // Logic Separation
   const { state, actions } = useRecoveryCodeLogic();
-  const { recoveryCode, isGenerating, scrollY } = state;
+  const { recoveryCode, isLoadingCode, isGenerating, scrollY } = state;
   const { handleGenerateCode, handleCopyCode, handleShareCode, scrollHandler } = actions;
   const STRINGS = AUTH_STRINGS.recoveryCode;
 
@@ -50,7 +50,18 @@ export default function RecoveryCodeScreen(): JSX.Element {
           </AppText>
         </View>
 
-        {recoveryCode ? (
+        {isLoadingCode ? (
+          <View
+            style={[
+              styles.noCodeCard,
+              { borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceCard },
+            ]}>
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+            <AppText style={[styles.noCodeText, { color: `${theme.colors.onSurface}60` }]}>
+              Loading recovery code...
+            </AppText>
+          </View>
+        ) : recoveryCode ? (
           <View
             style={[
               styles.codeCard,
@@ -98,7 +109,7 @@ export default function RecoveryCodeScreen(): JSX.Element {
           variant="primary"
           fullWidth
           onPress={handleGenerateCode}
-          disabled={isGenerating}
+          disabled={isGenerating || isLoadingCode}
           style={{ marginTop: 24 }}
         />
 
