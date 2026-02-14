@@ -25,6 +25,15 @@ jobs:
       - name: Run linter
         run: npm run lint
 
+      - name: Run lint warning budget check
+        run: npm run lint:baseline:check
+
+      - name: Run hardcode audit (error mode)
+        run: npm run hardcode:audit:ci
+
+      - name: Run english copy guard
+        run: npm run copy:english:check
+
       - name: Run tests
         run: npm test -- --coverage
 
