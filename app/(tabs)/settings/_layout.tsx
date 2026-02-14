@@ -1,24 +1,29 @@
 import { Stack } from 'expo-router';
+import { useHeritageTheme } from '@/theme/heritage';
 
 /**
  * Settings Stack Layout
  * This prevents nested settings screens from appearing as tabs
  */
 export default function SettingsLayout(): JSX.Element {
+  const { colors } = useHeritageTheme();
+
   return (
     <Stack
       screenOptions={{
         headerShown: false, // Most screens handle their own header
-        // Heritage theme colors: surfaceDim=#F9F3E8 → #FFFAF5 for warm cream
+        contentStyle: {
+          backgroundColor: colors.surfaceDim,
+        },
         headerStyle: {
-          backgroundColor: '#FFFAF5', // theme.colors.surfaceDim variant
+          backgroundColor: colors.surfaceDim,
         },
         headerTitleStyle: {
-          color: '#2C2C2C', // theme.colors.onSurface
+          color: colors.onSurface,
           fontSize: 20,
           fontWeight: '700',
         },
-        headerTintColor: '#2C2C2C', // theme.colors.onSurface
+        headerTintColor: colors.onSurface,
       }}>
       <Stack.Screen
         name="index"
@@ -80,6 +85,13 @@ export default function SettingsLayout(): JSX.Element {
         options={{
           headerShown: false,
           title: 'About & Help',
+        }}
+      />
+      <Stack.Screen
+        name="about-timelog"
+        options={{
+          headerShown: false,
+          title: 'About TimeLog',
         }}
       />
       <Stack.Screen

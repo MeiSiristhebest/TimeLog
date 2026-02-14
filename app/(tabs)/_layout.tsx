@@ -23,6 +23,9 @@ export default function TabsLayout(): JSX.Element {
       screenOptions={{
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.handle,
+        sceneStyle: {
+          backgroundColor: theme.colors.surfaceDim,
+        },
         headerStyle: {
           backgroundColor: theme.colors.surfaceDim, // Use Surface Dim for header
           shadowColor: 'transparent',
@@ -41,6 +44,7 @@ export default function TabsLayout(): JSX.Element {
         options={{
           title: 'Record',
           headerShown: false,
+          popToTopOnBlur: true,
           tabBarIcon: ({ color }) => <Ionicons name="mic" size={ICON_SIZE} color={color} />,
         }}
       />
@@ -51,6 +55,7 @@ export default function TabsLayout(): JSX.Element {
         options={{
           title: 'Listen',
           headerShown: false, // Use custom header inside gallery.tsx
+          popToTopOnBlur: true,
           tabBarIcon: ({ color }) => <Ionicons name="headset" size={ICON_SIZE} color={color} />,
         }}
       />
@@ -61,6 +66,7 @@ export default function TabsLayout(): JSX.Element {
         options={{
           title: 'Me',
           headerShown: false,
+          popToTopOnBlur: true,
           tabBarIcon: ({ color }) => <Ionicons name="person" size={ICON_SIZE} color={color} />,
         }}
       />
