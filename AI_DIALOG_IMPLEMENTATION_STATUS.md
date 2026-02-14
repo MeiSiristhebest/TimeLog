@@ -126,7 +126,7 @@ verify_jwt = false  # We verify in function code using auth.getUser()
 ✅ Returns valid LiveKit JWT with room permissions
 {
   "token": "eyJhbGc...",
-  "url": "wss://time-log-wuk3kw5e.livekit.cloud",
+  "url": "wss://your-livekit-instance.livekit.cloud",
   "expiresAt": 1769946875809
 }
 
@@ -144,26 +144,26 @@ verify_jwt = false  # We verify in function code using auth.getUser()
 ## 🔧 Environment Setup
 
 ### Supabase Project
-- **Project ID**: `cazgjzgmxsctbaqeksqo`
-- **URL**: `https://cazgjzgmxsctbaqeksqo.supabase.co`
-- **Anon Key**: `sb_publishable_buvEGX7wz0rB3sAy-wixPQ_w_bNALoj` (2025 format)
+- **Project ID**: `your-supabase-project-ref`
+- **URL**: `https://your-supabase-project-ref.supabase.co`
+- **Anon Key**: `your-public-anon-key` (2025 format)
 
 ### LiveKit Cloud
-- **URL**: `wss://time-log-wuk3kw5e.livekit.cloud`
-- **API Key**: `API5pvKHSbvamGw`
+- **URL**: `wss://your-livekit-instance.livekit.cloud`
+- **API Key**: `your-livekit-api-key`
 - **Free Tier**: 1000 agent minutes/month
 
 ### Environment Variables (Set in Supabase Dashboard)
 ```bash
-LIVEKIT_API_KEY=API5pvKHSbvamGw
+LIVEKIT_API_KEY=your-livekit-api-key
 LIVEKIT_API_SECRET=<secret>
-LIVEKIT_URL=wss://time-log-wuk3kw5e.livekit.cloud
+LIVEKIT_URL=wss://your-livekit-instance.livekit.cloud
 ```
 
 ### Test User
-- **Email**: `mtx1534572236@outlook.com`
-- **Password**: `123123abc`
-- **User ID**: `6b027bfa-5671-4a38-877a-1bb36c046de7`
+- **Email**: `test-user@example.com`
+- **Password**: `your-test-password`
+- **User ID**: `your-test-user-id`
 
 ---
 
@@ -402,7 +402,7 @@ npx expo start --dev-client
 npx drizzle-kit generate
 
 # Deploy Supabase Edge Functions
-cd supabase && npx supabase functions deploy livekit-token network-probe --project-ref cazgjzgmxsctbaqeksqo
+cd supabase && npx supabase functions deploy livekit-token network-probe --project-ref your-supabase-project-ref
 
 # Run tests
 npm test
@@ -414,19 +414,19 @@ npm run lint
 ### Testing Edge Functions
 ```bash
 # Get JWT token
-JWT=$(curl -s -X POST 'https://cazgjzgmxsctbaqeksqo.supabase.co/auth/v1/token?grant_type=password' \
+JWT=$(curl -s -X POST 'https://your-supabase-project-ref.supabase.co/auth/v1/token?grant_type=password' \
   -H 'Content-Type: application/json' \
-  -H 'apikey: sb_publishable_buvEGX7wz0rB3sAy-wixPQ_w_bNALoj' \
-  -d '{"email":"mtx1534572236@outlook.com","password":"123123abc"}' | jq -r '.access_token')
+  -H 'apikey: your-public-anon-key' \
+  -d '{"email":"test-user@example.com","password":"your-test-password"}' | jq -r '.access_token')
 
 # Test livekit-token
-curl -X POST 'https://cazgjzgmxsctbaqeksqo.supabase.co/functions/v1/livekit-token' \
+curl -X POST 'https://your-supabase-project-ref.supabase.co/functions/v1/livekit-token' \
   -H "Authorization: Bearer $JWT" \
   -H 'Content-Type: application/json' \
-  -d '{"roomName":"story-001","identity":"6b027bfa-5671-4a38-877a-1bb36c046de7"}'
+  -d '{"roomName":"story-001","identity":"your-test-user-id"}'
 
 # Test network-probe
-curl -X POST 'https://cazgjzgmxsctbaqeksqo.supabase.co/functions/v1/network-probe' \
+curl -X POST 'https://your-supabase-project-ref.supabase.co/functions/v1/network-probe' \
   -H "Authorization: Bearer $JWT" \
   -H 'Content-Type: application/json'
 ```

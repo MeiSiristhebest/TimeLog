@@ -123,8 +123,8 @@ docker run --env-file .env timelog-agent:latest
 ### 选项 3：LiveKit Cloud（推荐）
 ```bash
 livekit-cli agent deploy \
-  --url wss://time-log-wuk3kw5e.livekit.cloud \
-  --api-key API5pvKHSbvamGw \
+  --url wss://your-livekit-instance.livekit.cloud \
+  --api-key your-livekit-api-key \
   --api-secret <your-secret> \
   --file story_agent.py
 ```

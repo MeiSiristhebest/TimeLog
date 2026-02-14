@@ -49,7 +49,7 @@ cp .env.example .env
 
 **Required variables**
 ```bash
-LIVEKIT_URL=wss://time-log-wuk3kw5e.livekit.cloud
+LIVEKIT_URL=wss://your-livekit-instance.livekit.cloud
 LIVEKIT_API_KEY=your-livekit-api-key
 LIVEKIT_API_SECRET=your-livekit-secret
 DEEPGRAM_API_KEY=your-deepgram-api-key

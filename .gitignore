@@ -2,6 +2,9 @@ node_modules/
 .expo/
 dist/
 npm-debug.*
+*.log
+*.tmp
+*.tmp.*
 *.jks
 *.p8
 *.p12
@@ -13,8 +16,10 @@ web-build/
 # expo router
 expo-env.d.ts
 
-# firebase/supabase/vexo
-.env
+# local env files
+**/.env
+**/.env.*
+!**/.env.example
 
 # iOS/Android build artifacts
 ios
@@ -27,11 +32,9 @@ coverage/
 scripts/*.log
 
 # AI Agent state (ephemeral)
-# .agent/
-# .agentvibes/
-# .claude/
-# .codex/
 .agent/
+.agentvibes/
+.claude/
 .codex/
 .mcp.json
 .shared/
@@ -39,8 +42,28 @@ scripts/*.log
 .skill/
 .tmp*
 
+# local planning/output artifacts
+_bmad-output/
+_bmad/
+
+# local Supabase runtime artifacts
+supabase/.temp/
+
+# IDE/editor local settings
+.idea/
+.vscode/
+
+# Python local artifacts (agents)
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
 # macOS
 .DS_Store
+Thumbs.db
+Desktop.ini
 
 # Temporary files created by Metro to check the health of the file watcher
 .metro-health-check*

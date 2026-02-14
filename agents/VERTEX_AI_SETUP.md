@@ -110,8 +110,8 @@ Hello! How can I help you today?
 
 ```bash
 # LiveKit
-LIVEKIT_URL=wss://time-log-wuk3kw5e.livekit.cloud
-LIVEKIT_API_KEY=API5pvKHSbvamGw
+LIVEKIT_URL=wss://your-livekit-instance.livekit.cloud
+LIVEKIT_API_KEY=your-livekit-api-key
 LIVEKIT_API_SECRET=your-secret
 
 # Deepgram
@@ -126,8 +126,8 @@ USE_VERTEX_AI=false
 
 ```bash
 # LiveKit
-LIVEKIT_URL=wss://time-log-wuk3kw5e.livekit.cloud
-LIVEKIT_API_KEY=API5pvKHSbvamGw
+LIVEKIT_URL=wss://your-livekit-instance.livekit.cloud
+LIVEKIT_API_KEY=your-livekit-api-key
 LIVEKIT_API_SECRET=your-secret
 
 # Deepgram
