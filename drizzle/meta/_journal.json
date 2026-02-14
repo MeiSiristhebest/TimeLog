@@ -92,6 +92,13 @@
       "when": 1770346926615,
       "tag": "0012_confused_korath",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1770545327881,
+      "tag": "0013_wide_black_bolt",
+      "breakpoints": true
     }
   ]
 }

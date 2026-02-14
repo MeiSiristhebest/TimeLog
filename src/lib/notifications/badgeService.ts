@@ -5,7 +5,9 @@
  */
 
 import * as Notifications from 'expo-notifications';
-import { getUnreadCount } from '@/features/home/services/activityService';
+import { and, eq, isNull } from 'drizzle-orm';
+import { db } from '@/db/client';
+import { activityEvents } from '@/db/schema';
 import { devLog } from '@/lib/devLogger';
 
 /**
@@ -13,7 +15,11 @@ import { devLog } from '@/lib/devLogger';
  */
 export async function updateAppBadge(userId: string): Promise<void> {
   try {
-    const count = await getUnreadCount(userId);
+    const unreadActivities = await db
+      .select()
+      .from(activityEvents)
+      .where(and(eq(activityEvents.targetUserId, userId), isNull(activityEvents.readAt)));
+    const count = unreadActivities.length;
     await Notifications.setBadgeCountAsync(count);
   } catch (error) {
     devLog.error('[badgeService] Failed to update badge:', error);

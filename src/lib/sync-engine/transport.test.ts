@@ -59,7 +59,7 @@ describe('TusTransport', () => {
   let transport: TusTransport;
   const mockSupabaseUrl = 'https://test.supabase.co';
   const mockAnonKey = 'test-anon-key';
-  const uploadMock = Upload as jest.Mock;
+  const uploadMock = Upload as unknown as jest.Mock;
 
   beforeEach(() => {
     transport = new TusTransport(mockSupabaseUrl, mockAnonKey);
@@ -144,6 +144,25 @@ describe('TusTransport', () => {
       expect(uploadInstance?.options.headers?.Authorization).toContain('Bearer');
     });
 
+    it('should fail fast when local file cannot be converted to blob', async () => {
+      const filePath = 'file:///recordings/test.wav';
+      (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({
+        exists: true,
+        size: 1024,
+        uri: filePath,
+      });
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        blob: () => Promise.resolve(new Blob([''])),
+      });
+
+      await expect(transport.uploadFile(filePath, 'recordings', 'test.wav')).rejects.toThrow(
+        'Failed to load file for upload'
+      );
+    });
+
     it('should handle upload errors with proper error messages', async () => {
       const filePath = 'file:///recordings/test.wav';
 
@@ -211,6 +230,19 @@ describe('TusTransport', () => {
       expect(Crypto.digest).toHaveBeenCalledWith(
         Crypto.CryptoDigestAlgorithm.MD5,
         DEFAULT_ARRAY_BUFFER
+      );
+    });
+
+    it('should throw when checksum source file cannot be fetched', async () => {
+      const filePath = 'file:///recordings/missing.wav';
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        arrayBuffer: () => Promise.resolve(DEFAULT_ARRAY_BUFFER),
+      });
+
+      await expect(transport.calculateMd5Checksum(filePath)).rejects.toThrow(
+        'Failed to load file for checksum'
       );
     });
   });

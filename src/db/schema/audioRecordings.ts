@@ -2,13 +2,13 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 /**
  * Sync status for audio recordings.
- * - local: Just saved, not yet queued for sync
+ * - local/local_only: Stored only on device (not queued for cloud)
  * - queued: Added to sync queue, waiting for network
  * - syncing: Upload in progress
  * - synced: Cloud backup complete
  * - failed: Upload failed, will retry with exponential backoff
  */
-export type SyncStatus = 'local' | 'queued' | 'syncing' | 'synced' | 'failed';
+export type SyncStatus = 'local' | 'local_only' | 'queued' | 'syncing' | 'synced' | 'failed';
 
 /**
  * Recording status for tracking session state.
@@ -17,6 +17,8 @@ export type SyncStatus = 'local' | 'queued' | 'syncing' | 'synced' | 'failed';
  * - completed: Recording finished normally
  */
 export type RecordingStatus = 'recording' | 'paused' | 'completed';
+export type UploadFormat = 'wav' | 'opus';
+export type TranscodeStatus = 'pending' | 'ready' | 'fallback_wav' | 'failed';
 
 // Tracks locally recorded audio files before they are synced.
 export const audioRecordings = sqliteTable('audio_recordings', {
@@ -28,8 +30,12 @@ export const audioRecordings = sqliteTable('audio_recordings', {
   startedAt: integer('started_at').notNull(),
   endedAt: integer('ended_at'),
   isSynced: integer('is_synced', { mode: 'boolean' }).notNull().default(false), // Legacy field, kept for migration
-  // Sync status: local → queued → syncing → synced/failed
+  // Sync status: local/local_only → queued → syncing → synced/failed
   syncStatus: text('sync_status').notNull().default('local').$type<SyncStatus>(),
+  // Upload metadata snapshot for deterministic sync retries
+  uploadPath: text('upload_path'),
+  uploadFormat: text('upload_format').$type<UploadFormat>(),
+  transcodeStatus: text('transcode_status').$type<TranscodeStatus>(),
   // Recording status: recording → paused/completed (for interruption handling)
   recordingStatus: text('recording_status').notNull().default('completed').$type<RecordingStatus>(),
   // Pause metadata: timestamp when paused (for session recovery)

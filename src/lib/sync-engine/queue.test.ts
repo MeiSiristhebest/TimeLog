@@ -7,12 +7,30 @@ import { syncQueueService } from './queue';
 import { db } from '@/db/client';
 import { syncQueue, audioRecordings } from '@/db/schema';
 
+jest.mock('drizzle-orm', () => ({
+  eq: jest.fn(() => ({})),
+  and: jest.fn(() => ({})),
+  lt: jest.fn(() => ({})),
+  lte: jest.fn(() => ({})),
+  gte: jest.fn(() => ({})),
+}));
+
 // Helper to create a chainable mock that acts as a Promise
-const createChainableMock = (returnValue: any = undefined) => {
-  const mock: any = jest.fn(() => mock);
+type ChainableMock = jest.Mock & {
+  then: (resolve: (value: unknown) => unknown, reject: (error: unknown) => unknown) => Promise<unknown>;
+  values: jest.Mock;
+  set: jest.Mock;
+  where: jest.Mock;
+  from: jest.Mock;
+  orderBy: jest.Mock;
+  limit: jest.Mock;
+};
+
+const createChainableMock = (returnValue: unknown = undefined): ChainableMock => {
+  const mock = jest.fn(() => mock) as unknown as ChainableMock;
 
   // Make the mock Thenable so it can be awaited directly
-  mock.then = (resolve: any, reject: any) => {
+  mock.then = (resolve, reject) => {
     return Promise.resolve(returnValue).then(resolve, reject);
   };
 
@@ -75,7 +93,14 @@ describe('SyncQueueService', () => {
       // Verify recording status update
       expect(db.update).toHaveBeenCalledWith(audioRecordings);
       const updateMock = (db.update as jest.Mock).mock.results[0].value;
-      expect(updateMock.set).toHaveBeenCalledWith({ syncStatus: 'queued' });
+      expect(updateMock.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          syncStatus: 'queued',
+          uploadPath: '/path/to/file.wav',
+          uploadFormat: 'wav',
+          transcodeStatus: 'pending',
+        })
+      );
     });
   });
 
@@ -97,6 +122,23 @@ describe('SyncQueueService', () => {
 
       // Verify recording status update
       expect(db.update).toHaveBeenCalledWith(audioRecordings);
+    });
+  });
+
+  describe('enqueueDeleteFile', () => {
+    it('should insert queue item with delete_file operation', async () => {
+      await syncQueueService.enqueueDeleteFile('rec-123', 'rec-123.opus');
+
+      expect(db.insert).toHaveBeenCalledWith(syncQueue);
+      const insertMock = (db.insert as jest.Mock).mock.results[0].value as ChainableMock;
+      expect(insertMock.values).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'delete_file',
+          recordingId: 'rec-123',
+          priority: 1,
+          status: 'pending',
+        })
+      );
     });
   });
 

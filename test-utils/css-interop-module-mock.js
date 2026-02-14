@@ -19,4 +19,11 @@ module.exports = {
       return styles;
     },
   },
+  useColorScheme: function () {
+    return {
+      colorScheme: 'light',
+      setColorScheme: function () {},
+      toggleColorScheme: function () {},
+    };
+  },
 };

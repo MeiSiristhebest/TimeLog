@@ -10,10 +10,7 @@
 import * as Notifications from 'expo-notifications';
 import { AppState, AppStateStatus } from 'react-native';
 import { devLog } from '@/lib/devLogger';
-import {
-  fetchLastUsedAt,
-  updateLastUsedAt as updateLastUsedAtProfile,
-} from '@/features/notifications/services/nudgeProfileService';
+import { supabase } from '@/lib/supabase';
 
 /**
  * Nudge notification type identifier
@@ -55,7 +52,11 @@ const NUDGE_MESSAGES = {
  */
 export async function updateLastUsedAt(userId: string): Promise<void> {
   try {
-    await updateLastUsedAtProfile(userId);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ last_used_at: new Date().toISOString() })
+      .eq('id', userId);
+    if (error) throw error;
     devLog.info('[nudgeService] Updated last_used_at for user:', userId);
   } catch (err) {
     devLog.error('[nudgeService] Error updating last_used_at:', err);
@@ -128,7 +129,14 @@ export async function cancelNudgeNotifications(): Promise<void> {
  */
 export async function shouldScheduleNudge(userId: string): Promise<boolean> {
   try {
-    const lastUsedAt = await fetchLastUsedAt(userId);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('last_used_at')
+      .eq('id', userId)
+      .single();
+    if (error) throw error;
+
+    const lastUsedAt = data?.last_used_at ?? null;
     if (!lastUsedAt) {
       // No last_used_at recorded, schedule nudge
       return true;
@@ -212,7 +220,8 @@ export function handleNudgeNotificationTap(
   data: Record<string, unknown>
 ): { screen: string } | null {
   if (data?.type === NUDGE_NOTIFICATION_TYPE) {
-    return { screen: (data.screen as string) || 'topics' };
+    const screen = typeof data.screen === 'string' && data.screen.length > 0 ? data.screen : 'topics';
+    return { screen };
   }
   return null;
 }

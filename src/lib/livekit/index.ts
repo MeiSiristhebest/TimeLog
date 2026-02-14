@@ -8,6 +8,7 @@
  */
 
 import { registerGlobals } from '@livekit/react-native';
+import { Platform } from 'react-native';
 
 let isRegistered = false;
 
@@ -16,6 +17,10 @@ let isRegistered = false;
  * Safe to call multiple times (idempotent)
  */
 export function initializeLiveKit(): void {
+  if (Platform.OS === 'web') {
+    return;
+  }
+
   if (isRegistered) {
     return;
   }

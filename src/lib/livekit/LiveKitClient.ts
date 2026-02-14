@@ -5,7 +5,7 @@
  * Manages dual audio path: local recording (@siteed) + LiveKit streaming (mic).
  */
 
-import { Room, RoomEvent, Track, RemoteAudioTrack } from 'livekit-client';
+import { Room, RoomEvent, RemoteAudioTrack } from 'livekit-client';
 import type { ConnectionQuality } from 'livekit-client';
 
 export type LiveKitConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
@@ -22,10 +22,21 @@ export interface TranscriptionSegment {
   timestamp: number;
 }
 
+type LiveKitListener = (...args: unknown[]) => void;
+
+function isConnectionState(value: unknown): value is LiveKitConnectionState {
+  return (
+    value === 'disconnected' ||
+    value === 'connecting' ||
+    value === 'connected' ||
+    value === 'reconnecting'
+  );
+}
+
 export class LiveKitClient {
   private room: Room;
   private connectionState: LiveKitConnectionState = 'disconnected';
-  private listeners: Map<string, Set<Function>> = new Map();
+  private listeners: Map<string, Set<LiveKitListener>> = new Map();
 
   constructor() {
     this.room = new Room({
@@ -36,7 +47,9 @@ export class LiveKitClient {
       // Audio settings for elderly users
       audioCaptureDefaults: {
         autoGainControl: true,
-        echoCancellation: true,
+        // Keep assistant voice audible in local story recordings (AI mode).
+        // Echo cancellation can aggressively suppress speaker output from capture.
+        echoCancellation: false,
         noiseSuppression: true,
       },
     });
@@ -103,8 +116,8 @@ export class LiveKitClient {
    * Subscribe to agent audio output
    */
   onAgentAudio(callback: (track: RemoteAudioTrack) => void): () => void {
-    const handler = (track: Track) => {
-      if (track.kind === Track.Kind.Audio && track instanceof RemoteAudioTrack) {
+    const handler: LiveKitListener = (track) => {
+      if (track instanceof RemoteAudioTrack) {
         callback(track);
       }
     };
@@ -112,6 +125,26 @@ export class LiveKitClient {
     this.on('trackSubscribed', handler);
     
     return () => this.off('trackSubscribed', handler);
+  }
+
+  /**
+   * Subscribe to remote participant join events.
+   * In TimeLog rooms this effectively signals agent worker presence.
+   */
+  onParticipantConnected(callback: () => void): () => void {
+    const handler: LiveKitListener = () => {
+      callback();
+    };
+
+    this.on('participantConnected', handler);
+    return () => this.off('participantConnected', handler);
+  }
+
+  /**
+   * Current remote participant count.
+   */
+  getRemoteParticipantCount(): number {
+    return this.room.remoteParticipants.size;
   }
 
   /**
@@ -139,8 +172,14 @@ export class LiveKitClient {
    * Subscribe to connection state changes
    */
   onConnectionStateChange(callback: (state: LiveKitConnectionState) => void): () => void {
-    this.on('connectionStateChange', callback);
-    return () => this.off('connectionStateChange', callback);
+    const handler: LiveKitListener = (state) => {
+      if (isConnectionState(state)) {
+        callback(state);
+      }
+    };
+
+    this.on('connectionStateChange', handler);
+    return () => this.off('connectionStateChange', handler);
   }
 
   /**
@@ -149,6 +188,10 @@ export class LiveKitClient {
   private setupEventListeners(): void {
     this.room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
       this.emit('trackSubscribed', track, publication, participant);
+    });
+
+    this.room.on(RoomEvent.ParticipantConnected, (participant) => {
+      this.emit('participantConnected', participant);
     });
 
     this.room.on(RoomEvent.Disconnected, () => {
@@ -170,7 +213,7 @@ export class LiveKitClient {
   /**
    * Generic event emitter
    */
-  private emit(event: string, ...args: any[]): void {
+  private emit(event: string, ...args: unknown[]): void {
     const handlers = this.listeners.get(event);
     if (handlers) {
       handlers.forEach(handler => handler(...args));
@@ -180,17 +223,19 @@ export class LiveKitClient {
   /**
    * Register event listener
    */
-  private on(event: string, handler: Function): void {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
+  private on(event: string, handler: LiveKitListener): void {
+    let handlers = this.listeners.get(event);
+    if (!handlers) {
+      handlers = new Set();
+      this.listeners.set(event, handlers);
     }
-    this.listeners.get(event)!.add(handler);
+    handlers.add(handler);
   }
 
   /**
    * Unregister event listener
    */
-  private off(event: string, handler: Function): void {
+  private off(event: string, handler: LiveKitListener): void {
     const handlers = this.listeners.get(event);
     if (handlers) {
       handlers.delete(handler);

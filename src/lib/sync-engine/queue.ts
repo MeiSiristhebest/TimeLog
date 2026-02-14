@@ -8,28 +8,66 @@ import { eq, and, lte, lt, gte } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { syncQueue, audioRecordings } from '@/db/schema';
 import { generateId } from '@/utils/id';
-import type { SyncQueueItem } from '@/types/entities';
+import type { SyncQueueItem, TranscriptSegmentSyncPayload } from '@/types/entities';
 
 const MAX_RETRY_COUNT = 5;
 const BASE_BACKOFF_MS = 2000; // 2 seconds
 
-export type SyncItemType = 'upload_recording' | 'update_metadata' | 'create_profile' | 'upload_transcript_segment';
+export type SyncItemType =
+  | 'upload_recording'
+  | 'update_metadata'
+  | 'create_profile'
+  | 'upload_transcript_segment'
+  | 'delete_file';
 
 export type EnqueuePayload = {
   type: SyncItemType;
   recordingId?: string;
   filePath?: string;
+  uploadPath?: string;
+  uploadExtension?: 'opus' | 'wav';
+  transcodeStatus?: 'pending' | 'ready' | 'fallback_wav' | 'failed';
   data?: Record<string, unknown>;
 };
 
 class SyncQueueService {
+  async markRecordingLocalOnly(
+    recordingId: string,
+    options?: {
+      uploadPath?: string;
+      uploadExtension?: 'opus' | 'wav';
+      transcodeStatus?: 'pending' | 'ready' | 'fallback_wav' | 'failed';
+    }
+  ): Promise<void> {
+    await db
+      .update(audioRecordings)
+      .set({
+        syncStatus: 'local_only',
+        uploadPath: options?.uploadPath,
+        uploadFormat: options?.uploadExtension,
+        transcodeStatus: options?.transcodeStatus,
+      })
+      .where(eq(audioRecordings.id, recordingId));
+  }
+
   /**
    * Enqueue a recording upload operation.
    * Sets recording.syncStatus = 'queued' and creates queue entry.
    */
-  async enqueueRecordingUpload(recordingId: string, filePath: string): Promise<void> {
+  async enqueueRecordingUpload(
+    recordingId: string,
+    filePath: string,
+    options?: {
+      uploadPath?: string;
+      uploadExtension?: 'opus' | 'wav';
+      transcodeStatus?: 'pending' | 'ready' | 'fallback_wav' | 'failed';
+    }
+  ): Promise<void> {
     const id = generateId();
     const now = Date.now();
+    const uploadPath = options?.uploadPath ?? filePath;
+    const uploadExtension = options?.uploadExtension ?? 'wav';
+    const transcodeStatus = options?.transcodeStatus ?? 'pending';
 
     // Use raw SQL for transaction since Drizzle expo-sqlite doesn't support .transaction()
     // Insert queue item
@@ -37,9 +75,15 @@ class SyncQueueService {
       id,
       type: 'upload_recording',
       recordingId,
-      filePath, // Store filePath in column for direct access
+      filePath: uploadPath, // Persist resolved upload path for deterministic retries
       priority: 1, // Default priority for user-initiated uploads
-      payload: JSON.stringify({ filePath, recordingId }),
+      payload: JSON.stringify({
+        filePath,
+        uploadPath,
+        uploadExtension,
+        transcodeStatus,
+        recordingId,
+      }),
       createdAt: now,
       retryCount: 0,
       status: 'pending',
@@ -49,7 +93,12 @@ class SyncQueueService {
     // Update recording status
     await db
       .update(audioRecordings)
-      .set({ syncStatus: 'queued' })
+      .set({
+        syncStatus: 'queued',
+        uploadPath,
+        uploadFormat: uploadExtension,
+        transcodeStatus,
+      })
       .where(eq(audioRecordings.id, recordingId));
   }
 
@@ -82,10 +131,7 @@ class SyncQueueService {
       .where(eq(audioRecordings.id, recordingId));
   }
 
-  /**
-   * Enqueue a transcript segment upload.
-   */
-  async enqueueTranscriptSegment(record: any): Promise<void> {
+  async enqueueTranscriptSegment(record: TranscriptSegmentSyncPayload): Promise<void> {
     const id = generateId();
     const now = Date.now();
 
@@ -95,6 +141,23 @@ class SyncQueueService {
       recordingId: record.storyId,
       priority: 3, // Transcript segments are lower priority than metadata
       payload: JSON.stringify(record),
+      createdAt: now,
+      retryCount: 0,
+      status: 'pending',
+      nextRetryAt: now,
+    });
+  }
+
+  async enqueueDeleteFile(recordingId: string, storagePath: string): Promise<void> {
+    const id = generateId();
+    const now = Date.now();
+
+    await db.insert(syncQueue).values({
+      id,
+      type: 'delete_file',
+      recordingId,
+      priority: 1,
+      payload: JSON.stringify({ recordingId, storagePath }),
       createdAt: now,
       retryCount: 0,
       status: 'pending',
@@ -186,6 +249,14 @@ class SyncQueueService {
         .set({ syncStatus: 'synced' })
         .where(eq(audioRecordings.id, item.recordingId));
     }
+  }
+
+  /**
+   * Remove queue item without mutating recording sync status.
+   * Used when upload becomes ineligible (e.g., no cloud session).
+   */
+  async discard(id: string): Promise<void> {
+    await db.delete(syncQueue).where(eq(syncQueue.id, id));
   }
 
   /**

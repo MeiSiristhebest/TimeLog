@@ -15,6 +15,43 @@ interface MMKVLike {
   clearAll: () => void;
 }
 
+type MMKVRawLike = {
+  getString: (key: string) => string | undefined;
+  set: (key: string, value: string | number | boolean | ArrayBuffer) => void;
+  contains: (key: string) => boolean;
+  clearAll: () => void;
+  delete?: (key: string) => boolean | void;
+  remove?: (key: string) => boolean | void;
+};
+
+type MMKVConstructor = new (config?: { id?: string }) => MMKVRawLike;
+type CreateMMKV = (config?: { id?: string }) => MMKVRawLike;
+
+function toMMKVLike(candidate: unknown): MMKVLike | null {
+  if (!candidate || typeof candidate !== 'object') return null;
+
+  const storage = candidate as MMKVRawLike;
+  const deleteFn = typeof storage.delete === 'function' ? storage.delete : storage.remove;
+  if (typeof deleteFn !== 'function') return null;
+
+  const isValid =
+    typeof storage.getString === 'function' &&
+    typeof storage.set === 'function' &&
+    typeof storage.contains === 'function' &&
+    typeof storage.clearAll === 'function';
+  if (!isValid) return null;
+
+  return {
+    getString: storage.getString.bind(storage),
+    set: (key, value) => storage.set(key, value),
+    delete: (key) => {
+      deleteFn.call(storage, key);
+    },
+    contains: storage.contains.bind(storage),
+    clearAll: storage.clearAll.bind(storage),
+  };
+}
+
 /**
  * In-memory fallback storage for when MMKV native module isn't ready.
  * This prevents crashes during development hot reloads.
@@ -50,15 +87,29 @@ function createMMKV(): MMKVLike {
   try {
     // Dynamic require to catch import errors
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { MMKV } = require('react-native-mmkv');
+    const mmkvModule = require('react-native-mmkv') as {
+      createMMKV?: CreateMMKV;
+      MMKV?: MMKVConstructor;
+    };
 
-    // Check if MMKV class is properly available (has prototype)
-    if (!MMKV || typeof MMKV !== 'function' || !MMKV.prototype) {
-      devLog.warn('[MMKV] MMKV class not properly initialized');
+    // MMKV v4+ (Nitro) path
+    if (typeof mmkvModule.createMMKV === 'function') {
+      const storage = toMMKVLike(mmkvModule.createMMKV({ id: 'timelog' }));
+      if (storage) return storage;
+      devLog.warn('[MMKV] createMMKV returned an invalid instance');
       return createMemoryFallback();
     }
 
-    return new MMKV({ id: 'timelog' });
+    // Backward compatibility for MMKV v3 API
+    if (typeof mmkvModule.MMKV === 'function') {
+      const storage = toMMKVLike(new mmkvModule.MMKV({ id: 'timelog' }));
+      if (storage) return storage;
+      devLog.warn('[MMKV] MMKV constructor returned an invalid instance');
+      return createMemoryFallback();
+    }
+
+    devLog.warn('[MMKV] MMKV APIs not found on module export');
+    return createMemoryFallback();
   } catch (error) {
     devLog.warn('[MMKV] Failed to initialize:', error);
     return createMemoryFallback();

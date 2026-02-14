@@ -9,15 +9,15 @@
  *
  * @example
  * ```typescript
- * const WaveformVisualizer = createLazyComponent(
- *   () => import('@/features/recorder/components/WaveformVisualizer'),
+ * const HeavyComponent = createLazyComponent(
+ *   () => import('./HeavyComponent'),
  *   { fallback: 'skeleton' }
  * );
  * ```
  */
 
 import React, { Suspense, ComponentType, ReactNode } from 'react';
-import { HeritageSkeleton } from '@/components/ui/heritage/HeritageSkeleton';
+import { HeritageSkeleton, SkeletonList } from '@/components/ui/heritage/HeritageSkeleton';
 import { View, ActivityIndicator } from 'react-native';
 
 type FallbackType = 'spinner' | 'skeleton' | 'none' | ReactNode;
@@ -45,8 +45,11 @@ function SpinnerFallback(): JSX.Element {
  */
 function SkeletonFallback(): JSX.Element {
   return (
-    <View className="flex-1 items-center justify-center min-h-[200px]">
-      <HeritageSkeleton variant="card" />
+    <View className="flex-1 min-h-[240px] px-4 py-6">
+      <View className="mb-4">
+        <HeritageSkeleton variant="title" width="45%" />
+      </View>
+      <SkeletonList count={3} />
     </View>
   );
 }
@@ -68,16 +71,16 @@ function getFallback(fallbackType: FallbackType): ReactNode {
  * @param options - Configuration options
  * @returns Wrapped component with lazy loading
  */
-export function createLazyComponent<T extends ComponentType<any>>(
-  importFn: () => Promise<{ default: T }>,
+export function createLazyComponent<P extends object>(
+  importFn: () => Promise<{ default: ComponentType<P> }>,
   options: LazyComponentOptions = {}
-): T {
+): ComponentType<P> {
   const { fallback = 'spinner' } = options;
 
   const LazyComponent = React.lazy(importFn);
 
   // Create wrapper component that includes Suspense
-  function WrappedComponent(props: React.ComponentProps<T>): JSX.Element {
+  function WrappedComponent(props: P): JSX.Element {
     return (
       <Suspense fallback={getFallback(fallback)}>
         <LazyComponent {...props} />
@@ -86,9 +89,13 @@ export function createLazyComponent<T extends ComponentType<any>>(
   }
 
   // Preserve display name for debugging
-  WrappedComponent.displayName = `Lazy(${(LazyComponent as any).displayName || 'Component'})`;
+  const lazyComponentWithName = LazyComponent as ComponentType<P> & {
+    displayName?: string;
+    name?: string;
+  };
+  WrappedComponent.displayName = `Lazy(${lazyComponentWithName.displayName || lazyComponentWithName.name || 'Component'})`;
 
-  return WrappedComponent as unknown as T;
+  return WrappedComponent;
 }
 
 /**
@@ -101,7 +108,7 @@ export function withLazyLoading<P extends object>(
   importFn: () => Promise<{ default: ComponentType<P> }>,
   options: LazyComponentOptions = {}
 ): ComponentType<P> {
-  return createLazyComponent(importFn, options);
+  return createLazyComponent<P>(importFn, options);
 }
 
 /**

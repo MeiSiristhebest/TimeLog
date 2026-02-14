@@ -6,7 +6,7 @@
  */
 
 import { AudioSession } from '@livekit/react-native';
-import { Platform } from 'react-native';
+import { devLog } from '@/lib/devLogger';
 
 /**
  * Configure and start audio session for LiveKit
@@ -45,7 +45,7 @@ export async function stopAudioSession(): Promise<void> {
   } catch (error) {
     // Ignore errors on stop (session might not be active)
     if (__DEV__) {
-      console.warn('Failed to stop audio session:', error);
+      devLog.warn('[audioSession] Failed to stop audio session:', error);
     }
   }
 }

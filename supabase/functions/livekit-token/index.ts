@@ -10,6 +10,9 @@ const corsHeaders = {
 interface TokenRequest {
   roomName: string;
   identity?: string;
+  storyId?: string;
+  topicText?: string;
+  language?: string;
 }
 
 interface TokenResponse {
@@ -47,7 +50,7 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { roomName, identity }: TokenRequest = await req.json();
+    const { roomName, identity, storyId, topicText, language }: TokenRequest = await req.json();
 
     if (!roomName) {
       throw new Error('Missing required field: roomName');
@@ -65,11 +68,28 @@ serve(async (req) => {
       throw new Error('LiveKit credentials not configured');
     }
 
+    const trimmedTopicText = topicText?.trim();
+    const trimmedLanguage = language?.trim();
+    const resolvedStoryId = storyId?.trim() || (roomName.startsWith('story_') ? roomName.slice(6) : roomName);
+
+    const participantContext = {
+      storyId: resolvedStoryId,
+      topicText: trimmedTopicText,
+      language: trimmedLanguage,
+    };
+
+    const attributes: Record<string, string> = {};
+    if (participantContext.storyId) attributes.storyId = participantContext.storyId;
+    if (participantContext.topicText) attributes.topicText = participantContext.topicText;
+    if (participantContext.language) attributes.language = participantContext.language;
+
     // Create LiveKit access token
     const at = new AccessToken(livekitApiKey, livekitApiSecret, {
       identity: userId,
       // Token valid for 24 hours
       ttl: '24h',
+      metadata: JSON.stringify(participantContext),
+      attributes,
     });
 
     // Grant permissions

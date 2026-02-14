@@ -14,32 +14,7 @@ import m0009 from './0009_great_luke_cage.sql';
 import m0010 from './0010_add_story_reactions.sql';
 import m0011 from './0011_wooden_maginty.sql';
 import m0012 from './0012_confused_korath.sql';
-
-function patchDuplicateCreateTable(sql, tableName) {
-  const target = `CREATE TABLE \`${tableName}\` (`;
-  const replacement = `CREATE TABLE IF NOT EXISTS \`${tableName}\` (`;
-  return typeof sql === 'string' ? sql.replace(target, replacement) : sql;
-}
-
-function stripDanglingSingleQuoteLines(sql) {
-  if (typeof sql !== 'string') return sql;
-  // Guard against broken generated SQL that ends with a standalone `'` line.
-  return sql.replace(/^\s*'\s*$/gm, '');
-}
-
-// NOTE:
-// `transcript_segments` was generated in both 0011 and 0012.
-// Keep historical migrations intact, but make the second create idempotent.
-const m0011Patched = stripDanglingSingleQuoteLines(
-  patchDuplicateCreateTable(m0011, 'transcript_segments')
-);
-
-const m0012Patched = stripDanglingSingleQuoteLines(
-  patchDuplicateCreateTable(
-    patchDuplicateCreateTable(m0012, 'local_profiles'),
-    'transcript_segments'
-  )
-);
+import m0013 from './0013_wide_black_bolt.sql';
 
   export default {
     journal,
@@ -55,8 +30,9 @@ m0007,
 m0008,
 m0009,
 m0010,
-m0011: m0011Patched,
-m0012: m0012Patched
+m0011,
+m0012,
+m0013
     }
   }
   

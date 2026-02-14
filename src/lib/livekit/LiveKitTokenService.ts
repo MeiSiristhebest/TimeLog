@@ -17,9 +17,11 @@ export interface LiveKitTokenResponse {
 export interface LiveKitTokenRequest {
   roomName: string;
   identity: string;
+  storyId?: string;
+  topicText?: string;
+  language?: string;
 }
 
-const TOKEN_CACHE_KEY = 'livekit_token_cache';
 const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // Refresh 5 mins before expiry
 
 export class LiveKitTokenService {
