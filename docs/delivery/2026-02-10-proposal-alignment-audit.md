@@ -3,6 +3,9 @@
 Date: 2026-02-10  
 Audit Baseline: current workspace (including uncommitted changes)
 
+## Follow-up Remediation Report
+Wave A/B 对齐整改落地报告已发布：`docs/delivery/2026-02-14-proposal-alignment-remediation-report.md`
+
 ## 1) Summary Page
 
 ### Overall Conclusion

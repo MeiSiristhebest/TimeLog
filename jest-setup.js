@@ -60,19 +60,47 @@ jest.mock('react-native-mmkv', () => {
 // Mock expo-file-system
 jest.mock('expo-file-system', () => ({
   documentDirectory: 'file:///test/doc-dir/',
-  getInfoAsync: jest.fn(),
-  makeDirectoryAsync: jest.fn(),
-  moveAsync: jest.fn(),
-  getFreeDiskStorageAsync: jest.fn(),
+  cacheDirectory: 'file:///test/cache-dir/',
+  EncodingType: {
+    UTF8: 'utf8',
+    Base64: 'base64',
+  },
+  getInfoAsync: jest.fn(async () => ({ exists: false, isDirectory: false })),
+  makeDirectoryAsync: jest.fn(async () => undefined),
+  moveAsync: jest.fn(async () => undefined),
+  copyAsync: jest.fn(async () => undefined),
+  readAsStringAsync: jest.fn(async (_path, options) => {
+    if (options?.encoding === 'base64') {
+      return 'dGVzdA==';
+    }
+    return 'test';
+  }),
+  writeAsStringAsync: jest.fn(async () => undefined),
+  deleteAsync: jest.fn(async () => undefined),
+  getFreeDiskStorageAsync: jest.fn(async () => 1024 * 1024 * 1024),
 }));
 
 // Mock expo-file-system/legacy
 jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: 'file:///test/doc-dir/',
-  getInfoAsync: jest.fn(),
-  makeDirectoryAsync: jest.fn(),
-  moveAsync: jest.fn(),
-  getFreeDiskStorageAsync: jest.fn(),
+  cacheDirectory: 'file:///test/cache-dir/',
+  EncodingType: {
+    UTF8: 'utf8',
+    Base64: 'base64',
+  },
+  getInfoAsync: jest.fn(async () => ({ exists: false, isDirectory: false })),
+  makeDirectoryAsync: jest.fn(async () => undefined),
+  moveAsync: jest.fn(async () => undefined),
+  copyAsync: jest.fn(async () => undefined),
+  readAsStringAsync: jest.fn(async (_path, options) => {
+    if (options?.encoding === 'base64') {
+      return 'dGVzdA==';
+    }
+    return 'test';
+  }),
+  writeAsStringAsync: jest.fn(async () => undefined),
+  deleteAsync: jest.fn(async () => undefined),
+  getFreeDiskStorageAsync: jest.fn(async () => 1024 * 1024 * 1024),
 }));
 
 // Mock expo-av
@@ -189,10 +217,13 @@ jest.mock('drizzle-orm/sqlite-core', () => {
 jest.mock('drizzle-orm', () => ({
   eq: jest.fn(),
   and: jest.fn((...args) => args.filter(Boolean)),
+  or: jest.fn((...args) => args.filter(Boolean)),
   desc: jest.fn(column => ({ column, direction: 'desc' })),
   asc: jest.fn(column => ({ column, direction: 'asc' })),
   isNull: jest.fn(column => ({ column, op: 'isNull' })),
   isNotNull: jest.fn(column => ({ column, op: 'isNotNull' })),
+  like: jest.fn((column, pattern) => ({ column, pattern, op: 'like' })),
+  inArray: jest.fn((column, values) => ({ column, values, op: 'inArray' })),
   lte: jest.fn((left, right) => ({ left, right, op: 'lte' })),
   lt: jest.fn((left, right) => ({ left, right, op: 'lt' })),
   gte: jest.fn((left, right) => ({ left, right, op: 'gte' })),
