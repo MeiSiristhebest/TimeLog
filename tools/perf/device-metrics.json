@@ -1,0 +1,11 @@
+{
+  "samples": [
+    {
+      "device": "REPLACE_ME_DEVICE",
+      "platform": "ios|android",
+      "coldStartMs": null,
+      "audioStartLatencyMs": null,
+      "notes": "Capture real-device metrics and replace this placeholder row."
+    }
+  ]
+}

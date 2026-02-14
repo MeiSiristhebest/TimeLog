@@ -1,0 +1,231 @@
+{
+  "generatedAt": "2026-02-14T07:47:47.293Z",
+  "scope": [
+    "app",
+    "src"
+  ],
+  "totals": {
+    "scannedFiles": 435,
+    "colorLiteralsNonThemeNonTest": 219,
+    "routeLiteralCalls": 40,
+    "permissionRequestsOutsidePolicy": 0,
+    "permissionRequestsTotal": 15,
+    "roleLiteralCalls": 88,
+    "envFallbackLiterals": 8
+  },
+  "topFiles": {
+    "colorLiteralsNonThemeNonTest": [
+      {
+        "file": "src/components/ui/heritage/HeritageTheme.tsx",
+        "count": 36
+      },
+      {
+        "file": "src/features/settings/screens/FontSizeScreen.tsx",
+        "count": 25
+      },
+      {
+        "file": "src/features/discovery/screens/TopicsDiscoveryScreen.tsx",
+        "count": 15
+      },
+      {
+        "file": "src/components/ui/HeritageAlert.tsx",
+        "count": 10
+      },
+      {
+        "file": "src/features/discovery/components/CategoryFilter.tsx",
+        "count": 9
+      },
+      {
+        "file": "src/components/ui/feedback/ToastProvider.tsx",
+        "count": 7
+      },
+      {
+        "file": "src/features/story-gallery/components/EmptyGallery.tsx",
+        "count": 6
+      },
+      {
+        "file": "src/features/auth/screens/RecoveryCodeScreen.tsx",
+        "count": 5
+      },
+      {
+        "file": "src/components/ui/HeritageDatePicker.tsx",
+        "count": 4
+      },
+      {
+        "file": "src/components/ui/UndoToast.tsx",
+        "count": 4
+      },
+      {
+        "file": "src/features/home/components/HomeNotification.tsx",
+        "count": 4
+      },
+      {
+        "file": "src/features/recorder/components/RecordingModeSwitcher.tsx",
+        "count": 4
+      },
+      {
+        "file": "src/features/settings/components/EditProfileModal.tsx",
+        "count": 4
+      },
+      {
+        "file": "src/features/story-gallery/screens/StoryEditScreen.tsx",
+        "count": 4
+      },
+      {
+        "file": "src/components/ui/GlassCard.tsx",
+        "count": 3
+      }
+    ],
+    "routeLiteralCalls": [
+      {
+        "file": "src/features/auth/hooks/useAuthLogic.ts",
+        "count": 10
+      },
+      {
+        "file": "src/features/app/screens/SplashScreen.tsx",
+        "count": 5
+      },
+      {
+        "file": "src/features/app/screens/AppEntryScreen.tsx",
+        "count": 4
+      },
+      {
+        "file": "src/features/home/hooks/useHomeLogic.ts",
+        "count": 3
+      },
+      {
+        "file": "src/features/settings/hooks/useSettingsLogic.ts",
+        "count": 3
+      },
+      {
+        "file": "src/features/family/hooks/useFamilyLogic.ts",
+        "count": 2
+      },
+      {
+        "file": "src/features/family-listener/hooks/useNotifications.ts",
+        "count": 2
+      },
+      {
+        "file": "src/features/settings/screens/SettingsHomeScreen.tsx",
+        "count": 2
+      },
+      {
+        "file": "src/features/story-gallery/screens/StoryDetailScreen.tsx",
+        "count": 2
+      },
+      {
+        "file": "src/features/auth/hooks/useDeepLinkHandler.ts",
+        "count": 1
+      },
+      {
+        "file": "src/features/auth/hooks/useLoginLogic.ts",
+        "count": 1
+      },
+      {
+        "file": "src/features/auth/screens/WelcomeScreen.tsx",
+        "count": 1
+      },
+      {
+        "file": "src/features/family/screens/FamilyMembersScreen.tsx",
+        "count": 1
+      },
+      {
+        "file": "src/features/settings/hooks/useAccountSecurity.ts",
+        "count": 1
+      },
+      {
+        "file": "src/features/settings/screens/AppSettingsScreen.tsx",
+        "count": 1
+      }
+    ],
+    "permissionRequestsOutsidePolicy": [],
+    "roleLiteralCalls": [
+      {
+        "file": "src/features/settings/screens/RoleSelectScreen.tsx",
+        "count": 7
+      },
+      {
+        "file": "src/features/settings/services/profileService.ts",
+        "count": 7
+      },
+      {
+        "file": "src/features/discovery/services/discoveryService.ts",
+        "count": 6
+      },
+      {
+        "file": "src/features/settings/reducers/editProfileReducer.ts",
+        "count": 6
+      },
+      {
+        "file": "src/features/settings/hooks/useSettingsLogic.ts",
+        "count": 5
+      },
+      {
+        "file": "src/types/entities.ts",
+        "count": 5
+      },
+      {
+        "file": "src/features/recorder/services/topicService.ts",
+        "count": 4
+      },
+      {
+        "file": "src/features/settings/components/EditProfileModal.tsx",
+        "count": 4
+      },
+      {
+        "file": "src/features/settings/components/UserProfileHeader.tsx",
+        "count": 4
+      },
+      {
+        "file": "src/features/settings/services/localProfileService.ts",
+        "count": 4
+      },
+      {
+        "file": "src/db/schema/localProfiles.ts",
+        "count": 3
+      },
+      {
+        "file": "src/features/app/screens/AppEntryScreen.tsx",
+        "count": 3
+      },
+      {
+        "file": "src/features/auth/hooks/useAuthLogic.ts",
+        "count": 3
+      },
+      {
+        "file": "src/features/recorder/data/topicQuestions.ts",
+        "count": 3
+      },
+      {
+        "file": "src/features/settings/hooks/useProfile.ts",
+        "count": 3
+      }
+    ],
+    "envFallbackLiterals": [
+      {
+        "file": "src/lib/supabase.ts",
+        "count": 2
+      },
+      {
+        "file": "src/lib/sync-engine/transport.ts",
+        "count": 2
+      },
+      {
+        "file": "app/api/health+api.ts",
+        "count": 1
+      },
+      {
+        "file": "src/features/auth/services/authService.ts",
+        "count": 1
+      },
+      {
+        "file": "src/features/family/services/inviteService.ts",
+        "count": 1
+      },
+      {
+        "file": "src/features/home/services/weatherService.ts",
+        "count": 1
+      }
+    ]
+  }
+}
