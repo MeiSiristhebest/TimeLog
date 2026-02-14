@@ -9,11 +9,12 @@
 
 import { AppText } from '@/components/ui/AppText';
 import { useCallback, useEffect, useRef } from 'react';
-import { View, FlatList, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
+import { View, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import type { Comment } from '../services/commentService';
 import { CommentItem } from './CommentItem';
 import { useHeritageTheme } from '@/theme/heritage';
+import { EN_COPY } from '@/features/app/copy/en';
 
 type CommentListProps = {
   /** List of comments to display */
@@ -83,7 +84,7 @@ export function CommentList({
       <View className="flex-1 items-center justify-center py-8">
         <ActivityIndicator size="large" color={colors.primary} />
         <AppText className="mt-2 text-base text-center px-8" style={{ color: colors.textMuted }}>
-          Loading comments...
+          {EN_COPY.comments.loadingComments}
         </AppText>
       </View>
     );
@@ -98,9 +99,11 @@ export function CommentList({
           style={{ backgroundColor: `${colors.primary}20` }}>
           <Ionicons name="chatbubble-outline" size={32} color={colors.primary} />
         </View>
-        <AppText className="text-lg font-medium text-center" style={{ color: colors.onSurface }}>No comments yet</AppText>
+        <AppText className="text-lg font-medium text-center" style={{ color: colors.onSurface }}>
+          {EN_COPY.comments.emptyTitle}
+        </AppText>
         <AppText className="mt-2 text-base text-center px-8" style={{ color: colors.textMuted }}>
-          {readOnly ? "Family hasn't left any comments yet" : 'Be the first to comment!'}
+          {readOnly ? EN_COPY.comments.emptyReadOnlyDescription : EN_COPY.comments.emptyDescription}
         </AppText>
       </View>
     );

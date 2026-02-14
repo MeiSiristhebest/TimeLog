@@ -10,21 +10,21 @@
 
 import { AppText } from '@/components/ui/AppText';
 import React, { useEffect } from 'react';
-import { View, StyleSheet, ImageBackground } from 'react-native';
+import { View, ImageBackground } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, {
-  useSharedValue,
+import { Animated } from '@/tw/animated';
+import { useSharedValue,
   useAnimatedStyle,
   withSpring,
   withDelay,
   FadeInDown,
-  ZoomIn,
-} from 'react-native-reanimated';
+  ZoomIn, } from 'react-native-reanimated';
 import { Ionicons } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { useHeritageTheme } from '@/theme/heritage';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { EN_COPY, getStorySavedCategoryLabel } from '@/features/app/copy/en';
 
 const ILL_CHILDHOOD = require('../../../../assets/images/illustration_childhood.png');
 const ILL_FAMILY = require('../../../../assets/images/illustration_family.png');
@@ -47,7 +47,7 @@ interface StorySavedViewProps {
 }
 
 // Icon Helper
-const getCategoryIllustration = (category?: string): any => {
+function getCategoryIllustration(category?: string): number {
   switch (category) {
     case 'childhood':
       return ILL_CHILDHOOD;
@@ -76,49 +76,18 @@ const getCategoryIllustration = (category?: string): any => {
     default:
       return ILL_MEMORIES;
   }
-};
+}
 
-const getCategoryLabel = (category?: string): string => {
-  switch (category) {
-    case 'childhood':
-      return 'My Childhood';
-    case 'family':
-      return 'My Family';
-    case 'career':
-      return 'My Career';
-    case 'education':
-      return 'My Education';
-    case 'memories':
-      return 'My Memories';
-    case 'history':
-      return 'My History';
-    case 'wisdom':
-      return 'My Wisdom';
-    case 'travel':
-      return 'My Travel';
-    case 'celebrations':
-      return 'My Celebration';
-    case 'hobbies':
-      return 'My Hobbies';
-    case 'food':
-      return 'My Food';
-    case 'friendship':
-      return 'My Friends';
-    default:
-      return 'My Story';
-  }
-};
-
-export const StorySavedView = ({
+export function StorySavedView({
   onDismiss,
-  storyTitle = 'My Childhood Joy',
+  storyTitle = EN_COPY.storySaved.defaultStoryTitle,
   category,
-}: StorySavedViewProps) => {
-  const { colors } = useHeritageTheme();
+}: StorySavedViewProps): JSX.Element {
+  const { colors, isDark } = useHeritageTheme();
 
   // Get dynamic illustration
   const illustrationSource = getCategoryIllustration(category);
-  const captionLabel = getCategoryLabel(category);
+  const captionLabel = getStorySavedCategoryLabel(category);
 
   // Animations
   const rotate = useSharedValue(0);
@@ -147,9 +116,14 @@ export const StorySavedView = ({
   }));
 
   return (
-    <ImageBackground source={PAPER_TEXTURE} className="flex-1 w-full h-full" resizeMode="repeat">
-      <SafeAreaView style={{ flex: 1 }}>
-        <View className="flex-1 px-6 pb-6 justify-between items-center">
+    <View style={{ flex: 1, backgroundColor: colors.surface }}>
+      <ImageBackground
+        source={PAPER_TEXTURE}
+        className="flex-1 w-full h-full"
+        resizeMode="repeat"
+        imageStyle={{ opacity: isDark ? 0.08 : 0.22 }}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View className="flex-1 px-6 pb-6 justify-between items-center">
           <View className="flex-1 justify-center items-center w-full pb-[60px]">
           {/* 1. Success Icon */}
           <Animated.View
@@ -165,34 +139,39 @@ export const StorySavedView = ({
           <Animated.View
             entering={FadeInDown.delay(200).duration(600)}
             className="items-center mb-8 gap-2">
-            <AppText className="text-[32px] text-center" style={{ fontFamily: 'Fraunces_600SemiBold', color: colors.onSurface }}>Story Kept Safe.</AppText>
+            <AppText className="text-[32px] text-center" style={{ fontFamily: 'Fraunces_600SemiBold', color: colors.onSurface }}>
+              {EN_COPY.storySaved.successTitle}
+            </AppText>
             <AppText className="text-base text-center" style={{ color: colors.textMuted }}>
-              Saving to your library...
+              {EN_COPY.storySaved.successSubtitle}
             </AppText>
           </Animated.View>
 
           {/* 3. Polaroid Card - Enhanced Animation */}
-          <Animated.View
-            entering={ZoomIn.delay(300)
-              .duration(600)
-              .springify()
-              .damping(12)
-              .stiffness(100)
-              .withInitialValues({ transform: [{ scale: 0.7 }] })}
-            className="w-[320px] items-center shadow-lg elevation-10"
-            style={[
-              {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 20 },
-                shadowOpacity: 0.15,
-                shadowRadius: 30,
-              },
-              polaroidStyle
-            ]}>
+            <Animated.View
+              entering={ZoomIn.delay(300)
+                .duration(600)
+                .springify()
+                .damping(12)
+                .stiffness(100)
+                .withInitialValues({ transform: [{ scale: 0.7 }] })}
+              className="w-[320px] items-center shadow-lg elevation-10"
+              style={[
+                {
+                  shadowColor: colors.shadowNeutral,
+                  shadowOffset: { width: 0, height: 20 },
+                  shadowOpacity: isDark ? 0.32 : 0.15,
+                  shadowRadius: 30,
+                },
+                polaroidStyle
+              ]}>
             <View className="w-full p-4 pb-[60px] rounded items-center" style={{ backgroundColor: colors.surface }}>
               {/* Photo Area */}
               <View className="w-full aspect-square items-center justify-center overflow-hidden border relative"
-                style={{ backgroundColor: '#F5F2EA', borderColor: 'rgba(0,0,0,0.05)' }}>
+                style={{
+                  backgroundColor: isDark ? colors.surfaceAccent : `${colors.surface}E8`,
+                  borderColor: isDark ? `${colors.border}88` : `${colors.border}66`,
+                }}>
                 <Image
                   source={illustrationSource}
                   style={{ width: '85%', height: '85%', opacity: 0.9 }}
@@ -206,21 +185,26 @@ export const StorySavedView = ({
               <View className="absolute bottom-5 w-full items-center px-8">
                 <AppText
                   className="text-lg italic text-center"
-                  style={{ fontFamily: 'Fraunces_600SemiBold', color: '#444', maxWidth: '80%', paddingHorizontal: 6 }}
+                  style={{
+                    fontFamily: 'Fraunces_600SemiBold',
+                    color: colors.onSurface,
+                    maxWidth: '80%',
+                    paddingHorizontal: 6,
+                  }}
                   ellipsizeMode="tail"
                   numberOfLines={1}>
                   {captionLabel || storyTitle}
                 </AppText>
               </View>
             </View>
-          </Animated.View>
-        </View>
+            </Animated.View>
+          </View>
 
           {/* 4. Footer Action */}
           <View className="w-full max-w-[400px]">
             <Animated.View entering={FadeInDown.delay(600).duration(500)} className="w-full">
               <HeritageButton
-                title="Done"
+                title={EN_COPY.common.done}
                 onPress={onDismiss}
                 variant="primary"
                 size="large"
@@ -229,8 +213,9 @@ export const StorySavedView = ({
               />
             </Animated.View>
           </View>
-        </View>
-      </SafeAreaView>
-    </ImageBackground>
+          </View>
+        </SafeAreaView>
+      </ImageBackground>
+    </View>
   );
-};
+}

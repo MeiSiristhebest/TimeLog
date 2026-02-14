@@ -22,17 +22,16 @@ import { HeritageModal } from './HeritageModal';
 import { AppText } from '@/components/ui/AppText';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Pressable, ScrollView } from 'react-native';
+import { useHeritageTheme } from '@/theme/heritage';
+import { EN_COPY, formatPickerA11yLabel } from '@/features/app/copy/en';
 
-// Heritage Memoir Design Tokens
-const TOKENS = {
-  primary: '#B85A3B',
-  onPrimary: '#FFFFFF',
-  surface: '#FFFCF7',
-  surfaceDim: '#F9F3E8',
-  onSurface: '#1E293B',
-  textMuted: '#475569',
-  border: '#E2E8F0',
-} as const;
+type PickerTokens = {
+  primary: string;
+  onPrimary: string;
+  surface: string;
+  textMuted: string;
+  border: string;
+};
 
 const ITEM_HEIGHT = 56;
 const VISIBLE_ITEMS = 5;
@@ -65,12 +64,14 @@ function WheelColumn({
   selectedIndex,
   onSelect,
   formatItem,
+  tokens,
   testID,
 }: {
   items: number[];
   selectedIndex: number;
   onSelect: (index: number) => void;
   formatItem: (value: number) => string;
+  tokens: PickerTokens;
   testID?: string;
 }) {
   const scrollViewRef = useRef<ScrollView>(null);
@@ -120,7 +121,7 @@ function WheelColumn({
         style={{
           top: ITEM_HEIGHT * 2,
           height: ITEM_HEIGHT,
-          backgroundColor: `${TOKENS.primary}15`
+          backgroundColor: `${tokens.primary}15`
         }}
       />
 
@@ -151,7 +152,7 @@ function WheelColumn({
               }}>
               <AppText
                 className={isSelected ? "text-3xl font-semibold" : "text-3xl"}
-                style={{ color: isSelected ? TOKENS.primary : TOKENS.textMuted }}
+                style={{ color: isSelected ? tokens.primary : tokens.textMuted }}
               >
                 {formatItem(item)}
               </AppText>
@@ -168,12 +169,20 @@ export function HeritageTimePicker({
   value,
   onConfirm,
   onCancel,
-  title = 'Select Time',
+  title = EN_COPY.pickers.selectTime,
   testID = 'heritage-time-picker',
 }: HeritageTimePickerProps) {
+  const { colors } = useHeritageTheme();
   const initialDate = value ?? new Date();
   const [selectedHour, setSelectedHour] = useState(initialDate.getHours());
   const [selectedMinute, setSelectedMinute] = useState(initialDate.getMinutes());
+  const tokens: PickerTokens = {
+    primary: colors.primary,
+    onPrimary: colors.onPrimary,
+    surface: colors.surfaceCard,
+    textMuted: colors.textMuted,
+    border: colors.border,
+  };
 
   // Reset when value changes
   useEffect(() => {
@@ -204,13 +213,13 @@ export function HeritageTimePicker({
       visible={visible}
       onClose={onCancel}
       closeOnBackdrop={false}
-      accessibilityLabel={`Time picker: ${title}`}
+      accessibilityLabel={formatPickerA11yLabel(EN_COPY.pickers.timePickerA11yPrefix, title)}
       testID={testID}>
-      <View className="p-6">
+      <View className="p-6" style={{ backgroundColor: tokens.surface }}>
         {/* Header */}
         <View className="mb-6 items-center">
-          <AppText className="text-lg mb-2" style={{ color: TOKENS.textMuted }}>{title}</AppText>
-          <AppText className="text-5xl" style={{ fontFamily: 'Fraunces_600SemiBold', color: TOKENS.primary, letterSpacing: 2 }}>{displayTime}</AppText>
+          <AppText className="text-lg mb-2" style={{ color: tokens.textMuted }}>{title}</AppText>
+          <AppText className="text-5xl" style={{ fontFamily: 'Fraunces_600SemiBold', color: tokens.primary, letterSpacing: 2 }}>{displayTime}</AppText>
         </View>
 
         {/* Wheel Picker */}
@@ -221,12 +230,13 @@ export function HeritageTimePicker({
             selectedIndex={selectedHour}
             onSelect={setSelectedHour}
             formatItem={formatHour}
+            tokens={tokens}
             testID={`${testID}-hours`}
           />
 
           {/* Separator */}
           <View className="w-6 items-center justify-center">
-            <AppText className="text-4xl font-semibold" style={{ color: TOKENS.primary }}>:</AppText>
+            <AppText className="text-4xl font-semibold" style={{ color: tokens.primary }}>:</AppText>
           </View>
 
           {/* Minutes */}
@@ -235,6 +245,7 @@ export function HeritageTimePicker({
             selectedIndex={selectedMinute}
             onSelect={setSelectedMinute}
             formatItem={formatMinute}
+            tokens={tokens}
             testID={`${testID}-minutes`}
           />
         </View>
@@ -243,26 +254,30 @@ export function HeritageTimePicker({
         <View className="flex-row gap-3">
           <Pressable
             className="flex-1 min-h-[56px] items-center justify-center rounded-2xl border-[1.5px] bg-transparent py-4"
-            style={{ borderColor: TOKENS.border }}
+            style={{ borderColor: tokens.border }}
             onPress={onCancel}
             accessibilityRole="button"
-            accessibilityLabel="Cancel">
-            <AppText className="text-lg font-semibold" style={{ color: TOKENS.textMuted }}>Cancel</AppText>
+            accessibilityLabel={EN_COPY.common.cancel}>
+            <AppText className="text-lg font-semibold" style={{ color: tokens.textMuted }}>
+              {EN_COPY.common.cancel}
+            </AppText>
           </Pressable>
 
           <Pressable
             className="flex-1 min-h-[56px] items-center justify-center rounded-2xl py-4 shadow-sm elevation-[4]"
             style={{
-              backgroundColor: TOKENS.primary,
-              shadowColor: TOKENS.primary,
+              backgroundColor: tokens.primary,
+              shadowColor: tokens.primary,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.25,
               shadowRadius: 8,
             }}
             onPress={handleConfirm}
             accessibilityRole="button"
-            accessibilityLabel="Confirm time selection">
-            <AppText className="text-lg font-semibold" style={{ color: TOKENS.onPrimary }}>Confirm</AppText>
+            accessibilityLabel={EN_COPY.pickers.confirmTimeSelectionA11y}>
+            <AppText className="text-lg font-semibold" style={{ color: tokens.onPrimary }}>
+              {EN_COPY.common.confirm}
+            </AppText>
           </Pressable>
         </View>
       </View>
