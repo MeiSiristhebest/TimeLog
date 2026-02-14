@@ -13,7 +13,6 @@ import {
   getNotificationPermissionStatus,
   requestNotificationPermission,
   registerForPushNotifications,
-  refreshPushToken,
   addNotificationResponseListener,
   addForegroundNotificationListener,
   getLastNotificationResponse,
@@ -22,6 +21,8 @@ import {
   NotificationPermissionStatus,
   NotificationData,
 } from '@/lib/notifications';
+import { toFamilyStoryRoute, toStoryCommentsRoute } from '@/features/app/navigation/routes';
+import { PERMISSION_CONTEXT } from '@/features/permissions/permissionPolicy';
 
 export interface ForegroundNotification {
   id: string;
@@ -68,10 +69,10 @@ export function useNotifications(): UseNotificationsReturn {
 
       if (data.type === 'new_comment') {
         // Navigate to story comments view for seniors
-        router.push(`/story-comments/${data.storyId}`);
+        router.push(toStoryCommentsRoute(data.storyId));
       } else {
         // Navigate to family story player
-        router.push(`/family-story/${data.storyId}`);
+        router.push(toFamilyStoryRoute(data.storyId));
       }
     },
     [router]
@@ -86,7 +87,7 @@ export function useNotifications(): UseNotificationsReturn {
   const requestPermission = useCallback(async (): Promise<boolean> => {
     setIsRequesting(true);
     try {
-      const status = await requestNotificationPermission();
+      const status = await requestNotificationPermission(PERMISSION_CONTEXT.NOTIFICATION_PROMPT);
       setPermissionStatus(status);
 
       if (status === 'granted') {
@@ -120,11 +121,6 @@ export function useNotifications(): UseNotificationsReturn {
 
       setPermissionStatus(status);
       setCanRequestPermission(canAsk);
-
-      // If already granted, refresh the push token
-      if (status === 'granted') {
-        await refreshPushToken();
-      }
 
       // Handle cold start notification (app opened from notification)
       if (!hasHandledInitialNotification.current) {

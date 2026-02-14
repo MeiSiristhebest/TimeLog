@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { useNotifications } from './useNotifications';
 import type { NotificationData } from '@/lib/notifications';
+import { PERMISSION_CONTEXT } from '@/features/permissions/permissionPolicy';
 
 // Mock expo-router
 const mockPush = jest.fn();
@@ -14,7 +15,6 @@ jest.mock('expo-router', () => ({
 const mockGetNotificationPermissionStatus = jest.fn();
 const mockRequestNotificationPermission = jest.fn();
 const mockRegisterForPushNotifications = jest.fn();
-const mockRefreshPushToken = jest.fn();
 const mockAddNotificationResponseListener = jest.fn();
 const mockAddForegroundNotificationListener = jest.fn();
 const mockGetLastNotificationResponse = jest.fn();
@@ -23,9 +23,8 @@ const mockOpenNotificationSettings = jest.fn();
 
 jest.mock('@/lib/notifications', () => ({
   getNotificationPermissionStatus: () => mockGetNotificationPermissionStatus(),
-  requestNotificationPermission: () => mockRequestNotificationPermission(),
+  requestNotificationPermission: (...args: unknown[]) => mockRequestNotificationPermission(...args),
   registerForPushNotifications: () => mockRegisterForPushNotifications(),
-  refreshPushToken: () => mockRefreshPushToken(),
   addNotificationResponseListener: (cb: (data: NotificationData) => void) =>
     mockAddNotificationResponseListener(cb),
   addForegroundNotificationListener: (cb: (notification: unknown) => void) =>
@@ -45,7 +44,6 @@ describe('useNotifications', () => {
     mockCanRequestNotificationPermission.mockResolvedValue(true);
     mockRequestNotificationPermission.mockResolvedValue('granted');
     mockRegisterForPushNotifications.mockResolvedValue(undefined);
-    mockRefreshPushToken.mockResolvedValue(undefined);
     mockGetLastNotificationResponse.mockResolvedValue(null);
     mockAddNotificationResponseListener.mockReturnValue(jest.fn());
     mockAddForegroundNotificationListener.mockReturnValue(jest.fn());
@@ -104,7 +102,7 @@ describe('useNotifications', () => {
       expect(mockCanRequestNotificationPermission).toHaveBeenCalled();
     });
 
-    it('should refresh push token when permission is already granted', async () => {
+    it('should not auto-register push token when permission is already granted', async () => {
       mockGetNotificationPermissionStatus.mockResolvedValue('granted');
 
       renderHook(() => useNotifications());
@@ -114,7 +112,7 @@ describe('useNotifications', () => {
         await Promise.resolve(); // Extra flush for nested async
       });
 
-      expect(mockRefreshPushToken).toHaveBeenCalled();
+      expect(mockRegisterForPushNotifications).not.toHaveBeenCalled();
     });
   });
 
@@ -130,6 +128,9 @@ describe('useNotifications', () => {
       });
 
       expect(granted).toBe(true);
+      expect(mockRequestNotificationPermission).toHaveBeenCalledWith(
+        PERMISSION_CONTEXT.NOTIFICATION_PROMPT
+      );
     });
 
     it('should return false when permission is denied', async () => {

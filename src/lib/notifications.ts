@@ -12,10 +12,12 @@ import * as Device from 'expo-device';
 import { Platform, Linking } from 'react-native';
 import Constants from 'expo-constants';
 import { devLog } from './devLogger';
+import { supabase } from './supabase';
 import {
-  storePushTokenForCurrentUser,
-  removePushToken,
-} from '@/features/notifications/services/pushTokenService';
+  assertPermissionRequestAllowed,
+  PERMISSION_KIND,
+  type PermissionContext,
+} from '@/lib/permissions/policy';
 
 // Configure notification behavior for foreground notifications
 Notifications.setNotificationHandler({
@@ -39,6 +41,16 @@ export type NotificationPermissionStatus = 'granted' | 'denied' | 'undetermined'
 export interface NotificationData {
   storyId?: string;
   type?: 'new_story' | 'new_comment';
+}
+
+function isMissingFcmConfigurationError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes('default firebaseapp is not initialized') ||
+    message.includes('fcm-credentials') ||
+    message.includes('firebaseapp.initializeapp')
+  );
 }
 
 /**
@@ -67,7 +79,11 @@ export async function getNotificationPermissionStatus(): Promise<NotificationPer
  * Request notification permissions from the user
  * @returns The final permission status
  */
-export async function requestNotificationPermission(): Promise<NotificationPermissionStatus> {
+export async function requestNotificationPermission(
+  context: PermissionContext
+): Promise<NotificationPermissionStatus> {
+  assertPermissionRequestAllowed(PERMISSION_KIND.NOTIFICATIONS, context);
+
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
 
   if (existingStatus === 'granted') {
@@ -108,11 +124,11 @@ export async function registerForPushNotifications(): Promise<string | null> {
     return null;
   }
 
-  // Check/request permissions
-  const status = await requestNotificationPermission();
+  // Registration should only run after an explicit permission request flow.
+  const status = await getNotificationPermissionStatus();
 
   if (status !== 'granted') {
-    devLog.info('[Notifications] Permission not granted:', status);
+    devLog.info('[Notifications] Permission not granted, skipping token registration:', status);
     return null;
   }
 
@@ -125,9 +141,24 @@ export async function registerForPushNotifications(): Promise<string | null> {
     const pushToken = tokenData.data;
     devLog.info('[Notifications] Got push token:', pushToken);
 
-    // Store token in Supabase
     try {
-      await storePushTokenForCurrentUser(pushToken, Platform.OS);
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (user?.id) {
+        const { error: upsertError } = await supabase.from('user_push_tokens').upsert(
+          {
+            user_id: user.id,
+            push_token: pushToken,
+            device_type: Platform.OS,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id,push_token' }
+        );
+        if (upsertError) throw upsertError;
+      }
       devLog.info('[Notifications] Push token stored successfully');
     } catch (error) {
       devLog.error('[Notifications] Failed to store push token:', error);
@@ -135,6 +166,12 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
     return pushToken;
   } catch (error) {
+    if (Platform.OS === 'android' && isMissingFcmConfigurationError(error)) {
+      devLog.warn(
+        '[Notifications] Android push token unavailable (FCM not configured for this build).'
+      );
+      return null;
+    }
     devLog.error('[Notifications] Failed to get push token:', error);
     return null;
   }
@@ -155,12 +192,22 @@ export async function unregisterPushToken(): Promise<void> {
     });
 
     try {
-      await removePushToken(tokenData.data);
+      const { error } = await supabase
+        .from('user_push_tokens')
+        .delete()
+        .eq('push_token', tokenData.data);
+      if (error) throw error;
       devLog.info('[Notifications] Push token unregistered successfully');
     } catch (error) {
       devLog.error('[Notifications] Failed to unregister push token:', error);
     }
   } catch (error) {
+    if (Platform.OS === 'android' && isMissingFcmConfigurationError(error)) {
+      devLog.warn(
+        '[Notifications] Skipping push token unregister (FCM not configured for this build).'
+      );
+      return;
+    }
     devLog.error('[Notifications] Failed to unregister push token:', error);
   }
 }

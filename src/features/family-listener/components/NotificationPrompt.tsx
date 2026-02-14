@@ -21,6 +21,7 @@ import { devLog } from '@/lib/devLogger';
 import { AppText } from '@/components/ui/AppText';
 import { useState, useEffect } from 'react';
 import { View, TouchableOpacity } from 'react-native';
+import { PERMISSION_CONTEXT } from '@/features/permissions/permissionPolicy';
 
 type NotificationPromptProps = {
   onDismiss: () => void;
@@ -55,7 +56,7 @@ export function NotificationPrompt({
   const handleRequestPermission = async () => {
     setIsRequesting(true);
     try {
-      const status = await requestNotificationPermission();
+      const status = await requestNotificationPermission(PERMISSION_CONTEXT.NOTIFICATION_PROMPT);
 
       if (status === 'granted') {
         // Register for push notifications

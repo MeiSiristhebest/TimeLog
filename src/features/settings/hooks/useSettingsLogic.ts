@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'expo-router';
+import type { Href } from 'expo-router';
 import { Linking } from 'react-native';
-import Constants from 'expo-constants';
+import { useFocusEffect } from '@react-navigation/native';
 import { getStoredRole } from '@/features/auth/services/roleStorage';
 import { SETTINGS_STRUCTURE, THEME_OPTIONS_DATA, SETTINGS_STRINGS } from '../data/mockSettingsData';
 import {
@@ -19,17 +20,37 @@ import {
   updateNotificationSettings,
   getDeviceTimeZone,
 } from '@/lib/notifications/notificationSettingsService';
+import {
+  canRequestNotificationPermission,
+  getNotificationPermissionStatus,
+  openNotificationSettings,
+  registerForPushNotifications,
+  requestNotificationPermission,
+  unregisterPushToken,
+} from '@/lib/notifications';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { devLog } from '@/lib/devLogger';
 import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useProfile } from './useProfile';
+import { APP_ROUTES, toUpgradeAccountRoute } from '@/features/app/navigation/routes';
+import { PERMISSION_CONTEXT } from '@/features/permissions/permissionPolicy';
+
+function getThemeModeLabel(themeMode: 'system' | 'dark' | 'light'): string {
+  if (themeMode === 'system') {
+    return 'System';
+  }
+  if (themeMode === 'dark') {
+    return 'Dark';
+  }
+  return 'Light';
+}
 
 // Hook for Settings Home
 export function useSettingsHome() {
   const router = useRouter();
   const { colors } = useHeritageTheme();
   const sessionUserId = useAuthStore((state) => state.sessionUserId);
-  const { profile, isLoading: isProfileLoading } = useProfile();
+  const { profile, isLoading: isProfileLoading, refetch: refetchProfile } = useProfile();
   const [userRole, setUserRole] = useState<'storyteller' | 'listener'>('storyteller');
 
   // Access stores to generate summaries
@@ -42,8 +63,7 @@ export function useSettingsHome() {
       if (!summaryKey) return undefined;
 
       if (summaryKey === 'display') {
-        const modeLabel =
-          themeMode === 'system' ? 'System' : themeMode === 'dark' ? 'Dark' : 'Light';
+        const modeLabel = getThemeModeLabel(themeMode);
         const sizeLabel = FONT_SCALE_LABELS[fontScaleIndex] || 'Standard';
         return `${modeLabel} · ${sizeLabel}`;
       }
@@ -69,10 +89,17 @@ export function useSettingsHome() {
     });
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      void refetchProfile();
+      return undefined;
+    }, [refetchProfile])
+  );
+
   const navigateTo = useCallback(
     (route: string) => {
       // safe cast or validate
-      router.push(route as any);
+      router.push(route as Href);
     },
     [router]
   );
@@ -91,7 +118,6 @@ export function useSettingsHome() {
 
 // Hook for Display & Accessibility
 export function useDisplaySettingsLogic() {
-  const { colors } = useHeritageTheme();
   const { themeMode, fontScaleIndex, setThemeMode, setFontScaleIndex, reset, isLoaded, hydrate } =
     useDisplaySettingsStore();
 
@@ -130,7 +156,7 @@ export function useAccountSecurityLogic() {
     ...hook,
     actions: {
       ...hook,
-      navigateTo: (route: string) => router.push(route as any),
+      navigateTo: (route: string) => router.push(route as Href),
     },
   };
 }
@@ -170,7 +196,7 @@ export function useDataStorageLogic() {
     },
     actions: {
       handleCloudToggle,
-      navigateToDeletedItems: () => router.push('/(tabs)/settings/deleted-items'),
+      navigateToDeletedItems: () => router.push(APP_ROUTES.SETTINGS_DELETED_ITEMS),
     },
   };
 }
@@ -191,8 +217,7 @@ export function useFamilySharingLogic() {
           primaryAction: {
             label: 'Set Up Now',
             onPress: () => {
-              const next = encodeURIComponent(route);
-              router.push(`/upgrade-account?next=${next}`);
+              router.push(toUpgradeAccountRoute(route));
             },
           },
           secondaryAction: { label: 'Not now' },
@@ -200,17 +225,17 @@ export function useFamilySharingLogic() {
         return;
       }
 
-      router.push(route as any);
+      router.push(route as Href);
     },
     [profile?.isAnonymous, router]
   );
 
   return {
     actions: {
-      navigateToFamilyMembers: () => navigateWithUpgradeCheck('/family-members'),
-      navigateToInvite: () => navigateWithUpgradeCheck('/invite'),
-      navigateToAcceptInvite: () => navigateWithUpgradeCheck('/accept-invite'),
-      navigateToAskQuestion: () => navigateWithUpgradeCheck('/(tabs)/family/ask-question'),
+      navigateToFamilyMembers: () => navigateWithUpgradeCheck(APP_ROUTES.FAMILY_MEMBERS),
+      navigateToInvite: () => navigateWithUpgradeCheck(APP_ROUTES.INVITE),
+      navigateToAcceptInvite: () => navigateWithUpgradeCheck(APP_ROUTES.ACCEPT_INVITE),
+      navigateToAskQuestion: () => navigateWithUpgradeCheck(APP_ROUTES.FAMILY_ASK_QUESTION),
     },
   };
 }
@@ -232,7 +257,11 @@ export function useNotificationsLogic() {
   });
 
   const loadSettings = useCallback(async () => {
-    if (!sessionUserId) return;
+    if (!sessionUserId) {
+      setEnabled(false);
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -283,6 +312,65 @@ export function useNotificationsLogic() {
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
+  const handleEnabledToggle = useCallback(
+    async (nextEnabled: boolean) => {
+      if (nextEnabled === enabled) {
+        return;
+      }
+
+      setEnabled(nextEnabled);
+
+      if (!nextEnabled) {
+        try {
+          await unregisterPushToken();
+        } catch (error) {
+          devLog.warn('[NotificationsScreen] Failed to unregister push token', error);
+        }
+        return;
+      }
+
+      try {
+        const currentStatus = await getNotificationPermissionStatus();
+        const status =
+          currentStatus === 'granted'
+            ? currentStatus
+            : await requestNotificationPermission(PERMISSION_CONTEXT.NOTIFICATION_SETTINGS);
+
+        if (status !== 'granted') {
+          setEnabled(false);
+          const canAskAgain = await canRequestNotificationPermission();
+          HeritageAlert.show({
+            title: 'Notifications Disabled',
+            message: canAskAgain
+              ? 'Notification permission is required to receive reminders.'
+              : 'Please enable notifications in system settings to receive reminders.',
+            variant: 'warning',
+            primaryAction: canAskAgain
+              ? undefined
+              : {
+                  label: 'Open Settings',
+                  onPress: () => {
+                    void openNotificationSettings();
+                  },
+                },
+          });
+          return;
+        }
+
+        await registerForPushNotifications();
+      } catch (error) {
+        setEnabled(false);
+        devLog.error('[NotificationsScreen] Failed to enable notifications', error);
+        HeritageAlert.show({
+          title: SETTINGS_STRINGS.notifications.save.errorTitle,
+          message: SETTINGS_STRINGS.notifications.save.errorMessage,
+          variant: 'error',
+        });
+      }
+    },
+    [enabled]
+  );
+
   const formatTime = (date: Date) => {
     return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
@@ -331,7 +419,7 @@ export function useNotificationsLogic() {
       formatTime, // helper
     },
     actions: {
-      setEnabled,
+      setEnabled: handleEnabledToggle,
       setGentleReminders,
       setQuietStart,
       setQuietEnd,
@@ -346,7 +434,6 @@ export function useNotificationsLogic() {
 // Hook for About/Help
 export function useAboutHelpLogic() {
   const router = useRouter();
-  const appVersion = Constants.expoConfig?.version ?? '1.0.0';
 
   const handleSupportEmail = useCallback(async () => {
     try {
@@ -374,12 +461,10 @@ export function useAboutHelpLogic() {
   }, []);
 
   return {
-    state: {
-      appVersion,
-    },
+    state: {},
     actions: {
       handleSupportEmail,
-      navigateToHelp: () => router.push('/help'),
+      navigateToHelp: () => router.push(APP_ROUTES.HELP),
     },
   };
 }

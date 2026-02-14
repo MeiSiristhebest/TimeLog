@@ -6,11 +6,11 @@ import { useProfile } from '../hooks/useProfile';
 import { useDisplaySettingsStore } from '../store/displaySettingsStore';
 import { getLanguageLabel, getSystemLocale } from '../utils/languageOptions';
 import { getLatestLocalProfile, updateLocalProfile } from '../services/localProfileService';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -23,9 +23,16 @@ import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { devLog } from '@/lib/devLogger';
+import { HeritageDatePicker } from '@/components/ui/HeritageDatePicker';
+import { requestMediaLibraryWithRationale } from '@/utils/permissions';
 
 let ImagePicker: typeof import('expo-image-picker') | null = null;
 let imagePickerPromise: Promise<typeof import('expo-image-picker') | null> | null = null;
+type FileSystemWithDirectories = typeof FileSystem & {
+  documentDirectory?: string | null;
+  cacheDirectory?: string | null;
+};
+const fileSystemWithDirectories = FileSystem as FileSystemWithDirectories;
 
 function loadImagePicker(): Promise<typeof import('expo-image-picker') | null> {
   if (ImagePicker) return Promise.resolve(ImagePicker);
@@ -44,28 +51,25 @@ function loadImagePicker(): Promise<typeof import('expo-image-picker') | null> {
   return imagePickerPromise;
 }
 
-function resolveImageMediaTypes(
-  imagePicker: typeof import('expo-image-picker')
-): unknown {
-  // Support both old and new expo-image-picker APIs across SDK variants.
-  const options = imagePicker.MediaTypeOptions as
-    | { Images?: unknown; All?: unknown }
-    | undefined;
-  if (options?.Images !== undefined) {
-    return options.Images;
+async function persistAvatarAssetUri(uri: string): Promise<string> {
+  const baseDir =
+    fileSystemWithDirectories.documentDirectory ?? fileSystemWithDirectories.cacheDirectory;
+  if (!baseDir) {
+    return uri;
   }
-  if (options?.All !== undefined) {
-    return options.All;
+
+  const avatarDir = `${baseDir}avatars/`;
+  const info = await FileSystem.getInfoAsync(avatarDir);
+  if (!info.exists) {
+    await FileSystem.makeDirectoryAsync(avatarDir, { intermediates: true });
   }
-  const mediaType = (imagePicker as unknown as { MediaType?: { Images?: unknown; images?: unknown } })
-    .MediaType;
-  if (mediaType?.Images !== undefined) {
-    return mediaType.Images;
-  }
-  if (mediaType?.images !== undefined) {
-    return mediaType.images;
-  }
-  return ['images'];
+
+  const extMatch = uri.match(/\.(jpg|jpeg|png|webp|heic)(?:\?|$)/i);
+  const extension = extMatch?.[1]?.toLowerCase() ?? 'jpg';
+  const targetUri = `${avatarDir}avatar_${Date.now()}.${extension}`;
+  await FileSystem.copyAsync({ from: uri, to: targetUri });
+
+  return targetUri;
 }
 
 export function EditProfileScreen(): JSX.Element {
@@ -82,9 +86,6 @@ export function EditProfileScreen(): JSX.Element {
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [tempYear, setTempYear] = useState(1950);
-  const [tempMonth, setTempMonth] = useState(1);
-  const [tempDay, setTempDay] = useState(1);
   const [hydratedProfileId, setHydratedProfileId] = useState<string | null>(null);
 
   const languageLabel = useMemo(
@@ -120,8 +121,10 @@ export function EditProfileScreen(): JSX.Element {
         return;
       }
 
-      const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
+      const granted = await requestMediaLibraryWithRationale(() =>
+        imagePicker.requestMediaLibraryPermissionsAsync()
+      );
+      if (!granted) {
         HeritageAlert.show({
           title: 'Permission Required',
           message: 'Please allow photo library access to change your avatar.',
@@ -131,7 +134,7 @@ export function EditProfileScreen(): JSX.Element {
       }
 
       const result = await imagePicker.launchImageLibraryAsync({
-        mediaTypes: resolveImageMediaTypes(imagePicker),
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -139,9 +142,10 @@ export function EditProfileScreen(): JSX.Element {
 
       if (!result.canceled && result.assets?.[0]) {
         const uri = result.assets[0].uri;
-        setAvatarUri(uri);
+        const localAvatarUri = await persistAvatarAssetUri(uri);
+        setAvatarUri(localAvatarUri);
         // Persist avatar selection locally immediately to avoid losing it if save flow is interrupted.
-        void updateProfileData({ avatarUri: uri }).catch((syncErr) => {
+        void updateProfileData({ avatarUri: localAvatarUri }).catch((syncErr) => {
           devLog.warn('[EditProfileScreen] Immediate avatar local sync failed', syncErr);
         });
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -268,38 +272,8 @@ export function EditProfileScreen(): JSX.Element {
     ? birthDate.toLocaleDateString()
     : 'Select your birthday';
 
-  const daysInTempMonth = new Date(tempYear, tempMonth, 0).getDate();
-  const monthNames = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
   const openDatePicker = () => {
-    const baseDate = birthDate ?? new Date(1950, 0, 1);
-    setTempYear(baseDate.getFullYear());
-    setTempMonth(baseDate.getMonth() + 1);
-    setTempDay(baseDate.getDate());
     setShowDatePicker(true);
-  };
-
-  const closeDatePicker = () => {
-    setShowDatePicker(false);
-  };
-
-  const confirmDate = () => {
-    const clampedDay = Math.min(tempDay, new Date(tempYear, tempMonth, 0).getDate());
-    setBirthDate(new Date(tempYear, tempMonth - 1, clampedDay));
-    setShowDatePicker(false);
   };
 
   return (
@@ -317,7 +291,13 @@ export function EditProfileScreen(): JSX.Element {
             {avatarUri ? (
               <Image
                 source={{ uri: avatarUri }}
-                className="w-[120px] h-[120px] rounded-full border-4 border-white"
+                style={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: 60,
+                  borderWidth: 4,
+                  borderColor: '#fff',
+                }}
                 contentFit="cover"
               />
             ) : (
@@ -427,117 +407,18 @@ export function EditProfileScreen(): JSX.Element {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <Modal
+      <HeritageDatePicker
         visible={showDatePicker}
-        transparent
-        animationType="fade"
-        onRequestClose={closeDatePicker}>
-        <View
-          className="flex-1 justify-end"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.35)' }}>
-          <View
-            className="rounded-t-3xl px-4 pt-3 pb-5"
-            style={{ backgroundColor: colors.surface }}>
-            <View
-              className="flex-row items-center justify-between mb-3"
-              style={{ minHeight: 44 }}>
-              <Pressable onPress={closeDatePicker} className="px-3 py-2">
-                <AppText style={{ color: colors.textMuted }}>Cancel</AppText>
-              </Pressable>
-              <AppText className="text-base font-semibold" style={{ color: colors.onSurface }}>
-                Select Birthday
-              </AppText>
-              <Pressable onPress={confirmDate} className="px-3 py-2">
-                <AppText style={{ color: colors.primary, fontWeight: '700' }}>Done</AppText>
-              </Pressable>
-            </View>
-
-            <View className="rounded-2xl border px-4 py-4" style={{ borderColor: colors.border }}>
-              <AppText className="text-base text-center mb-3" style={{ color: colors.onSurface }}>
-                {new Date(tempYear, tempMonth - 1, Math.min(tempDay, daysInTempMonth)).toLocaleDateString(
-                  undefined,
-                  {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  }
-                )}
-              </AppText>
-
-              <View
-                className="rounded-2xl border px-3 py-3"
-                style={{ backgroundColor: colors.surfaceCard, borderColor: colors.border }}>
-                <View className="flex-row gap-3">
-                  <DateUnitSelector
-                    label="Month"
-                    value={monthNames[tempMonth - 1]}
-                    onDecrease={() => setTempMonth((prev) => Math.max(1, prev - 1))}
-                    onIncrease={() => setTempMonth((prev) => Math.min(12, prev + 1))}
-                    colors={colors}
-                  />
-                  <DateUnitSelector
-                    label="Day"
-                    value={String(Math.min(tempDay, daysInTempMonth))}
-                    onDecrease={() => setTempDay((prev) => Math.max(1, prev - 1))}
-                    onIncrease={() =>
-                      setTempDay((prev) => Math.min(new Date(tempYear, tempMonth, 0).getDate(), prev + 1))
-                    }
-                    colors={colors}
-                  />
-                  <DateUnitSelector
-                    label="Year"
-                    value={String(tempYear)}
-                    onDecrease={() => setTempYear((prev) => Math.max(1920, prev - 1))}
-                    onIncrease={() => setTempYear((prev) => Math.min(new Date().getFullYear(), prev + 1))}
-                    colors={colors}
-                  />
-                </View>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    </View>
-  );
-}
-
-type DateUnitSelectorProps = {
-  label: string;
-  value: string;
-  onDecrease: () => void;
-  onIncrease: () => void;
-  colors: ReturnType<typeof useHeritageTheme>['colors'];
-};
-
-function DateUnitSelector({
-  label,
-  value,
-  onDecrease,
-  onIncrease,
-  colors,
-}: DateUnitSelectorProps): JSX.Element {
-  return (
-    <View className="flex-1 items-center">
-      <AppText className="text-xs mb-2" style={{ color: colors.textMuted }}>
-        {label}
-      </AppText>
-      <Pressable
-        onPress={onIncrease}
-        className="w-10 h-10 rounded-full items-center justify-center"
-        style={{ backgroundColor: `${colors.primary}15` }}>
-        <Ionicons name="chevron-up" size={18} color={colors.primary} />
-      </Pressable>
-      <View className="min-h-[44px] items-center justify-center px-2">
-        <AppText className="text-lg font-semibold" style={{ color: colors.onSurface }}>
-          {value}
-        </AppText>
-      </View>
-      <Pressable
-        onPress={onDecrease}
-        className="w-10 h-10 rounded-full items-center justify-center"
-        style={{ backgroundColor: `${colors.primary}15` }}>
-        <Ionicons name="chevron-down" size={18} color={colors.primary} />
-      </Pressable>
+        value={birthDate}
+        minimumDate={new Date(1920, 0, 1)}
+        maximumDate={new Date()}
+        title="Select Birthday"
+        onCancel={() => setShowDatePicker(false)}
+        onConfirm={(nextDate) => {
+          setBirthDate(nextDate);
+          setShowDatePicker(false);
+        }}
+      />
     </View>
   );
 }

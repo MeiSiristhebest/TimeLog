@@ -7,6 +7,12 @@
 
 import { requestRecordingPermissionsAsync, getRecordingPermissionsAsync } from 'expo-audio';
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
+import {
+  assertPermissionRequestAllowed,
+  PERMISSION_CONTEXT,
+  PERMISSION_KIND,
+} from '@/features/permissions/permissionPolicy';
+import { requestNotificationPermission } from '@/lib/notifications';
 
 /**
  * Request microphone permission with a rationale pre-dialog.
@@ -15,6 +21,8 @@ import { HeritageAlert } from '@/components/ui/HeritageAlert';
  * @returns Promise<boolean> - true if permission granted, false otherwise
  */
 export async function requestMicrophoneWithRationale(): Promise<boolean> {
+  assertPermissionRequestAllowed(PERMISSION_KIND.MICROPHONE, PERMISSION_CONTEXT.RECORDER_START);
+
   return new Promise((resolve) => {
     HeritageAlert.show({
       title: 'Microphone Access',
@@ -48,6 +56,11 @@ export async function hasMicrophonePermission(): Promise<boolean> {
  * Request notification permission with rationale (call after first story saved).
  */
 export async function requestNotificationWithRationale(): Promise<boolean> {
+  assertPermissionRequestAllowed(
+    PERMISSION_KIND.NOTIFICATIONS,
+    PERMISSION_CONTEXT.NOTIFICATION_PROMPT
+  );
+
   return new Promise((resolve) => {
     HeritageAlert.show({
       title: 'Stay Connected',
@@ -56,13 +69,43 @@ export async function requestNotificationWithRationale(): Promise<boolean> {
       primaryAction: {
         label: 'Enable Notifications',
         onPress: async () => {
-          // Notification permission request would go here
-          // For now, just resolve true
-          resolve(true);
+          const status = await requestNotificationPermission(PERMISSION_CONTEXT.NOTIFICATION_PROMPT);
+          resolve(status === 'granted');
         },
       },
       secondaryAction: {
         label: 'Maybe Later',
+        onPress: () => resolve(false),
+      },
+    });
+  });
+}
+
+/**
+ * Request media library permission with rationale (avatar picker only).
+ */
+export async function requestMediaLibraryWithRationale(
+  requestPermission: () => Promise<{ granted: boolean }>
+): Promise<boolean> {
+  assertPermissionRequestAllowed(
+    PERMISSION_KIND.MEDIA_LIBRARY,
+    PERMISSION_CONTEXT.PROFILE_AVATAR_PICKER
+  );
+
+  return new Promise((resolve) => {
+    HeritageAlert.show({
+      title: 'Photo Library Access',
+      message: 'TimeLog needs photo access to let you choose a profile picture.',
+      variant: 'info',
+      primaryAction: {
+        label: 'Allow Photos',
+        onPress: async () => {
+          const { granted } = await requestPermission();
+          resolve(granted);
+        },
+      },
+      secondaryAction: {
+        label: 'Not Now',
         onPress: () => resolve(false),
       },
     });

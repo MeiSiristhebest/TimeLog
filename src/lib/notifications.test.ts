@@ -85,6 +85,7 @@ import {
   getBadgeCount,
   setBadgeCount,
 } from './notifications';
+import { PERMISSION_CONTEXT } from '@/features/permissions/permissionPolicy';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { supabase } from './supabase';
@@ -129,7 +130,7 @@ describe('notifications', () => {
         status: 'granted',
       });
 
-      const status = await requestNotificationPermission();
+      const status = await requestNotificationPermission(PERMISSION_CONTEXT.NOTIFICATION_PROMPT);
 
       expect(status).toBe('granted');
       expect(Notifications.requestPermissionsAsync).not.toHaveBeenCalled();
@@ -143,7 +144,7 @@ describe('notifications', () => {
         status: 'granted',
       });
 
-      const status = await requestNotificationPermission();
+      const status = await requestNotificationPermission(PERMISSION_CONTEXT.NOTIFICATION_PROMPT);
 
       expect(status).toBe('granted');
       expect(Notifications.requestPermissionsAsync).toHaveBeenCalled();
@@ -157,7 +158,7 @@ describe('notifications', () => {
         status: 'denied',
       });
 
-      const status = await requestNotificationPermission();
+      const status = await requestNotificationPermission(PERMISSION_CONTEXT.NOTIFICATION_PROMPT);
 
       expect(status).toBe('denied');
     });
@@ -202,13 +203,11 @@ describe('notifications', () => {
       (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({
         status: 'undetermined',
       });
-      (Notifications.requestPermissionsAsync as jest.Mock).mockResolvedValue({
-        status: 'denied',
-      });
 
       const token = await registerForPushNotifications();
 
       expect(token).toBeNull();
+      expect(Notifications.requestPermissionsAsync).not.toHaveBeenCalled();
     });
 
     it('registers token and stores in Supabase when permission granted', async () => {
