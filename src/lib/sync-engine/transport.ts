@@ -7,6 +7,7 @@ import * as Upload from 'tus-js-client';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Crypto from 'expo-crypto';
 import { supabase } from '@/lib/supabase';
+import { getSupabaseRuntimeConfig, RuntimeConfigError } from '@/lib/config/runtimeConfig';
 
 const DEFAULT_CHUNK_SIZE = 1 * 1024 * 1024; // 1MB - optimized for mobile latency
 
@@ -100,9 +101,9 @@ export class TusTransport {
    * @returns MD5 hash as hex string (32 characters)
    */
   async calculateMd5Checksum(filePath: string): Promise<string> {
-    const response = await fetch(filePath);
+    const response = await this.fetchLocalFile(filePath);
     if (!response.ok) {
-      throw new Error(`Failed to load file for checksum: ${filePath}`);
+      throw new Error(`Failed to load file for checksum (status ${response.status})`);
     }
 
     const arrayBuffer = await response.arrayBuffer();
@@ -123,6 +124,9 @@ export class TusTransport {
 
   private getContentType(storagePath: string): string {
     const normalizedPath = storagePath.toLowerCase();
+    if (normalizedPath.endsWith('.opus')) {
+      return 'audio/opus';
+    }
     if (normalizedPath.endsWith('.wav')) {
       return 'audio/wav';
     }
@@ -134,17 +138,36 @@ export class TusTransport {
    * React Native requires blob conversion for file uploads.
    */
   private async fileUriToBlob(uri: string): Promise<Blob> {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    return blob;
+    const response = await this.fetchLocalFile(uri);
+    if (!response.ok) {
+      throw new Error(`Failed to load file for upload (status ${response.status})`);
+    }
+    return response.blob();
   }
 
-  /**
-   * Legacy method - kept for backward compatibility.
-   * TODO: Migrate all callers to use uploadFile with TUS.
-   */
+  private async fetchLocalFile(uri: string): Promise<Response> {
+    try {
+      return await fetch(uri);
+    } catch (error) {
+      throw new Error(
+        `Failed to access local file: ${
+          error instanceof Error ? error.message : 'unknown fetch error'
+        }`
+      );
+    }
+  }
+
+  async deleteFile(bucket: string, storagePath: string): Promise<void> {
+    const { error } = await supabase.storage.from(bucket).remove([storagePath]);
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  /** Legacy method kept for backward compatibility. */
   async syncMetadata(table: string, data: Record<string, unknown>): Promise<void> {
-    // TODO: Implement metadata sync via Supabase REST API
+    void table;
+    void data;
     throw new Error('Not implemented - use Supabase client directly for metadata sync');
   }
 }
@@ -152,8 +175,12 @@ export class TusTransport {
 // Singleton instance for legacy SyncTransport compatibility
 export class SyncTransport extends TusTransport {
   constructor() {
-    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-    const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
-    super(supabaseUrl, anonKey);
+    const { url, anonKey, isConfigured } = getSupabaseRuntimeConfig();
+    if (!isConfigured) {
+      throw new RuntimeConfigError(
+        'SyncTransport requires EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.'
+      );
+    }
+    super(url, anonKey);
   }
 }

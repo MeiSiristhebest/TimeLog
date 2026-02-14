@@ -11,8 +11,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// Expo Push API endpoint
-const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+const DEFAULT_EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+
+function getExpoPushUrl(): string {
+  const configured = Deno.env.get('EXPO_PUSH_URL')?.trim();
+  return configured && configured.length > 0 ? configured : DEFAULT_EXPO_PUSH_URL;
+}
 
 // CORS headers for preflight requests
 const corsHeaders = {
@@ -170,7 +174,7 @@ serve(async (req: Request) => {
         channelId: 'default',
       }));
 
-      const pushResponse = await fetch(EXPO_PUSH_URL, {
+      const pushResponse = await fetch(getExpoPushUrl(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,9 +1,9 @@
 import * as SecureStore from 'expo-secure-store';
 import { createClient } from '@supabase/supabase-js';
 import { devLog } from './devLogger';
+import { getSupabaseRuntimeConfig } from '@/lib/config/runtimeConfig';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+const { url: supabaseUrl, anonKey: supabaseAnonKey, isConfigured } = getSupabaseRuntimeConfig();
 
 const secureStorage = {
   getItem: (key: string) => SecureStore.getItemAsync(key),
@@ -11,7 +11,7 @@ const secureStorage = {
   removeItem: (key: string) => SecureStore.deleteItemAsync(key),
 };
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!isConfigured) {
   devLog.warn(
     'Supabase env vars missing. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to enable auth.'
   );
