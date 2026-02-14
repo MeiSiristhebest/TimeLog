@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { render, waitFor } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useProfile } from './useProfile';
+import type { ProfileUpdate } from '../services/profileService';
 
 const mockGetLocalProfile = jest.fn();
 const mockEnsureLocalProfile = jest.fn();
@@ -38,7 +40,11 @@ jest.mock('../store/displaySettingsStore', () => ({
     selector({ setFontScaleIndex: mockSetFontScaleIndex }),
 }));
 
-function Harness({ onReady }: { onReady: (update: (updates: any) => Promise<void>) => void }) {
+function Harness({
+  onReady,
+}: {
+  onReady: (update: (updates: ProfileUpdate) => Promise<void>) => void;
+}) {
   const { updateProfileData, isLoading } = useProfile();
   useEffect(() => {
     if (!isLoading) {
@@ -49,6 +55,12 @@ function Harness({ onReady }: { onReady: (update: (updates: any) => Promise<void
 }
 
 describe('useProfile integration', () => {
+  function createWrapper(queryClient: QueryClient): React.ComponentType<{ children: React.ReactNode }> {
+    return function Wrapper({ children }: { children: React.ReactNode }): JSX.Element {
+      return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+    };
+  }
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -82,8 +94,15 @@ describe('useProfile integration', () => {
       updatedAt: Date.now(),
     });
 
-    let updateFn: ((updates: any) => Promise<void>) | undefined;
-    render(<Harness onReady={(fn) => (updateFn = fn)} />);
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+      },
+    });
+    let updateFn: ((updates: ProfileUpdate) => Promise<void>) | undefined;
+    render(<Harness onReady={(fn) => (updateFn = fn)} />, {
+      wrapper: createWrapper(queryClient),
+    });
 
     await waitFor(() => {
       expect(updateFn).toBeTruthy();
@@ -140,8 +159,15 @@ describe('useProfile integration', () => {
       updatedAt: new Date().toISOString(),
     });
 
-    let updateFn: ((updates: any) => Promise<void>) | undefined;
-    render(<Harness onReady={(fn) => (updateFn = fn)} />);
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+      },
+    });
+    let updateFn: ((updates: ProfileUpdate) => Promise<void>) | undefined;
+    render(<Harness onReady={(fn) => (updateFn = fn)} />, {
+      wrapper: createWrapper(queryClient),
+    });
 
     await waitFor(() => {
       expect(updateFn).toBeTruthy();

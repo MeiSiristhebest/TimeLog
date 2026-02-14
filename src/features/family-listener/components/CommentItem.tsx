@@ -3,7 +3,8 @@ import React from 'react';
 import { Ionicons } from '@/components/ui/Icon';
 import { useHeritageTheme } from '../../../theme/heritage';
 import type { Comment } from '../services/commentService';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { Animated } from '@/tw/animated';
+import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { View, Pressable } from 'react-native';
 
 /**

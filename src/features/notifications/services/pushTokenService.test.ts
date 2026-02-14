@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { removePushToken, storePushToken, storePushTokenForCurrentUser } from './pushTokenService';
 
-const mockUpsert = jest.fn<any>();
-const mockDelete = jest.fn<any>();
-const mockGetUser = jest.fn<any>();
+const mockUpsert = jest.fn();
+const mockDelete = jest.fn();
+const mockGetUser = jest.fn();
 
 jest.mock('@/lib/supabase', () => ({
   supabase: {
@@ -25,7 +25,7 @@ describe('pushTokenService', () => {
   });
 
   it('stores push token with user metadata', async () => {
-    mockUpsert.mockResolvedValue({ data: null, error: null });
+    mockUpsert.mockImplementation(async () => ({ data: null, error: null }));
     const token = 'ExpoPushToken[abc]';
 
     await storePushToken('user-1', token, 'ios');
@@ -42,14 +42,15 @@ describe('pushTokenService', () => {
   });
 
   it('throws when upsert fails', async () => {
-    mockUpsert.mockResolvedValue({ data: null, error: { message: 'fail' } });
+    mockUpsert.mockImplementation(async () => ({ data: null, error: { message: 'fail' } }));
 
     await expect(storePushToken('user-1', 'token', 'android')).rejects.toThrow('fail');
   });
 
   it('removes push token', async () => {
+    const deleteEq = jest.fn(async () => ({ error: null as { message: string } | null }));
     mockDelete.mockReturnValue({
-      eq: jest.fn().mockResolvedValue({ error: null }),
+      eq: deleteEq,
     });
 
     await removePushToken('token-123');
@@ -58,8 +59,8 @@ describe('pushTokenService', () => {
   });
 
   it('stores push token for current user', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null });
-    mockUpsert.mockResolvedValue({ data: null, error: null });
+    mockGetUser.mockImplementation(async () => ({ data: { user: { id: 'user-1' } }, error: null }));
+    mockUpsert.mockImplementation(async () => ({ data: null, error: null }));
 
     await storePushTokenForCurrentUser('token-xyz', 'ios');
 

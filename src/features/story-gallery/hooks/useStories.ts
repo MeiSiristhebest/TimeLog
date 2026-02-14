@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { DeviceEventEmitter } from 'react-native';
 // import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { desc, eq, isNull, isNotNull, and } from 'drizzle-orm';
@@ -12,6 +12,8 @@ type UseStoriesResult = {
   isLoading: boolean;
   error: unknown;
 };
+
+const storyQueryCache = new Map<string, AudioRecordingRow[]>();
 
 /**
  * Options for useStories hook to control deleted item filtering.
@@ -36,25 +38,29 @@ interface UseStoriesOptions {
  */
 export function useStories(options: UseStoriesOptions = {}): UseStoriesResult {
   const { includeDeleted = false, onlyDeleted = false } = options;
+  const cacheKey = `${includeDeleted ? '1' : '0'}:${onlyDeleted ? '1' : '0'}`;
+  const shouldUseCache = process.env.NODE_ENV !== 'test';
+  const cachedStories = shouldUseCache ? (storyQueryCache.get(cacheKey) ?? []) : [];
 
-  // Build where clause based on deleted filtering options
-  const whereConditions: any[] = [];
+  const whereConditions = useMemo(() => {
+    const conditions: (ReturnType<typeof eq> | ReturnType<typeof isNull> | ReturnType<typeof isNotNull>)[] = [];
+    // Always filter by completed recordings
+    conditions.push(eq(audioRecordings.recordingStatus, 'completed'));
 
-  // Always filter by completed recordings
-  whereConditions.push(eq(audioRecordings.recordingStatus, 'completed'));
+    // Handle deleted item filtering
+    if (onlyDeleted) {
+      // Settings > Deleted Items screen: show only deleted items
+      conditions.push(isNotNull(audioRecordings.deletedAt));
+    } else if (!includeDeleted) {
+      // Default: hide deleted items (Gallery view)
+      conditions.push(isNull(audioRecordings.deletedAt));
+    }
+    // If includeDeleted=true and onlyDeleted=false: show all items (no deletedAt filter)
+    return conditions;
+  }, [includeDeleted, onlyDeleted]);
 
-  // Handle deleted item filtering
-  if (onlyDeleted) {
-    // Settings > Deleted Items screen: show only deleted items
-    whereConditions.push(isNotNull(audioRecordings.deletedAt));
-  } else if (!includeDeleted) {
-    // Default: hide deleted items (Gallery view)
-    whereConditions.push(isNull(audioRecordings.deletedAt));
-  }
-  // If includeDeleted=true and onlyDeleted=false: show all items (no deletedAt filter)
-
-  const [stories, setStories] = useState<AudioRecordingRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [stories, setStories] = useState<AudioRecordingRow[]>(cachedStories);
+  const [isLoading, setIsLoading] = useState(cachedStories.length === 0);
   const [error, setError] = useState<unknown>(null);
 
   const fetchStories = useCallback(async () => {
@@ -65,9 +71,12 @@ export function useStories(options: UseStoriesOptions = {}): UseStoriesResult {
         .where(and(...whereConditions))
         .orderBy(
           onlyDeleted
-            ? desc(audioRecordings.deletedAt!)
+            ? desc(audioRecordings.deletedAt)
             : desc(audioRecordings.startedAt)
         );
+      if (shouldUseCache) {
+        storyQueryCache.set(cacheKey, result);
+      }
       setStories(result);
       setError(null);
     } catch (e) {
@@ -76,7 +85,7 @@ export function useStories(options: UseStoriesOptions = {}): UseStoriesResult {
     } finally {
       setIsLoading(false);
     }
-  }, [includeDeleted, onlyDeleted]); // whereConditions dependency is unstable if constructed inline, so relying on props
+  }, [cacheKey, onlyDeleted, shouldUseCache, whereConditions]);
 
   useEffect(() => {
     // Initial fetch

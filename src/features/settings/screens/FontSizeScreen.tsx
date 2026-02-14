@@ -16,7 +16,7 @@ import { useProfile } from '../hooks/useProfile';
 export function FontSizeScreen(): JSX.Element {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isDark } = useHeritageTheme();
+  const { isDark, colors } = useHeritageTheme();
   const { state, actions } = useDisplaySettingsLogic();
   const { updateProfileData } = useProfile();
   const { fontScaleIndex } = state;
@@ -27,16 +27,20 @@ export function FontSizeScreen(): JSX.Element {
   }, [fontScaleIndex]);
 
   const palette = {
-    bg: isDark ? '#111111' : '#F2F2F2',
-    surface: isDark ? '#1E1E1E' : '#FFFFFF',
-    sentBubble: isDark ? '#2B7E48' : '#95EC69',
-    receivedBubble: isDark ? '#2C2C2C' : '#FFFFFF',
-    textPrimary: isDark ? '#FFFFFF' : '#000000',
-    textSecondary: isDark ? '#AAAAAA' : '#666666',
-    divider: isDark ? '#2a2a2a' : '#e5e5e5',
-    sliderTrack: isDark ? '#555555' : '#D1D1D1',
-    tick: isDark ? '#555555' : '#D1D1D1',
-    green: '#07C160',
+    bg: colors.surfaceDim,
+    surface: colors.surfaceCard,
+    sentBubble: colors.success,
+    receivedBubble: colors.surfaceCard,
+    textPrimary: colors.onSurface,
+    textSecondary: colors.textMuted,
+    divider: colors.border,
+    sliderTrack: colors.handle,
+    tick: colors.handle,
+    accent: colors.success,
+    buttonText: colors.onPrimary,
+    sentText: colors.onPrimary,
+    avatarBackground: `${colors.onSurface}20`,
+    thumb: isDark ? colors.handleActive : colors.surfaceCard,
   } as const;
 
   const messages = [
@@ -94,8 +98,8 @@ export function FontSizeScreen(): JSX.Element {
         <Pressable
           onPress={handleDone}
           className="px-4 h-8 rounded items-center justify-center"
-          style={{ backgroundColor: palette.green }}>
-          <Text style={{ fontSize: headerButtonSize, color: '#FFFFFF', fontWeight: '500' }}>
+          style={{ backgroundColor: palette.accent }}>
+          <Text style={{ fontSize: headerButtonSize, color: palette.buttonText, fontWeight: '500' }}>
             Done
           </Text>
         </Pressable>
@@ -120,9 +124,13 @@ export function FontSizeScreen(): JSX.Element {
                   style={{
                     width: Math.round(40 * currentPreviewScale),
                     height: Math.round(40 * currentPreviewScale),
-                    backgroundColor: palette.green,
+                    backgroundColor: palette.accent,
                   }}>
-                  <Ionicons name="chatbubble-ellipses" size={previewIconSize} color="#FFFFFF" />
+                  <Ionicons
+                    name="chatbubble-ellipses"
+                    size={previewIconSize}
+                    color={palette.buttonText}
+                  />
                 </View>
               ) : null}
 
@@ -167,7 +175,7 @@ export function FontSizeScreen(): JSX.Element {
                 )}
                 <Text
                   style={{
-                    color: msg.type === 'sent' ? '#000000' : palette.textPrimary,
+                    color: msg.type === 'sent' ? palette.sentText : palette.textPrimary,
                     fontSize: previewBodySize,
                     lineHeight: previewBodyLineHeight,
                     fontWeight: msg.type === 'sent' ? '500' : '400',
@@ -178,12 +186,13 @@ export function FontSizeScreen(): JSX.Element {
 
               {msg.type === 'sent' ? (
                 <View
-                  className="rounded bg-gray-300 items-center justify-center"
+                  className="rounded items-center justify-center"
                   style={{
                     width: Math.round(40 * currentPreviewScale),
                     height: Math.round(40 * currentPreviewScale),
+                    backgroundColor: palette.avatarBackground,
                   }}>
-                  <Ionicons name="person" size={previewAvatarIconSize} color="#FFFFFF" />
+                  <Ionicons name="person" size={previewAvatarIconSize} color={palette.buttonText} />
                 </View>
               ) : null}
             </View>
@@ -237,7 +246,7 @@ export function FontSizeScreen(): JSX.Element {
             }}
             minimumTrackTintColor={palette.sliderTrack}
             maximumTrackTintColor={palette.sliderTrack}
-            thumbTintColor={isDark ? '#4A4A4A' : '#FFFFFF'}
+            thumbTintColor={palette.thumb}
           />
         </View>
 

@@ -22,8 +22,15 @@ describe('SyncStatusBadge', () => {
     it('renders "local" state with amber cloud icon', () => {
       render(<SyncStatusBadge status="local" />);
 
-      expect(screen.getByText('Saved Locally')).toBeTruthy();
-      expect(screen.getByLabelText('Saved Locally')).toBeTruthy();
+      expect(screen.getByText('Local Only')).toBeTruthy();
+      expect(screen.getByLabelText('Local Only')).toBeTruthy();
+    });
+
+    it('renders "local_only" state with amber cloud-offline icon', () => {
+      render(<SyncStatusBadge status="local_only" />);
+
+      expect(screen.getByText('Local Only')).toBeTruthy();
+      expect(screen.getByLabelText('Local Only')).toBeTruthy();
     });
 
     it('renders "queued" state with amber icon', () => {
@@ -58,7 +65,7 @@ describe('SyncStatusBadge', () => {
   describe('Color Validation', () => {
     it('uses amber color for "local" state', () => {
       const { getByText } = render(<SyncStatusBadge status="local" />);
-      const text = getByText('Saved Locally');
+      const text = getByText('Local Only');
 
       expect(StyleSheet.flatten(text.props.style).color).toBe(PALETTE.warning);
     });

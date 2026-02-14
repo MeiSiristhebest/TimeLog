@@ -2,12 +2,11 @@ import { AppText } from '@/components/ui/AppText';
 import React, { useEffect } from 'react';
 import { Modal, View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
-import Animated, {
-  useSharedValue,
+import { Animated } from '@/tw/animated';
+import { useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+  withTiming, } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useHeritageTheme } from '../../../theme/heritage';
 

@@ -9,18 +9,18 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
+import { Animated } from '@/tw/animated';
+import { useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
-  runOnJS,
-} from 'react-native-reanimated';
+  runOnJS, } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import { useHeritageTheme } from '../../../theme/heritage';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+type SnapPoint = number | `${number}%`;
 
 type HeritageBottomSheetProps = {
   /** Whether sheet is visible */

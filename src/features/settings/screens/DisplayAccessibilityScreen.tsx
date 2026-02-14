@@ -8,6 +8,18 @@ import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { useProfile } from '../hooks/useProfile';
 import { getLanguageLabel, getSystemLocale } from '../utils/languageOptions';
 
+type HeritageColors = ReturnType<typeof useHeritageTheme>['colors'];
+
+function getThemeLabel(themeMode: 'system' | 'dark' | 'light'): string {
+  if (themeMode === 'system') {
+    return 'Follow System';
+  }
+  if (themeMode === 'dark') {
+    return 'Dark Mode';
+  }
+  return 'Light Mode';
+}
+
 export function DisplayAccessibilityScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
   const { profile } = useProfile();
@@ -20,11 +32,7 @@ export function DisplayAccessibilityScreen(): JSX.Element {
   const [landscape, setLandscape] = useState(false);
 
   // Memoize theme label to prevent re-calculations
-  const themeLabel = useMemo(
-    () =>
-      themeMode === 'system' ? 'Follow System' : themeMode === 'dark' ? 'Dark Mode' : 'Light Mode',
-    [themeMode]
-  );
+  const themeLabel = useMemo(() => getThemeLabel(themeMode), [themeMode]);
 
   const systemLocale = getSystemLocale();
   const languageValue = getLanguageLabel(profile?.language ?? systemLocale, systemLocale);
@@ -73,13 +81,18 @@ export function DisplayAccessibilityScreen(): JSX.Element {
   );
 }
 
-// Extracted Component (Fixing nested definition rule)
-const SettingsSectionContainer = ({
+function SettingsSectionContainer({
   children,
   colors,
 }: {
   children: React.ReactNode;
-  colors: any;
-}) => <View className="mb-0 overflow-hidden rounded-lg mx-4" style={{ backgroundColor: colors.surfaceCard }}>{children}</View>;
+  colors: HeritageColors;
+}): JSX.Element {
+  return (
+    <View className="mb-0 mx-4 overflow-hidden rounded-lg" style={{ backgroundColor: colors.surfaceCard }}>
+      {children}
+    </View>
+  );
+}
 
-const NO_OP = () => { };
+function NO_OP(): void {}

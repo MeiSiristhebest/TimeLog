@@ -17,6 +17,18 @@ interface PlaybackWaveformProps {
     progressColor?: string;
 }
 
+type AudioAnalysisExtractor = {
+    extractAudioAnalysis?: (options: { fileUri: string }) => Promise<AudioAnalysis>;
+};
+
+async function extractAudioAnalysis(fileUri: string): Promise<AudioAnalysis> {
+    const module = ExpoAudioStreamModule as AudioAnalysisExtractor;
+    if (typeof module.extractAudioAnalysis !== 'function') {
+        throw new Error('Audio analysis extraction is unavailable in this build.');
+    }
+    return module.extractAudioAnalysis({ fileUri });
+}
+
 /**
  * PlaybackWaveform
  *
@@ -47,7 +59,6 @@ export function PlaybackWaveform({
 
     const activeColor = progressColor || theme.colors.primary;
     const inactiveColor = color || `${theme.colors.primary}55`;
-    const FS = FileSystem as any;
 
     const getAnalysisPath = (fileUri: string) => {
         if (fileUri.endsWith('.wav')) {
@@ -72,9 +83,9 @@ export function PlaybackWaveform({
 
                 // 1) Try cache first
                 try {
-                    const info = await FS.getInfoAsync(analysisPath);
+                    const info = await FileSystem.getInfoAsync(analysisPath);
                     if (info.exists) {
-                        const cached = await FS.readAsStringAsync(analysisPath);
+                        const cached = await FileSystem.readAsStringAsync(analysisPath);
                         const parsed = JSON.parse(cached) as AudioAnalysis;
                         if (isMounted) {
                             setAnalysis(parsed);
@@ -86,9 +97,7 @@ export function PlaybackWaveform({
                 }
 
                 // 2) Extract analysis from file
-                const result = await (ExpoAudioStreamModule as any).extractAudioAnalysis({
-                    fileUri: uri,
-                });
+                const result = await extractAudioAnalysis(uri);
 
                 if (isMounted) {
                     setAnalysis(result);
@@ -96,7 +105,7 @@ export function PlaybackWaveform({
 
                 // 3) Cache analysis for next time
                 try {
-                    await FS.writeAsStringAsync(analysisPath, JSON.stringify(result));
+                    await FileSystem.writeAsStringAsync(analysisPath, JSON.stringify(result));
                 } catch (writeError) {
                     devLog.warn('[PlaybackWaveform] Cache write failed:', writeError);
                 }
@@ -112,7 +121,7 @@ export function PlaybackWaveform({
         return () => {
             isMounted = false;
         };
-    }, [uri, FS]);
+    }, [uri]);
 
     const handleLayout = (e: LayoutChangeEvent) => {
         setWidth(e.nativeEvent.layout.width);
@@ -145,8 +154,8 @@ export function PlaybackWaveform({
                 // Use amplitude if available, otherwise fallback to dB converted to linear
                 // @siteed/expo-audio-studio typically provides `amplitude` (0-1) or `dB`
                 // We'll check the type at runtime or assume standard AudioAnalysis structure
-                const point = dataPoints[j] as any;
-                const amp = point.amplitude ?? (point.dB ? Math.pow(10, point.dB / 20) : 0);
+                const point = dataPoints[j];
+                const amp = typeof point.amplitude === 'number' ? point.amplitude : Math.pow(10, point.dB / 20);
                 sum += amp;
                 count++;
             }
@@ -202,6 +211,8 @@ export function PlaybackWaveform({
         return skPath;
     }, [drawWidth, height, barWidth, barGap]);
 
+    const drawPath = path ?? fallbackPath;
+
     const progressRect = useMemo(() => {
         if (drawWidth === 0 || !durationMillis || durationMillis <= 0) return { x: 0, y: 0, width: 0, height };
 
@@ -218,10 +229,10 @@ export function PlaybackWaveform({
         <View
             style={{ height, width: '100%', overflow: 'hidden', backgroundColor: 'transparent' }}
             onLayout={handleLayout}>
-            {paintReady && (path || fallbackPath) && (
+            {paintReady && drawPath && (
                 <Canvas style={{ width: '100%', height, backgroundColor: 'transparent' }}>
                     {/* Layer 1: Inactive Color (Background) */}
-                    <Path path={path ?? fallbackPath!} color={inactiveColor} />
+                    <Path path={drawPath} color={inactiveColor} />
 
                     {/* Layer 2: Active Color (Foreground), clipped to progress */}
                     <Group>
@@ -231,7 +242,7 @@ export function PlaybackWaveform({
                  Safe bet: Group with clip prop.
              */}
                         <Group clip={Skia.XYWHRect(progressRect.x, progressRect.y, progressRect.width, progressRect.height)}>
-                            <Path path={path ?? fallbackPath!} color={activeColor} />
+                            <Path path={drawPath} color={activeColor} />
                         </Group>
                     </Group>
                 </Canvas>

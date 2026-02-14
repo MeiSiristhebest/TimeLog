@@ -4,6 +4,7 @@ import { subscribeToCommentChanges } from './commentRealtimeService';
 const mockSubscribe = jest.fn();
 const mockOn = jest.fn();
 const mockRemoveChannel = jest.fn();
+type CommentPayload = { new?: { story_id?: string } | null; old?: { story_id?: string } | null };
 
 jest.mock('@/lib/supabase', () => {
   return {
@@ -41,23 +42,27 @@ describe('commentRealtimeService', () => {
 
   it('triggers callback when payload story_id matches', () => {
     const invalidate = jest.fn();
-    let insertHandler: ((payload: any) => void) | null = null;
-    let deleteHandler: ((payload: any) => void) | null = null;
+    let insertHandler: ((payload: CommentPayload) => void) | null = null;
+    let deleteHandler: ((payload: CommentPayload) => void) | null = null;
 
     mockOn
-      .mockImplementationOnce((_event, _config, cb) => {
-        insertHandler = cb;
+      .mockImplementationOnce((_event: unknown, _config: unknown, cb: unknown) => {
+        insertHandler = cb as (payload: CommentPayload) => void;
         return { on: mockOn, subscribe: jest.fn() } as any;
       })
-      .mockImplementationOnce((_event, _config, cb) => {
-        deleteHandler = cb;
+      .mockImplementationOnce((_event: unknown, _config: unknown, cb: unknown) => {
+        deleteHandler = cb as (payload: CommentPayload) => void;
         return { on: mockOn, subscribe: jest.fn() } as any;
       });
 
     subscribeToCommentChanges(new Set(['match-id']), invalidate);
 
     expect(insertHandler).not.toBeNull();
-    insertHandler?.({ new: { story_id: 'match-id' }, old: null });
+    if (!insertHandler) {
+      throw new Error('Expected insert handler to be registered');
+    }
+    const invokeInsert = insertHandler as (payload: CommentPayload) => void;
+    invokeInsert({ new: { story_id: 'match-id' }, old: null });
 
     expect(invalidate).toHaveBeenCalled();
     expect(deleteHandler).not.toBeNull();
@@ -65,16 +70,20 @@ describe('commentRealtimeService', () => {
 
   it('does not trigger callback when story_id does not match', () => {
     const invalidate = jest.fn();
-    let handler: ((payload: any) => void) | null = null;
+    let handler: ((payload: CommentPayload) => void) | null = null;
 
-    mockOn.mockImplementation((_event, _config, cb) => {
-      handler = cb;
+    mockOn.mockImplementation((_event: unknown, _config: unknown, cb: unknown) => {
+      handler = cb as (payload: CommentPayload) => void;
       return { on: mockOn, subscribe: jest.fn() } as any;
     });
 
     subscribeToCommentChanges(new Set(['match-id']), invalidate);
 
-    handler?.({ new: { story_id: 'other' }, old: null });
+    if (!handler) {
+      throw new Error('Expected handler to be registered');
+    }
+    const invokeHandler = handler as (payload: CommentPayload) => void;
+    invokeHandler({ new: { story_id: 'other' }, old: null });
 
     expect(invalidate).not.toHaveBeenCalled();
   });

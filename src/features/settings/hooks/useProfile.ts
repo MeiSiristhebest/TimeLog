@@ -6,7 +6,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { supabase } from '@/lib/supabase';
 import {
   getProfile,
   updateProfile,
@@ -28,6 +27,7 @@ import { devLog } from '@/lib/devLogger';
 import { useDisplaySettingsStore } from '../store/displaySettingsStore';
 import { getSystemLocale } from '../utils/languageOptions';
 import { DEFAULT_FONT_SCALE_INDEX } from '@/theme/heritage';
+import { useCurrentUserId } from '@/features/auth/hooks/useCurrentUserId';
 
 type UseProfileResult = {
   profile: UserProfile | null;
@@ -40,6 +40,9 @@ type UseProfileResult = {
 
 export function useProfile(): UseProfileResult {
   const sessionUserId = useAuthStore((state) => state.sessionUserId);
+  const { currentUserId: resolvedCurrentUserId } = useCurrentUserId({
+    enabled: !sessionUserId,
+  });
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -71,16 +74,14 @@ export function useProfile(): UseProfileResult {
       return sessionUserId;
     }
 
-    const { data } = await supabase.auth.getSession();
-    const fallbackUserId = data.session?.user?.id ?? null;
-    if (fallbackUserId) {
-      return fallbackUserId;
+    if (resolvedCurrentUserId) {
+      return resolvedCurrentUserId;
     }
 
     // MMKV/session can be unavailable in some dev-build states; keep profile editable locally.
     const latestLocal = await getLatestLocalProfile();
     return latestLocal?.id ?? null;
-  }, [sessionUserId]);
+  }, [sessionUserId, resolvedCurrentUserId]);
 
   const fetchProfile = useCallback(async () => {
     const userId = await resolveUserId();
@@ -90,7 +91,9 @@ export function useProfile(): UseProfileResult {
       return;
     }
 
-    setIsLoading(true);
+    if (!profile) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -141,7 +144,7 @@ export function useProfile(): UseProfileResult {
     } finally {
       setIsLoading(false);
     }
-  }, [resolveUserId, setFontScaleIndex, systemLocale, mapLocalToProfile]);
+  }, [resolveUserId, profile, setFontScaleIndex, systemLocale, mapLocalToProfile]);
 
   useEffect(() => {
     fetchProfile();

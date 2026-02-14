@@ -7,13 +7,53 @@
 import { supabase } from '@/lib/supabase';
 import { devLog } from '@/lib/devLogger';
 
+export const FAMILY_QUESTION_CATEGORIES = {
+  GENERAL: 'general',
+  CHILDHOOD: 'childhood',
+  FAMILY: 'family',
+  CAREER: 'career',
+  HOBBIES: 'hobbies',
+  TRAVEL: 'travel',
+} as const;
+
+export type FamilyQuestionCategory =
+  (typeof FAMILY_QUESTION_CATEGORIES)[keyof typeof FAMILY_QUESTION_CATEGORIES];
+
+function normalizeFamilyQuestionCategory(category?: string | null): FamilyQuestionCategory {
+  const normalized = category?.trim().toLowerCase();
+  if (!normalized) return FAMILY_QUESTION_CATEGORIES.GENERAL;
+
+  if (normalized === 'childhood') return FAMILY_QUESTION_CATEGORIES.CHILDHOOD;
+  if (normalized === 'family' || normalized === 'family_history') {
+    return FAMILY_QUESTION_CATEGORIES.FAMILY;
+  }
+  if (normalized === 'career' || normalized === 'education') {
+    return FAMILY_QUESTION_CATEGORIES.CAREER;
+  }
+  if (normalized === 'hobbies') return FAMILY_QUESTION_CATEGORIES.HOBBIES;
+  if (normalized === 'travel') return FAMILY_QUESTION_CATEGORIES.TRAVEL;
+
+  return FAMILY_QUESTION_CATEGORIES.GENERAL;
+}
+
 export interface FamilyQuestion {
   id: string;
   seniorUserId: string;
   familyUserId: string;
   questionText: string;
+  category: FamilyQuestionCategory;
   createdAt: string;
   answeredAt: string | null;
+}
+
+interface FamilyQuestionRow {
+  id: string;
+  senior_user_id: string;
+  family_user_id: string;
+  question_text: string;
+  category: string | null;
+  created_at: string;
+  answered_at: string | null;
 }
 
 /**
@@ -22,14 +62,18 @@ export interface FamilyQuestion {
 export async function submitQuestion(
   questionText: string,
   seniorUserId: string,
-  familyUserId: string
+  familyUserId: string,
+  category?: string
 ): Promise<FamilyQuestion> {
+  const normalizedCategory = normalizeFamilyQuestionCategory(category);
+
   const { data, error } = await supabase
     .from('family_questions')
     .insert({
       senior_user_id: seniorUserId,
       family_user_id: familyUserId,
       question_text: questionText,
+      category: normalizedCategory,
     })
     .select(
       `
@@ -37,6 +81,7 @@ export async function submitQuestion(
       senior_user_id,
       family_user_id,
       question_text,
+      category,
       created_at,
       answered_at
     `
@@ -53,6 +98,7 @@ export async function submitQuestion(
     seniorUserId: data.senior_user_id,
     familyUserId: data.family_user_id,
     questionText: data.question_text,
+    category: normalizeFamilyQuestionCategory(data.category),
     createdAt: data.created_at,
     answeredAt: data.answered_at,
   };
@@ -70,6 +116,7 @@ export async function getUnansweredQuestions(seniorUserId: string): Promise<Fami
       senior_user_id,
       family_user_id,
       question_text,
+      category,
       created_at,
       answered_at
     `
@@ -83,11 +130,12 @@ export async function getUnansweredQuestions(seniorUserId: string): Promise<Fami
     return [];
   }
 
-  return (data || []).map((q: any) => ({
+  return ((data || []) as FamilyQuestionRow[]).map((q) => ({
     id: q.id,
     seniorUserId: q.senior_user_id,
     familyUserId: q.family_user_id,
     questionText: q.question_text,
+    category: normalizeFamilyQuestionCategory(q.category),
     createdAt: q.created_at,
     answeredAt: q.answered_at,
   }));

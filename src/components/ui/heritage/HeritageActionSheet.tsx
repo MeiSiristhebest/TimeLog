@@ -1,12 +1,11 @@
 import { AppText } from '@/components/ui/AppText';
 import { useEffect, useCallback } from 'react';
-import { View, Pressable, StyleSheet, Modal } from 'react-native';
-import Animated, {
-  useSharedValue,
+import { View, Pressable, Modal } from 'react-native';
+import { Animated } from '@/tw/animated';
+import { useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+  withTiming, } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';

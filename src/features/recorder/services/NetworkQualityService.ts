@@ -28,15 +28,18 @@ export interface NetworkMetrics {
   timestamp: number;
 }
 
-const PROBE_INTERVAL_MS = 5000; // Probe every 5 seconds
+const PROBE_INTERVAL_MS = 650; // Fast probe cadence to evaluate 3-failures-in-2s window
 const PROBE_TIMEOUT_MS = 3000; // 3 second timeout
 const RTT_HISTORY_SIZE = 10; // Keep last 10 RTT measurements for jitter calculation
+const OFFLINE_FAIL_THRESHOLD = 3; // 3 failed probes...
+const OFFLINE_FAIL_WINDOW_MS = 2000; // ...within 2 seconds
 
 export class NetworkQualityService {
   private probeInterval: ReturnType<typeof setInterval> | null = null;
   private rttHistory: number[] = [];
   private probeSuccessCount = 0;
   private probeTotalCount = 0;
+  private failedProbeTimestamps: number[] = [];
   private currentMetrics: NetworkMetrics | null = null;
   private listeners: Set<(metrics: NetworkMetrics) => void> = new Set();
 
@@ -111,6 +114,7 @@ export class NetworkQualityService {
 
       const rtt = Date.now() - startTime;
       this.probeSuccessCount++;
+      this.failedProbeTimestamps = [];
 
       // Update RTT history
       this.rttHistory.push(rtt);
@@ -119,31 +123,37 @@ export class NetworkQualityService {
       }
 
       // Calculate metrics
-      this.updateMetrics(rtt);
+      this.updateMetrics(rtt, false);
     } catch {
-      // Probe failed - consider as offline or very poor quality
-      this.updateMetrics(null);
+      // Probe failed - use sliding window policy before declaring OFFLINE
+      const now = Date.now();
+      this.failedProbeTimestamps.push(now);
+      this.failedProbeTimestamps = this.failedProbeTimestamps.filter(
+        (timestamp) => now - timestamp <= OFFLINE_FAIL_WINDOW_MS
+      );
+
+      const isOffline =
+        this.failedProbeTimestamps.length >= OFFLINE_FAIL_THRESHOLD;
+      this.updateMetrics(null, isOffline);
     }
   }
 
   /**
    * Update metrics based on probe result
    */
-  private updateMetrics(rtt: number | null): void {
+  private updateMetrics(rtt: number | null, isOfflineFailure: boolean): void {
     if (rtt === null) {
-      // Probe failed
+      // Probe failed, but only transition to OFFLINE when failure threshold is met.
       this.currentMetrics = {
-        rtt: -1,
-        packetLoss: 100,
+        rtt: isOfflineFailure ? -1 : PROBE_TIMEOUT_MS,
+        packetLoss: isOfflineFailure ? 100 : Math.min(99, this.estimatePacketLoss()),
         jitter: 0,
-        quality: 'OFFLINE',
+        quality: isOfflineFailure ? 'OFFLINE' : 'POOR',
         timestamp: Date.now(),
       };
     } else {
       // Calculate packet loss
-      const packetLoss = this.probeTotalCount > 0
-        ? ((this.probeTotalCount - this.probeSuccessCount) / this.probeTotalCount) * 100
-        : 0;
+      const packetLoss = this.estimatePacketLoss();
 
       // Calculate jitter (RTT variance)
       const jitter = this.calculateJitter();
@@ -161,9 +171,19 @@ export class NetworkQualityService {
     }
 
     // Notify listeners
+    const metrics = this.currentMetrics;
+    if (!metrics) {
+      return;
+    }
     this.listeners.forEach((listener) => {
-      listener(this.currentMetrics!);
+      listener(metrics);
     });
+  }
+
+  private estimatePacketLoss(): number {
+    return this.probeTotalCount > 0
+      ? ((this.probeTotalCount - this.probeSuccessCount) / this.probeTotalCount) * 100
+      : 0;
   }
 
   /**
@@ -210,6 +230,7 @@ export class NetworkQualityService {
     this.rttHistory = [];
     this.probeSuccessCount = 0;
     this.probeTotalCount = 0;
+    this.failedProbeTimestamps = [];
     this.currentMetrics = null;
   }
 

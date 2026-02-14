@@ -5,13 +5,14 @@ import { formatDate } from '../utils/date-utils';
 import { useHeritageTheme } from '@/theme/heritage';
 import { AppText } from '@/components/ui/AppText';
 import React, { useCallback } from 'react';
-import { FlatList } from 'react-native';
-import { View, Pressable } from 'react-native';
+import { FlatList , View, Pressable } from 'react-native';
+
 
 interface DeletedItemsListProps {
   items: AudioRecording[];
   onRestore: (id: string) => void;
   onPermanentDelete: (id: string) => void;
+  onPreview: (id: string) => void;
   isLoading?: boolean;
 }
 
@@ -23,6 +24,7 @@ export function DeletedItemsList({
   items,
   onRestore,
   onPermanentDelete,
+  onPreview,
   isLoading,
 }: DeletedItemsListProps): JSX.Element {
   const { colors } = useHeritageTheme();
@@ -44,7 +46,11 @@ export function DeletedItemsList({
             borderBottomWidth: isLast ? 0 : 0.5,
             borderColor: colors.border,
           }}>
-          <View style={{ flex: 1, paddingRight: 16 }}>
+          <Pressable
+            onPress={() => onPreview(item.id)}
+            style={{ flex: 1, paddingRight: 16 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Preview ${item.title || 'Untitled Story'}`}>
             <AppText
               style={{ fontSize: 16, fontWeight: '600', color: colors.onSurface, marginBottom: 2 }}
               numberOfLines={1}>
@@ -53,7 +59,7 @@ export function DeletedItemsList({
             <AppText style={{ fontSize: 12, color: `${colors.onSurface}99` }}>
               Deleted {formatDate(new Date(item.deletedAt || Date.now()))}
             </AppText>
-          </View>
+          </Pressable>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <View style={{ alignItems: 'flex-end' }}>
@@ -97,7 +103,7 @@ export function DeletedItemsList({
         </View>
       );
     },
-    [colors, items.length, onRestore, onPermanentDelete]
+    [colors, items.length, onPermanentDelete, onPreview, onRestore]
   );
 
   if (isLoading) {

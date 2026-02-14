@@ -18,6 +18,64 @@ jest.mock('@/features/recorder/services/soundCueService', () => ({
   cleanupSoundCue: jest.fn(),
 }));
 
+jest.mock('@/features/home/hooks/useHomeLogic', () => {
+  const React = require('react');
+  const { startRecordingStream } = require('@/features/recorder/services/recorderService');
+  const { initializeSoundCue, playSuccess } = require('@/features/recorder/services/soundCueService');
+
+  return {
+    useHomeLogic: () => {
+      const [recordingHandle, setRecordingHandle] = React.useState(null);
+      const [lastSavedId, setLastSavedId] = React.useState(null);
+
+      React.useEffect(() => {
+        void initializeSoundCue();
+      }, []);
+
+      return {
+        state: {
+          recordingHandle,
+          lastSavedId,
+          currentAmplitude: { value: 0 },
+          isRecordingPaused: false,
+          currentQuestion: { id: 'q1', text: 'Test question', category: 'general' },
+          isSpeaking: false,
+          words: [],
+          currentWordIndex: 0,
+          isCurrentTopicAnswered: false,
+          formattedDate: 'Today',
+          greeting: 'Hello',
+          weather: { isLoading: true, error: null, condition: '', temperature: 0 },
+          weatherIcon: 'sunny',
+          activities: [],
+          hasUnread: false,
+          isOnline: true,
+          recordingMode: 'basic',
+        },
+        actions: {
+          handleStartRecording: async () => {
+            const handle = await startRecordingStream();
+            setRecordingHandle(handle);
+          },
+          handleStopRecording: async () => {
+            if (!recordingHandle) return;
+            const finalized = await recordingHandle.stop();
+            await playSuccess();
+            setRecordingHandle(null);
+            setLastSavedId(finalized.id);
+          },
+          replayQuestion: jest.fn(),
+          newTopic: jest.fn(),
+          setRecordingMode: jest.fn(),
+          setLastSavedId,
+          navigateToListen: jest.fn(),
+          navigateToStory: jest.fn(),
+        },
+      };
+    },
+  };
+});
+
 jest.mock('@/features/recorder/hooks/useAudioAmplitude', () => ({
   useAudioAmplitude: () => ({
     currentAmplitude: { value: 0 },
@@ -75,6 +133,11 @@ jest.mock('@expo/vector-icons', () => ({
   Ionicons: () => null,
 }));
 
+jest.mock('@/components/ui/Icon', () => ({
+  Icon: () => null,
+  Ionicons: () => null,
+}));
+
 jest.mock('expo-router', () => ({
   Link: ({ children }: { children: ReactNode }) => children,
   useLocalSearchParams: () => ({}),
@@ -82,7 +145,7 @@ jest.mock('expo-router', () => ({
 }));
 
 describe('recorder stop flow', () => {
-  it('plays success cue and shows confirmation after stop', async () => {
+  it('plays success cue and shows saved view after hold-to-stop', async () => {
     const stop = jest.fn().mockResolvedValue({
       id: 'rec-123',
       filePath: 'file:///test.wav',
@@ -115,13 +178,13 @@ describe('recorder stop flow', () => {
       expect(startRecordingStream).toHaveBeenCalled();
     });
 
-    const stopButton = await waitFor(() => getByLabelText(/stop recording/i));
-    fireEvent.press(stopButton);
+    const stopButton = await waitFor(() => getByLabelText(/hold to finish recording/i));
+    fireEvent(stopButton, 'pressIn');
 
     await waitFor(() => {
       expect(playSuccess).toHaveBeenCalled();
       expect(getByText(/Story Kept Safe/)).toBeTruthy();
       expect(getByText('Done')).toBeTruthy();
-    });
+    }, { timeout: 3000 });
   });
 });

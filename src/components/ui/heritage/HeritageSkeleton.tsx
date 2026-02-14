@@ -1,13 +1,12 @@
 import { useEffect, type ReactNode } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
-import Animated, {
-  useSharedValue,
+import { View, useWindowDimensions } from 'react-native';
+import { Animated } from '@/tw/animated';
+import { useSharedValue,
   useAnimatedStyle,
   withRepeat,
   withTiming,
   withSequence,
-  Easing,
-} from 'react-native-reanimated';
+  Easing, } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useHeritageTheme } from '@/theme/heritage';
 
@@ -27,6 +26,8 @@ type HeritageSkeletonProps = {
   /** Number of text lines (for text variant) */
   lines?: number;
 };
+
+type SkeletonVariant = 'text' | 'title' | 'avatar' | 'thumbnail' | 'button' | 'card';
 
 function ShimmerOverlay({ screenWidth, color }: { screenWidth: number, color: string }): JSX.Element {
   const translateX = useSharedValue(-screenWidth);
@@ -145,7 +146,7 @@ export function HeritageSkeleton({
       className={styles.skeleton}
       style={[
         {
-          width: dimensions.width as any,
+          width: dimensions.width,
           height: dimensions.height,
           borderRadius: dimensions.borderRadius,
           backgroundColor: colors.border
@@ -157,7 +158,7 @@ export function HeritageSkeleton({
 
   // Handle multiple text lines
   if (variant === 'text' && lines > 1) {
-    const lineWidths = ['100%', '95%', '80%', '70%', '60%'];
+    const lineWidths: `${number}%`[] = ['100%', '95%', '80%', '70%', '60%'];
     const content = (
       <View className={styles.linesContainer}>
         {Array.from({ length: lines }).map((_, index) => (
@@ -166,7 +167,7 @@ export function HeritageSkeleton({
             className={`${styles.skeleton} ${styles.textLine}`}
             style={[
               {
-                width: lineWidths[index % lineWidths.length] as any,
+                width: lineWidths[index % lineWidths.length],
                 height: dimensions.height,
                 borderRadius: dimensions.borderRadius,
                 backgroundColor: colors.border

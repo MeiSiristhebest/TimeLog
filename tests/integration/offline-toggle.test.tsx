@@ -2,6 +2,10 @@ import { act, render, waitFor } from '@testing-library/react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { OfflineBanner } from '@/components/ui/feedback/OfflineBanner';
 
+jest.mock('@/components/ui/Icon', () => ({
+  Ionicons: () => null,
+}));
+
 jest.mock('@react-native-community/netinfo', () => {
   let handler: ((state: { isConnected: boolean | null }) => void) | null = null;
   return {

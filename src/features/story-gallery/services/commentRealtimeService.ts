@@ -1,6 +1,34 @@
 import { supabase } from '@/lib/supabase';
 
 type SupabaseChannel = ReturnType<typeof supabase.channel>;
+type RemovableChannelClient = {
+  removeChannel: (targetChannel: SupabaseChannel) => unknown;
+};
+type UnsubscribableChannel = {
+  unsubscribe: () => unknown;
+};
+type RealtimeCommentPayload = {
+  new?: { story_id?: string | null } | null;
+  old?: { story_id?: string | null } | null;
+};
+
+function hasRemoveChannel(value: unknown): value is RemovableChannelClient {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const maybeClient = value as { removeChannel?: unknown };
+  return typeof maybeClient.removeChannel === 'function';
+}
+
+function hasUnsubscribe(value: unknown): value is UnsubscribableChannel {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const maybeChannel = value as { unsubscribe?: unknown };
+  return typeof maybeChannel.unsubscribe === 'function';
+}
 
 export function subscribeToCommentChanges(
   storyIdSet: Set<string>,
@@ -20,7 +48,7 @@ export function subscribeToCommentChanges(
         table: 'story_comments',
       },
       (payload) => {
-        const storyId = (payload as any).new?.story_id;
+        const storyId = (payload as RealtimeCommentPayload).new?.story_id;
         if (storyId && storyIdSet.has(storyId)) {
           onInvalidate();
         }
@@ -34,7 +62,7 @@ export function subscribeToCommentChanges(
         table: 'story_comments',
       },
       (payload) => {
-        const storyId = (payload as any).old?.story_id;
+        const storyId = (payload as RealtimeCommentPayload).old?.story_id;
         if (storyId && storyIdSet.has(storyId)) {
           onInvalidate();
         }
@@ -43,14 +71,13 @@ export function subscribeToCommentChanges(
     .subscribe();
 
   return () => {
-    const client: any = supabase as any;
-    if (client && typeof client.removeChannel === 'function') {
-      client.removeChannel(channel);
+    if (hasRemoveChannel(supabase)) {
+      supabase.removeChannel(channel);
       return;
     }
 
-    if (channel && typeof (channel as any).unsubscribe === 'function') {
-      (channel as any).unsubscribe();
+    if (hasUnsubscribe(channel)) {
+      channel.unsubscribe();
     }
   };
 }

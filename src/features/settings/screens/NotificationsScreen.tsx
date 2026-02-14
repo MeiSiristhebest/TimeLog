@@ -1,9 +1,10 @@
 import { AppText } from '@/components/ui/AppText';
 import { View, Switch } from 'react-native';
-import Animated from 'react-native-reanimated';
+import { Animated } from '@/tw/animated';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { HeritageTimePicker } from '@/components/ui/HeritageTimePicker';
+import { HeritageSkeleton } from '@/components/ui/heritage/HeritageSkeleton';
 import { useHeritageTheme } from '@/theme/heritage';
 import { SettingsRow } from '../components/SettingsRow';
 import { SettingsSection } from '../components/SettingsSection';
@@ -36,9 +37,14 @@ export function NotificationsScreen(): JSX.Element {
           justifyContent: 'center',
           alignItems: 'center',
         }}>
-        <AppText style={{ color: colors.onSurface }}>
-          {SETTINGS_STRINGS.notifications.loading}
-        </AppText>
+        <View style={{ width: '82%', alignItems: 'center', gap: 14 }}>
+          <AppText style={{ color: colors.onSurface, fontSize: 18, fontWeight: '600' }}>
+            {SETTINGS_STRINGS.notifications.loading}
+          </AppText>
+          <HeritageSkeleton variant="title" width="60%" />
+          <HeritageSkeleton variant="text" width="90%" />
+          <HeritageSkeleton variant="text" width="78%" />
+        </View>
       </View>
     );
   }
@@ -64,11 +70,20 @@ export function NotificationsScreen(): JSX.Element {
             <SettingsRow
               label={SETTINGS_STRINGS.notifications.general.enableNotifications}
               value=""
-              onPress={() => actions.setEnabled(!enabled)}
+              onPress={() => {
+                void actions.setEnabled(!enabled);
+              }}
               showChevron={false}
               iconName="notifications-outline"
               iconColor={colors.primaryMuted}
-              rightElement={<Switch value={enabled} onValueChange={actions.setEnabled} />}
+              rightElement={
+                <Switch
+                  value={enabled}
+                  onValueChange={(value) => {
+                    void actions.setEnabled(value);
+                  }}
+                />
+              }
             />
             <View
               style={{
@@ -133,13 +148,19 @@ export function NotificationsScreen(): JSX.Element {
         visible={showStartPicker}
         onCancel={() => actions.setShowStartPicker(false)}
         value={quietStart}
-        onConfirm={actions.setQuietStart}
+        onConfirm={(nextDate) => {
+          actions.setQuietStart(nextDate);
+          actions.setShowStartPicker(false);
+        }}
       />
       <HeritageTimePicker
         visible={showEndPicker}
         onCancel={() => actions.setShowEndPicker(false)}
         value={quietEnd}
-        onConfirm={actions.setQuietEnd}
+        onConfirm={(nextDate) => {
+          actions.setQuietEnd(nextDate);
+          actions.setShowEndPicker(false);
+        }}
       />
     </View>
   );

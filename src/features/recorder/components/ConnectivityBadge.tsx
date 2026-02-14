@@ -2,22 +2,21 @@
  * Connectivity Badge
  * 
  * Displays real-time network quality for AI dialog.
- * - Green indicator: EXCELLENT/GOOD quality
- * - Red indicator: POOR/OFFLINE quality
+ * - Green indicator: EXCELLENT/GOOD quality (theme.success)
+ * - Red indicator: POOR/OFFLINE quality (theme.error)
  * - Sound cues on quality change (<100ms response)
  * 
  * Accessibility: Large touch target, high contrast, voice feedback
  */
 
-import React, { useEffect, useRef } from 'react';
-import Animated, {
-  Easing,
+import React, { useEffect, useRef, useMemo } from 'react';
+import { Animated } from '@/tw/animated';
+import { Easing,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withSequence,
-  withTiming,
-} from 'react-native-reanimated';
+  withTiming, } from 'react-native-reanimated';
 import {
   AccessibilityInfo,
   Pressable,
@@ -33,49 +32,66 @@ export interface ConnectivityBadgeProps {
   quality: NetworkQuality;
   mode?: 'DIALOG' | 'DEGRADED' | 'SILENT';
   onPress?: () => void;
+  minimal?: boolean;
 }
 
-const QUALITY_CONFIG = {
-  EXCELLENT: {
-    color: '#7D9D7A', // sage green
-    icon: 'wifi' as const,
-    label: '网络极佳',
-    accessibilityLabel: 'Network quality excellent',
-  },
-  GOOD: {
-    color: '#7D9D7A',
-    icon: 'wifi' as const,
-    label: '网络良好',
-    accessibilityLabel: 'Network quality good',
-  },
-  FAIR: {
-    color: '#F59E0B', // amber
-    icon: 'wifi-outline' as const,
-    label: '网络一般',
-    accessibilityLabel: 'Network quality fair',
-  },
-  POOR: {
-    color: '#B84A4A', // error red
-    icon: 'wifi-outline' as const,
-    label: '网络较差',
-    accessibilityLabel: 'Network quality poor',
-  },
-  OFFLINE: {
-    color: '#94A3B8', // disabled
-    icon: 'cloud-offline-outline' as const,
-    label: '离线',
-    accessibilityLabel: 'Offline',
-  },
-} as const;
+function getDialogModeAccessibilityLabel(mode: 'DIALOG' | 'DEGRADED' | 'SILENT'): string {
+  if (mode === 'SILENT') {
+    return 'AI dialog disabled';
+  }
+  if (mode === 'DEGRADED') {
+    return 'AI dialog degraded';
+  }
+  return 'AI dialog active';
+}
 
-export function ConnectivityBadge({ quality, mode = 'DIALOG', onPress }: ConnectivityBadgeProps) {
-  const theme = useHeritageTheme();
-  const { colors } = theme;
+export function ConnectivityBadge({
+  quality,
+  mode = 'DIALOG',
+  onPress,
+  minimal = false,
+}: ConnectivityBadgeProps): JSX.Element {
+  const { colors } = useHeritageTheme();
+
+  // Memoize config to depend on theme colors
+  const config = useMemo(() => {
+    return {
+      EXCELLENT: {
+        color: colors.success, // Use theme token (Sage/Green)
+        icon: 'wifi' as const,
+        label: 'Network excellent',
+        accessibilityLabel: 'Network quality excellent',
+      },
+      GOOD: {
+        color: colors.success,
+        icon: 'wifi' as const,
+        label: 'Network good',
+        accessibilityLabel: 'Network quality good',
+      },
+      FAIR: {
+        color: colors.warning, // Use theme token (Amber)
+        icon: 'wifi-outline' as const,
+        label: 'Network fair',
+        accessibilityLabel: 'Network quality fair',
+      },
+      POOR: {
+        color: colors.error, // Use theme token (Red)
+        icon: 'wifi-outline' as const,
+        label: 'Network poor',
+        accessibilityLabel: 'Network quality poor',
+      },
+      OFFLINE: {
+        color: colors.disabledText, // Use theme token (Grey)
+        icon: 'cloud-offline-outline' as const,
+        label: 'Offline',
+        accessibilityLabel: 'Offline',
+      },
+    }[quality];
+  }, [colors, quality]);
 
   const previousQualityRef = useRef<NetworkQuality>(quality);
   const pulseAnim = useSharedValue(1);
 
-  const config = QUALITY_CONFIG[quality];
   const isGoodQuality = quality === 'EXCELLENT' || quality === 'GOOD';
   const isPoorQuality = quality === 'POOR' || quality === 'OFFLINE';
 
@@ -135,6 +151,34 @@ export function ConnectivityBadge({ quality, mode = 'DIALOG', onPress }: Connect
     return config.color;
   };
 
+  const badgeColor = getBadgeColor();
+  const a11yLabel = `${config.accessibilityLabel}. ${getDialogModeAccessibilityLabel(mode)}`;
+
+  if (minimal) {
+    return (
+      <Pressable
+        onPress={handlePress}
+        disabled={!onPress}
+        hitSlop={8}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={a11yLabel}
+        accessibilityHint={onPress ? 'Tap to view network details' : undefined}
+        style={{ opacity: onPress ? 1 : 0.9 }}
+      >
+        <Animated.View style={animatedStyle}>
+          <Ionicons name={config.icon} size={18} color={badgeColor} />
+          {mode !== 'DIALOG' && (
+            <View
+              className="absolute -right-1 -top-1 h-2 w-2 rounded-full border border-white dark:border-black"
+              style={{ backgroundColor: badgeColor }}
+            />
+          )}
+        </Animated.View>
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable
       onPress={handlePress}
@@ -143,11 +187,11 @@ export function ConnectivityBadge({ quality, mode = 'DIALOG', onPress }: Connect
       style={{ backgroundColor: colors.surfaceCard }}
       accessible
       accessibilityRole="button"
-      accessibilityLabel={`${config.accessibilityLabel}. ${mode === 'SILENT' ? 'AI dialog disabled' : mode === 'DEGRADED' ? 'AI dialog degraded' : 'AI dialog active'}`}
+      accessibilityLabel={a11yLabel}
       accessibilityHint={onPress ? 'Double tap to view network details' : undefined}
     >
       <Animated.View style={animatedStyle}>
-        <Ionicons name={config.icon} size={20} color={getBadgeColor()} />
+        <Ionicons name={config.icon} size={20} color={badgeColor} />
       </Animated.View>
 
       <Text
@@ -155,14 +199,14 @@ export function ConnectivityBadge({ quality, mode = 'DIALOG', onPress }: Connect
         style={{ color: colors.onSurface }}
         maxFontSizeMultiplier={1.5}
       >
-        {mode === 'SILENT' ? '静默模式' : config.label}
+        {mode === 'SILENT' ? 'Silent mode' : config.label}
       </Text>
 
       {/* Mode indicator dot */}
       {mode !== 'DIALOG' && (
         <View
           className="h-2 w-2 rounded-full"
-          style={{ backgroundColor: getBadgeColor() }}
+          style={{ backgroundColor: badgeColor }}
         />
       )}
     </Pressable>

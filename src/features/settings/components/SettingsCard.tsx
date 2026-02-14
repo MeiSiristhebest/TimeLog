@@ -1,6 +1,6 @@
 import { useHeritageTheme } from '@/theme/heritage';
-import { Platform } from 'react-native';
-import { View } from 'react-native';
+import { Platform , View } from 'react-native';
+
 
 type SettingsCardProps = {
   children: React.ReactNode;

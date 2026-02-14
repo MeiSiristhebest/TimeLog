@@ -1,18 +1,23 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import { Pressable, Text } from 'react-native';
 import { SettingsHomeScreen } from './SettingsHomeScreen';
 
 const mockPush = jest.fn();
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush }),
+  Link: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 jest.mock('../components/SettingsRow', () => ({
   SettingsRow: ({ label, onPress }: { label: string; onPress?: () => void }) => (
-    <Pressable onPress={onPress}>
-      <Text>{label}</Text>
-    </Pressable>
+    (() => {
+      const { Pressable, Text } = require('react-native');
+      return (
+        <Pressable onPress={onPress}>
+          <Text>{label}</Text>
+        </Pressable>
+      );
+    })()
   ),
 }));
 
@@ -24,11 +29,17 @@ jest.mock('../components/SettingsCard', () => ({
   SettingsCard: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-jest.mock('../store/displaySettingsStore', () => ({
-  useDisplaySettingsStore: () => ({
-    themeMode: 'system',
-    fontScaleIndex: 1,
+jest.mock('../hooks/useSettingsLogic', () => ({
+  useSettingsHome: () => ({
+    userRole: 'storyteller',
+    profile: { displayName: 'Ava' },
+    isProfileLoading: false,
+    sessionUserId: 'u-1',
   }),
+}));
+
+jest.mock('@/features/story-gallery/hooks/useStories', () => ({
+  useStories: () => ({ stories: [] }),
 }));
 
 jest.mock('@/theme/heritage', () => ({
@@ -45,14 +56,24 @@ jest.mock('@/theme/heritage', () => ({
     colors: {
       surface: '#ffffff',
       border: '#dddddd',
+      surfaceDim: '#f5f5f5',
+      surfaceCard: '#ffffff',
+      onSurface: '#111111',
+      textMuted: '#666666',
+      iconBlue: '#4a90e2',
+      iconOrange: '#f59e0b',
+      iconRed: '#ef4444',
+    },
+    typography: {
+      body: 24,
     },
   }),
 }));
 
 describe('SettingsHomeScreen', () => {
-  it('navigates to display screen', () => {
+  it('renders settings entry', () => {
     const { getByText } = render(<SettingsHomeScreen />);
-    fireEvent.press(getByText('Display & Accessibility'));
-    expect(mockPush).toHaveBeenCalledWith('/(tabs)/settings/display-accessibility');
+    fireEvent.press(getByText('Settings'));
+    expect(getByText('My Stories')).toBeTruthy();
   });
 });

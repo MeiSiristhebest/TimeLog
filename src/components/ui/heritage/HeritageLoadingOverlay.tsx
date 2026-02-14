@@ -1,12 +1,11 @@
 import { AppText } from '@/components/ui/AppText';
-import { View, Modal, ActivityIndicator, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
+import { View, Modal, ActivityIndicator } from 'react-native';
+import { Animated } from '@/tw/animated';
+import { useSharedValue,
   useAnimatedStyle,
   withTiming,
   withRepeat,
-  Easing,
-} from 'react-native-reanimated';
+  Easing, } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import { Ionicons } from '@/components/ui/Icon';
 import { useHeritageTheme } from '@/theme/heritage';

@@ -12,22 +12,29 @@ import { startAudioSession, stopAudioSession } from '@/lib/livekit/audioSession'
 import { AiDialogOrchestrator, DialogMode } from '@/features/recorder/services/AiDialogOrchestrator';
 import { NetworkQualityService, NetworkQuality, NetworkMetrics } from '@/features/recorder/services/NetworkQualityService';
 import { transcriptSyncService } from '@/features/recorder/services/TranscriptSyncService';
+import { playOfflineCue } from '@/features/recorder/services/soundCueService';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { getCurrentUserId } from '@/features/auth/services/sessionService';
+
+const AGENT_PARTICIPANT_TIMEOUT_MS = 2500;
 
 export interface UseLiveKitDialogOptions {
-  storyId: string;
+  storyId?: string;
+  topicText?: string;
+  language?: string;
   onModeChange?: (mode: DialogMode) => void;
   onNetworkQualityChange?: (quality: NetworkQuality) => void;
   onError?: (error: Error) => void;
 }
 
 export interface UseLiveKitDialogReturn {
-  connect: () => Promise<void>;
+  connect: (storyIdOverride?: string) => Promise<void>;
   disconnect: () => Promise<void>;
   isConnected: boolean;
   connectionState: LiveKitConnectionState;
   skip: () => void;
   continueDialog: () => void;
+  startWaitingForAiResponse: () => void;
   dialogMode: DialogMode;
   networkQuality: NetworkQuality | null;
   networkMetrics: NetworkMetrics | null;
@@ -36,7 +43,7 @@ export interface UseLiveKitDialogReturn {
 }
 
 export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDialogReturn {
-  const { storyId, onModeChange, onNetworkQualityChange, onError } = options;
+  const { storyId, topicText, language, onModeChange, onNetworkQualityChange, onError } = options;
   
   const sessionUserId = useAuthStore((state) => state.sessionUserId);
   
@@ -51,16 +58,63 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
   const [transcripts, setTranscripts] = useState<TranscriptionSegment[]>([]);
   const [error, setError] = useState<Error | null>(null);
 
-  const connect = useCallback(async () => {
-    if (!sessionUserId) {
-      const err = new Error('User not authenticated');
+  const resolveIdentity = useCallback(async (): Promise<string> => {
+    if (sessionUserId) {
+      return sessionUserId;
+    }
+
+    const fallbackUserId = await getCurrentUserId();
+    if (fallbackUserId) {
+      return fallbackUserId;
+    }
+
+    const err = new Error('User not authenticated');
+    setError(err);
+    onError?.(err);
+    throw err;
+  }, [sessionUserId, onError]);
+
+  const waitForAgentPresence = useCallback((client: LiveKitClient): Promise<void> => {
+    if (client.getRemoteParticipantCount() > 0) {
+      return Promise.resolve();
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+      let unsubscribe: (() => void) | null = null;
+
+      const cleanup = () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        unsubscribe?.();
+      };
+
+      unsubscribe = client.onParticipantConnected(() => {
+        cleanup();
+        resolve();
+      });
+
+      timeoutId = setTimeout(() => {
+        cleanup();
+        reject(new Error('AI agent worker is not available'));
+      }, AGENT_PARTICIPANT_TIMEOUT_MS);
+    });
+  }, []);
+
+  const connect = useCallback(async (storyIdOverride?: string) => {
+    const resolvedStoryId = storyIdOverride ?? storyId;
+    if (!resolvedStoryId) {
+      const err = new Error('Missing story id for LiveKit dialog session');
       setError(err);
       onError?.(err);
-      return;
+      throw err;
     }
 
     try {
       setError(null);
+      setTranscripts([]);
+      const identity = await resolveIdentity();
 
       // Start audio session
       await startAudioSession();
@@ -78,19 +132,38 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
         onModeChange?.(event.newMode);
       });
 
+      orchestrator.onTimeout(() => {
+        void playOfflineCue();
+      });
+
       // Setup network monitor
       networkService.onQualityChange((metrics) => {
         setNetworkQuality(metrics.quality);
         setNetworkMetrics(metrics);
         onNetworkQualityChange?.(metrics.quality);
+
+        if (metrics.quality === 'OFFLINE' || metrics.quality === 'POOR') {
+          orchestrator.setMode('DEGRADED', `Network quality ${metrics.quality.toLowerCase()}`);
+          return;
+        }
+
+        if (
+          (metrics.quality === 'EXCELLENT' || metrics.quality === 'GOOD') &&
+          orchestrator.getState().mode === 'DEGRADED'
+        ) {
+          orchestrator.setMode('DIALOG', 'Network quality recovered');
+        }
       });
       networkService.start();
 
       // Fetch LiveKit token
-      const roomName = `story_${storyId}`;
+      const roomName = `story_${resolvedStoryId}`;
       const tokenData = await livekitTokenService.fetchToken({
         roomName,
-        identity: sessionUserId,
+        identity,
+        storyId: resolvedStoryId,
+        topicText,
+        language,
       });
 
       // Create and connect LiveKit client
@@ -108,7 +181,7 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
         setTranscripts((prev) => [...prev, segment]);
         
         // Save to SQLite
-        void transcriptSyncService.saveSegment(storyId, segment, segmentIndex++);
+        void transcriptSyncService.saveSegment(resolvedStoryId, segment, segmentIndex++);
 
         // Handle AI response timing
         if (segment.speaker === 'agent' && segment.isFinal) {
@@ -126,6 +199,9 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
 
       // Enable microphone
       await client.enableMicrophone();
+
+      // Hard gate: room connected but no remote worker means AI is unavailable.
+      await waitForAgentPresence(client);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to connect');
       setError(error);
@@ -146,8 +222,18 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
         networkServiceRef.current = null;
       }
       await stopAudioSession();
+      throw error;
     }
-  }, [storyId, sessionUserId, onModeChange, onNetworkQualityChange, onError]);
+  }, [
+    storyId,
+    topicText,
+    language,
+    resolveIdentity,
+    onModeChange,
+    onNetworkQualityChange,
+    onError,
+    waitForAgentPresence,
+  ]);
 
   const disconnect = useCallback(async () => {
     try {
@@ -172,6 +258,7 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
       setDialogMode('DIALOG');
       setNetworkQuality(null);
       setNetworkMetrics(null);
+      setTranscripts([]);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to disconnect');
       setError(error);
@@ -185,6 +272,10 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
 
   const continueDialog = useCallback(() => {
     orchestratorRef.current?.handleContinue();
+  }, []);
+
+  const startWaitingForAiResponse = useCallback(() => {
+    orchestratorRef.current?.startWaitingForResponse();
   }, []);
 
   // Cleanup on unmount
@@ -201,6 +292,7 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
     connectionState,
     skip,
     continueDialog,
+    startWaitingForAiResponse,
     dialogMode,
     networkQuality,
     networkMetrics,

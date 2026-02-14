@@ -1,5 +1,6 @@
-import { ViewStyle, StyleProp } from 'react-native';
-import { ScrollView } from 'react-native';
+import { ViewStyle, StyleProp , ScrollView } from 'react-native';
+import { useHeritageTheme } from '@/theme/heritage';
+
 
 /**
  * Root container with Apple-style defaults:
@@ -14,10 +15,12 @@ export function Container({
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }): JSX.Element {
+  const { colors } = useHeritageTheme();
+
   return (
     <ScrollView
-      className="bg-surface flex-1"
-      style={style}
+      className="flex-1"
+      style={[{ backgroundColor: colors.surface }, style]}
       contentContainerStyle={{ flexGrow: 1 }}
       contentInsetAdjustmentBehavior="automatic">
       {children}

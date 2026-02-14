@@ -6,6 +6,7 @@
 
 import { render, fireEvent } from '@testing-library/react-native';
 import { View as MockView } from 'react-native';
+import type { AccessibilityRole } from 'react-native';
 import { PlaybackControls } from './PlaybackControls';
 
 // Mock @expo/vector-icons
@@ -19,7 +20,7 @@ jest.mock('@react-native-community/slider', () => {
     __esModule: true,
     default: (props: {
       accessibilityLabel?: string;
-      accessibilityRole?: string;
+      accessibilityRole?: AccessibilityRole;
       onSlidingComplete?: (value: number) => void;
     }) => (
       <MockView

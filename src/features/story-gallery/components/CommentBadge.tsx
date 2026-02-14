@@ -12,15 +12,14 @@
  */
 
 import { AppText } from '@/components/ui/AppText';
-import { AccessibilityInfo, StyleSheet } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
+import { AccessibilityInfo } from 'react-native';
+import { Animated } from '@/tw/animated';
+import { useAnimatedStyle,
   withRepeat,
   withSequence,
   withTiming,
   useSharedValue,
-  cancelAnimation,
-} from 'react-native-reanimated';
+  cancelAnimation, } from 'react-native-reanimated';
 import { useEffect, useState } from 'react';
 import { useHeritageTheme } from '@/theme/heritage';
 

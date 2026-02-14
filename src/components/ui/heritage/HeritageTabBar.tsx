@@ -5,10 +5,11 @@
 
 import { AppText } from '@/components/ui/AppText';
 import { useCallback } from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@/components/ui/Icon';
-import Animated, { useAnimatedStyle, withTiming, FadeIn, FadeOut } from 'react-native-reanimated';
+import { Animated } from '@/tw/animated';
+import { useAnimatedStyle, withTiming, FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useHeritageTheme } from '@/theme/heritage';

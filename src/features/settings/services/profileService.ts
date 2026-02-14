@@ -37,6 +37,25 @@ type DatabaseProfile = {
   updated_at: string;
 };
 
+async function fetchBlobFromUri(imageUri: string): Promise<Blob> {
+  let response: Response;
+  try {
+    response = await fetch(imageUri);
+  } catch (error) {
+    throw new Error(
+      `Failed to read local avatar file before upload: ${
+        error instanceof Error ? error.message : 'unknown fetch error'
+      }`
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(`Failed to read local avatar file before upload (status ${response.status})`);
+  }
+
+  return response.blob();
+}
+
 /**
  * Get user profile by user ID
  */
@@ -98,8 +117,7 @@ export async function uploadAvatar(userId: string, imageUri: string): Promise<st
   const filename = `${userId}/avatar-${Date.now()}.jpg`;
 
   // Fetch the image as blob
-  const response = await fetch(imageUri);
-  const blob = await response.blob();
+  const blob = await fetchBlobFromUri(imageUri);
 
   const { error: uploadError } = await supabase.storage.from('avatars').upload(filename, blob, {
     contentType: 'image/jpeg',

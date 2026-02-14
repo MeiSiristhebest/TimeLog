@@ -13,8 +13,13 @@ import { generateId } from '@/utils/id';
 import { ELDERLY_VAD_CONFIG } from './vadConfig';
 import { devLog } from '@/lib/devLogger';
 
-const FS = FileSystem as any;
-const audioEmitter = new LegacyEventEmitter(ExpoAudioStreamModule);
+const FS = FileSystem;
+type FileSystemWithDirectories = typeof FileSystem & {
+  documentDirectory?: string | null;
+  cacheDirectory?: string | null;
+};
+const fileSystemWithDirectories = FileSystem as FileSystemWithDirectories;
+const audioEmitter = new LegacyEventEmitter(ExpoAudioStreamModule as never);
 
 // Define locally if missing from export
 type FileInfoWithMd5 = FileInfo & { md5?: string };
@@ -22,10 +27,11 @@ type FileInfoWithMd5 = FileInfo & { md5?: string };
 const MIN_FREE_DISK_BYTES = 500 * 1024 * 1024; // 500MB safeguard
 
 function getRecordingsDir(): string {
-  devLog.info('[RecorderService] documentDirectory:', FS.documentDirectory);
-  devLog.info('[RecorderService] cacheDirectory:', FS.cacheDirectory);
+  devLog.info('[RecorderService] documentDirectory:', fileSystemWithDirectories.documentDirectory);
+  devLog.info('[RecorderService] cacheDirectory:', fileSystemWithDirectories.cacheDirectory);
 
-  const baseDir = FS.documentDirectory ?? FS.cacheDirectory;
+  const baseDir =
+    fileSystemWithDirectories.documentDirectory ?? fileSystemWithDirectories.cacheDirectory;
   if (!baseDir) {
     devLog.error('[RecorderService] documentDirectory and cacheDirectory are both null/undefined');
     throw new Error('FS unavailable - cannot initialize recordings directory');
@@ -68,6 +74,96 @@ type SilenceTrackerOptions = {
   onThreshold?: (silenceDurationMs: number) => Promise<void> | void;
 };
 
+type AudioStreamStatus = {
+  isRecording: boolean;
+  isPaused: boolean;
+  durationMs: number;
+  size: number;
+  interval: number;
+  intervalAnalysis: number;
+  mimeType: string;
+};
+
+type RecordingInterruptionEvent = {
+  reason: string;
+  isPaused: boolean;
+};
+
+type AudioStreamModuleCandidate = Partial<typeof ExpoAudioStreamModule> & {
+  status?: () => AudioStreamStatus;
+  extractAudioAnalysis?: (options: { fileUri: string }) => Promise<AudioAnalysis>;
+};
+
+function getAudioModuleCandidate(): AudioStreamModuleCandidate {
+  return ExpoAudioStreamModule as AudioStreamModuleCandidate;
+}
+
+function ensureAudioModuleReady(): void {
+  const moduleCandidate = getAudioModuleCandidate();
+
+  const ready =
+    typeof moduleCandidate?.getPermissionsAsync === 'function' &&
+    typeof moduleCandidate?.requestPermissionsAsync === 'function' &&
+    typeof moduleCandidate?.startRecording === 'function' &&
+    typeof moduleCandidate?.stopRecording === 'function' &&
+    typeof moduleCandidate?.pauseRecording === 'function' &&
+    typeof moduleCandidate?.resumeRecording === 'function';
+
+  if (!ready) {
+    throw new Error(
+      'Recording native module is unavailable in this build. Rebuild and reinstall the Expo dev client, then restart Metro with --dev-client.'
+    );
+  }
+}
+
+function getRecorderStatus(): AudioStreamStatus | null {
+  const moduleCandidate = getAudioModuleCandidate();
+  if (typeof moduleCandidate.status !== 'function') {
+    return null;
+  }
+
+  try {
+    return moduleCandidate.status();
+  } catch (error) {
+    devLog.warn('[RecorderService] Failed to read recorder status', error);
+    return null;
+  }
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message.toLowerCase();
+  }
+  return String(error).toLowerCase();
+}
+
+function isAlreadyPausedError(error: unknown): boolean {
+  const message = getErrorMessage(error);
+  return message.includes('already paused');
+}
+
+function isNotActiveRecordingError(error: unknown): boolean {
+  const message = getErrorMessage(error);
+  return message.includes('not active');
+}
+
+async function waitForRecorderStatus(
+  predicate: (status: AudioStreamStatus) => boolean,
+  attempts = 3,
+  intervalMs = 90
+): Promise<boolean> {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const status = getRecorderStatus();
+    if (status && predicate(status)) {
+      return true;
+    }
+    if (attempt < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+  }
+  return false;
+}
+
 export class InsufficientStorageError extends Error {
   constructor() {
     super('Please clear some space for new stories (need at least 500MB free).');
@@ -76,6 +172,7 @@ export class InsufficientStorageError extends Error {
 }
 
 async function ensureRecordingPermission(): Promise<boolean> {
+  ensureAudioModuleReady();
   const result = await ExpoAudioStreamModule.getPermissionsAsync();
   if (result.granted) return true;
 
@@ -144,9 +241,11 @@ async function cacheAudioAnalysis(filePath: string): Promise<void> {
     const info = await FS.getInfoAsync(analysisPath);
     if (info.exists) return;
 
-    const result = await (ExpoAudioStreamModule as any).extractAudioAnalysis({
-      fileUri: filePath,
-    });
+    const moduleCandidate = getAudioModuleCandidate();
+    if (typeof moduleCandidate.extractAudioAnalysis !== 'function') {
+      return;
+    }
+    const result = await moduleCandidate.extractAudioAnalysis({ fileUri: filePath });
     await FS.writeAsStringAsync(analysisPath, JSON.stringify(result));
   } catch (error) {
     devLog.warn('[RecorderService] Failed to cache audio analysis:', error);
@@ -252,15 +351,63 @@ export async function finalizeRecordingMetadata(
 export async function startRecordingStream(
   params?: RecordingStreamOptions
 ): Promise<RecordingHandle> {
+  ensureAudioModuleReady();
   await ensureRecordingPermission();
   const startedAt = new Date();
   const metadata = { ...(await prepareRecordingTarget(params)), startedAt };
 
   let isCurrentlyPaused = false;
+  let isStopped = false;
   const pauseRecording = async () => {
-    if (isCurrentlyPaused) return;
+    if (isCurrentlyPaused || isStopped) return;
+
+    const statusBeforePause = getRecorderStatus();
+    if (statusBeforePause?.isPaused) {
+      isCurrentlyPaused = true;
+      await db
+        .update(audioRecordings)
+        .set({
+          recordingStatus: 'paused',
+          pausedAt: Date.now(),
+        })
+        .where(eq(audioRecordings.id, metadata.id));
+      return;
+    }
+
+    let assumePausedFromFallback = false;
+    try {
+      await ExpoAudioStreamModule.pauseRecording();
+    } catch (error) {
+      const statusAfterError = getRecorderStatus();
+      const hasNativeStatus = statusAfterError !== null;
+      const eventuallyPaused = await waitForRecorderStatus((status) => status.isPaused);
+      const treatAsPaused =
+        Boolean(statusAfterError?.isPaused) ||
+        eventuallyPaused ||
+        (!hasNativeStatus && isAlreadyPausedError(error)) ||
+        (isNotActiveRecordingError(error) && Boolean(statusBeforePause?.isPaused));
+
+      if (!treatAsPaused) {
+        throw error;
+      }
+
+      if (
+        (!hasNativeStatus && isAlreadyPausedError(error)) ||
+        (isNotActiveRecordingError(error) && Boolean(statusBeforePause?.isPaused))
+      ) {
+        assumePausedFromFallback = true;
+      }
+    }
+
+    const status = getRecorderStatus();
+    const pausedNow =
+      assumePausedFromFallback ||
+      Boolean(status?.isPaused) ||
+      (await waitForRecorderStatus((next) => next.isPaused));
+    if (!pausedNow) {
+      throw new Error('Recording pause did not take effect');
+    }
     isCurrentlyPaused = true;
-    await ExpoAudioStreamModule.pauseRecording();
     await db
       .update(audioRecordings)
       .set({
@@ -271,8 +418,44 @@ export async function startRecordingStream(
   };
 
   const resumeRecording = async () => {
-    if (!isCurrentlyPaused) return;
-    await ExpoAudioStreamModule.resumeRecording();
+    if (!isCurrentlyPaused || isStopped) return;
+
+    const statusBeforeResume = getRecorderStatus();
+    if (statusBeforeResume && !statusBeforeResume.isPaused && statusBeforeResume.isRecording) {
+      isCurrentlyPaused = false;
+      await db
+        .update(audioRecordings)
+        .set({
+          recordingStatus: 'recording',
+          pausedAt: null,
+        })
+        .where(eq(audioRecordings.id, metadata.id));
+      return;
+    }
+
+    try {
+      await ExpoAudioStreamModule.resumeRecording();
+    } catch (error) {
+      const statusAfterError = getRecorderStatus();
+      const eventuallyResumed = await waitForRecorderStatus(
+        (next) => !next.isPaused && next.isRecording
+      );
+      const treatAsResumed =
+        Boolean(statusAfterError && !statusAfterError.isPaused && statusAfterError.isRecording) ||
+        eventuallyResumed;
+      if (!treatAsResumed) {
+        throw error;
+      }
+    }
+
+    const status = getRecorderStatus();
+    const resumedNow =
+      Boolean(status && !status.isPaused && status.isRecording) ||
+      (await waitForRecorderStatus((next) => !next.isPaused && next.isRecording));
+    if (!resumedNow) {
+      throw new Error('Recording resume did not take effect');
+    }
+
     isCurrentlyPaused = false;
     await db
       .update(audioRecordings)
@@ -296,7 +479,6 @@ export async function startRecordingStream(
   });
 
   let analysisSubscription: EventSubscription | null = null;
-  let fallbackMeteringTimer: ReturnType<typeof setInterval> | null = null;
 
   // Start Recording using @siteed/expo-audio-studio
   // This library writes WAV directly to disk with proper PCM format
@@ -310,6 +492,31 @@ export async function startRecordingStream(
     intervalAnalysis: 100, // 100ms updates for metering
     enableProcessing: true, // Required for metering/analysis
     keepAwake: true, // Maintains background audio session (requires dev build)
+    autoResumeAfterInterruption: false,
+    ios: {
+      audioSession: {
+        category: 'PlayAndRecord',
+        mode: 'VoiceChat',
+        categoryOptions: ['DefaultToSpeaker', 'AllowBluetooth', 'AllowBluetoothA2DP'],
+      },
+    },
+    android: {
+      audioFocusStrategy: 'communication',
+    },
+    onRecordingInterrupted: (event: RecordingInterruptionEvent) => {
+      isCurrentlyPaused = event.isPaused;
+
+      void db
+        .update(audioRecordings)
+        .set({
+          recordingStatus: event.isPaused ? 'paused' : 'recording',
+          pausedAt: event.isPaused ? Date.now() : null,
+        })
+        .where(eq(audioRecordings.id, metadata.id))
+        .catch((error) => {
+          devLog.warn('[RecorderService] Failed to persist interruption state', error);
+        });
+    },
   });
 
   // Subscribe to analysis events for Metering and VAD
@@ -332,14 +539,7 @@ export async function startRecordingStream(
       error
     );
     if (params?.onMetering) {
-      let t = 0;
-      fallbackMeteringTimer = setInterval(() => {
-        // Simulate gentle breathing waveform: -60dB to -25dB
-        t += 0.2;
-        const base = -45 + Math.sin(t) * 15;
-        const jitter = (Math.random() - 0.5) * 4;
-        params.onMetering(base + jitter);
-      }, 120);
+      params.onMetering(-160);
     }
   }
 
@@ -354,16 +554,12 @@ export async function startRecordingStream(
   };
 
   const stop = async () => {
+    isStopped = true;
     // Remove listener first
     if (analysisSubscription) {
       analysisSubscription.remove();
       analysisSubscription = null;
     }
-    if (fallbackMeteringTimer) {
-      clearInterval(fallbackMeteringTimer);
-      fallbackMeteringTimer = null;
-    }
-
     const result = await ExpoAudioStreamModule.stopRecording();
 
     const endedAt = new Date();

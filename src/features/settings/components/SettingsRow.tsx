@@ -1,10 +1,11 @@
 import React, { forwardRef } from 'react';
-import { Pressable, View, type PressableProps } from 'react-native';
+import { Pressable, View, type PressableProps, type PressableStateCallbackType } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { useHeritageTheme } from '@/theme/heritage';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { Animated } from '@/tw/animated';
+import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 type SettingsRowProps = Omit<PressableProps, 'style'> & {
   label: string;
@@ -75,7 +76,7 @@ export const SettingsRow = forwardRef<React.ElementRef<typeof View>, SettingsRow
         className="active:opacity-70"
         accessibilityRole={onPress || href ? 'button' : 'none'}
         {...props}>
-        {({ pressed }) => (
+        {({ pressed }: PressableStateCallbackType) => (
           <View
             className="bg-transparent"
             style={[

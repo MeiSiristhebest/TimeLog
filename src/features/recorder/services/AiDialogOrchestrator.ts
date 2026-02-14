@@ -29,6 +29,11 @@ export interface DialogModeChangeEvent {
   timestamp: number;
 }
 
+export interface DialogTimeoutEvent {
+  timeoutCount: number;
+  timestamp: number;
+}
+
 const AI_RESPONSE_TIMEOUT_MS = 2000;
 const MAX_SKIPS_BEFORE_SILENT = 2;
 const DEGRADED_TIMEOUT_THRESHOLD = 3; // 3 consecutive timeouts → DEGRADED
@@ -44,6 +49,7 @@ export class AiDialogOrchestrator {
 
   private responseTimer: ReturnType<typeof setTimeout> | null = null;
   private listeners: Set<(event: DialogModeChangeEvent) => void> = new Set();
+  private timeoutListeners: Set<(event: DialogTimeoutEvent) => void> = new Set();
 
   /**
    * Start waiting for AI response
@@ -119,6 +125,19 @@ export class AiDialogOrchestrator {
     this.state.isWaitingForResponse = false;
     this.state.timeoutCount++;
 
+    const timeoutEvent: DialogTimeoutEvent = {
+      timeoutCount: this.state.timeoutCount,
+      timestamp: Date.now(),
+    };
+
+    this.timeoutListeners.forEach((listener) => {
+      try {
+        listener(timeoutEvent);
+      } catch {
+        // Silently ignore listener errors
+      }
+    });
+
     // Multiple consecutive timeouts → DEGRADED mode
     if (this.state.timeoutCount >= DEGRADED_TIMEOUT_THRESHOLD) {
       this.transitionTo('DEGRADED', `${DEGRADED_TIMEOUT_THRESHOLD} consecutive timeouts`);
@@ -148,6 +167,17 @@ export class AiDialogOrchestrator {
     // Return unsubscribe function
     return () => {
       this.listeners.delete(callback);
+    };
+  }
+
+  /**
+   * Subscribe to AI timeout events (2000ms no response)
+   */
+  onTimeout(callback: (event: DialogTimeoutEvent) => void): () => void {
+    this.timeoutListeners.add(callback);
+
+    return () => {
+      this.timeoutListeners.delete(callback);
     };
   }
 
@@ -207,5 +237,6 @@ export class AiDialogOrchestrator {
       this.responseTimer = null;
     }
     this.listeners.clear();
+    this.timeoutListeners.clear();
   }
 }

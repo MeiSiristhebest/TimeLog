@@ -25,19 +25,15 @@ import {
   View,
   TextInput,
   Pressable,
-  StyleSheet,
   TextInputProps,
-  NativeSyntheticEvent,
-  TextInputFocusEventData,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
+import { Animated } from '@/tw/animated';
+import { useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSequence,
   interpolate,
-  interpolateColor,
-} from 'react-native-reanimated';
+  interpolateColor, } from 'react-native-reanimated';
 import { Ionicons } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
 import { useHeritageTheme } from '../../../theme/heritage';
@@ -164,22 +160,6 @@ export function HeritageInput({
         [0, 1],
         [colors.border, colors.handleActive] // Use handleActive (primary) for focus
       ),
-    backgroundColor: colors.surface,
-  }));
-
-  // Re-eval styles when theme changes
-  const labelAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateY: interpolate(labelPosition.value, [0, 1], [0, -28]),
-      },
-      {
-        scale: interpolate(labelPosition.value, [0, 1], [1, 0.85]),
-      },
-    ],
-    color: hasError
-      ? colors.error
-      : interpolateColor(focusProgress.value, [0, 1], [colors.textMuted, colors.primary]),
     backgroundColor: colors.surface,
   }));
 

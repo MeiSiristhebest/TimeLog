@@ -1,10 +1,15 @@
 import { AppText } from '@/components/ui/AppText';
-import { View, TouchableOpacity, Animated, StyleSheet } from 'react-native';
-import { useEffect, useRef } from 'react';
+import { View, TouchableOpacity } from 'react-native';
+import { useEffect } from 'react';
 import { Ionicons } from '@/components/ui/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NotificationData } from '@/lib/notifications';
 import { useHeritageTheme } from '@/theme/heritage';
+import { Animated } from '@/tw/animated';
+import { runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming, } from 'react-native-reanimated';
 
 /**
  * NotificationBanner - In-app notification banner for foreground notifications.
@@ -54,7 +59,7 @@ export function NotificationBanner({
 
   const animateOut = (callback: () => void) => {
     opacity.value = withTiming(0, { duration: 200 });
-    translateY.value = withTiming(-150, { duration: 200 }, (finished) => {
+    translateY.value = withTiming(-150, { duration: 200 }, (finished?: boolean) => {
       if (finished) {
         runOnJS(callback)();
       }

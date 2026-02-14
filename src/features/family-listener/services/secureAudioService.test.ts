@@ -37,7 +37,7 @@ describe('secureAudioService', () => {
       };
 
       const mockSignedUrl =
-        'https://storage.supabase.co/signed/audio-recordings/recordings/story-123.wav?token=abc123';
+        'https://storage.supabase.co/signed/audio-recordings/story-123.wav?token=abc123';
 
       // Mock story query
       const mockSingle = jest.fn().mockResolvedValue({ data: mockStory, error: null });

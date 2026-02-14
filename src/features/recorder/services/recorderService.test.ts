@@ -1,9 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import {
-  ExpoAudioStreamModule,
-  __getAudioAnalysisCallback,
-  __resetAudioAnalysisCallback,
-} from '@siteed/expo-audio-studio';
+import { ExpoAudioStreamModule } from '@siteed/expo-audio-studio';
 import {
   startRecordingStream,
   ensureSufficientDisk,
@@ -11,16 +7,38 @@ import {
 } from './recorderService';
 import { ELDERLY_VAD_CONFIG } from './vadConfig';
 
-// Type assertion for test helpers
-const getCallback = __getAudioAnalysisCallback as () =>
-  | ((event: { durationMs: number; dataPoints: { dB: number }[] }) => Promise<void>)
-  | null;
-const resetCallback = __resetAudioAnalysisCallback as () => void;
+let analysisCallback: ((event: { durationMs: number; dataPoints: { dB: number }[] }) => Promise<void>) | null = null;
+
+jest.mock('expo-modules-core', () => ({
+  LegacyEventEmitter: jest.fn().mockImplementation(() => ({
+    addListener: jest.fn((_eventName: string, callback: typeof analysisCallback) => {
+      analysisCallback = callback;
+      return { remove: jest.fn() };
+    }),
+  })),
+}));
 
 describe('recorderService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    resetCallback();
+    analysisCallback = null;
+
+    const moduleWithStatus = ExpoAudioStreamModule as unknown as {
+      status?: jest.Mock;
+    };
+    if (!moduleWithStatus.status) {
+      moduleWithStatus.status = jest.fn();
+    }
+    moduleWithStatus.status.mockReset();
+    moduleWithStatus.status.mockReturnValue({
+      isRecording: true,
+      isPaused: false,
+      durationMs: 1000,
+      size: 100,
+      interval: 100,
+      intervalAnalysis: 100,
+      mimeType: 'audio/wav',
+    });
   });
 
   describe('ensureSufficientDisk', () => {
@@ -88,7 +106,7 @@ describe('recorderService', () => {
       const onMetering = jest.fn();
       await startRecordingStream({ onMetering });
 
-      const callback = getCallback();
+      const callback = analysisCallback;
       expect(callback).not.toBeNull();
 
       // Simulate analysis event with metering data
@@ -105,7 +123,7 @@ describe('recorderService', () => {
       const onSilenceThreshold = jest.fn();
       await startRecordingStream({ onSilenceThreshold });
 
-      const callback = getCallback();
+      const callback = analysisCallback;
       expect(callback).not.toBeNull();
 
       const base = 1000;
@@ -141,7 +159,7 @@ describe('recorderService', () => {
       const onSilenceThreshold = jest.fn();
       await startRecordingStream({ onSilenceThreshold });
 
-      const callback = getCallback();
+      const callback = analysisCallback;
 
       // Start silence tracking
       await callback!({ durationMs: 1000, dataPoints: [{ dB: -60 }] });
@@ -161,6 +179,49 @@ describe('recorderService', () => {
     });
 
     it('should handle pause and resume', async () => {
+      const statusMock = (
+        ExpoAudioStreamModule as unknown as {
+          status: jest.Mock;
+        }
+      ).status;
+      statusMock
+        .mockReturnValueOnce({
+          isRecording: true,
+          isPaused: false,
+          durationMs: 1000,
+          size: 100,
+          interval: 100,
+          intervalAnalysis: 100,
+          mimeType: 'audio/wav',
+        })
+        .mockReturnValueOnce({
+          isRecording: false,
+          isPaused: true,
+          durationMs: 1200,
+          size: 120,
+          interval: 100,
+          intervalAnalysis: 100,
+          mimeType: 'audio/wav',
+        })
+        .mockReturnValueOnce({
+          isRecording: false,
+          isPaused: true,
+          durationMs: 1400,
+          size: 140,
+          interval: 100,
+          intervalAnalysis: 100,
+          mimeType: 'audio/wav',
+        })
+        .mockReturnValueOnce({
+          isRecording: true,
+          isPaused: false,
+          durationMs: 1600,
+          size: 160,
+          interval: 100,
+          intervalAnalysis: 100,
+          mimeType: 'audio/wav',
+        });
+
       const handle = await startRecordingStream();
 
       await handle.pause();
@@ -168,6 +229,125 @@ describe('recorderService', () => {
 
       await handle.resume();
       expect(ExpoAudioStreamModule.resumeRecording).toHaveBeenCalled();
+    });
+
+
+    it('should throw if native pause status is not paused', async () => {
+      const moduleWithStatus = ExpoAudioStreamModule as unknown as {
+        status?: jest.Mock;
+      };
+      const statusMock =
+        moduleWithStatus.status ??
+        jest.fn(() => ({
+          isRecording: true,
+          isPaused: false,
+          durationMs: 1000,
+          size: 100,
+          interval: 100,
+          intervalAnalysis: 100,
+          mimeType: 'audio/wav',
+        }));
+      moduleWithStatus.status = statusMock;
+
+      statusMock.mockReturnValue({
+        isRecording: true,
+        isPaused: false,
+        durationMs: 1000,
+        size: 100,
+        interval: 100,
+        intervalAnalysis: 100,
+        mimeType: 'audio/wav',
+      });
+
+      const handle = await startRecordingStream();
+      await expect(handle.pause()).rejects.toThrow('pause did not take effect');
+    });
+
+    it('should throw if native resume status remains paused', async () => {
+      const moduleWithStatus = ExpoAudioStreamModule as unknown as {
+        status?: jest.Mock;
+      };
+      const statusMock =
+        moduleWithStatus.status ??
+        jest.fn(() => ({
+          isRecording: true,
+          isPaused: false,
+          durationMs: 1000,
+          size: 100,
+          interval: 100,
+          intervalAnalysis: 100,
+          mimeType: 'audio/wav',
+        }));
+      moduleWithStatus.status = statusMock;
+
+      statusMock
+        .mockReturnValueOnce({
+          isRecording: true,
+          isPaused: false,
+          durationMs: 1000,
+          size: 100,
+          interval: 100,
+          intervalAnalysis: 100,
+          mimeType: 'audio/wav',
+        })
+        .mockReturnValueOnce({
+          isRecording: false,
+          isPaused: true,
+          durationMs: 1200,
+          size: 120,
+          interval: 100,
+          intervalAnalysis: 100,
+          mimeType: 'audio/wav',
+        })
+        .mockReturnValueOnce({
+          isRecording: false,
+          isPaused: true,
+          durationMs: 1400,
+          size: 140,
+          interval: 100,
+          intervalAnalysis: 100,
+          mimeType: 'audio/wav',
+        })
+        .mockReturnValueOnce({
+          isRecording: false,
+          isPaused: true,
+          durationMs: 1600,
+          size: 160,
+          interval: 100,
+          intervalAnalysis: 100,
+          mimeType: 'audio/wav',
+        })
+        .mockReturnValue({
+          isRecording: false,
+          isPaused: true,
+          durationMs: 1800,
+          size: 180,
+          interval: 100,
+          intervalAnalysis: 100,
+          mimeType: 'audio/wav',
+        });
+
+      const handle = await startRecordingStream();
+      await expect(handle.pause()).resolves.toBeUndefined();
+      await expect(handle.resume()).rejects.toThrow('resume did not take effect');
+    });
+
+    it('should treat native already-paused error as success when status is unavailable', async () => {
+      const moduleWithStatus = ExpoAudioStreamModule as unknown as {
+        status?: jest.Mock;
+        pauseRecording: jest.Mock;
+      };
+
+      const originalStatus = moduleWithStatus.status;
+      moduleWithStatus.status = undefined;
+      moduleWithStatus.pauseRecording.mockRejectedValueOnce(
+        new Error('Recording is either not active or already paused')
+      );
+
+      const handle = await startRecordingStream();
+      await expect(handle.pause()).resolves.toBeUndefined();
+
+      moduleWithStatus.status = originalStatus;
     });
 
     it('should finalize recording on stop', async () => {

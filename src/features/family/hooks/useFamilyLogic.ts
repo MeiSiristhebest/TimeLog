@@ -5,7 +5,7 @@ import * as Linking from 'expo-linking';
 import * as Haptics from 'expo-haptics';
 import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
-import { MOCK_FAMILY_MEMBERS, FAMILY_STRINGS } from '../data/mockFamilyData';
+import { FAMILY_STRINGS } from '../data/mockFamilyData';
 import { devLog } from '@/lib/devLogger';
 import { createFamilyInvite, acceptFamilyInvite } from '@/features/family/services/inviteService';
 import { setStoredRole } from '@/features/auth/services/roleStorage';
@@ -15,6 +15,7 @@ import {
   type QuestionCategory,
 } from '@/features/family-listener/services/questionService';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { APP_ROUTES } from '@/features/app/navigation/routes';
 
 // Hook for Family Members Logic
 import { getFamilyMembers, removeFamilyMember, FamilyMember } from '../services/familyService';
@@ -192,12 +193,12 @@ export function useAcceptInviteLogic() {
       HeritageAlert.show({
         title: FAMILY_STRINGS.acceptInvite.success.title,
         message: FAMILY_STRINGS.acceptInvite.success.message,
-        variant: 'success',
-        primaryAction: {
-          label: FAMILY_STRINGS.acceptInvite.buttons.continue,
-          onPress: () => router.replace('/(tabs)'),
-        },
-      });
+          variant: 'success',
+          primaryAction: {
+            label: FAMILY_STRINGS.acceptInvite.buttons.continue,
+            onPress: () => router.replace(APP_ROUTES.TABS),
+          },
+        });
     } catch (err) {
       const message =
         err instanceof Error ? err.message : FAMILY_STRINGS.acceptInvite.errors.acceptFailed;
@@ -208,7 +209,7 @@ export function useAcceptInviteLogic() {
   };
 
   const handleBackHome = () => {
-    router.replace('/(tabs)');
+    router.replace(APP_ROUTES.TABS);
   };
 
   const missingToken = !token;
@@ -290,7 +291,12 @@ export function useAskQuestionLogic() {
 
     setIsSubmitting(true);
     try {
-      await submitQuestion(customQuestion.trim(), params.seniorUserId, sessionUserId);
+      await submitQuestion(
+        customQuestion.trim(),
+        params.seniorUserId,
+        sessionUserId,
+        selectedCategory ?? undefined
+      );
       HeritageAlert.show({
         title: FAMILY_STRINGS.askQuestion.alerts.success.title,
         message: FAMILY_STRINGS.askQuestion.alerts.success.message,

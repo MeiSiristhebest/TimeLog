@@ -7,6 +7,7 @@
 
 import { useColorScheme } from 'nativewind';
 import { useEffect, useMemo } from 'react';
+import { Appearance } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useDisplaySettingsStore } from '@/features/settings/store/displaySettingsStore';
 import { DEFAULT_FONT_SCALE_INDEX, FONT_SCALE_STEPS } from './fontScale';
@@ -240,7 +241,8 @@ export function createHeritageTheme({
   fontScaleIndex: number;
   systemScheme: 'light' | 'dark' | null | undefined;
 }): HeritageTheme {
-  const isDark = themeMode === 'dark' || (themeMode === 'system' && systemScheme === 'dark');
+  const fallbackScheme = systemScheme ?? Appearance.getColorScheme();
+  const isDark = themeMode === 'dark' || (themeMode === 'system' && fallbackScheme === 'dark');
   const scale = FONT_SCALE_STEPS[fontScaleIndex] ?? FONT_SCALE_STEPS[DEFAULT_FONT_SCALE_INDEX];
 
   return {

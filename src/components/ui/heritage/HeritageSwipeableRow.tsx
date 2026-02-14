@@ -1,17 +1,18 @@
 import { AppText } from '@/components/ui/AppText';
 import { ReactNode, useCallback, useRef } from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
+import { View, Pressable } from 'react-native';
+import { Animated } from '@/tw/animated';
+import { useSharedValue,
   useAnimatedStyle,
   withSpring,
-  runOnJS,
-} from 'react-native-reanimated';
+  runOnJS, } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Ionicons } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
+import { useHeritageTheme } from '@/theme/heritage';
 
 const THRESHOLD = 40;
+const ACTION_WIDTH = 80;
 
 type SwipeAction = {
   icon: keyof typeof Ionicons.glyphMap;

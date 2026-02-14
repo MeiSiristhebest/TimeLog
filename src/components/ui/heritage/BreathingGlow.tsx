@@ -1,22 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { ViewStyle } from 'react-native';
-import { StyleSheet, View } from 'react-native';
-import Animated, {
-  Easing,
+import type { ViewStyle, StyleProp } from 'react-native';
+import { View } from 'react-native';
+import { Animated } from '@/tw/animated';
+import { Easing,
   useReducedMotion,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withSequence,
-  withTiming,
-} from 'react-native-reanimated';
+  withTiming, } from 'react-native-reanimated';
 import { useHeritageTheme } from '@/theme/heritage';
 
 interface BreathingGlowProps {
   color?: string;
   size?: number;
   profile?: BreathingProfile;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export type BreathingProfile = 'home' | 'recording';
@@ -114,6 +113,13 @@ export function BreathingGlow({
     () => resolveBreathingProfile(profile, alphaStrength),
     [profile, alphaStrength]
   );
+  const absoluteFill: ViewStyle = {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  };
 
   useEffect(() => {
     // Keep nodes mounted from frame 1, only reveal after warm-up.
@@ -235,6 +241,8 @@ export function BreathingGlow({
       />
       <Animated.View
         key="outer-pulse"
+        renderToHardwareTextureAndroid
+        needsOffscreenAlphaCompositing
         style={[
           {
             position: 'absolute',
@@ -243,18 +251,19 @@ export function BreathingGlow({
             borderRadius: ringSize / 2,
             overflow: 'hidden',
           },
-          styles.pulseSurfaceStabilizer,
           outerAnimatedStyle,
         ]}>
         <View
           style={{
-            ...StyleSheet.absoluteFillObject,
+            ...absoluteFill,
             backgroundColor: glowColor,
           }}
         />
       </Animated.View>
       <Animated.View
         key="pulse"
+        renderToHardwareTextureAndroid
+        needsOffscreenAlphaCompositing
         style={[
           {
             position: 'absolute',
@@ -263,12 +272,11 @@ export function BreathingGlow({
             borderRadius: ringSize / 2,
             overflow: 'hidden',
           },
-          styles.pulseSurfaceStabilizer,
           animatedStyle,
         ]}>
         <View
           style={{
-            ...StyleSheet.absoluteFillObject,
+            ...absoluteFill,
             backgroundColor: glowColor,
           }}
         />
@@ -276,13 +284,5 @@ export function BreathingGlow({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  pulseSurfaceStabilizer: {
-    // Improves Android edge rasterization for scaled rounded surfaces.
-    renderToHardwareTextureAndroid: true,
-    needsOffscreenAlphaCompositing: true,
-  },
-});
 
 export default BreathingGlow;

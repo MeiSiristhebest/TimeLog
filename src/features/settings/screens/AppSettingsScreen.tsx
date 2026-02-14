@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { AppText } from '@/components/ui/AppText';
 import { SettingsRow } from '../components/SettingsRow';
@@ -8,7 +8,9 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
+import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { SETTINGS_STRINGS } from '../data/mockSettingsData';
+import { APP_ROUTES } from '@/features/app/navigation/routes';
 
 export function AppSettingsScreen(): JSX.Element {
   const router = useRouter();
@@ -16,17 +18,22 @@ export function AppSettingsScreen(): JSX.Element {
   const setUnauthenticated = useAuthStore((s) => s.setUnauthenticated);
 
   const handleSignOut = async () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Log Out',
-        style: 'destructive',
-        onPress: async () => {
+    HeritageAlert.show({
+      title: 'Log Out',
+      message: 'Are you sure you want to log out?',
+      variant: 'warning',
+      primaryAction: {
+        label: 'Log Out',
+        destructive: true,
+        onPress: () => {
           setUnauthenticated();
-          router.replace('/');
+          router.replace(APP_ROUTES.ROOT);
         },
       },
-    ]);
+      secondaryAction: {
+        label: 'Cancel',
+      },
+    });
   };
 
   const STRINGS = SETTINGS_STRINGS.appSettings;
@@ -41,33 +48,33 @@ export function AppSettingsScreen(): JSX.Element {
         showsVerticalScrollIndicator={false}>
         {/* Group 1: Account */}
         <SettingsSection title={STRINGS.sections.account}>
-          <Link href="/(tabs)/settings/account-security" asChild>
+          <Link href={APP_ROUTES.SETTINGS_ACCOUNT_SECURITY} asChild>
             <SettingsRow label={STRINGS.items.accountSecurity} />
           </Link>
-          <Link href="/(tabs)/settings/family-sharing" asChild>
+          <Link href={APP_ROUTES.SETTINGS_FAMILY_SHARING} asChild>
             <SettingsRow label={STRINGS.items.familySharing} isLast />
           </Link>
         </SettingsSection>
 
         {/* Group 2: General */}
         <SettingsSection title={STRINGS.sections.general}>
-          <Link href="/(tabs)/settings/notifications" asChild>
+          <Link href={APP_ROUTES.SETTINGS_NOTIFICATIONS} asChild>
             <SettingsRow label={STRINGS.items.notifications} />
           </Link>
-          <Link href="/(tabs)/settings/display-accessibility" asChild>
+          <Link href={APP_ROUTES.SETTINGS_DISPLAY_ACCESSIBILITY} asChild>
             <SettingsRow label={STRINGS.items.display} />
           </Link>
-          <Link href="/(tabs)/settings/data-storage" asChild>
+          <Link href={APP_ROUTES.SETTINGS_DATA_STORAGE} asChild>
             <SettingsRow label={STRINGS.items.dataStorage} isLast />
           </Link>
         </SettingsSection>
 
         {/* Group 3: About */}
         <SettingsSection title={STRINGS.sections.about}>
-          <Link href="/(tabs)/settings/about-help" asChild>
+          <Link href={APP_ROUTES.SETTINGS_ABOUT_HELP} asChild>
             <SettingsRow label={STRINGS.items.help} />
           </Link>
-          <Link href="/(tabs)/settings/about-help" asChild>
+          <Link href={APP_ROUTES.SETTINGS_ABOUT_TIMELOG} asChild>
             <SettingsRow label={STRINGS.items.about} value="v1.0.0" isLast />
           </Link>
         </SettingsSection>

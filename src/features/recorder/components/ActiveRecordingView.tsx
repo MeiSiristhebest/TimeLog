@@ -1,34 +1,41 @@
 /**
- * ActiveRecordingView - Full-screen recording interface.
+ * ActiveRecordingView - Full-screen recording interface (Classic Mode).
  *
  * Layout: 3-section vertical flex (Header, Content, Footer)
- * Based on Heritage Hybrid HTML mockup for proper spacing.
+ * Redesigned for better spacing, stacking, and consistent controls.
  */
 
 import { AppText } from '@/components/ui/AppText';
 import { useEffect, useState } from 'react';
-import { View, Platform } from 'react-native';
-import Animated, {
-  SharedValue,
+import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Animated } from '@/tw/animated';
+import { SharedValue,
   FadeIn,
-  FadeInDown,
-  useAnimatedStyle,
-  useSharedValue,
-} from 'react-native-reanimated';
+  useSharedValue, } from 'react-native-reanimated';
 import { Ionicons } from '@/components/ui/Icon';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { NetworkQuality } from '@/features/recorder/services/NetworkQualityService';
 
-import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { BreathingGlow } from '@/components/ui/heritage/BreathingGlow';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useActiveRecordingLogic } from '@/features/recorder/hooks/useActiveRecordingLogic';
+import { ConnectivityBadge } from './ConnectivityBadge';
 import { WaveformVisualizer } from './WaveformVisualizer';
+import { RecordingModeSwitcher } from './RecordingModeSwitcher';
+import { RecordingControls } from './RecordingControls';
 
 interface ActiveRecordingViewProps {
   questionText?: string;
   onStop: () => void;
+  onPause: () => void;
+  onResume: () => void;
+  onSwitchToAi: () => void;
   amplitude?: SharedValue<number>;
+  recordingDurationSec?: number;
   isPaused?: boolean;
+  isOnline?: boolean;
+  canSwitchToAi?: boolean;
+  controlsDisabled?: boolean;
 }
 
 // Helper to format MM:SS
@@ -38,23 +45,44 @@ function formatTime(seconds: number): string {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
+function qualityFromOnline(isOnline: boolean): NetworkQuality {
+  return isOnline ? 'GOOD' : 'OFFLINE';
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
 export function ActiveRecordingView({
   questionText,
   onStop,
+  onPause,
+  onResume,
+  onSwitchToAi,
   amplitude,
+  recordingDurationSec,
   isPaused = false,
+  isOnline = true,
+  canSwitchToAi = true,
+  controlsDisabled = false,
 }: ActiveRecordingViewProps): JSX.Element {
-  const { colors } = useHeritageTheme();
-  const { duration, pulse } = useActiveRecordingLogic(isPaused);
+  const { colors, isDark } = useHeritageTheme();
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const { duration } = useActiveRecordingLogic(isPaused);
   const [showVisualizer, setShowVisualizer] = useState(false);
 
   // Fallback amplitude if not provided
   const fallbackAmplitude = useSharedValue(0);
   const activeAmplitude = amplitude ?? fallbackAmplitude;
+  const orbSize = clamp(Math.min(width * 0.54, height * 0.22), 170, 206);
+  const innerCircleSize = Math.round(orbSize * 0.52);
+  const glowSize = Math.round(orbSize * 0.72);
+  const waveformWidth = Math.round(orbSize * 0.72);
+  const waveformHeight = Math.round(orbSize * 0.3);
+  const bottomPadding = Math.max(insets.bottom + 8, 18);
 
-  const animatedTextStyle = useAnimatedStyle(() => ({
-    opacity: pulse.value,
-  }));
+  const displayedDuration = recordingDurationSec ?? duration;
 
   useEffect(() => {
     // Give breathing circle one frame to stabilize before mounting Skia waveform.
@@ -63,122 +91,127 @@ export function ActiveRecordingView({
   }, []);
 
   return (
-    <View className="flex-1 w-full h-full" style={{ backgroundColor: colors.surface }}>
+    <View style={[styles.root, { backgroundColor: colors.surface }]}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.screen}>
 
-      <SafeAreaView style={{ flex: 1 }}>
-        <View className="flex-1 justify-between">
-        {/* === SECTION 1: HEADER === */}
-        <Animated.View entering={FadeInDown.duration(600)} className="items-center pt-4 gap-5">
-          {/* "I am listening..." Status */}
-          <Animated.View style={animatedTextStyle}>
-            <AppText className="text-[28px] italic tracking-tight" style={{ fontFamily: 'Fraunces_600SemiBold', color: colors.primary }}>
-              I am listening...
-            </AppText>
-          </Animated.View>
-
-          {/* Timer Pill */}
-          <View
-            className="flex-row items-center gap-2.5 px-5 py-2.5 rounded-full border"
-            style={{
-              backgroundColor: `${colors.surface}99`,
-              borderColor: `${colors.border}60`,
-            }}>
-            <Ionicons name="timer-outline" size={20} color={colors.primary} />
-            <AppText
-              className="text-[22px] font-bold tracking-[2px]"
-              style={{
-                color: colors.onSurface,
-                fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-                fontVariant: ['tabular-nums'],
-              }}>
-              {formatTime(duration)}
-            </AppText>
-          </View>
-        </Animated.View>
-
-        {/* === SECTION 2: CONTENT (Question + Visualizer) === */}
-        <View className="flex-1 items-center justify-evenly px-6 pb-5">
-          {/* Question Card - Positioned ABOVE visualizer */}
-          <Animated.View
-            entering={FadeIn.delay(400).duration(800)}
-            className="items-center max-w-[320px] z-20">
-            <View
-              className="w-full rounded-[24px] border px-6 py-5"
-              style={{
-                backgroundColor: colors.surfaceWarm,
-                borderColor: colors.border,
-              }}>
-              <AppText className="text-xs font-bold tracking-[3px] uppercase mb-2.5 text-center" style={{ color: colors.textMuted }}>
-                YOUR STORY
-              </AppText>
-              <AppText
-                className="text-[26px] text-center leading-[34px]"
-                style={{ fontFamily: 'Fraunces_600SemiBold', color: colors.onSurface }}>
-                {questionText || 'What is your story today?'}
-              </AppText>
-            </View>
-          </Animated.View>
-
-          {/* Visualizer Area - Below the question */}
-          <Animated.View entering={FadeIn.delay(520).duration(420)} className="relative items-center justify-center w-[228px] h-[228px]">
-            {/* Breathing Area */}
-            <View className="absolute inset-0 items-center justify-center">
+          {/* 1. Unified Header (Status & Mode) */}
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
               <View
-                style={{
-                  width: 228,
-                  height: 228,
-                  borderRadius: 114,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  overflow: 'visible',
-                }}>
-                <BreathingGlow color={colors.primary} size={212} profile="recording" />
+                style={[
+                  styles.timerPill,
+                  { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }
+                ]}
+              >
+                <Ionicons name="timer-outline" size={14} color={isDark ? colors.textMuted : colors.textFaint} />
+                <AppText
+                  style={{
+                    fontSize: 15,
+                    fontWeight: '600',
+                    color: colors.onSurface,
+                    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+                    fontVariant: ['tabular-nums'],
+                    letterSpacing: 0.5,
+                  }}>
+                  {formatTime(displayedDuration)}
+                </AppText>
               </View>
-              <View
-                style={{
-                  position: 'absolute',
-                  width: 118,
-                  height: 118,
-                  borderRadius: 59,
-                  backgroundColor: `${colors.primarySoft}CC`,
-                  borderWidth: 1,
-                  borderColor: `${colors.primaryMuted}80`,
+            </View>
+
+            <View style={styles.headerCenter}>
+              <RecordingModeSwitcher
+                mode="basic"
+                disabled={!canSwitchToAi || controlsDisabled}
+                onSwitch={(mode) => {
+                  if (mode === 'ai') onSwitchToAi();
                 }}
               />
             </View>
 
-            {/* Waveform Bars (Foreground) */}
-            {showVisualizer ? (
-              <View className="w-[176px] h-28 z-10">
-                <WaveformVisualizer
-                  amplitude={activeAmplitude}
-                  isRecording={true}
-                  isPaused={isPaused}
-                  color={colors.primary}
-                />
-              </View>
-            ) : null}
-          </Animated.View>
-        </View>
+            <View style={styles.headerRight}>
+              <ConnectivityBadge
+                quality={qualityFromOnline(isOnline)}
+                mode={isOnline ? 'DIALOG' : 'SILENT'}
+                minimal // Pass minimal prop to ConnectivityBadge if supported, or rely on its small usage
+              />
+            </View>
+          </View>
 
-        {/* === SECTION 3: FOOTER === */}
-        <Animated.View entering={FadeInDown.delay(800).duration(600)} className="items-center px-6 pb-6">
-          <HeritageButton
-            title="STOP RECORDING"
-            onPress={onStop}
-            variant="primary"
-            size="large"
-            icon="stop-circle"
-            fullWidth
-            style={{ maxWidth: 340, height: 80, borderRadius: 40 }}
-            textStyle={{ fontSize: 18, fontWeight: '700', letterSpacing: 1.5 }}
-          />
-          <AppText
-            className="mt-4 text-sm font-medium tracking-wide"
-            style={{ color: colors.textMuted, textAlign: 'center', width: '100%' }}>
-            Tap to save story
-          </AppText>
-        </Animated.View>
+          {/* 2. Content: Typography First (No Cards) */}
+          <View style={styles.content}>
+            <Animated.View
+              entering={FadeIn.delay(300).duration(800)}
+              style={[styles.questionWrap, { maxWidth: Math.min(width - 40, 380) }]}>
+
+              <AppText style={[styles.dateLabel, { color: colors.tertiary }]}>
+                TODAY&apos;S TOPIC
+              </AppText>
+
+              <AppText
+                style={[
+                  styles.questionText,
+                  { fontFamily: 'Fraunces_600SemiBold', color: colors.onSurface },
+                ]}>
+                {questionText || 'What is your story today?'}
+              </AppText>
+            </Animated.View>
+
+            {/* 3. Visualizer: The "Breathing" Core */}
+            <Animated.View entering={FadeIn.delay(500).duration(600)} style={styles.orbWrap}>
+              <View
+                style={[
+                  styles.orbContainer,
+                  { width: orbSize, height: orbSize, borderRadius: orbSize / 2 },
+                  // Remove border, let it blend
+                ]}>
+                <View style={styles.orbBackground}>
+                  <BreathingGlow color={colors.primary} size={glowSize} profile="recording" />
+                </View>
+
+                <View
+                  style={[
+                    styles.innerCircle,
+                    {
+                      width: innerCircleSize,
+                      height: innerCircleSize,
+                      borderRadius: innerCircleSize / 2,
+                      backgroundColor: `${colors.primarySoft}60`, // More subtle
+                      // Removed borderColor
+                    },
+                  ]}
+                />
+
+                {showVisualizer && (
+                  <View style={{ zIndex: 10, width: waveformWidth, height: waveformHeight }}>
+                    <WaveformVisualizer
+                      amplitude={activeAmplitude}
+                      isRecording={true}
+                      isPaused={isPaused}
+                      color={colors.primary}
+                    />
+                  </View>
+                )}
+              </View>
+            </Animated.View>
+          </View>
+
+          {/* 4. Footer: Clean Controls */}
+          <View style={[styles.footer, { paddingBottom: bottomPadding }]}>
+            <RecordingControls
+              isRecording={true}
+              isPaused={isPaused}
+              onStart={() => { }}
+              onStop={onStop}
+              onPause={onPause}
+              onResume={onResume}
+              disabled={controlsDisabled}
+            />
+            <AppText
+              style={[styles.finishText, { color: colors.textMuted }]}>
+              Press and hold to end session
+            </AppText>
+          </View>
         </View>
       </SafeAreaView>
     </View>
@@ -186,3 +219,105 @@ export function ActiveRecordingView({
 }
 
 export default ActiveRecordingView;
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  screen: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+    height: 48,
+  },
+  headerLeft: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  headerCenter: {
+    flex: 2,
+    alignItems: 'center',
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  timerPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 6,
+    borderRadius: 999,
+    paddingHorizontal: 12, // Reduced padding
+    paddingVertical: 6,
+  },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    rowGap: 40, // More breathing room between text and orb
+    paddingHorizontal: 8,
+  },
+  questionWrap: {
+    width: '100%',
+    alignItems: 'center',
+    rowGap: 12,
+  },
+  dateLabel: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    opacity: 0.9,
+  },
+  questionText: {
+    fontSize: 30, // Larger, more magazine-like
+    lineHeight: 38,
+    textAlign: 'center',
+    letterSpacing: -0.5,
+  },
+  orbWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  orbContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  orbBackground: {
+    position: 'absolute',
+    inset: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  innerCircle: {
+    position: 'absolute',
+    // No border
+  },
+  footer: {
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingTop: 4,
+  },
+  finishText: {
+    marginTop: 16,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
+    opacity: 0.6,
+    letterSpacing: 0.4,
+  },
+});

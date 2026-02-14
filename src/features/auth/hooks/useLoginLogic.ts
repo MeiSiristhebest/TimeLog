@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { signInWithEmailPassword, sendResetEmail } from '@/features/auth/services/authService';
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
+import { APP_ROUTES } from '@/features/app/navigation/routes';
 
 export function useLoginLogic() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export function useLoginLogic() {
     try {
       await signInWithEmailPassword(email, password);
       setMessage('Login successful.');
-      router.replace('/(tabs)');
+      router.replace(APP_ROUTES.TABS);
     } catch (err) {
       const friendly =
         err instanceof Error ? err.message : 'Something went wrong. Please try again.';

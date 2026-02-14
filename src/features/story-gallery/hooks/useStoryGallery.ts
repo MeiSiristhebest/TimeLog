@@ -1,5 +1,7 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
+import { asc } from 'drizzle-orm';
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useStories } from '../hooks/useStories';
 import { softDeleteStory, restoreStory, offloadStory } from '../services/storyService';
 import {
@@ -10,10 +12,15 @@ import {
 import { FilterCategory, GALLERY_STRINGS, mapRawCategoryToFilter } from '../data/mockGalleryData';
 import { SortOption } from '../components/SortOptionsModal';
 import { getQuestionById } from '@/features/recorder/data/topicQuestions';
+import { db } from '@/db/client';
+import { transcriptSegments } from '@/db/schema';
 
 export function useStoryGallery() {
   const router = useRouter();
   const { stories, isLoading } = useStories();
+  const { data: segments } = useLiveQuery(
+    db.select().from(transcriptSegments).orderBy(asc(transcriptSegments.storyId), asc(transcriptSegments.segmentIndex))
+  );
 
   // Local State
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -35,6 +42,36 @@ export function useStoryGallery() {
 
   // Computed Strings
   const subtitle = `${stories.filter((s) => !s.deletedAt).length}${GALLERY_STRINGS.header.subtitleSuffix}`;
+  const transcriptFallbackByStoryId = useMemo(() => {
+    const fallback = new Map<string, string[]>();
+    const finalOnly = new Map<string, string[]>();
+
+    (segments ?? []).forEach((segment) => {
+      const text = segment.text.trim();
+      if (!text) return;
+
+      const fallbackList = fallback.get(segment.storyId) ?? [];
+      fallbackList.push(text);
+      fallback.set(segment.storyId, fallbackList);
+
+      if (segment.isFinal) {
+        const finalList = finalOnly.get(segment.storyId) ?? [];
+        finalList.push(text);
+        finalOnly.set(segment.storyId, finalList);
+      }
+    });
+
+    const result = new Map<string, string>();
+    fallback.forEach((_, storyId) => {
+      const source = finalOnly.get(storyId) ?? fallback.get(storyId) ?? [];
+      const merged = source.join(' ').trim();
+      if (merged.length > 0) {
+        result.set(storyId, merged);
+      }
+    });
+
+    return result;
+  }, [segments]);
 
   // Derived Data
   const recordings = useMemo(() => {
@@ -86,10 +123,13 @@ export function useStoryGallery() {
       topicId: record.topicId,
       userId: record.userId,
       deviceId: record.deviceId,
+      transcription: record.transcription?.trim()
+        ? record.transcription
+        : transcriptFallbackByStoryId.get(record.id) ?? null,
       coverImagePath: record.coverImagePath,
       isOffloaded: record.filePath === 'OFFLOADED',
     }));
-  }, [stories, filter, sortOption]);
+  }, [stories, filter, sortOption, transcriptFallbackByStoryId]);
 
   // Handlers
   const handleSelectStory = useCallback((id: string) => {
@@ -150,7 +190,7 @@ export function useStoryGallery() {
     try {
       await offloadStory(id);
       showSuccessToast('Removed from device');
-    } catch (error) {
+    } catch {
       showErrorToast('Failed to offload story');
     }
   }, []);

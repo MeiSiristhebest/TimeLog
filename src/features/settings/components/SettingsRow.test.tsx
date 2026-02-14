@@ -1,9 +1,11 @@
 import { render } from '@testing-library/react-native';
-import { Text } from 'react-native';
 import { SettingsRow } from './SettingsRow';
 
 jest.mock('@/components/ui/AppText', () => ({
-  AppText: ({ children }: { children: string }) => <Text>{children}</Text>,
+  AppText: ({ children }: { children: string }) => {
+    const { Text } = require('react-native');
+    return <Text>{children}</Text>;
+  },
 }));
 
 jest.mock('@/components/ui/Icon', () => ({

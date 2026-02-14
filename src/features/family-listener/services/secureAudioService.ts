@@ -12,6 +12,7 @@ import { devLog } from '@/lib/devLogger';
 
 /** Signed URL expiry time in seconds (1 hour) */
 const SIGNED_URL_EXPIRY_SECONDS = 3600;
+const AUDIO_STORAGE_BUCKET = 'audio-recordings';
 
 /** Refresh threshold - refresh URL when less than 5 minutes remaining */
 const REFRESH_THRESHOLD_SECONDS = 300;
@@ -72,7 +73,7 @@ export async function getSignedAudioUrl(storyId: string): Promise<SignedAudioUrl
 
   // Generate signed URL from Supabase Storage
   const { data, error } = await supabase.storage
-    .from('audio-recordings')
+    .from(AUDIO_STORAGE_BUCKET)
     .createSignedUrl(storagePath, SIGNED_URL_EXPIRY_SECONDS);
 
   if (error) {
@@ -101,9 +102,40 @@ export async function getSignedAudioUrl(storyId: string): Promise<SignedAudioUrl
  * @returns The storage path for Supabase Storage
  */
 function deriveStoragePath(filePath: string, storyId: string): string {
-  // For now, assume storage path follows pattern: recordings/{storyId}.wav
-  // This may need adjustment based on actual sync engine implementation
-  return `recordings/${storyId}.wav`;
+  const normalized = filePath.trim();
+  if (!normalized) {
+    return `${storyId}.wav`;
+  }
+
+  // Local app path (file://...) - cloud object naming is {storyId}.{ext}
+  if (normalized.startsWith('file://')) {
+    return `${storyId}${extractAudioExtension(normalized)}`;
+  }
+
+  // Already a plain storage object path
+  if (/^[^/]+\.(wav|opus)$/i.test(normalized)) {
+    return normalized;
+  }
+
+  // Current canonical cloud path: {userId}/{recordingId}.{ext}
+  if (/^[^/]+\/[^/]+\.(wav|opus)$/i.test(normalized)) {
+    return normalized;
+  }
+
+  // Backward compatibility for legacy "recordings/<file>" storage paths.
+  if (normalized.startsWith('recordings/')) {
+    return normalized.replace(/^recordings\//, '');
+  }
+
+  if (/\.(wav|opus)$/i.test(normalized)) {
+    return normalized;
+  }
+
+  return `${storyId}${extractAudioExtension(normalized)}`;
+}
+
+function extractAudioExtension(path: string): '.wav' | '.opus' {
+  return path.toLowerCase().endsWith('.opus') ? '.opus' : '.wav';
 }
 
 /**

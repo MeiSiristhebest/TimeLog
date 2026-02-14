@@ -1,17 +1,21 @@
 import { AppText } from '@/components/ui/AppText';
-import { Pressable, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { Pressable, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import { AudioRecording } from '@/types/entities';
 import { useHeritageTheme } from '@/theme/heritage';
 import { CommentBadge } from './CommentBadge';
+import { SyncStatusBadge } from './SyncStatusBadge';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { Animated } from '@/tw/animated';
+import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { getQuestionById } from '@/features/recorder/data/topicQuestions';
+import { CATEGORY_DATA, mapRawCategoryToFilter } from '../data/mockGalleryData';
 
 export interface CompactStoryCardProps {
   story: AudioRecording;
   dateObj: Date;
   fullDateStr: string;
+  durationStr: string;
   isPlayable?: boolean;
   isOffline?: boolean;
   unreadCommentCount?: number;
@@ -24,6 +28,7 @@ export function CompactStoryCard({
   story,
   dateObj,
   fullDateStr,
+  durationStr,
   isPlayable = true,
   isOffline = false,
   unreadCommentCount = 0,
@@ -41,7 +46,6 @@ export function CompactStoryCard({
 
   // Status
   const isSynced = story.syncStatus === 'synced';
-  const isSyncing = story.syncStatus === 'syncing' || story.syncStatus === 'queued';
   const isDisabled = isOffline && !isPlayable;
   const accentColor = colors.primaryMuted; // #EABFAA
 
@@ -51,7 +55,11 @@ export function CompactStoryCard({
   };
 
   const question = story.topicId ? getQuestionById(story.topicId) : null;
-  const displayTitle = story.title || question?.text || 'Untitled Story';
+  const questionCategory = question?.category;
+  const categoryLabel = questionCategory
+    ? CATEGORY_DATA.find((item) => item.id === mapRawCategoryToFilter(questionCategory))?.label
+    : undefined;
+  const displayTitle = story.title?.trim() || (categoryLabel ? `${categoryLabel} Story` : 'Untitled Story');
 
   return (
     <View className="relative mb-4 w-full items-center pt-2 px-4 z-10">
@@ -111,24 +119,10 @@ export function CompactStoryCard({
                 {fullDateStr}
               </AppText>
 
-              <View className="flex-row items-center gap-[6px]">
-                {isSynced && (
-                  <>
-                    <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-                    <AppText className="text-xs font-medium" style={{ color: colors.textMuted }}>
-                      Saved to cloud
-                    </AppText>
-                  </>
-                )}
-                {isSyncing && (
-                  <>
-                    <Ionicons name="cloud-outline" size={18} color={colors.disabledText} />
-                    <AppText className="text-xs font-medium" style={{ color: colors.disabledText }}>
-                      Waiting for sync...
-                    </AppText>
-                  </>
-                )}
-              </View>
+              <AppText className="mb-3 text-xs font-medium tracking-[0.2px]" style={{ color: colors.textMuted }}>
+                {categoryLabel ? `${durationStr} · ${categoryLabel}` : durationStr}
+              </AppText>
+
             </View>
 
             <View className="mr-5 flex-row items-center gap-2">
@@ -185,6 +179,16 @@ export function CompactStoryCard({
 
               {unreadCommentCount > 0 && <CommentBadge count={unreadCommentCount} />}
             </View>
+          </View>
+
+          <View
+            style={{
+              position: 'absolute',
+              right: 16,
+              bottom: 10,
+              zIndex: 5,
+            }}>
+            <SyncStatusBadge status={story.syncStatus} />
           </View>
         </Animated.View>
       </Pressable>

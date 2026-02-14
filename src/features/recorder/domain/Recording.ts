@@ -167,6 +167,10 @@ export class Recording {
     return this.props.deletedAt !== undefined;
   }
 
+  get deletedAt(): Date | undefined {
+    return this.props.deletedAt;
+  }
+
   get isSynced(): boolean {
     return this.props.syncStatus === SyncStatus.SYNCED;
   }

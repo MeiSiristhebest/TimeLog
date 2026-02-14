@@ -1,9 +1,11 @@
 import { render } from '@testing-library/react-native';
-import { Text } from 'react-native';
 import { AboutHelpScreen } from './AboutHelpScreen';
 
 jest.mock('../components/SettingsRow', () => ({
-  SettingsRow: ({ label }: { label: string }) => <Text>{label}</Text>,
+  SettingsRow: ({ label }: { label: string }) => {
+    const { Text } = require('react-native');
+    return <Text>{label}</Text>;
+  },
 }));
 
 jest.mock('../components/SettingsSection', () => ({

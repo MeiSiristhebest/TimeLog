@@ -32,8 +32,13 @@ export function useUnreadActivities(): UseUnreadActivitiesResult {
     refetch,
   } = useQuery<Activity[], Error>({
     queryKey,
-    queryFn: () => getUnreadActivities(sessionUserId!),
-    enabled: !!sessionUserId,
+    queryFn: () => {
+      if (!sessionUserId) {
+        throw new Error('Session user ID is required');
+      }
+      return getUnreadActivities(sessionUserId);
+    },
+    enabled: Boolean(sessionUserId),
     staleTime: 30 * 1000, // 30 seconds
   });
 

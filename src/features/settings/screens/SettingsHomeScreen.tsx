@@ -10,11 +10,11 @@ import { SettingsSection } from '../components/SettingsSection';
 import { Pressable, ScrollView, View } from 'react-native';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { AppText } from '@/components/ui/AppText';
-import { useStories } from '@/features/story-gallery/hooks/useStories';
 import {
   isProfilePromptDismissed,
   setProfilePromptDismissed,
 } from '../services/profileOnboardingService';
+import { APP_ROUTES } from '@/features/app/navigation/routes';
 
 const NO_OP = () => { };
 
@@ -25,23 +25,24 @@ export function SettingsHomeScreen(): JSX.Element {
 
   // Use existing logic for profile data
   const { userRole, profile, isProfileLoading, sessionUserId } = useSettingsHome();
-  const { stories } = useStories();
   const [promptDismissed, setPromptDismissed] = useState(isProfilePromptDismissed());
 
   const handleProfilePress = () => {
-    router.push('/(tabs)/settings/edit-profile');
+    router.push(APP_ROUTES.SETTINGS_EDIT_PROFILE);
   };
 
-  const displayName = isProfileLoading ? 'Loading...' : profile?.displayName || 'Set up profile';
-  const roleLabel = userRole === 'storyteller' ? 'Storyteller' : 'Family Member';
-  const avatarUrl = profile?.avatarUrl || undefined;
+  const displayName =
+    profile?.displayName?.trim() || (isProfileLoading ? 'Storyteller' : 'Set up profile');
+  const avatarUrl = profile?.avatarUrl?.trim() || profile?.avatarUri?.trim() || undefined;
 
   const profileIncomplete = useMemo(
     () => !profile?.displayName || !profile?.birthDate || !profile?.language,
     [profile]
   );
 
-  const shouldShowProfilePrompt = stories.length > 0 && profileIncomplete && !promptDismissed;
+  const shouldShowUpgradePrompt = profile?.isAnonymous === true && !promptDismissed;
+  const shouldShowProfilePrompt =
+    profile?.isAnonymous !== true && profileIncomplete && !promptDismissed;
 
   const handleDismissPrompt = () => {
     setProfilePromptDismissed(true);
@@ -66,11 +67,36 @@ export function SettingsHomeScreen(): JSX.Element {
           <UserProfileHeader
             displayName={displayName}
             userId={sessionUserId || 'guest-user'}
-            role={userRole}
+            role={userRole === 'listener' ? 'family' : 'storyteller'}
             onPress={handleProfilePress}
             avatar={avatarUrl}
           />
         </View>
+
+        {shouldShowUpgradePrompt ? (
+          <View
+            className="mx-4 mb-4 rounded-2xl border px-4 py-4"
+            style={{ backgroundColor: colors.surfaceCard, borderColor: colors.border }}>
+            <AppText className="text-base font-semibold mb-1" style={{ color: colors.onSurface }}>
+              Upgrade to a permanent account
+            </AppText>
+            <AppText className="text-sm mb-3" style={{ color: colors.textMuted }}>
+              You can keep using TimeLog now, but upgrading protects your stories and unlocks family
+              sharing.
+            </AppText>
+            <HeritageButton
+              title="Upgrade Account"
+              onPress={() => router.push(APP_ROUTES.UPGRADE_ACCOUNT)}
+              variant="primary"
+              fullWidth
+            />
+            <Pressable onPress={handleDismissPrompt} className="mt-3 items-center">
+              <AppText className="text-sm" style={{ color: colors.textMuted }}>
+                Skip for now
+              </AppText>
+            </Pressable>
+          </View>
+        ) : null}
 
         {shouldShowProfilePrompt ? (
           <View
@@ -99,14 +125,14 @@ export function SettingsHomeScreen(): JSX.Element {
 
         {/* TimeLog Functional Group */}
         <SettingsSection>
-          <Link href="/(tabs)/gallery" asChild>
+          <Link href={APP_ROUTES.GALLERY} asChild>
             <SettingsRow
               label={SETTINGS_STRINGS.home.myStories}
               iconName="book-outline"
               iconColor={colors.iconBlue} // Blue
             />
           </Link>
-          <Link href="/family-members" asChild>
+          <Link href={APP_ROUTES.FAMILY_MEMBERS} asChild>
             <SettingsRow
               label={SETTINGS_STRINGS.home.familyMembers}
               iconName="people-outline"
@@ -124,7 +150,7 @@ export function SettingsHomeScreen(): JSX.Element {
 
         {/* Settings Section - Link to new Options Page */}
         <SettingsSection>
-          <Link href="/(tabs)/settings/app-settings" asChild>
+          <Link href={APP_ROUTES.SETTINGS_APP_SETTINGS} asChild>
             <SettingsRow
               label="Settings"
               iconName="settings-outline"

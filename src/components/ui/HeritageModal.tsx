@@ -17,17 +17,15 @@ import {
   View,
   Modal,
   Pressable,
-  StyleSheet,
   AccessibilityInfo,
   useWindowDimensions,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
+import { Animated } from '@/tw/animated';
+import { useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSpring,
-  Easing,
-} from 'react-native-reanimated';
+  Easing, } from 'react-native-reanimated';
 import { useHeritageTheme } from '@/theme/heritage';
 
 const ANIMATION = {

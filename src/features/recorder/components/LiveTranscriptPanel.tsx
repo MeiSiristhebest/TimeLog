@@ -46,7 +46,7 @@ export function LiveTranscriptPanel({ segments, maxHeight = 300 }: LiveTranscrip
           style={{ color: colors.textMuted }}
           maxFontSizeMultiplier={1.5}
         >
-          等待对话开始...
+          Waiting for conversation to begin...
         </Text>
       </View>
     );
@@ -105,7 +105,7 @@ const TranscriptBubble = React.memo(function TranscriptBubble({ segment }: Trans
         }}
         maxFontSizeMultiplier={1.3}
       >
-        {isUser ? '您' : 'AI'}
+        {isUser ? 'You' : 'AI'}
       </Text>
 
       {/* Transcript text */}
@@ -131,7 +131,7 @@ const TranscriptBubble = React.memo(function TranscriptBubble({ segment }: Trans
         }}
         maxFontSizeMultiplier={1.2}
       >
-        {new Date(segment.timestamp).toLocaleTimeString('zh-CN', {
+        {new Date(segment.timestamp).toLocaleTimeString('en-US', {
           hour: '2-digit',
           minute: '2-digit',
         })}

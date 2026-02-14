@@ -1,6 +1,6 @@
 import { useHeritageTheme } from '@/theme/heritage';
-import { StyleSheet, TextProps, TextStyle } from 'react-native';
-import { Text } from 'react-native';
+import { StyleSheet, TextProps, TextStyle , Text } from 'react-native';
+
 
 type Variant = 'body' | 'title' | 'subtitle' | 'caption' | 'label';
 

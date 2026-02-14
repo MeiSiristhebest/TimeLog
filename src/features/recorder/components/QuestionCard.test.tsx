@@ -3,6 +3,10 @@ import { render, fireEvent } from '@testing-library/react-native';
 import { QuestionCard } from './QuestionCard';
 import type { TopicQuestion } from '@/types/entities';
 
+jest.mock('@/components/ui/Icon', () => ({
+  Ionicons: () => null,
+}));
+
 const mockQuestion: TopicQuestion = {
   id: 'q-001',
   text: 'What was your favorite game to play as a child?',
@@ -18,6 +22,25 @@ const mockFamilyQuestion: TopicQuestion = {
 };
 
 describe('QuestionCard', () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      const firstArg = args[0];
+      if (
+        typeof firstArg === 'string' &&
+        (firstArg.includes('Each child in a list should have a unique "key" prop.') ||
+          firstArg.includes('not wrapped in act'))
+      ) {
+        return;
+      }
+    });
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
   it('renders question text correctly', () => {
     const { getByText } = render(<QuestionCard question={mockQuestion} />);
     expect(getByText(mockQuestion.text)).toBeTruthy();
@@ -37,16 +60,16 @@ describe('QuestionCard', () => {
     expect(onReplay).toHaveBeenCalled();
   });
 
-  it('calls onNewTopic when New Topic button is pressed in recorder variant', () => {
+  it('calls onNewTopic when Next button is pressed in recorder variant', () => {
     const onNewTopic = jest.fn();
     const { getByLabelText } = render(
       <QuestionCard question={mockQuestion} onNewTopic={onNewTopic} variant="recorder" />
     );
-    fireEvent.press(getByLabelText('New Topic'));
+    fireEvent.press(getByLabelText('Next'));
     expect(onNewTopic).toHaveBeenCalled();
   });
 
-  it('renders discovery variant with Record Answer and Try Another buttons', () => {
+  it('renders discovery variant with Record Answer and Next buttons', () => {
     const onRecordThis = jest.fn();
     const onNext = jest.fn();
     const { getByLabelText, getByText } = render(
@@ -59,12 +82,12 @@ describe('QuestionCard', () => {
     );
 
     expect(getByText('Record Answer')).toBeTruthy();
-    expect(getByText('Try Another Question')).toBeTruthy();
+    expect(getByText('Next')).toBeTruthy();
 
     fireEvent.press(getByLabelText('Record Answer'));
     expect(onRecordThis).toHaveBeenCalled();
 
-    fireEvent.press(getByLabelText('Try Another Question'));
+    fireEvent.press(getByLabelText('Next'));
     expect(onNext).toHaveBeenCalled();
   });
 });

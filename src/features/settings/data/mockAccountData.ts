@@ -23,4 +23,16 @@ export const ACCOUNT_SECURITY_STRINGS = {
     cancelAction: 'Cancel',
     loading: 'Loading profile details...',
   },
+  deleteAccountSection: {
+    label: 'Delete Account',
+    confirmTitle: 'Delete account and all data?',
+    confirmMessage:
+      'This permanently removes local recordings, local profile data, and linked cloud data. This action cannot be undone.',
+    confirmAction: 'Delete Forever',
+    cancelAction: 'Cancel',
+    failedTitle: 'Delete Failed',
+    failedMessage: 'Unable to delete account right now. Please try again.',
+    successTitle: 'Account Deleted',
+    successMessage: 'Your local data has been permanently removed.',
+  },
 } as const;

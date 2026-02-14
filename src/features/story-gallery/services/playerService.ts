@@ -1,5 +1,7 @@
-import { createAudioPlayer, AudioPlayer, AudioStatus } from 'expo-audio';
+import { createAudioPlayer, AudioPlayer, AudioStatus, setAudioModeAsync } from 'expo-audio';
 import { devLog } from '@/lib/devLogger';
+
+export type PlayerOutputMode = 'speaker' | 'earpiece';
 
 export interface PlayerStatus {
   isPlaying: boolean;
@@ -22,14 +24,55 @@ export interface PlayerStatus {
  */
 class PlayerService {
   private player: AudioPlayer | null = null;
+  private currentUri: string | null = null;
   private onStatusUpdate: ((status: PlayerStatus) => void) | null = null;
+  private hasConfiguredPlaybackMode = false;
+  private outputMode: PlayerOutputMode = 'speaker';
+
+  private getPlaybackAudioModeConfig(outputMode: PlayerOutputMode): Parameters<typeof setAudioModeAsync>[0] {
+    return {
+      playsInSilentMode: true,
+      interruptionMode: 'duckOthers',
+      allowsRecording: false,
+      shouldPlayInBackground: false,
+      shouldRouteThroughEarpiece: outputMode === 'earpiece',
+    };
+  }
+
+  private async ensurePlaybackAudioMode(): Promise<void> {
+    if (this.hasConfiguredPlaybackMode) {
+      return;
+    }
+
+    await setAudioModeAsync(this.getPlaybackAudioModeConfig(this.outputMode));
+
+    this.hasConfiguredPlaybackMode = true;
+  }
+
+  async setOutputMode(outputMode: PlayerOutputMode): Promise<void> {
+    if (this.hasConfiguredPlaybackMode && this.outputMode === outputMode) {
+      return;
+    }
+
+    await setAudioModeAsync(this.getPlaybackAudioModeConfig(outputMode));
+    this.outputMode = outputMode;
+    this.hasConfiguredPlaybackMode = true;
+  }
 
   async loadAudio(uri: string, onStatusUpdate: (status: PlayerStatus) => void): Promise<void> {
     try {
+      await this.ensurePlaybackAudioMode();
+
+      if (this.player && this.player.isLoaded && this.currentUri === uri) {
+        this.onStatusUpdate = onStatusUpdate;
+        return;
+      }
+
       // Cleanup existing player
       if (this.player) {
         this.player.remove(); // Release native resources
         this.player = null;
+        this.currentUri = null;
       }
 
       this.onStatusUpdate = onStatusUpdate;
@@ -38,6 +81,7 @@ class PlayerService {
 
       // Create new player - strict mode off implies it might throw if native module missing
       this.player = createAudioPlayer(uri);
+      this.currentUri = uri;
 
       // Subscribe to status updates
       this.player.addListener('playbackStatusUpdate', (status: AudioStatus) => {
@@ -101,8 +145,15 @@ class PlayerService {
 
   cleanup(): void {
     if (this.player) {
+      try {
+        this.player.pause();
+        this.player.seekTo(0);
+      } catch (error) {
+        devLog.warn('[PlayerService] Failed to stop player before cleanup', error);
+      }
       this.player.remove();
       this.player = null;
+      this.currentUri = null;
     }
     this.onStatusUpdate = null;
   }

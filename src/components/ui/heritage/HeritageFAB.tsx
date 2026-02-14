@@ -1,20 +1,17 @@
 
 import { AppText } from '@/components/ui/AppText';
 import { useState, useCallback } from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
+import { View, Pressable } from 'react-native';
+import { Animated } from '@/tw/animated';
+import { useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
   interpolate,
-  type SharedValue,
-} from 'react-native-reanimated';
+  type SharedValue, } from 'react-native-reanimated';
 import { Ionicons } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
 import { useHeritageTheme } from '@/theme/heritage';
-
-const MINI_FAB_SIZE = 48;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 

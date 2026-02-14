@@ -1,17 +1,20 @@
 import { create } from 'zustand';
-import { playerService, PlayerStatus } from '../services/playerService';
+import { playerService, PlayerStatus, type PlayerOutputMode } from '../services/playerService';
 import { devLog } from '@/lib/devLogger';
 
 interface PlayerState extends PlayerStatus {
   currentUri: string | null;
   isLoading: boolean;
+  isTogglingPlayback: boolean;
   error: string | null;
+  outputMode: PlayerOutputMode;
 
   // Actions
   load: (uri: string) => Promise<void>;
   togglePlayback: () => Promise<void>;
   seek: (position: number) => Promise<void>;
   setRate: (rate: number) => Promise<void>;
+  setOutputMode: (mode: PlayerOutputMode) => Promise<void>;
   reset: () => void;
 }
 
@@ -29,10 +32,15 @@ export const usePlayerStore = create<PlayerState>(function usePlayerStoreState(s
     ...initialState,
     currentUri: null,
     isLoading: false,
+    isTogglingPlayback: false,
     error: null,
+    outputMode: 'speaker',
 
     load: async (uri: string) => {
-      if (get().currentUri === uri) return;
+      const currentUri = get().currentUri;
+      if (currentUri === uri && playerService.isLoaded()) {
+        return;
+      }
 
       set({ isLoading: true, error: null, currentUri: uri });
       try {
@@ -43,31 +51,35 @@ export const usePlayerStore = create<PlayerState>(function usePlayerStoreState(s
             playerService.pause();
           }
         });
-        set({ isLoading: false });
+        set({ isLoading: false, isTogglingPlayback: false });
       } catch (error) {
-        set({ isLoading: false, error: 'Failed to load audio' });
+        set({ isLoading: false, isTogglingPlayback: false, error: 'Failed to load audio' });
         devLog.error(error);
       }
     },
 
     togglePlayback: async () => {
-      const { isPlaying, currentUri } = get();
-      if (!currentUri) return;
+      const { isPlaying, currentUri, isLoading, isTogglingPlayback } = get();
+      if (!currentUri || isLoading || isTogglingPlayback) return;
 
+      set({ isTogglingPlayback: true, isPlaying: !isPlaying });
       try {
         if (isPlaying) {
-          await playerService.pause();
+          playerService.pause();
         } else {
-          await playerService.play();
+          playerService.play();
         }
       } catch (error) {
+        set({ isPlaying, error: 'Playback action failed' });
         devLog.error('Playback toggle error:', error);
+      } finally {
+        set({ isTogglingPlayback: false });
       }
     },
 
     seek: async (position: number) => {
       try {
-        await playerService.seekTo(position);
+        playerService.seekTo(position);
       } catch (error) {
         devLog.error('Seek error:', error);
       }
@@ -75,16 +87,30 @@ export const usePlayerStore = create<PlayerState>(function usePlayerStoreState(s
 
     setRate: async (rate: number) => {
       try {
-        await playerService.setRate(rate);
+        playerService.setRate(rate);
         set({ rate });
       } catch (error) {
         devLog.error('Rate change error:', error);
       }
     },
 
+    setOutputMode: async (mode: PlayerOutputMode) => {
+      if (get().outputMode === mode) {
+        return;
+      }
+
+      try {
+        await playerService.setOutputMode(mode);
+        set({ outputMode: mode });
+      } catch (error) {
+        devLog.error('Output mode change error:', error);
+      }
+    },
+
     reset: () => {
+      const { outputMode } = get();
       playerService.unload();
-      set({ ...initialState, currentUri: null, error: null });
+      set({ ...initialState, currentUri: null, isTogglingPlayback: false, error: null, outputMode });
     },
   };
 });

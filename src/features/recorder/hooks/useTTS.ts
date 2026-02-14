@@ -54,14 +54,15 @@ export function useTTS(options: UseTTSOptions = {}): UseTTSReturn {
 
   // Track if component is mounted to prevent state updates after unmount
   const isMountedRef = useRef(true);
-  const highlightTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+  const highlightTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const speechSessionIdRef = useRef(0);
 
   const clearHighlightTimers = useCallback(() => {
     highlightTimersRef.current.forEach((timer) => clearTimeout(timer));
     highlightTimersRef.current = [];
   }, []);
 
-  const scheduleWordHighlights = useCallback((text: string, rate = 0.8) => {
+  const scheduleWordHighlights = useCallback((text: string, sessionId: number, rate = 0.8) => {
     const splitWords = text.trim().split(/\s+/);
     setWords(splitWords);
     setCurrentWordIndex(-1);
@@ -74,7 +75,7 @@ export function useTTS(options: UseTTSOptions = {}): UseTTSReturn {
       const punctuationBonus = /[.,!?;:]$/.test(word) ? 120 : 0;
       cumulative += baseMsPerWord + punctuationBonus;
       const timer = setTimeout(() => {
-        if (isMountedRef.current) {
+        if (isMountedRef.current && speechSessionIdRef.current === sessionId) {
           setCurrentWordIndex(index);
         }
       }, cumulative);
@@ -86,31 +87,24 @@ export function useTTS(options: UseTTSOptions = {}): UseTTSReturn {
   const speakText = useCallback((text: string) => {
     if (!isMountedRef.current) return;
 
+    const sessionId = speechSessionIdRef.current + 1;
+    speechSessionIdRef.current = sessionId;
     setIsSpeaking(true);
-    scheduleWordHighlights(text);
+    scheduleWordHighlights(text, sessionId);
+
+    const handleSpeechFinished = () => {
+      if (!isMountedRef.current || speechSessionIdRef.current !== sessionId) {
+        return;
+      }
+      setIsSpeaking(false);
+      setCurrentWordIndex(-1);
+      clearHighlightTimers();
+    };
 
     TTSService.speak(text, {
-      onDone: () => {
-        if (isMountedRef.current) {
-          setIsSpeaking(false);
-          setCurrentWordIndex(-1);
-          clearHighlightTimers();
-        }
-      },
-      onStopped: () => {
-        if (isMountedRef.current) {
-          setIsSpeaking(false);
-          setCurrentWordIndex(-1);
-          clearHighlightTimers();
-        }
-      },
-      onError: () => {
-        if (isMountedRef.current) {
-          setIsSpeaking(false);
-          setCurrentWordIndex(-1);
-          clearHighlightTimers();
-        }
-      },
+      onDone: handleSpeechFinished,
+      onStopped: handleSpeechFinished,
+      onError: handleSpeechFinished,
     });
   }, [clearHighlightTimers, scheduleWordHighlights]);
 
@@ -126,6 +120,7 @@ export function useTTS(options: UseTTSOptions = {}): UseTTSReturn {
 
   // Stop TTS playback
   const stop = useCallback(() => {
+    speechSessionIdRef.current += 1;
     TTSService.stop();
     if (isMountedRef.current) {
       setIsSpeaking(false);
@@ -151,6 +146,17 @@ export function useTTS(options: UseTTSOptions = {}): UseTTSReturn {
     }
   }, [initialQuestion, autoPlay, speakText, currentQuestion.id]);
 
+  // Keep words in sync when prompt changes while idle.
+  useEffect(() => {
+    if (isSpeaking) {
+      return;
+    }
+
+    const splitWords = currentQuestion.text.trim().split(/\s+/);
+    setWords(splitWords);
+    setCurrentWordIndex(-1);
+  }, [currentQuestion.text, isSpeaking]);
+
   // Auto-play when enabled and no initial question is provided
   useEffect(() => {
     if (autoPlay && !initialQuestion) {
@@ -164,6 +170,7 @@ export function useTTS(options: UseTTSOptions = {}): UseTTSReturn {
 
     return () => {
       isMountedRef.current = false;
+      speechSessionIdRef.current += 1;
       TTSService.stop();
       clearHighlightTimers();
     };

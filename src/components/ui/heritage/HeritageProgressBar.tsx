@@ -15,8 +15,10 @@
 import { AppText } from '@/components/ui/AppText';
 import { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { Animated } from '@/tw/animated';
+import { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useHeritageTheme } from '@/theme/heritage';
 
 type HeritageProgressBarProps = {
   /** Progress value (0-1) */

@@ -44,6 +44,11 @@ jest.mock('uuid', () => ({
   v4: jest.fn().mockReturnValue('mock-uuid-1234'),
 }));
 
+jest.mock('drizzle-orm', () => ({
+  eq: jest.fn((a: unknown, b: unknown) => ({ op: 'eq', a, b })),
+  and: jest.fn((...conditions: unknown[]) => ({ op: 'and', conditions })),
+}));
+
 describe('reactionService', () => {
   beforeEach(() => {
     jest.clearAllMocks();

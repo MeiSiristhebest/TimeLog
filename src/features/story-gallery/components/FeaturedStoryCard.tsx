@@ -1,18 +1,19 @@
 import { AppText } from '@/components/ui/AppText';
-import { View, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@/components/ui/Icon';
 import { AudioRecording } from '@/types/entities';
 import { useHeritageTheme } from '@/theme/heritage';
 import { CommentBadge } from './CommentBadge';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { SyncStatusBadge } from './SyncStatusBadge';
+import { Animated } from '@/tw/animated';
+import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import {
   COVER_IMAGES,
   CATEGORY_COVERS,
-  PREVIEW_TEXT_PLACEHOLDER,
 } from '../data/mockStoryData';
-import { mapRawCategoryToFilter } from '../data/mockGalleryData';
+import { CATEGORY_DATA, mapRawCategoryToFilter } from '../data/mockGalleryData';
 import { getQuestionById } from '@/features/recorder/data/topicQuestions';
 
 export interface FeaturedStoryCardProps {
@@ -45,10 +46,10 @@ export function FeaturedStoryCard({
   onOffload,
 }: FeaturedStoryCardProps): JSX.Element {
   const { colors } = useHeritageTheme();
+  const transcription = story.transcription?.trim() ?? '';
 
   // Status
   const isSynced = story.syncStatus === 'synced';
-  const isSyncing = story.syncStatus === 'syncing' || story.syncStatus === 'queued';
   const isDisabled = isOffline && !isPlayable;
 
   // Animations
@@ -67,6 +68,7 @@ export function FeaturedStoryCard({
 
   // Use centralized mapping to match Gallery Filters
   const categoryKey = mapRawCategoryToFilter(rawCategory);
+  const categoryLabel = CATEGORY_DATA.find((item) => item.id === categoryKey)?.label;
 
   // @ts-ignore - indexing mock data
   const coverImage =
@@ -74,8 +76,11 @@ export function FeaturedStoryCard({
       ? { uri: story.coverImagePath }
       : CATEGORY_COVERS[categoryKey] || COVER_IMAGES[index % COVER_IMAGES.length];
 
-  const previewText = PREVIEW_TEXT_PLACEHOLDER;
-  const displayTitle = story.title || question?.text || 'Untitled Story';
+  const previewText =
+    transcription.length > 0
+      ? `${transcription.replace(/\s+/g, ' ').slice(0, 96)}${transcription.length > 96 ? '…' : ''}`
+      : 'No transcript yet';
+  const displayTitle = story.title?.trim() || (categoryLabel ? `${categoryLabel} Story` : 'Untitled Story');
 
   return (
     <View className="relative mb-6 w-full items-center px-4 overflow-visible z-10">
@@ -244,24 +249,12 @@ export function FeaturedStoryCard({
                     <AppText className="text-xs font-medium" style={{ color: colors.textMuted }}>
                       {durationStr}
                     </AppText>
-                    <View className="flex-row items-center gap-1.5">
-                      {isSynced && story.filePath !== 'OFFLOADED' && (
-                        <>
-                          <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-                          <AppText className="text-xs font-medium" style={{ color: colors.textMuted }}>
-                            Saved
-                          </AppText>
-                        </>
-                      )}
-                      {isSyncing && (
-                        <>
-                          <Ionicons name="cloud-outline" size={18} color={colors.disabledText} />
-                          <AppText className="text-xs font-medium" style={{ color: colors.disabledText }}>
-                            Syncing...
-                          </AppText>
-                        </>
-                      )}
-                    </View>
+                    {categoryLabel ? (
+                      <AppText className="text-xs font-medium" style={{ color: colors.textMuted }}>
+                        {categoryLabel}
+                      </AppText>
+                    ) : null}
+                    <SyncStatusBadge status={story.syncStatus} />
                   </View>
                 </View>
               </View>

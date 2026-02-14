@@ -21,8 +21,13 @@ export function useStoryCommentCount(storyId: string | undefined): UseStoryComme
     error,
   } = useQuery<number, Error>({
     queryKey,
-    queryFn: () => getCommentCount(storyId!),
-    enabled: !!storyId,
+    queryFn: () => {
+      if (!storyId) {
+        throw new Error('Story ID is required');
+      }
+      return getCommentCount(storyId);
+    },
+    enabled: Boolean(storyId),
     staleTime: 30 * 1000,
   });
 

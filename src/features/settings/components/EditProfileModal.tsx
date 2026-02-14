@@ -10,7 +10,6 @@ import { useCallback, useEffect, useReducer, useState } from 'react';
 import {
   Modal,
   Platform,
-  Alert,
   View,
   Pressable,
   TextInput,
@@ -87,11 +86,11 @@ export function EditProfileModal({
   const handlePickImage = useCallback(async () => {
     const imagePicker = await loadImagePicker();
     if (!imagePicker) {
-      Alert.alert(
-        'Feature Not Available',
-        'Avatar upload requires a development build. This feature is not available in Expo Go.',
-        [{ text: 'OK' }]
-      );
+      HeritageAlert.show({
+        title: 'Feature Not Available',
+        message: 'Avatar upload requires a development build. This feature is not available in Expo Go.',
+        variant: 'warning',
+      });
       return;
     }
 
@@ -123,7 +122,11 @@ export function EditProfileModal({
         }
       }
     } catch {
-      Alert.alert('Error', 'Could not open image picker.');
+      HeritageAlert.show({
+        title: 'Error',
+        message: 'Could not open image picker.',
+        variant: 'error',
+      });
     }
   }, [onUploadAvatar]);
 
@@ -196,7 +199,17 @@ export function EditProfileModal({
           {/* Avatar */}
           <Pressable onPress={handlePickImage} className="relative mb-2">
             {avatarUri ? (
-              <Image source={{ uri: avatarUri }} className="w-[120px] h-[120px] rounded-full border-4 border-white" />
+              <Image
+                source={{ uri: avatarUri }}
+                style={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: 60,
+                  borderWidth: 4,
+                  borderColor: '#fff',
+                }}
+                contentFit="cover"
+              />
             ) : (
               <View
                 className="w-[120px] h-[120px] rounded-full items-center justify-center"

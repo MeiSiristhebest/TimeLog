@@ -1,7 +1,7 @@
 import { db } from '@/db/client';
 import { storyReactions } from '@/db/schema';
 import { supabase } from '@/lib/supabase';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { v4 as uuid } from 'uuid';
 import { devLog } from '@/lib/devLogger';
 
@@ -166,7 +166,7 @@ export async function syncPendingReactions(): Promise<void> {
   const pendingReactions = await db
     .select()
     .from(storyReactions)
-    .where(eq(storyReactions.syncedAt, null as unknown as number));
+    .where(isNull(storyReactions.syncedAt));
 
   for (const reaction of pendingReactions) {
     try {

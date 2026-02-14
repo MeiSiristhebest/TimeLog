@@ -88,6 +88,7 @@ export function TimelineStoryCard({
       story={story}
       dateObj={dateObj}
       fullDateStr={fullDateStr}
+      durationStr={durationStr}
       isPlayable={isPlayable}
       isOffline={isOffline}
       unreadCommentCount={unreadCommentCount}

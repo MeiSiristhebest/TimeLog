@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { AppState, AppStateStatus, Alert } from 'react-native';
+import { AppState, AppStateStatus } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { devLog } from '@/lib/devLogger';
+import { HeritageAlert } from '@/components/ui/HeritageAlert';
+import { toAcceptInviteRoute } from '@/features/app/navigation/routes';
 
 /**
  * Hook that handles deep linking and clipboard "TaoKouLing" detection for family invites.
@@ -34,7 +36,7 @@ export function useDeepLinkHandler(): void {
       if (cleanedPath === 'accept-invite' && typeof token === 'string' && token.length > 0) {
         if (lastHandledToken.current === token) return true;
         lastHandledToken.current = token;
-        router.replace(`/accept-invite?token=${encodeURIComponent(token)}`);
+        router.replace(toAcceptInviteRoute(token));
         return true;
       }
       return false;
@@ -60,17 +62,20 @@ export function useDeepLinkHandler(): void {
             if (lastHandledToken.current === token) return; // Already handled this token
 
             // Ask user if they want to accept
-            Alert.alert('Family Invite Detected', 'Do you want to join the family account?', [
-              { text: 'Cancel', style: 'cancel' },
-              {
-                text: 'Join',
+            HeritageAlert.show({
+              title: 'Family Invite Detected',
+              message: 'Do you want to join the family account?',
+              variant: 'info',
+              primaryAction: {
+                label: 'Join',
                 onPress: () => {
                   handleUrl(`timelog://accept-invite?token=${token}`);
-                  // Clear clipboard to avoid asking again? Optional.
-                  // Clipboard.setStringAsync('');
                 },
               },
-            ]);
+              secondaryAction: {
+                label: 'Cancel',
+              },
+            });
           }
         } catch (e) {
           devLog.info('[Clipboard] Error reading clipboard', e);

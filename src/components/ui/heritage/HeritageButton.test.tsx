@@ -1,8 +1,10 @@
 import { render } from '@testing-library/react-native';
-import { Text } from 'react-native';
 import { HeritageButton } from './HeritageButton';
 
-const mockAppText = jest.fn(({ children }: { children: string }) => <Text>{children}</Text>);
+const mockAppText = jest.fn(({ children }: { children: string }) => {
+  const { Text } = require('react-native');
+  return <Text>{children}</Text>;
+});
 
 jest.mock('@/components/ui/AppText', () => ({
   AppText: (props: { children: string }) => mockAppText(props),

@@ -37,23 +37,47 @@ interface RawComment {
   user_id: string;
   content: string;
   created_at: string;
-  profiles?: {
-    display_name: string | null;
-  } | null;
+}
+
+interface RawProfile {
+  user_id: string;
+  display_name: string | null;
 }
 
 /**
  * Transforms raw Supabase comment to Comment interface
  */
-function transformComment(raw: RawComment): Comment {
+function transformComment(raw: RawComment, displayNameByUserId: Map<string, string>): Comment {
   return {
     id: raw.id,
     storyId: raw.story_id,
     userId: raw.user_id,
-    userName: raw.profiles?.display_name || 'Family Member',
+    userName: displayNameByUserId.get(raw.user_id) ?? 'Family Member',
     content: raw.content,
     createdAt: new Date(raw.created_at).getTime(),
   };
+}
+
+async function fetchDisplayNamesByUserIds(userIds: string[]): Promise<Map<string, string>> {
+  const uniqueUserIds = Array.from(new Set(userIds.filter((id) => id.trim().length > 0)));
+  if (uniqueUserIds.length === 0) {
+    return new Map<string, string>();
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('user_id, display_name')
+    .in('user_id', uniqueUserIds);
+
+  if (error || !data) {
+    return new Map<string, string>();
+  }
+
+  return new Map(
+    (data as RawProfile[])
+      .filter((item) => item.display_name && item.display_name.trim().length > 0)
+      .map((item) => [item.user_id, item.display_name!.trim()])
+  );
 }
 
 /**
@@ -72,8 +96,7 @@ export async function fetchComments(storyId: string): Promise<Comment[]> {
       story_id,
       user_id,
       content,
-      created_at,
-      profiles:user_id (display_name)
+      created_at
     `
     )
     .eq('story_id', storyId)
@@ -84,7 +107,9 @@ export async function fetchComments(storyId: string): Promise<Comment[]> {
     throw new Error(`Failed to fetch comments: ${error.message}`);
   }
 
-  return (data || []).map((item: any) => transformComment(item as RawComment));
+  const rows = (data || []) as RawComment[];
+  const displayNameByUserId = await fetchDisplayNamesByUserIds(rows.map((item) => item.user_id));
+  return rows.map((item) => transformComment(item, displayNameByUserId));
 }
 
 /**
@@ -129,8 +154,7 @@ export async function postComment(storyId: string, content: string): Promise<Com
       story_id,
       user_id,
       content,
-      created_at,
-      profiles:user_id (display_name)
+      created_at
     `
     )
     .single();
@@ -140,7 +164,8 @@ export async function postComment(storyId: string, content: string): Promise<Com
     throw new Error(`Failed to post comment: ${error.message}`);
   }
 
-  return transformComment(data as RawComment);
+  const displayNameByUserId = await fetchDisplayNamesByUserIds([user.id]);
+  return transformComment(data as RawComment, displayNameByUserId);
 }
 
 /**
@@ -212,15 +237,15 @@ export function subscribeToComments(
               story_id,
               user_id,
               content,
-              created_at,
-              profiles:user_id (display_name)
+              created_at
             `
             )
             .eq('id', payload.new.id)
             .single();
 
           if (data) {
-            onNewComment(transformComment(data as RawComment));
+            const displayNameByUserId = await fetchDisplayNamesByUserIds([(data as RawComment).user_id]);
+            onNewComment(transformComment(data as RawComment, displayNameByUserId));
           }
         } catch {
           // Fallback: use payload data without profile

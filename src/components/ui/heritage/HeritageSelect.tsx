@@ -1,12 +1,11 @@
 import { AppText } from '@/components/ui/AppText';
 import { useState, useCallback, useMemo } from 'react';
-import { View, Pressable, TextInput, FlatList, StyleSheet, Modal } from 'react-native';
-import Animated, {
-  useSharedValue,
+import { View, Pressable, TextInput, FlatList, Modal } from 'react-native';
+import { Animated } from '@/tw/animated';
+import { useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+  withTiming, } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
@@ -159,6 +158,13 @@ export function HeritageSelect({
   const renderOption = useCallback(
     ({ item }: { item: SelectOption }) => {
       const selected = isSelected(item.value);
+      let optionTextColor: string = colors.onSurface;
+      if (selected) {
+        optionTextColor = colors.primary;
+      } else if (item.disabled) {
+        optionTextColor = colors.textMuted;
+      }
+
       return (
         <Pressable
           className={styles.option}
@@ -180,7 +186,7 @@ export function HeritageSelect({
           <AppText
             className={styles.optionLabel}
             style={{
-              color: selected ? colors.primary : (item.disabled ? colors.textMuted : colors.onSurface),
+              color: optionTextColor,
               fontWeight: selected ? '600' : 'normal'
             }}>
             {item.label}

@@ -15,13 +15,14 @@ import { View, ScrollView, Pressable } from 'react-native';
 // Category metadata for display
 export const CATEGORY_METADATA: Record<
     QuestionCategory,
-    { label: string; icon: any; color: string }
+    { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }
 > = {
     [QUESTION_CATEGORIES.GENERAL]: { label: 'General', icon: 'chatbubbles', color: '#90A4AE' },
     [QUESTION_CATEGORIES.CHILDHOOD]: { label: 'Childhood', icon: 'happy', color: '#FF9E80' },
-    [QUESTION_CATEGORIES.FAMILY_HISTORY]: { label: 'Family History', icon: 'people', color: '#80D8FF' },
-    [QUESTION_CATEGORIES.WISDOM]: { label: 'Wisdom', icon: 'bulb', color: '#81C784' },
-    [QUESTION_CATEGORIES.FUN]: { label: 'Fun', icon: 'star', color: '#FFD54F' },
+    [QUESTION_CATEGORIES.FAMILY]: { label: 'Family', icon: 'people', color: '#80D8FF' },
+    [QUESTION_CATEGORIES.CAREER]: { label: 'Career', icon: 'briefcase', color: '#81C784' },
+    [QUESTION_CATEGORIES.HOBBIES]: { label: 'Hobbies', icon: 'color-palette', color: '#FFD54F' },
+    [QUESTION_CATEGORIES.TRAVEL]: { label: 'Travel', icon: 'airplane', color: '#B39DDB' },
 };
 
 export interface CategoryFilterProps {

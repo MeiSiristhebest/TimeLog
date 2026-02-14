@@ -26,15 +26,14 @@
  */
 
 import { AppText } from '@/components/ui/AppText';
-import { useState, useCallback, createContext, useContext, ReactNode, useEffect } from 'react';
-import { Alert, View, Pressable, StyleSheet } from 'react-native';
+import { useState, useCallback, createContext, useContext, ReactNode, useEffect, useMemo } from 'react';
+import { View, Pressable } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
-import Animated, {
-  useSharedValue,
+import { Animated } from '@/tw/animated';
+import { useSharedValue,
   useAnimatedStyle,
   withSequence,
-  withTiming,
-} from 'react-native-reanimated';
+  withTiming, } from 'react-native-reanimated';
 import { HeritageModal } from './HeritageModal';
 import { devLog } from '@/lib/devLogger';
 
@@ -257,13 +256,14 @@ export function HeritageAlertProvider({ children }: { children: ReactNode }): JS
     setTimeout(() => setConfig(null), 250);
   }, []);
 
-  const contextValue = { show, hide };
+  const contextValue = useMemo(() => ({ show, hide }), [show, hide]);
+  const emptyAlertContextValue = useMemo<AlertContextType>(() => ({ show: () => {}, hide: () => {} }), []);
 
   // Register global ref per requirements
   useEffect(() => {
     setGlobalAlertRef(contextValue);
-    return () => setGlobalAlertRef({ show: () => { }, hide: () => { } } as any);
-  }, [show, hide]);
+    return () => setGlobalAlertRef(emptyAlertContextValue);
+  }, [contextValue, emptyAlertContextValue]);
 
   return (
     <AlertContext.Provider value={contextValue}>
@@ -302,9 +302,7 @@ export function setGlobalAlertRef(ref: AlertContextType): void {
 export const HeritageAlert = {
   show: (config: AlertConfig) => {
     if (!globalAlertRef) {
-      devLog.warn('HeritageAlert: No provider found. Falling back to native Alert.');
-      // Fallback to native Alert
-      Alert.alert(config.title, config.message);
+      devLog.error('HeritageAlert: No provider found. Alert suppressed to keep custom UI consistency.');
       return;
     }
     globalAlertRef.show(config);

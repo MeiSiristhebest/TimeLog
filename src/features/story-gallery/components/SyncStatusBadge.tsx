@@ -10,16 +10,15 @@
 
 import { AppText } from '@/components/ui/AppText';
 import { useEffect, useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
-import Animated, {
-  useSharedValue,
+import { Animated } from '@/tw/animated';
+import { useSharedValue,
   useAnimatedStyle,
   withRepeat,
   withTiming,
   Easing,
-  cancelAnimation,
-} from 'react-native-reanimated';
+  cancelAnimation, } from 'react-native-reanimated';
 import type { SyncStatus } from '@/types/entities';
 import { useHeritageTheme } from '@/theme/heritage';
 
@@ -45,7 +44,12 @@ export function SyncStatusBadge({ status, showText = true }: SyncStatusBadgeProp
       local: {
         icon: 'cloud-outline',
         color: colors.warning,
-        text: 'Saved Locally',
+        text: 'Local Only',
+      },
+      local_only: {
+        icon: 'cloud-offline-outline',
+        color: colors.warning,
+        text: 'Local Only',
       },
       queued: {
         icon: 'time-outline',

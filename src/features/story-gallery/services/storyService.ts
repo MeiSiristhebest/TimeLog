@@ -155,7 +155,7 @@ export async function offloadStory(id: string): Promise<boolean> {
 
 /**
  * Permanently delete a story from both local DB and cloud storage.
- * Fixes buggy behavior where audioFileUrl was missing.
+ * Cloud file deletion is queued for offline-safe eventual consistency.
  */
 export async function permanentlyDeleteStory(id: string): Promise<void> {
   try {
@@ -175,65 +175,12 @@ export async function permanentlyDeleteStory(id: string): Promise<void> {
     }
 
     // 2. Queue cloud deletion if synced or previously offloaded
-    // We derive the path strictly from ID to avoid 'audioFileUrl' issues
     if (recording.syncStatus === 'synced' || recording.filePath === 'OFFLOADED') {
-      // Assuming storage path convention is `{userId}/{recordingId}.wav`
-      // We grab userId from recording or fallback if missing (should exist for synced items)
-      if (recording.userId) {
-        const cloudPath = `${recording.userId}/${id}.wav`;
-        // Enqueue a custom 'delete_file' action or similar?
-        // Current syncQueue might not support delete_file directly.
-        // Checking syncQueue.ts... it has 'update_metadata' and 'upload_recording'.
-        // We might need to handle this manually or extend syncQueue.
-        // For now, based on user request "Fix cloud deletion bug", we'll assume we used 'update_metadata' with a delete flag?
-        // Or if the previous code tried to access audioFileUrl, it might have been trying to make a direct call.
-        // User request doesn't explicitly say "Update SyncQueue to support delete".
-        // It says "Fix cloud deletion bug (auto-derive path)".
-        // Let's assume we enqueue a metadata update that signals deletion or handle it.
-        // BUT, standard practice for "Permanently Delete" is usually immediate if online or queue.
-
-        // Since the user mentioned "attempt to access non-existent audioFileUrl",
-        // I will assume there IS mechanism or I should add one.
-        // Let's double check syncQueue capabilities. 
-        // It has `enqueueMetadataUpdate`. Maybe we send `{ deleted: true }` or similar?
-        // Wait, "Cloud Deletion" usually implies removing the file from storage bucket.
-        // If I look at context: "Fix... auto-derive path".
-        // This implies I should call something that takes a path.
-
-        // Let's implement a 'delete_recording' type in SyncQueue?
-        // Or just execute it directly if online? 
-        // The user prompt implies fixing an existing logic.
-        // Since I don't see Delete Logic in SyncQueue...
-        // Perhaps I should just delete from DB and let a separate process handle it?
-        // Or maybe I missed where Delete is handled.
-        // Re-reading SyncQueue (Step 598): explicit types are 'upload_recording', 'update_metadata', 'create_profile'.
-        // No 'delete_file'.
-
-        // Hypothesis: Previous code tried to do it directly in UI or Service?
-        // I will create a method `deleteCloudRecording` in `transport.ts`? 
-        // Or better, just queue a metadata update with `_deleted: true` and have the processor handle it?
-        // But the processor (Store.ts Step 609) only handles 'upload_recording' currently.
-
-        // User instruction: "Fix cloud deletion bug (auto-derive path...)"
-        // I will update DB record to be gone.
-        // And I should try to delete from cloud.
-        // Since queue support is limited, I'll add a direct call helper here or TODO note?
-        // Actually, if I delete from DB, I lose the record.
-        // Let's check `cloudSettingsService` or similar...
-
-        // Let's assume for now we just fix the path derivation logic where it was broken.
-        // Wait, I am WRITING the function now.
-        // So I should define how it works.
-        // I will use `enqueueMetadataUpdate` with a special flag for now, OR valid approach:
-        // Use `syncQueueService.enqueueMetadataUpdate(id, { isDeleted: true })` AND
-        // Ensure the processor later handles it.
-        // BUT since the user specifically talked about "audioFileUrl", 
-        // they probably want me to write code that calculates the path correctly.
-
-        // I will assume I need to extend the Sync Queue or handle it here.
-        // Let's stick to the prompt's simplicity: "Fix... derive path".
-        // I'll add a comment about extending SyncQueue support for delete.
-      }
+      const extension = recording.uploadFormat ?? 'wav';
+      const storagePath =
+        recording.uploadPath ??
+        (recording.userId ? `${recording.userId}/${id}.${extension}` : `${id}.${extension}`);
+      await syncQueueService.enqueueDeleteFile(id, storagePath);
     }
 
     // 3. Delete from local DB (Final step)
@@ -258,22 +205,14 @@ export async function updateStoryMetadata(
     transcription?: string;
     coverImagePath?: string;
     topicId?: string; // For category changes (mapped via topic)
+    startedAt?: number;
   }
 ): Promise<void> {
   try {
-    devLog.warn(`[storyService] Updating metadata for ${id}`, Object.keys(updates));
-
     // 1. Update local SQLite first
     await db
       .update(audioRecordings)
-      .set({
-        ...updates,
-        // If we change metadata, we should sync it.
-        // We do NOT reset syncStatus globally to 'queued' if the FILE is already synced.
-        // We only want to enable metadata sync.
-        // However, existing logic might require queueing.
-        // Let's assume queueing metadata update doesn't require re-uploading the file.
-      })
+      .set({ ...updates })
       .where(eq(audioRecordings.id, id));
 
     // 2. Enqueue cloud sync

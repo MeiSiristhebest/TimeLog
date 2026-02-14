@@ -69,4 +69,15 @@ describe('usePlayerStore', () => {
     expect(playerService.setRate).toHaveBeenCalledWith(1.25);
     expect(result.current.rate).toBe(1.25);
   });
+
+  it('should set output mode', async () => {
+    const { result } = renderHook(() => usePlayerStore());
+
+    await act(async () => {
+      await result.current.setOutputMode('earpiece');
+    });
+
+    expect(playerService.setOutputMode).toHaveBeenCalledWith('earpiece');
+    expect(result.current.outputMode).toBe('earpiece');
+  });
 });

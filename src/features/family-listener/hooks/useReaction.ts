@@ -20,7 +20,7 @@ type UseReactionResult = {
   reaction: UseQueryResult<Reaction | null, Error>['data'];
 };
 
-export function useReaction(storyId: string): UseReactionResult {
+export function useReaction(storyId: string | null): UseReactionResult {
   const queryClient = useQueryClient();
   const userId = useAuthStore((state) => state.sessionUserId);
 
@@ -30,10 +30,10 @@ export function useReaction(storyId: string): UseReactionResult {
   const { data: reaction, isLoading } = useQuery<Reaction | null, Error>({
     queryKey,
     queryFn: () => {
-      if (!userId) return null;
+      if (!userId || !storyId) return null;
       return getReaction(storyId, userId);
     },
-    enabled: !!userId,
+    enabled: Boolean(userId && storyId),
     staleTime: 1000 * 60, // 1 minute
   });
 
@@ -46,6 +46,7 @@ export function useReaction(storyId: string): UseReactionResult {
   >({
     mutationFn: async () => {
       if (!userId) throw new Error('User not authenticated');
+      if (!storyId) throw new Error('Story ID is required');
 
       if (reaction) {
         // Remove existing reaction
@@ -60,7 +61,7 @@ export function useReaction(storyId: string): UseReactionResult {
       // Cancel any outgoing refetches to avoid race conditions
       await queryClient.cancelQueries({ queryKey });
 
-      if (!userId) return { previousReaction: null };
+      if (!userId || !storyId) return { previousReaction: null };
 
       // Snapshot previous value for rollback
       const previousReaction = queryClient.getQueryData<Reaction | null>(queryKey);
@@ -75,7 +76,7 @@ export function useReaction(storyId: string): UseReactionResult {
         return {
           id: 'temp-optimistic',
           storyId,
-          userId: userId!,
+          userId,
           reactionType: 'heart' as const,
           createdAt: Date.now(),
           syncedAt: null,

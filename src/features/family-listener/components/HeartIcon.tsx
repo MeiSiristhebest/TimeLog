@@ -1,11 +1,10 @@
 import React, { useEffect } from 'react';
 import Svg, { Path } from 'react-native-svg';
-import Animated, {
-  useAnimatedStyle,
+import { Animated } from '@/tw/animated';
+import { useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withSequence,
-} from 'react-native-reanimated';
+  withSequence, } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Pressable, View } from 'react-native';
 

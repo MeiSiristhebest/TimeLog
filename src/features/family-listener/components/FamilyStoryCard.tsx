@@ -1,23 +1,18 @@
-/**
- * FamilyStoryCard - Story card for family users viewing senior's stories.
- *
- * Similar to StoryCard but simplified for family view:
- * - No sync status (family only sees synced stories)
- * - No offline indicators (family requires network)
- * - No delete action (family cannot delete senior's stories)
- *
- * Story 4.1: Family Story List (AC: 2)
- */
+import { AppText } from '@/components/ui/AppText';
+import { Ionicons } from '@/components/ui/Icon';
+import { useHeritageTheme } from '@/theme/heritage';
+import React, { forwardRef } from 'react';
+import { Pressable, View, type TouchableOpacityProps } from 'react-native';
+import { Animated } from '@/tw/animated';
+import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
-// ... imports
+import type { FamilyStory } from '../services/familyStoryService';
 
 type FamilyStoryCardProps = Omit<TouchableOpacityProps, 'onPress'> & {
   story: FamilyStory;
   onPress?: () => void;
   onPlay: () => void;
 };
-
-// ... format functions
 
 const ABSOLUTE_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
@@ -55,7 +50,6 @@ export const FamilyStoryCard = forwardRef<View, FamilyStoryCardProps>(
       transform: [{ scale: playScale.value }],
     }));
 
-    // Accessibility label with full context
     const accessibilityLabel = `Story: ${displayTitle}, ${formattedDate}, Duration ${formattedDuration}`;
 
     return (
@@ -76,7 +70,7 @@ export const FamilyStoryCard = forwardRef<View, FamilyStoryCardProps>(
               borderRadius: 16,
               borderWidth: 1,
               padding: 16,
-              backgroundColor: theme.colors.surface, // Surface
+              backgroundColor: theme.colors.surface,
               borderColor: theme.colors.border,
               shadowColor: theme.colors.shadow,
               shadowOffset: { width: 0, height: 2 },
@@ -85,9 +79,8 @@ export const FamilyStoryCard = forwardRef<View, FamilyStoryCardProps>(
               elevation: 2,
             },
             props.style,
-            cardAnimatedStyle
-          ]}
-        >
+            cardAnimatedStyle,
+          ]}>
           <View
             style={{
               flexDirection: 'row',
@@ -95,7 +88,6 @@ export const FamilyStoryCard = forwardRef<View, FamilyStoryCardProps>(
               justifyContent: 'space-between',
               gap: 12,
             }}>
-            {/* Left: Icon + Title + Date + Duration */}
             <View style={{ flex: 1, flexDirection: 'row', gap: 12 }}>
               <View
                 style={{
@@ -122,27 +114,25 @@ export const FamilyStoryCard = forwardRef<View, FamilyStoryCardProps>(
                 <AppText
                   style={{
                     fontSize: 16,
-                    color: `${theme.colors.onSurface}B3`, // 70% opacity
+                    color: `${theme.colors.onSurface}B3`,
                   }}>
                   {formattedDate}
                 </AppText>
               </View>
             </View>
 
-            {/* Right: Duration + Play button */}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <AppText
                 style={{
                   fontSize: 16,
-                  color: `${theme.colors.onSurface}99`, // 60% opacity
+                  color: `${theme.colors.onSurface}99`,
                 }}>
                 {formattedDuration}
               </AppText>
 
-              {/* Play button - 48dp touch target (WCAG AA) */}
               <Pressable
-                onPress={(e) => {
-                  e.stopPropagation(); // Prevent card press
+                onPress={(event) => {
+                  event.stopPropagation();
                   onPlay();
                 }}
                 onPressIn={() => {
@@ -187,13 +177,4 @@ export const FamilyStoryCard = forwardRef<View, FamilyStoryCardProps>(
   }
 );
 
-// displayName for debugging
 FamilyStoryCard.displayName = 'FamilyStoryCard';
-import { AppText } from '@/components/ui/AppText';
-import React, { forwardRef } from 'react';
-import { View, TouchableOpacity, Pressable, type TouchableOpacityProps } from 'react-native';
-import { Ionicons } from '@/components/ui/Icon';
-import type { FamilyStory } from '../services/familyStoryService';
-import { useHeritageTheme } from '../../../theme/heritage';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-

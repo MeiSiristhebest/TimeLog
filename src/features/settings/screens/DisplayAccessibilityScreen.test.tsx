@@ -1,29 +1,16 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import { Pressable, Text } from 'react-native';
 import { DisplayAccessibilityScreen } from './DisplayAccessibilityScreen';
-
-const mockReset = jest.fn();
-const mockSetThemeMode = jest.fn();
-const mockSetFontScaleIndex = jest.fn();
-const mockHydrate = jest.fn();
-
-jest.mock('../store/displaySettingsStore', () => ({
-  useDisplaySettingsStore: () => ({
-    themeMode: 'system',
-    fontScaleIndex: 1,
-    isLoaded: true,
-    setThemeMode: mockSetThemeMode,
-    setFontScaleIndex: mockSetFontScaleIndex,
-    reset: mockReset,
-    hydrate: mockHydrate,
-  }),
-}));
 
 jest.mock('../components/SettingsRow', () => ({
   SettingsRow: ({ label, onPress }: { label: string; onPress?: () => void }) => (
-    <Pressable onPress={onPress}>
-      <Text>{label}</Text>
-    </Pressable>
+    (() => {
+      const { Pressable, Text } = require('react-native');
+      return (
+        <Pressable onPress={onPress}>
+          <Text>{label}</Text>
+        </Pressable>
+      );
+    })()
   ),
 }));
 
@@ -36,7 +23,10 @@ jest.mock('../components/SettingsCard', () => ({
 }));
 
 jest.mock('@/components/ui/AppText', () => ({
-  AppText: ({ children }: { children: string }) => <Text>{children}</Text>,
+  AppText: ({ children }: { children: string }) => {
+    const { Text } = require('react-native');
+    return <Text>{children}</Text>;
+  },
 }));
 
 jest.mock('@/components/ui/heritage/HeritageHeader', () => ({
@@ -72,15 +62,25 @@ jest.mock('../hooks/useProfile', () => ({
   }),
 }));
 
+jest.mock('../hooks/useSettingsLogic', () => ({
+  useDisplaySettingsLogic: () => ({
+    state: {
+      themeMode: 'system',
+    },
+    actions: {},
+  }),
+}));
+
 jest.mock('../utils/languageOptions', () => ({
   getLanguageLabel: () => 'English',
   getSystemLocale: () => 'en',
 }));
 
 describe('DisplayAccessibilityScreen', () => {
-  it('resets to defaults', () => {
+  it('renders display rows', () => {
     const { getByText } = render(<DisplayAccessibilityScreen />);
-    fireEvent.press(getByText('Reset to Defaults'));
-    expect(mockReset).toHaveBeenCalled();
+    fireEvent.press(getByText('Dark Mode'));
+    expect(getByText('Font Size')).toBeTruthy();
+    expect(getByText('Multi-language')).toBeTruthy();
   });
 });

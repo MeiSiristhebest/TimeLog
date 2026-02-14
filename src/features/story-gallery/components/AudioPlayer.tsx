@@ -1,12 +1,13 @@
 import { AppText } from '@/components/ui/AppText';
-import { useEffect } from 'react';
-import { View, ActivityIndicator, Pressable, Text } from 'react-native';
+import { useCallback, useEffect } from 'react';
+import { View, ActivityIndicator, Text, AppState, StyleSheet, TouchableOpacity } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Ionicons } from '@/components/ui/Icon';
 import { usePlayerStore } from '../store/usePlayerStore';
+import type { PlayerOutputMode } from '../services/playerService';
 import { useHeritageTheme } from '@/theme/heritage';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { PlaybackWaveform } from './PlaybackWaveform';
+import { useFocusEffect } from '@react-navigation/native';
 
 function formatTime(millis: number): string {
   const totalSeconds = millis / 1000;
@@ -25,18 +26,37 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
     load,
     togglePlayback,
     seek,
+    reset,
+    outputMode,
+    setOutputMode,
     isPlaying,
+    isTogglingPlayback,
     positionMillis,
     durationMillis,
     isLoading,
     error,
   } = usePlayerStore();
 
-  const scale = useSharedValue(1);
+  useFocusEffect(
+    useCallback(() => {
+      void load(uri);
+      return () => {
+        reset();
+      };
+    }, [uri, load, reset])
+  );
 
   useEffect(() => {
-    load(uri);
-  }, [uri, load]);
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState !== 'active') {
+        reset();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [reset]);
 
   const handleSeek = (value: number) => {
     seek(value);
@@ -47,18 +67,14 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
     seek(Math.max(0, Math.min(newPosition, durationMillis || 0)));
   };
 
-  const playButtonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.92, theme.animation.press);
+  const handleToggleOutputMode = () => {
+    const nextMode: PlayerOutputMode = outputMode === 'speaker' ? 'earpiece' : 'speaker';
+    void setOutputMode(nextMode);
   };
-  const handlePressOut = () => {
-    scale.value = withSpring(1, theme.animation.press);
-  };
+
+  const handleTogglePlayback = useCallback(() => {
+    void togglePlayback();
+  }, [togglePlayback]);
 
   if (error) {
     return (
@@ -106,71 +122,101 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
         />
       </View>
 
-      {/* Controls */}
-      <View className="flex-row items-center justify-between px-6" style={{ marginTop: -18 }}>
-        {/* Skip Back 15s */}
-        <Pressable
-          onPress={() => handleSkip(-15)}
-          className="items-center gap-0.5"
-          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-          <Ionicons name="play-back" size={12} color={theme.colors.textMuted} />
-          <Text
-            style={{
-              color: theme.colors.textMuted,
-              fontSize: 10,
-              fontWeight: '600',
-              letterSpacing: 0,
-              textTransform: 'uppercase',
-            }}>
-            15s
-          </Text>
-        </Pressable>
-
-        {/* Play/Pause */}
-        <AnimatedPressable
-          onPress={togglePlayback}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          className="w-[56px] h-[56px] items-center justify-center rounded-full shadow-lg elevation-8"
+      <View style={styles.outputModeRow}>
+        <TouchableOpacity
+          onPress={handleToggleOutputMode}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={`Switch output mode. Current mode: ${outputMode === 'speaker' ? 'Speaker' : 'Earpiece'}`}
+          hitSlop={10}
           style={[
-            playButtonStyle,
+            styles.outputModeToggle,
             {
-              backgroundColor: theme.colors.primary,
-              shadowColor: theme.colors.primary,
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.3,
-              shadowRadius: 16,
+              backgroundColor: `${theme.colors.surfaceCard}F2`,
+              borderColor: `${theme.colors.textMuted}45`,
             },
           ]}>
-          {isLoading ? (
-            <ActivityIndicator color={theme.colors.onPrimary} size="large" />
-          ) : (
-            <Ionicons
-              name={isPlaying ? 'pause' : 'play'}
-              size={28}
-              color={theme.colors.onPrimary}
-              style={{ marginLeft: isPlaying ? 0 : 4 }}
-            />
-          )}
-        </AnimatedPressable>
+          <Ionicons
+            name={outputMode === 'speaker' ? 'volume-high' : 'phone-portrait'}
+            size={16}
+            color={theme.colors.textMuted}
+          />
+          <Text
+            numberOfLines={1}
+            style={[styles.outputModeToggleLabel, { color: theme.colors.textMuted }]}>
+            {outputMode === 'speaker' ? 'Speaker' : 'Earpiece'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Main Controls */}
+      <View style={styles.controlRow}>
+        {/* Skip Back 15s */}
+        <TouchableOpacity
+          onPress={() => handleSkip(-15)}
+          activeOpacity={0.75}
+          accessibilityLabel="Seek backward 15 seconds"
+          accessibilityRole="button"
+          hitSlop={12}
+          style={[
+            styles.seekButton,
+            {
+              backgroundColor: `${theme.colors.surfaceCard}F2`,
+              borderColor: `${theme.colors.textMuted}40`,
+            },
+          ]}>
+          <Ionicons name="play-back" size={20} color={theme.colors.textMuted} />
+          <Text style={[styles.seekLabel, { color: theme.colors.textMuted }]}>15s</Text>
+        </TouchableOpacity>
+
+        {/* Play/Pause */}
+        <TouchableOpacity
+          onPress={handleTogglePlayback}
+          disabled={isTogglingPlayback}
+          activeOpacity={0.85}
+          accessibilityLabel={isPlaying ? 'Pause playback' : 'Play recording'}
+          accessibilityRole="button"
+          hitSlop={14}
+          style={[
+            styles.playButton,
+            {
+              opacity: isTogglingPlayback ? 0.7 : 1,
+              backgroundColor: theme.colors.primary,
+              shadowColor: theme.colors.primary,
+              borderColor: `${theme.colors.primaryDeep}33`,
+            },
+          ]}>
+          <View style={styles.playButtonInner}>
+            {isLoading ? (
+              <ActivityIndicator color={theme.colors.onPrimary} size="large" />
+            ) : (
+              <Ionicons
+                name={isPlaying ? 'pause' : 'play'}
+                size={34}
+                color={theme.colors.onPrimary}
+                style={{ marginLeft: isPlaying ? 0 : 4 }}
+              />
+            )}
+          </View>
+        </TouchableOpacity>
 
         {/* Skip Forward 15s */}
-        <Pressable
+        <TouchableOpacity
           onPress={() => handleSkip(15)}
-          className="items-center gap-0.5"
-          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-          <Ionicons name="play-forward" size={12} color={theme.colors.textMuted} />
-          <Text
-            style={{
-              color: theme.colors.textMuted,
-              fontSize: 10,
-              fontWeight: '600',
-              letterSpacing: 0,
-              textTransform: 'uppercase',
-            }}>
-            15s
-          </Text>
-        </Pressable>
+          activeOpacity={0.75}
+          accessibilityLabel="Seek forward 15 seconds"
+          accessibilityRole="button"
+          hitSlop={12}
+          style={[
+            styles.seekButton,
+            {
+              backgroundColor: `${theme.colors.surfaceCard}F2`,
+              borderColor: `${theme.colors.textMuted}40`,
+            },
+          ]}>
+          <Ionicons name="play-forward" size={20} color={theme.colors.textMuted} />
+          <Text style={[styles.seekLabel, { color: theme.colors.textMuted }]}>15s</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -178,3 +224,68 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
 
 // Default export for React.lazy() compatibility
 export default AudioPlayer;
+
+const styles = StyleSheet.create({
+  controlRow: {
+    marginTop: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    width: '100%',
+    paddingHorizontal: 8,
+  },
+  seekButton: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    rowGap: 4,
+  },
+  seekLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  playButton: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 9 },
+    shadowOpacity: 0.32,
+    shadowRadius: 16,
+    elevation: 9,
+  },
+  playButtonInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  outputModeRow: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  outputModeToggle: {
+    minWidth: 146,
+    height: 50,
+    borderRadius: 999,
+    borderWidth: 1.3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    paddingHorizontal: 14,
+  },
+  outputModeToggleLabel: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '700',
+    marginLeft: 8,
+    flexShrink: 0,
+  },
+});

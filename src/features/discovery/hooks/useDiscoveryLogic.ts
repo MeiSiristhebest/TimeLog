@@ -13,10 +13,12 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { devLog } from '@/lib/devLogger';
 import type { QuestionCategory } from '@/db/schema/familyQuestions';
 import { QUESTION_CATEGORIES } from '@/db/schema/familyQuestions';
+import { useAuthStore } from '@/features/auth/store/authStore';
 
 export function useDiscoveryLogic() {
   const router = useRouter();
   const theme = useHeritageTheme();
+  const sessionUserId = useAuthStore((state) => state.sessionUserId);
 
   // State
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -35,7 +37,8 @@ export function useDiscoveryLogic() {
         // F3.2: Server-side category filtering (optimized)
         const questions = await fetchDiscoveryQuestions(
           100,
-          selectedCategories.length > 0 ? selectedCategories : undefined
+          selectedCategories.length > 0 ? selectedCategories : undefined,
+          sessionUserId ?? undefined
         );
 
         if (questions.length > 0) {
@@ -53,7 +56,7 @@ export function useDiscoveryLogic() {
       }
     }
     loadQuestions();
-  }, [selectedCategories]); // Re-load when categories change
+  }, [selectedCategories, sessionUserId]); // Re-load when categories or user changes
 
   const currentCard = deck[currentIndex];
 
@@ -69,9 +72,15 @@ export function useDiscoveryLogic() {
 
   // Handlers
   const handleSelectTopic = () => {
+    if (!currentCard) return;
     router.push({
       pathname: '/', // Home tab
-      params: { topicId: currentCard.id },
+      params: {
+        topicId: currentCard.id,
+        topicText: currentCard.text,
+        topicCategory: currentCard.category,
+        topicFamily: currentCard.tags?.includes('family') ? '1' : '0',
+      },
     });
   };
 

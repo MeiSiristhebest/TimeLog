@@ -3,8 +3,8 @@ import { startRecordingStream } from '@/features/recorder/services/recorderServi
 
 jest.mock('@siteed/expo-audio-studio', () => ({
   ExpoAudioStreamModule: {
-    getPermissionsAsync: jest.fn<any>().mockResolvedValue({ granted: false }),
-    requestPermissionsAsync: jest.fn<any>().mockResolvedValue({ granted: false }),
+    getPermissionsAsync: async () => ({ granted: false }),
+    requestPermissionsAsync: async () => ({ granted: false }),
     startRecording: jest.fn(),
     pauseRecording: jest.fn(),
     resumeRecording: jest.fn(),
@@ -16,8 +16,8 @@ jest.mock('@siteed/expo-audio-studio', () => ({
 jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: 'file:///documents/',
   cacheDirectory: 'file:///cache/',
-  getFreeDiskStorageAsync: jest.fn().mockResolvedValue(2 * 1024 * 1024 * 1024),
-  getInfoAsync: jest.fn().mockResolvedValue({ exists: true }),
+  getFreeDiskStorageAsync: async () => 2 * 1024 * 1024 * 1024,
+  getInfoAsync: async () => ({ exists: true }),
 }));
 
 describe('Recorder permissions', () => {

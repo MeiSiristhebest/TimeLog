@@ -1,9 +1,11 @@
 import { render } from '@testing-library/react-native';
-import { Text } from 'react-native';
 import { DataStorageScreen } from './DataStorageScreen';
 
 jest.mock('../components/SettingsRow', () => ({
-  SettingsRow: ({ label }: { label: string }) => <Text>{label}</Text>,
+  SettingsRow: ({ label }: { label: string }) => {
+    const { Text } = require('react-native');
+    return <Text>{label}</Text>;
+  },
 }));
 
 jest.mock('../components/SettingsSection', () => ({
@@ -19,7 +21,10 @@ jest.mock('@/components/ui/heritage/HeritageHeader', () => ({
 }));
 
 jest.mock('@/components/ui/AppText', () => ({
-  AppText: ({ children }: { children: string }) => <Text>{children}</Text>,
+  AppText: ({ children }: { children: string }) => {
+    const { Text } = require('react-native');
+    return <Text>{children}</Text>;
+  },
 }));
 
 jest.mock('../hooks/useCloudSettings', () => ({

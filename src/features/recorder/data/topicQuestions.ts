@@ -235,7 +235,8 @@ export function getRandomQuestion(): TopicQuestion {
  * @returns The question or undefined if not found
  */
 export function getQuestionById(id: string): TopicQuestion | undefined {
-  return TOPIC_QUESTIONS.find((q) => q.id === id);
+  const normalizedId = id.trim().toLowerCase();
+  return TOPIC_QUESTIONS.find((q) => q.id.toLowerCase() === normalizedId);
 }
 
 /**

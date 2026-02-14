@@ -10,17 +10,13 @@ import { Ionicons } from '@/components/ui/Icon';
 import { Link } from 'expo-router';
 import { HeritageButton } from '../../../components/ui/heritage/HeritageButton';
 import { AppText } from '@/components/ui/AppText';
+import { useHeritageTheme } from '@/theme/heritage';
 import React from 'react';
 import { View } from 'react-native';
 
-// Background color constant - matches Record screen
-const BG_COLOR = '#FFFAF5';
-// Icon color - warm terracotta
-const ICON_COLOR = '#C2410C';
-// Circle background - warm terracotta soft (surfaceAccent) to avoid grey
-const CIRCLE_BG = '#FDF2EE';
-
 export function EmptyGallery(): JSX.Element {
+  const { colors } = useHeritageTheme();
+
   return (
     <View
       style={{
@@ -28,7 +24,7 @@ export function EmptyGallery(): JSX.Element {
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 24,
-        backgroundColor: BG_COLOR,
+        backgroundColor: colors.surface,
       }}>
       {/* Illustration Circle - with subtle warm shadow like Record screen */}
       <View
@@ -39,14 +35,14 @@ export function EmptyGallery(): JSX.Element {
           alignItems: 'center',
           justifyContent: 'center',
           marginBottom: 32,
-          backgroundColor: CIRCLE_BG,
-          shadowColor: ICON_COLOR,
+          backgroundColor: colors.surfaceAccent,
+          shadowColor: colors.primary,
           shadowOffset: { width: 0, height: 8 },
           shadowOpacity: 0.1,
           shadowRadius: 24,
           elevation: 4,
         }}>
-        <Ionicons name="book-outline" size={80} color={ICON_COLOR} />
+        <Ionicons name="book-outline" size={80} color={colors.primaryDeep} />
       </View>
 
       <AppText
@@ -57,7 +53,7 @@ export function EmptyGallery(): JSX.Element {
           marginBottom: 12,
           letterSpacing: -0.5,
           fontFamily: 'Fraunces_600SemiBold',
-          color: '#1c1917',
+          color: colors.onSurface,
         }}>
         Your first story is waiting
       </AppText>
@@ -69,7 +65,7 @@ export function EmptyGallery(): JSX.Element {
           lineHeight: 24,
           marginBottom: 40,
           paddingHorizontal: 16,
-          color: '#57534e',
+          color: colors.textMuted,
         }}>
         Capture a memory today to keep it safe forever.
       </AppText>
@@ -79,7 +75,13 @@ export function EmptyGallery(): JSX.Element {
           title="Record a Story"
           variant="primary"
           icon="mic"
-          style={{ width: '100%', maxWidth: 320, height: 56, borderRadius: 16, backgroundColor: '#C05621' }}
+          style={{
+            width: '100%',
+            maxWidth: 320,
+            height: 56,
+            borderRadius: 16,
+            backgroundColor: colors.primary,
+          }}
           onPress={() => { }}
         />
       </Link>

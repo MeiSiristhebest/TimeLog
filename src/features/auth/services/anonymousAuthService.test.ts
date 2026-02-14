@@ -1,5 +1,4 @@
 import { upgradeAnonymousAccount } from './anonymousAuthService';
-import { supabase } from '@/lib/supabase';
 import { getLocalProfile, updateLocalProfile } from '@/features/settings/services/localProfileService';
 import { updateProfile } from '@/features/settings/services/profileService';
 

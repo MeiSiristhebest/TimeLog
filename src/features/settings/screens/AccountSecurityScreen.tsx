@@ -1,19 +1,28 @@
 import { AppText } from '@/components/ui/AppText';
-import { ScrollView, View, ActivityIndicator } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { SettingsRow } from '../components/SettingsRow';
 import { SettingsSection } from '../components/SettingsSection';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useAccountSecurityLogic } from '../hooks/useSettingsLogic';
 import { SETTINGS_STRINGS } from '../data/mockSettingsData';
+import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 
 // STRICT STITCH PROTOCOL: Pure View Component
 export function AccountSecurityScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
 
   // Logic Separation
-  const { isLoading, profileLabel, roleLabel, isSigningOut, confirmSignOut, actions } =
-    useAccountSecurityLogic();
+  const {
+    isLoading,
+    profileLabel,
+    roleLabel,
+    isSigningOut,
+    isDeletingAccount,
+    confirmSignOut,
+    confirmDeleteAccount,
+    actions,
+  } = useAccountSecurityLogic();
 
   const STRINGS = SETTINGS_STRINGS.accountSecurity;
 
@@ -67,17 +76,20 @@ export function AccountSecurityScreen(): JSX.Element {
         </SettingsSection>
 
         {/* Sign Out Group (Action) */}
-        <View style={{ marginTop: 24 }}>
-          <SettingsRow
-            label={STRINGS.sections.signOut.label}
-            destructive
-            showChevron={false}
-            align="center"
+        <View style={{ marginTop: 24, gap: 12, paddingHorizontal: 16 }}>
+          <HeritageButton
+            title={isSigningOut ? 'Signing Out...' : STRINGS.sections.signOut.label}
             onPress={confirmSignOut}
-            isLast
-            rightElement={
-              isSigningOut ? <ActivityIndicator size="small" color={colors.textMuted} /> : null
-            }
+            variant="secondary"
+            fullWidth
+            disabled={isSigningOut}
+          />
+          <HeritageButton
+            title={isDeletingAccount ? 'Deleting Account...' : STRINGS.sections.deleteAccount.label}
+            onPress={confirmDeleteAccount}
+            variant="ghost"
+            fullWidth
+            disabled={isDeletingAccount}
           />
         </View>
 

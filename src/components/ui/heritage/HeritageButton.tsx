@@ -20,19 +20,19 @@
 
 import { AppText } from '@/components/ui/AppText';
 import { useCallback, ReactNode } from 'react';
-import { ActivityIndicator, StyleSheet, ViewStyle, TextStyle, Pressable } from 'react-native';
-import Animated, {
-  useSharedValue,
+import { ActivityIndicator, ViewStyle, TextStyle, Pressable } from 'react-native';
+import { Animated } from '@/tw/animated';
+import { useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
-  useReducedMotion,
-} from 'react-native-reanimated';
+  useReducedMotion, } from 'react-native-reanimated';
 import { Ionicons } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
 import { useHeritageTheme } from '../../../theme/heritage';
 
 type ButtonSize = 'small' | 'medium' | 'large';
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
 
 type HeritageButtonProps = {
   /** Button text */

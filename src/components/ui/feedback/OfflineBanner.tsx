@@ -1,10 +1,11 @@
 import { AppText } from '@/components/ui/AppText';
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import NetInfo from '@react-native-community/netinfo';
 import { Ionicons } from '@/components/ui/Icon';
-import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
+import { Animated } from '@/tw/animated';
+import { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useHeritageTheme } from '@/theme/heritage';
 
 export function OfflineBanner(): JSX.Element | null {

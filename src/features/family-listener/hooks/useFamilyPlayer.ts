@@ -62,7 +62,7 @@ export interface UseFamilyPlayerReturn {
  * @param storyId - The story UUID to play
  * @returns Player state and control functions
  */
-export function useFamilyPlayer(storyId: string): UseFamilyPlayerReturn {
+export function useFamilyPlayer(storyId: string | null): UseFamilyPlayerReturn {
   const [playerState, setPlayerState] = useState<FamilyPlayerState>({
     state: 'idle',
     positionMs: 0,
@@ -73,7 +73,7 @@ export function useFamilyPlayer(storyId: string): UseFamilyPlayerReturn {
 
   // Track signed URL for refresh logic
   const signedUrlRef = useRef<SignedAudioUrl | null>(null);
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Handle status updates from player service
   const handleStatusUpdate = useCallback((status: PlayerStatus) => {
@@ -100,6 +100,15 @@ export function useFamilyPlayer(storyId: string): UseFamilyPlayerReturn {
 
   // Load audio with signed URL
   const load = useCallback(async () => {
+    if (!storyId) {
+      setPlayerState((prev) => ({
+        ...prev,
+        state: 'error',
+        error: 'Story ID is required',
+      }));
+      return;
+    }
+
     try {
       setPlayerState((prev) => ({
         ...prev,
@@ -131,6 +140,7 @@ export function useFamilyPlayer(storyId: string): UseFamilyPlayerReturn {
 
   // Refresh URL if needed before operations
   const ensureValidUrl = useCallback(async (): Promise<boolean> => {
+    if (!storyId) return false;
     if (!signedUrlRef.current) return false;
 
     if (isUrlExpired(signedUrlRef.current.expiresAt)) {
@@ -223,6 +233,7 @@ export function useFamilyPlayer(storyId: string): UseFamilyPlayerReturn {
 
     const checkAndRefreshUrl = async () => {
       if (
+        storyId &&
         signedUrlRef.current &&
         shouldRefreshUrl(signedUrlRef.current.expiresAt) &&
         playerState.state === 'playing'
@@ -238,10 +249,7 @@ export function useFamilyPlayer(storyId: string): UseFamilyPlayerReturn {
     };
 
     // Check every minute
-    refreshIntervalRef.current = setInterval(
-      checkAndRefreshUrl,
-      60000
-    ) as unknown as NodeJS.Timeout;
+    refreshIntervalRef.current = setInterval(checkAndRefreshUrl, 60000);
 
     return () => {
       if (refreshIntervalRef.current) {

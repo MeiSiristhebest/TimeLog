@@ -20,11 +20,12 @@
 
 import { AppText } from '@/components/ui/AppText';
 import { useCallback } from 'react';
-import { View, Pressable, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { View, Pressable, StyleProp, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@/components/ui/Icon';
-import Animated, { useAnimatedStyle, interpolate, SharedValue } from 'react-native-reanimated';
+import { Animated } from '@/tw/animated';
+import { useAnimatedStyle, interpolate, SharedValue } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useHeritageTheme } from '../../../theme/heritage';
 
@@ -91,7 +92,12 @@ export function HeritageHeader({
 
   // Animated styles based on scroll
   const headerBackgroundStyle = useAnimatedStyle(() => {
-    if (!scrollY) return { opacity: transparent ? 0 : 1 };
+    if (!scrollY) {
+      return {
+        opacity: transparent ? 0 : 1,
+        backgroundColor: colors.surface,
+      };
+    }
 
     const opacity = interpolate(
       scrollY.value,

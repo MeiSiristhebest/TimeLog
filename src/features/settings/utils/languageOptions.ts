@@ -58,8 +58,11 @@ export function buildLanguageOptions(locale: string): LanguageOption[] {
   let codes: string[] = [];
 
   try {
-    if (typeof Intl !== 'undefined' && 'supportedValuesOf' in Intl) {
-      codes = (Intl as any).supportedValuesOf('language') as string[];
+    const intlWithSupportedValuesOf = Intl as typeof Intl & {
+      supportedValuesOf?: (key: 'language') => string[];
+    };
+    if (typeof intlWithSupportedValuesOf.supportedValuesOf === 'function') {
+      codes = intlWithSupportedValuesOf.supportedValuesOf('language');
     }
   } catch {
     codes = [];

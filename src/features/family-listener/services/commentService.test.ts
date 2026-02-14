@@ -22,6 +22,14 @@ jest.mock('@/lib/supabase', () => ({
 describe('commentService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (supabase.from as jest.Mock).mockImplementation((table: string) => {
+      if (table === 'profiles') {
+        const mockIn = jest.fn().mockResolvedValue({ data: [], error: null });
+        const mockSelect = jest.fn().mockReturnValue({ in: mockIn });
+        return { select: mockSelect };
+      }
+      return {};
+    });
   });
 
   describe('fetchComments', () => {
@@ -33,7 +41,6 @@ describe('commentService', () => {
           user_id: 'user-1',
           content: 'First comment',
           created_at: '2026-01-15T10:00:00.000Z',
-          profiles: { display_name: 'Alice' },
         },
         {
           id: 'comment-2',
@@ -41,14 +48,25 @@ describe('commentService', () => {
           user_id: 'user-2',
           content: 'Second comment',
           created_at: '2026-01-15T11:00:00.000Z',
-          profiles: { display_name: 'Bob' },
         },
       ];
 
       const mockOrder = jest.fn().mockResolvedValue({ data: mockData, error: null });
       const mockEq = jest.fn().mockReturnValue({ order: mockOrder });
       const mockSelect = jest.fn().mockReturnValue({ eq: mockEq });
-      (supabase.from as jest.Mock).mockReturnValue({ select: mockSelect });
+      const mockProfileIn = jest.fn().mockResolvedValue({
+        data: [
+          { user_id: 'user-1', display_name: 'Alice' },
+          { user_id: 'user-2', display_name: 'Bob' },
+        ],
+        error: null,
+      });
+      const mockProfileSelect = jest.fn().mockReturnValue({ in: mockProfileIn });
+      (supabase.from as jest.Mock).mockImplementation((table: string) => {
+        if (table === 'story_comments') return { select: mockSelect };
+        if (table === 'profiles') return { select: mockProfileSelect };
+        return {};
+      });
 
       const result = await fetchComments('story-123');
 
@@ -68,14 +86,19 @@ describe('commentService', () => {
           user_id: 'user-1',
           content: 'Comment without profile',
           created_at: '2026-01-15T10:00:00.000Z',
-          profiles: null,
         },
       ];
 
       const mockOrder = jest.fn().mockResolvedValue({ data: mockData, error: null });
       const mockEq = jest.fn().mockReturnValue({ order: mockOrder });
       const mockSelect = jest.fn().mockReturnValue({ eq: mockEq });
-      (supabase.from as jest.Mock).mockReturnValue({ select: mockSelect });
+      const mockProfileIn = jest.fn().mockResolvedValue({ data: [], error: null });
+      const mockProfileSelect = jest.fn().mockReturnValue({ in: mockProfileIn });
+      (supabase.from as jest.Mock).mockImplementation((table: string) => {
+        if (table === 'story_comments') return { select: mockSelect };
+        if (table === 'profiles') return { select: mockProfileSelect };
+        return {};
+      });
 
       const result = await fetchComments('story-123');
 
@@ -87,7 +110,10 @@ describe('commentService', () => {
       const mockOrder = jest.fn().mockResolvedValue({ data: null, error: mockError });
       const mockEq = jest.fn().mockReturnValue({ order: mockOrder });
       const mockSelect = jest.fn().mockReturnValue({ eq: mockEq });
-      (supabase.from as jest.Mock).mockReturnValue({ select: mockSelect });
+      (supabase.from as jest.Mock).mockImplementation((table: string) => {
+        if (table === 'story_comments') return { select: mockSelect };
+        return {};
+      });
 
       await expect(fetchComments('story-123')).rejects.toThrow(
         'Failed to fetch comments: Database error'
@@ -98,7 +124,10 @@ describe('commentService', () => {
       const mockOrder = jest.fn().mockResolvedValue({ data: [], error: null });
       const mockEq = jest.fn().mockReturnValue({ order: mockOrder });
       const mockSelect = jest.fn().mockReturnValue({ eq: mockEq });
-      (supabase.from as jest.Mock).mockReturnValue({ select: mockSelect });
+      (supabase.from as jest.Mock).mockImplementation((table: string) => {
+        if (table === 'story_comments') return { select: mockSelect };
+        return {};
+      });
 
       const result = await fetchComments('story-123');
 
@@ -120,13 +149,21 @@ describe('commentService', () => {
         user_id: 'user-123',
         content: 'New comment',
         created_at: '2026-01-15T12:00:00.000Z',
-        profiles: { display_name: 'Test User' },
       };
 
       const mockSingle = jest.fn().mockResolvedValue({ data: mockComment, error: null });
       const mockSelect = jest.fn().mockReturnValue({ single: mockSingle });
       const mockInsert = jest.fn().mockReturnValue({ select: mockSelect });
-      (supabase.from as jest.Mock).mockReturnValue({ insert: mockInsert });
+      const mockProfileIn = jest.fn().mockResolvedValue({
+        data: [{ user_id: 'user-123', display_name: 'Test User' }],
+        error: null,
+      });
+      const mockProfileSelect = jest.fn().mockReturnValue({ in: mockProfileIn });
+      (supabase.from as jest.Mock).mockImplementation((table: string) => {
+        if (table === 'story_comments') return { insert: mockInsert };
+        if (table === 'profiles') return { select: mockProfileSelect };
+        return {};
+      });
 
       const result = await postComment('story-123', 'New comment');
 

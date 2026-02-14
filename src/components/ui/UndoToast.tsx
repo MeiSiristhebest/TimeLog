@@ -1,4 +1,5 @@
-import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
+import { Animated } from '@/tw/animated';
+import { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { CountdownRing } from './CountdownRing';
 import { AppText } from '@/components/ui/AppText';
 import React from 'react';

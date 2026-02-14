@@ -90,7 +90,7 @@ export class RecordingPolicy {
   static canPermanentlyDelete(recording: Recording): boolean {
     if (!recording.isDeleted) return false;
 
-    const deletedAt = (recording as unknown as { props: { deletedAt?: Date } }).props?.deletedAt;
+    const deletedAt = recording.deletedAt;
     if (!deletedAt) return false;
 
     const daysSinceDeleted = (Date.now() - deletedAt.getTime()) / (1000 * 60 * 60 * 24);

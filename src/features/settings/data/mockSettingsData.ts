@@ -102,6 +102,9 @@ export const SETTINGS_STRINGS = {
       signOut: {
         label: 'Sign Out',
       },
+      deleteAccount: {
+        label: 'Delete Account',
+      },
     },
   },
   dataStorage: {

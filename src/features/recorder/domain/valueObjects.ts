@@ -194,6 +194,7 @@ export class FileSize {
  */
 export class SyncStatus {
   static readonly LOCAL = new SyncStatus('local');
+  static readonly LOCAL_ONLY = new SyncStatus('local_only');
   static readonly QUEUED = new SyncStatus('queued');
   static readonly SYNCING = new SyncStatus('syncing');
   static readonly SYNCED = new SyncStatus('synced');
@@ -205,6 +206,8 @@ export class SyncStatus {
     switch (value) {
       case 'local':
         return SyncStatus.LOCAL;
+      case 'local_only':
+        return SyncStatus.LOCAL_ONLY;
       case 'queued':
         return SyncStatus.QUEUED;
       case 'syncing':
@@ -229,6 +232,7 @@ export class SyncStatus {
   get displayName(): string {
     switch (this.value) {
       case 'local':
+      case 'local_only':
         return 'Local Only';
       case 'queued':
         return 'Waiting to Sync';
@@ -244,7 +248,7 @@ export class SyncStatus {
   }
 
   get isLocal(): boolean {
-    return this === SyncStatus.LOCAL;
+    return this === SyncStatus.LOCAL || this === SyncStatus.LOCAL_ONLY;
   }
 
   get isPending(): boolean {

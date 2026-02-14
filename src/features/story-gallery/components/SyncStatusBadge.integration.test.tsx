@@ -21,7 +21,8 @@ jest.mock('react-native-reanimated', () => {
 function getStatusLabel(status: SyncStatus): string {
   switch (status) {
     case 'local':
-      return 'Saved Locally';
+    case 'local_only':
+      return 'Local Only';
     case 'queued':
       return 'Waiting for Network';
     case 'failed':
@@ -37,8 +38,8 @@ describe('SyncStatusBadge Integration Tests', () => {
       const { rerender } = render(<SyncStatusBadge status="local" />);
 
       // Initial state: local
-      expect(screen.getByText('Saved Locally')).toBeTruthy();
-      expect(screen.getByLabelText('Saved Locally')).toBeTruthy();
+      expect(screen.getByText('Local Only')).toBeTruthy();
+      expect(screen.getByLabelText('Local Only')).toBeTruthy();
 
       // Transition to queued (when network detected)
       rerender(<SyncStatusBadge status="queued" />);
@@ -63,7 +64,7 @@ describe('SyncStatusBadge Integration Tests', () => {
       const { rerender, getByLabelText } = render(<SyncStatusBadge status="local" />);
 
       // Each state should have proper accessibility label
-      expect(getByLabelText('Saved Locally')).toBeTruthy();
+      expect(getByLabelText('Local Only')).toBeTruthy();
 
       rerender(<SyncStatusBadge status="queued" />);
       await waitFor(() => {
@@ -85,7 +86,7 @@ describe('SyncStatusBadge Integration Tests', () => {
       const { rerender, getByText } = render(<SyncStatusBadge status="local" />);
 
       // Amber for local
-      expect(StyleSheet.flatten(getByText('Saved Locally').props.style).color).toBe(
+      expect(StyleSheet.flatten(getByText('Local Only').props.style).color).toBe(
         PALETTE.warning
       );
 
@@ -120,7 +121,7 @@ describe('SyncStatusBadge Integration Tests', () => {
       const { rerender } = render(<SyncStatusBadge status="local" />);
 
       // Offline: stays local
-      expect(screen.getByText('Saved Locally')).toBeTruthy();
+      expect(screen.getByText('Local Only')).toBeTruthy();
 
       // Network comes back: queued for upload
       rerender(<SyncStatusBadge status="queued" />);
@@ -187,7 +188,7 @@ describe('SyncStatusBadge Integration Tests', () => {
 
     it('distinguishes locally safe vs cloud backed states visually', () => {
       // Locally safe states: Amber
-      const locallySafe: SyncStatus[] = ['local', 'queued', 'failed'];
+      const locallySafe: SyncStatus[] = ['local', 'local_only', 'queued', 'failed'];
       locallySafe.forEach((status) => {
         const { getByText, unmount } = render(<SyncStatusBadge status={status} />);
         const textElement = getByText(getStatusLabel(status));

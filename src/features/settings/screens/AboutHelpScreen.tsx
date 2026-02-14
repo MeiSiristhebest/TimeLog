@@ -10,8 +10,7 @@ export function AboutHelpScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
 
   // Logic Separation
-  const { state, actions } = useAboutHelpLogic();
-  const { appVersion } = state;
+  const { actions } = useAboutHelpLogic();
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.surfaceDim }}>
@@ -39,19 +38,6 @@ export function AboutHelpScreen(): JSX.Element {
           </View>
         </SettingsSection>
 
-        {/* About Group */}
-        <SettingsSection title={SETTINGS_STRINGS.aboutHelp.about.title}>
-          <View style={{ backgroundColor: colors.surfaceCard }}>
-            <SettingsRow
-              label={SETTINGS_STRINGS.aboutHelp.about.appVersion}
-              value={appVersion}
-              iconName="information-circle-outline"
-              iconColor={colors.textMuted}
-              showChevron={false}
-              isLast
-            />
-          </View>
-        </SettingsSection>
       </ScrollView>
     </View>
   );

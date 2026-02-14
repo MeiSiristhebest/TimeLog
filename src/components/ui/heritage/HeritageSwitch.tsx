@@ -1,8 +1,8 @@
 
 import { useHeritageTheme } from '@/theme/heritage';
 import { AppText } from '@/components/ui/AppText';
-import { Switch, SwitchProps } from 'react-native';
-import { View } from 'react-native';
+import { Switch, SwitchProps , View } from 'react-native';
+
 
 export interface HeritageSwitchProps extends Omit<SwitchProps, 'trackColor' | 'thumbColor'> {
   /** Optional label to display next to switch */

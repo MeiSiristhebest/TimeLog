@@ -1,9 +1,11 @@
 import { render } from '@testing-library/react-native';
-import { Text } from 'react-native';
 import { AccountSecurityScreen } from './AccountSecurityScreen';
 
 jest.mock('../components/SettingsRow', () => ({
-  SettingsRow: ({ label }: { label: string }) => <Text>{label}</Text>,
+  SettingsRow: ({ label }: { label: string }) => {
+    const { Text } = require('react-native');
+    return <Text>{label}</Text>;
+  },
 }));
 
 jest.mock('../components/SettingsSection', () => ({
@@ -16,6 +18,13 @@ jest.mock('../components/SettingsCard', () => ({
 
 jest.mock('@/components/ui/heritage/HeritageHeader', () => ({
   HeritageHeader: () => null,
+}));
+
+jest.mock('@/components/ui/heritage/HeritageButton', () => ({
+  HeritageButton: ({ title }: { title: string }) => {
+    const { Text } = require('react-native');
+    return <Text>{title}</Text>;
+  },
 }));
 
 jest.mock('../hooks/useProfile', () => ({
@@ -37,8 +46,9 @@ jest.mock('@/theme/heritage', () => ({
 }));
 
 describe('AccountSecurityScreen', () => {
-  it('renders sign out row', () => {
+  it('renders sign out and delete-account rows', () => {
     const { getByText } = render(<AccountSecurityScreen />);
     expect(getByText('Sign Out')).toBeTruthy();
+    expect(getByText('Delete Account')).toBeTruthy();
   });
 });

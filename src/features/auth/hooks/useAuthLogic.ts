@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { Share } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -16,74 +16,90 @@ import {
   DeviceSummary,
 } from '../services/deviceCodesService';
 import { signInAnonymously } from '../services/anonymousAuthService';
-import { supabase } from '@/lib/supabase';
+import { useActiveSession } from './useActiveSession';
 import { devLog } from '@/lib/devLogger';
+import { APP_ROUTES } from '@/features/app/navigation/routes';
 
 // Hook for Role Screen Logic
 export function useRoleLogic() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const hasInitializedRef = useRef(false);
+  const { session, refetch: refetchSession } = useActiveSession();
 
   // Constants to avoid magic strings re-use
   const ROLE_STORYTELLER = 'storyteller';
   const ROLE_FAMILY = 'family';
 
   useEffect(() => {
+    if (hasInitializedRef.current) {
+      return;
+    }
+    hasInitializedRef.current = true;
+
+    let mounted = true;
+
     async function checkAuthState() {
       try {
-        // Check for existing session first
-        const { data: { session } } = await supabase.auth.getSession();
+        const rolePromise = getStoredRole();
+        const sessionResult = await refetchSession();
+        const resolvedSession = sessionResult.data ?? session;
+        const role = await rolePromise;
 
-        if (session) {
+        if (resolvedSession) {
           devLog.info('[useRoleLogic] Found existing session, redirecting to app');
-          const role = await getStoredRole();
-
           if (role === ROLE_STORYTELLER) {
-            router.replace('/device-code');
+            router.replace(APP_ROUTES.DEVICE_CODE);
           } else {
-            router.replace('/(tabs)');
+            router.replace(APP_ROUTES.TABS);
           }
           return;
         }
 
         // No session, check stored role for routing
-        const role = await getStoredRole();
         if (role === ROLE_STORYTELLER) {
-          router.replace('/device-code');
+          router.replace(APP_ROUTES.DEVICE_CODE);
           return;
         }
         if (role === ROLE_FAMILY) {
-          router.replace('/(tabs)');
+          router.replace(APP_ROUTES.TABS);
           return;
         }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     }
 
-    checkAuthState();
-  }, []);
+    void checkAuthState();
 
-  const handleSelect = async (role: string) => {
+    return () => {
+      mounted = false;
+    };
+  }, [router, refetchSession, session]);
+
+  const handleSelect = useCallback(async (role: string) => {
     try {
       await setStoredRole(role);
 
       if (role === ROLE_STORYTELLER) {
-        // Check if user already has a session
-        const { data: { session } } = await supabase.auth.getSession();
+        // Re-fetch session to avoid stale reads during role switching.
+        const latestSessionResult = await refetchSession();
+        const resolvedSession = latestSessionResult.data ?? session;
 
-        if (!session) {
+        if (!resolvedSession) {
           // Auto sign in anonymously for storytellers (only if no session exists)
           devLog.info('[useRoleLogic] Signing in storyteller anonymously');
           await signInAnonymously();
         } else {
-          devLog.info('[useRoleLogic] Using existing session:', session.user.id);
+          devLog.info('[useRoleLogic] Using existing session:', resolvedSession.user.id);
         }
 
-        router.replace('/device-code');
+        router.replace(APP_ROUTES.DEVICE_CODE);
       } else {
         // Family users need to login
-        router.replace('/(tabs)');
+        router.replace(APP_ROUTES.TABS);
       }
     } catch (error) {
       devLog.error('[useRoleLogic] Failed to handle role selection:', error);
@@ -93,13 +109,13 @@ export function useRoleLogic() {
         variant: 'error',
       });
     }
-  };
+  }, [refetchSession, router, session]);
 
   const handleBack = () => {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/welcome');
+      router.replace(APP_ROUTES.ROOT);
     }
   };
 
@@ -179,7 +195,7 @@ export function useDeviceCodeLogic() {
   useEffect(() => {
     getStoredRole().then((role) => {
       if (role !== 'storyteller') {
-        router.replace('/role');
+        router.replace(APP_ROUTES.ROLE);
       }
     });
   }, [router]);
@@ -204,12 +220,12 @@ export function useDeviceCodeLogic() {
   }, [loadCode]);
 
   const handleReady = () => {
-    router.replace('/(tabs)');
+    router.replace(APP_ROUTES.TABS);
   };
 
   const handleBack = () => {
     if (router.canGoBack()) router.back();
-    else router.replace('/role');
+    else router.replace(APP_ROUTES.ROLE);
   };
 
   const formattedCode = codeData
