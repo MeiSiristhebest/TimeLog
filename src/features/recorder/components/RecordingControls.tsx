@@ -77,17 +77,7 @@ export function RecordingControls({
     <View style={styles.controlsRow}>
       {/* 1. Pause / Resume */}
       <View style={styles.controlItem}>
-        <View
-          style={[
-            styles.actionOuterRing,
-            {
-              width: ACTION_OUTER_SIZE,
-              height: ACTION_OUTER_SIZE,
-              borderRadius: ACTION_OUTER_SIZE / 2,
-              borderColor: `${colors.primaryDeep}55`,
-              backgroundColor: isDark ? `${colors.primaryDeep}1A` : `${colors.primaryDeep}0A`,
-            },
-          ]}>
+        <View style={styles.buttonWrapper}>
           <Pressable
             onPress={() => {
               triggerHaptic.selection();
@@ -99,29 +89,41 @@ export function RecordingControls({
             }}
             disabled={disabled}
             style={({ pressed }) => [
-              styles.roundButton,
+              styles.actionOuterRing,
               {
-                width: ACTION_BUTTON_SIZE,
-                height: ACTION_BUTTON_SIZE,
-                backgroundColor: colors.primarySoft,
-                borderWidth: 2,
-                borderColor: colors.primaryDeep,
-                transform: [{ scale: pressed && !disabled ? 0.94 : 1 }],
+                width: ACTION_OUTER_SIZE,
+                height: ACTION_OUTER_SIZE,
+                borderRadius: ACTION_OUTER_SIZE / 2,
+                borderColor: `${colors.primaryDeep}55`,
+                backgroundColor: isDark ? `${colors.primaryDeep}1A` : `${colors.primaryDeep}0A`,
                 opacity: disabled ? 0.4 : 1,
-                shadowColor: colors.primaryDeep,
-                shadowOpacity: isDark ? 0.4 : 0.18,
-                shadowRadius: 10,
-                shadowOffset: { width: 0, height: 4 },
               },
-            ]}
-            accessibilityLabel={isPaused ? 'Resume' : 'Pause'}
-            accessibilityRole="button">
-            <Ionicons
-              name={isPaused ? 'play' : 'pause'}
-              size={34}
-              color={colors.primaryDeep}
-              style={{ marginLeft: isPaused ? 4 : 0 }}
-            />
+            ]}>
+            {({ pressed }) => (
+              <View
+                style={[
+                  styles.roundButton,
+                  {
+                    width: ACTION_BUTTON_SIZE,
+                    height: ACTION_BUTTON_SIZE,
+                    backgroundColor: colors.primarySoft,
+                    borderWidth: 2,
+                    borderColor: colors.primaryDeep,
+                    transform: [{ scale: pressed && !disabled ? 0.94 : 1 }],
+                    shadowColor: colors.primaryDeep,
+                    shadowOpacity: isDark ? 0.4 : 0.18,
+                    shadowRadius: 10,
+                    shadowOffset: { width: 0, height: 4 },
+                  },
+                ]}>
+                <Ionicons
+                  name={isPaused ? 'play' : 'pause'}
+                  size={34}
+                  color={colors.primaryDeep}
+                  style={{ marginLeft: isPaused ? 4 : 0 }}
+                />
+              </View>
+            )}
           </Pressable>
         </View>
         <AppText style={[styles.label, { color: colors.primaryDeep }]}>
@@ -131,25 +133,27 @@ export function RecordingControls({
 
       {/* 2. Hold to Finish - Prominent */}
       <View style={styles.controlItem}>
-        <HoldToStopButton
-          onHoldComplete={() => {
-            if (disabled) return;
-            triggerHaptic.success();
-            onStop();
-          }}
-          size={ACTION_BUTTON_SIZE}
-          holdDurationMs={700}
-          buttonColor={isDark ? `${colors.surfaceCard}F0` : '#FFF8F5'}
-          iconColor={colors.error}
-          progressColor={colors.error}
-          trackColor={isDark ? `${colors.error}66` : `${colors.error}4D`}
-          ringStrokeWidth={6}
-          ringPadding={ACTION_RING_PADDING}
-          buttonBorderColor={colors.error}
-          buttonBorderWidth={2}
-          accessibilityLabel="Hold to finish recording"
-          disabled={disabled}
-        />
+        <View style={styles.buttonWrapper}>
+          <HoldToStopButton
+            onHoldComplete={() => {
+              if (disabled) return;
+              triggerHaptic.success();
+              onStop();
+            }}
+            size={ACTION_BUTTON_SIZE}
+            holdDurationMs={700}
+            buttonColor={isDark ? `${colors.surfaceCard}F0` : '#FFF8F5'}
+            iconColor={colors.error}
+            progressColor={colors.error}
+            trackColor={isDark ? `${colors.error}66` : `${colors.error}4D`}
+            ringStrokeWidth={6}
+            ringPadding={ACTION_RING_PADDING}
+            buttonBorderColor={colors.error}
+            buttonBorderWidth={2}
+            accessibilityLabel="Hold to finish recording"
+            disabled={disabled}
+          />
+        </View>
         <AppText style={[styles.label, { color: colors.error, fontWeight: '700' }]}>
           Hold to End
         </AppText>
@@ -174,6 +178,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     rowGap: 12,
     minWidth: ACTION_OUTER_SIZE + 8,
+  },
+  buttonWrapper: {
+    width: ACTION_OUTER_SIZE,
+    height: ACTION_OUTER_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionOuterRing: {
     alignItems: 'center',

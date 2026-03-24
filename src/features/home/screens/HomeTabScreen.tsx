@@ -44,6 +44,7 @@ export default function HomeTabScreen(): JSX.Element {
     activities,
     hasUnread,
     isOnline,
+    isRecordAllowed,
     recordingMode,
     canEnableAiMode,
     cloudDialogMode,
@@ -56,11 +57,34 @@ export default function HomeTabScreen(): JSX.Element {
     isPauseTransitioning,
     isStartingRecording,
   } = state;
+
   const promptText = currentQuestion?.text || HOME_STRINGS.questionCard.defaultQuestion;
   const renderedWords = useMemo(
     () => (words.length > 0 ? words : promptText.split(/\s+/).filter(Boolean)),
     [words, promptText]
   );
+
+  if (!isRecordAllowed) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.surface }]}>
+        <View style={styles.blockedContainer}>
+          <Ionicons name="headset" size={56} color={colors.primary} />
+          <AppText style={[styles.blockedTitle, { color: colors.onSurface }]}>
+            Listener Mode
+          </AppText>
+          <AppText style={[styles.blockedBody, { color: colors.textMuted }]}>
+            Recording is unavailable for family listeners. Open the Listen tab to continue.
+          </AppText>
+          <HeritageButton
+            title="Open Listen"
+            onPress={actions.navigateToFamilyTab}
+            variant="primary"
+            icon="headset"
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // -- Views --
 
@@ -426,5 +450,23 @@ const styles = StyleSheet.create({
     marginTop: 16,
     minHeight: 24,
     textAlign: 'center',
+  },
+  blockedContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    gap: 16,
+  },
+  blockedTitle: {
+    fontFamily: 'Fraunces_600SemiBold',
+    fontSize: 30,
+    textAlign: 'center',
+  },
+  blockedBody: {
+    fontSize: 17,
+    lineHeight: 26,
+    textAlign: 'center',
+    maxWidth: 360,
   },
 });

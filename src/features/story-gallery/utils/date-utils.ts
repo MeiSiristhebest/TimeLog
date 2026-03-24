@@ -13,7 +13,7 @@ export function formatDuration(ms: number): string {
  * Format date to English absolute date format.
  * e.g., "January 14, 2026 at 3:00 PM"
  */
-const DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
+const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
   month: 'long',
   day: 'numeric',

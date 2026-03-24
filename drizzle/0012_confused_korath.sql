@@ -12,7 +12,7 @@ CREATE TABLE `local_profiles` (
 	`updated_at` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `transcript_segments` (
+CREATE TABLE IF NOT EXISTS `transcript_segments` (
 	`id` text PRIMARY KEY NOT NULL,
 	`story_id` text NOT NULL,
 	`segment_index` integer NOT NULL,

@@ -311,7 +311,7 @@ export default function StoryDetailScreen(): JSX.Element {
         }}>
         {/* Audio Player */}
         <View style={{ marginBottom: 24 }}>
-          <AudioPlayer uri={story.filePath} />
+          <AudioPlayer uri={story.filePath} fallbackDurationMs={story.durationMs} />
         </View>
 
         {/* Action Buttons */}
@@ -434,31 +434,37 @@ function TranscriptBlock({
   theme: HeritageTheme;
 }): JSX.Element {
   const style = getSpeakerStyle(entry.speaker, theme);
+  const isAgent = entry.speaker === 'agent';
 
   return (
     <View
       style={{
+        alignSelf: isAgent ? 'flex-start' : 'flex-end',
+        maxWidth: '85%',
         paddingHorizontal: 16,
         paddingVertical: 14,
-        borderRadius: 14,
+        borderRadius: 20,
         backgroundColor: style.backgroundColor,
+        borderBottomLeftRadius: isAgent ? 4 : 20,
+        borderBottomRightRadius: !isAgent ? 4 : 20,
       }}>
       <AppText
         style={{
           color: style.labelColor,
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: '700',
-          letterSpacing: 0.2,
-          marginBottom: 8,
+          letterSpacing: 0.5,
+          marginBottom: 6,
           textTransform: 'uppercase',
+          alignSelf: isAgent ? 'flex-start' : 'flex-end',
         }}>
         {style.label}
       </AppText>
       <AppText
         style={{
-          fontSize: 20,
+          fontSize: 18,
           fontFamily: 'System',
-          lineHeight: 32,
+          lineHeight: 28,
           color: style.textColor,
         }}>
         {entry.text}

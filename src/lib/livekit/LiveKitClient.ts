@@ -43,7 +43,7 @@ export class LiveKitClient {
       // Optimize for voice (not video)
       adaptiveStream: true,
       dynacast: true,
-      
+
       // Audio settings for elderly users
       audioCaptureDefaults: {
         autoGainControl: true,
@@ -85,17 +85,39 @@ export class LiveKitClient {
   }
 
   /**
-   * Enable microphone (LiveKit streaming path)
+   * Start microphone hardware and create the initial track.
+   * This should only be called once when the session enters 'connected' state.
    */
-  async enableMicrophone(): Promise<void> {
+  async startMicrophoneHardware(): Promise<void> {
+    console.log('[LiveKitClient] Initializing microphone hardware');
     await this.room.localParticipant.setMicrophoneEnabled(true);
+    console.log('[LiveKitClient] Microphone hardware initialized');
   }
 
   /**
-   * Disable microphone
+   * Enable microphone (Soft Unmute)
+   */
+  async enableMicrophone(): Promise<void> {
+    console.log('[LiveKitClient] Soft Unmuting microphone tracks');
+    this.room.localParticipant.audioTrackPublications.forEach((pub) => {
+      if (pub.audioTrack) {
+        void pub.audioTrack.unmute();
+      }
+    });
+    console.log('[LiveKitClient] Microphone soft unmuted');
+  }
+
+  /**
+   * Disable microphone (Soft Mute)
    */
   async disableMicrophone(): Promise<void> {
-    await this.room.localParticipant.setMicrophoneEnabled(false);
+    console.log('[LiveKitClient] Soft Muting microphone tracks');
+    this.room.localParticipant.audioTrackPublications.forEach((pub) => {
+      if (pub.audioTrack) {
+        void pub.audioTrack.mute();
+      }
+    });
+    console.log('[LiveKitClient] Microphone soft muted');
   }
 
   /**
@@ -123,7 +145,7 @@ export class LiveKitClient {
     };
 
     this.on('trackSubscribed', handler);
-    
+
     return () => this.off('trackSubscribed', handler);
   }
 

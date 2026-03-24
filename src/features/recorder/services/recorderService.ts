@@ -6,7 +6,7 @@ import {
 } from '@siteed/expo-audio-studio';
 import { LegacyEventEmitter, type EventSubscription } from 'expo-modules-core';
 import { eq } from 'drizzle-orm';
-import { DeviceEventEmitter } from 'react-native';
+import { DeviceEventEmitter, PermissionsAndroid, Platform } from 'react-native';
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
 import { generateId } from '@/utils/id';
@@ -61,6 +61,7 @@ export type RecordingHandle = {
 };
 
 type RecordingStreamOptions = {
+  recordingId?: string;
   topicId?: string;
   userId?: string;
   deviceId?: string;
@@ -173,11 +174,49 @@ export class InsufficientStorageError extends Error {
 
 async function ensureRecordingPermission(): Promise<boolean> {
   ensureAudioModuleReady();
+
+  if (Platform.OS === 'android') {
+    try {
+      // Direct check using React Native's standard PermissionsAndroid
+      const hasPermission = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
+      );
+      devLog.info('[RecorderService] PermissionsAndroid check result:', hasPermission);
+
+      if (hasPermission) return true;
+
+      const result = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        {
+          title: 'Microphone Permission',
+          message: 'TimeLog needs access to your microphone to record your stories.',
+          buttonNeutral: 'Ask Me Later',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
+        }
+      );
+      devLog.info('[RecorderService] PermissionsAndroid request result:', result);
+
+      if (result === PermissionsAndroid.RESULTS.GRANTED) {
+        return true;
+      }
+    } catch (err) {
+      devLog.warn('[RecorderService] PermissionsAndroid fail:', err);
+    }
+  }
+
+  // Fallback or iOS check using the library's own module
   const result = await ExpoAudioStreamModule.getPermissionsAsync();
-  if (result.granted) return true;
+  devLog.info('[RecorderService] ExpoAudioStreamModule getPermissions result:', result);
+
+  const isGranted = result?.granted === true || result?.status === 'granted';
+  if (isGranted) return true;
 
   const requestResult = await ExpoAudioStreamModule.requestPermissionsAsync();
-  if (!requestResult.granted) {
+  devLog.info('[RecorderService] ExpoAudioStreamModule requestPermissions result:', requestResult);
+
+  const isRequestGranted = requestResult?.granted === true || requestResult?.status === 'granted';
+  if (!isRequestGranted) {
     throw new Error('Microphone permission is required to record.');
   }
   return true;
@@ -286,6 +325,7 @@ export async function ensureSufficientDisk(): Promise<number> {
 }
 
 export async function prepareRecordingTarget(params?: {
+  id?: string;
   topicId?: string;
   userId?: string;
   deviceId?: string;
@@ -293,7 +333,7 @@ export async function prepareRecordingTarget(params?: {
   await ensureSufficientDisk();
   await ensureRecordingsDir();
 
-  const id = generateId();
+  const id = params?.id ?? generateId();
   const fileName = `rec_${id}.wav`;
   const filePath = `${getRecordingsDir()}${fileName}`;
 
@@ -335,6 +375,14 @@ export async function finalizeRecordingMetadata(
   const sizeBytes = metadata.sizeBytes ?? (info.exists ? (info.size ?? 0) : 0);
   const checksumMd5 = metadata.checksumMd5 ?? (info.exists ? (info.md5 ?? null) : null);
 
+  devLog.info('[RecorderService] Finalizing metadata:', {
+    id: metadata.id,
+    durationMs,
+    sizeBytes,
+    exists: info.exists,
+    filePath: metadata.filePath
+  });
+
   await db
     .update(audioRecordings)
     .set({
@@ -354,7 +402,15 @@ export async function startRecordingStream(
   ensureAudioModuleReady();
   await ensureRecordingPermission();
   const startedAt = new Date();
-  const metadata = { ...(await prepareRecordingTarget(params)), startedAt };
+  const metadata = {
+    ...(await prepareRecordingTarget({
+      id: params?.recordingId,
+      topicId: params?.topicId,
+      userId: params?.userId,
+      deviceId: params?.deviceId,
+    })),
+    startedAt
+  };
 
   let isCurrentlyPaused = false;
   let isStopped = false;
@@ -496,12 +552,12 @@ export async function startRecordingStream(
     ios: {
       audioSession: {
         category: 'PlayAndRecord',
-        mode: 'VoiceChat',
+        mode: 'Default', // Match audioSession.ts to avoid conflicts
         categoryOptions: ['DefaultToSpeaker', 'AllowBluetooth', 'AllowBluetoothA2DP'],
       },
     },
     android: {
-      audioFocusStrategy: 'communication',
+      audioFocusStrategy: 'none', // Let AudioSession.ts manage focus
     },
     onRecordingInterrupted: (event: RecordingInterruptionEvent) => {
       isCurrentlyPaused = event.isPaused;
@@ -565,7 +621,9 @@ export async function startRecordingStream(
       analysisSubscription.remove();
       analysisSubscription = null;
     }
+    devLog.info('[RecorderService] Stopping native recording...');
     const result = await ExpoAudioStreamModule.stopRecording();
+    devLog.info('[RecorderService] Native stop result:', result);
 
     const endedAt = new Date();
 

@@ -15,14 +15,14 @@ import { View, ScrollView, Pressable } from 'react-native';
 // Category metadata for display
 export const CATEGORY_METADATA: Record<
     QuestionCategory,
-    { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }
+    { label: string; icon: keyof typeof Ionicons.glyphMap; colorKey: string }
 > = {
-    [QUESTION_CATEGORIES.GENERAL]: { label: 'General', icon: 'chatbubbles', color: '#90A4AE' },
-    [QUESTION_CATEGORIES.CHILDHOOD]: { label: 'Childhood', icon: 'happy', color: '#FF9E80' },
-    [QUESTION_CATEGORIES.FAMILY]: { label: 'Family', icon: 'people', color: '#80D8FF' },
-    [QUESTION_CATEGORIES.CAREER]: { label: 'Career', icon: 'briefcase', color: '#81C784' },
-    [QUESTION_CATEGORIES.HOBBIES]: { label: 'Hobbies', icon: 'color-palette', color: '#FFD54F' },
-    [QUESTION_CATEGORIES.TRAVEL]: { label: 'Travel', icon: 'airplane', color: '#B39DDB' },
+    [QUESTION_CATEGORIES.GENERAL]: { label: 'General', icon: 'chatbubbles', colorKey: 'textMuted' },
+    [QUESTION_CATEGORIES.CHILDHOOD]: { label: 'Childhood', icon: 'happy', colorKey: 'amberCustom' },
+    [QUESTION_CATEGORIES.FAMILY]: { label: 'Family', icon: 'people', colorKey: 'primary' },
+    [QUESTION_CATEGORIES.CAREER]: { label: 'Career', icon: 'briefcase', colorKey: 'sageGreen' },
+    [QUESTION_CATEGORIES.HOBBIES]: { label: 'Hobbies', icon: 'color-palette', colorKey: 'blueAccent' },
+    [QUESTION_CATEGORIES.TRAVEL]: { label: 'Travel', icon: 'airplane', colorKey: 'primaryMuted' },
 };
 
 export interface CategoryFilterProps {
@@ -43,17 +43,35 @@ export function CategoryFilter({ selectedCategories, onCategoryToggle }: Categor
     const categories = Object.keys(CATEGORY_METADATA) as QuestionCategory[];
 
     return (
-        <View className="py-3">
+        <View style={{ backgroundColor: colors.surfaceDim, paddingBottom: 12 }}>
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
-                className="flex-grow-0">
-                {categories.map((category) => {
+                contentContainerStyle={{
+                    paddingHorizontal: 24,
+                    alignItems: 'center',
+                }}>
+                {categories.map((category, index) => {
                     const meta = CATEGORY_METADATA[category];
                     const isSelected =
                         selectedCategories.includes(category) ||
                         (isAllSelected && category === QUESTION_CATEGORIES.GENERAL);
+
+                    // Dynamic mapped icon colors
+                    const iconColor =
+                        meta.colorKey === 'textMuted'
+                            ? colors.textMuted
+                            : meta.colorKey === 'primary'
+                                ? colors.primary
+                                : meta.colorKey === 'blueAccent'
+                                    ? colors.blueAccent
+                                    : meta.colorKey === 'amberCustom'
+                                        ? colors.amberCustom
+                                        : meta.colorKey === 'sageGreen'
+                                            ? colors.sageGreen
+                                            : meta.colorKey === 'primaryMuted'
+                                                ? colors.primaryMuted
+                                                : colors.textMuted;
 
                     return (
                         <Pressable
@@ -62,30 +80,38 @@ export function CategoryFilter({ selectedCategories, onCategoryToggle }: Categor
                             accessibilityRole="button"
                             accessibilityLabel={meta.label}
                             accessibilityState={{ selected: isSelected }}
-                            className="flex-row items-center px-5 py-3.5 rounded-full border-2 gap-2.5 min-h-[56px] shadow-sm elevation-3"
-                            style={({ pressed }) => [
+                            style={[
                                 {
-                                    backgroundColor: isSelected ? meta.color : colors.surface,
-                                    borderColor: isSelected ? meta.color : colors.border,
-                                    opacity: pressed ? 0.7 : 1,
-                                    transform: [{ scale: pressed ? 0.96 : 1 }],
-                                    shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 2 },
-                                    shadowOpacity: 0.1,
-                                    shadowRadius: 4,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    borderRadius: 999,
+                                    borderWidth: 1,
+                                    paddingHorizontal: 18,
+                                    paddingVertical: 10,
                                 },
+                                isSelected
+                                    ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                                    : { backgroundColor: colors.surfaceCard, borderColor: colors.border },
+                                { marginRight: index === categories.length - 1 ? 0 : 12, minHeight: 44 },
                             ]}>
-                            <Ionicons
-                                name={meta.icon}
-                                size={24}
-                                color={isSelected ? '#000' : colors.textMuted}
-                            />
+                            {meta.icon && (
+                                <Ionicons
+                                    name={meta.icon}
+                                    size={16}
+                                    color={isSelected ? colors.onPrimary : iconColor}
+                                    style={{ marginRight: 6 }}
+                                />
+                            )}
                             <AppText
-                                className="text-lg tracking-wide"
-                                style={{
-                                    color: isSelected ? '#000' : colors.textMuted,
-                                    fontWeight: isSelected ? '700' : '600',
-                                }}>
+                                style={[
+                                    {
+                                        fontSize: 15,
+                                        lineHeight: 18,
+                                        fontWeight: '600',
+                                        letterSpacing: 0.2,
+                                    },
+                                    isSelected ? { color: colors.onPrimary } : { color: colors.onSurface },
+                                ]}>
                                 {meta.label}
                             </AppText>
                         </Pressable>

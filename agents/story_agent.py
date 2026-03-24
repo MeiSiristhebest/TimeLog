@@ -29,7 +29,7 @@ VERTEX_PROJECT_ID = os.getenv("VERTEX_PROJECT_ID") or os.getenv("GOOGLE_CLOUD_PR
 VERTEX_LOCATION = os.getenv("VERTEX_LOCATION") or os.getenv("GOOGLE_CLOUD_LOCATION", "global")
 MIN_SILENCE_DURATION = float(os.getenv("AGENT_MIN_SILENCE_DURATION", "3.0"))
 LANGUAGE = os.getenv("AGENT_LANGUAGE", "multi")
-TTS_MODEL = os.getenv("AGENT_TTS_MODEL", "aura-asteria-en")
+TTS_MODEL = os.getenv("AGENT_TTS_MODEL", "aura-2-asteria-en")
 LLM_MODEL = os.getenv("AGENT_LLM_MODEL", "gemini-2.5-flash")
 STT_MODEL = os.getenv("AGENT_STT_MODEL", "nova-3")
 

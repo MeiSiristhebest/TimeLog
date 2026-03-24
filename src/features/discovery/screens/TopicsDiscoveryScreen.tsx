@@ -7,7 +7,7 @@ import { useDiscoveryLogic } from '@/features/discovery/hooks/useDiscoveryLogic'
 import { CategoryFilter } from '@/features/discovery/components/CategoryFilter';
 import { AppText } from '@/components/ui/AppText';
 import { Image } from 'expo-image';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, ScrollView } from 'react-native';
 import { useIsTopicAnswered } from '@/features/recorder/hooks/useAnsweredTopics';
 import {
   DISCOVERY_STRINGS,
@@ -86,14 +86,17 @@ export default function TopicsDiscoveryScreen(): JSX.Element {
               <View style={[styles.iconCircle, { backgroundColor: `${meta.color}15` }]}>
                 <Ionicons
                   name={meta.icon as keyof typeof Ionicons.glyphMap}
-                  size={40}
+                  size={28}
                   color={meta.color}
                 />
               </View>
             </View>
 
             {/* Middle: Content */}
-            <View style={styles.cardContent}>
+            <ScrollView
+              style={{ flex: 1, width: '100%' }}
+              contentContainerStyle={styles.cardContent}
+              showsVerticalScrollIndicator={false}>
               {/* Gold Badge */}
               {isFamilyTopic ? (
                 <View
@@ -144,7 +147,7 @@ export default function TopicsDiscoveryScreen(): JSX.Element {
                   </AppText>
                 </View>
               ) : null}
-            </View>
+            </ScrollView>
 
             {/* Bottom Decor */}
             <View style={[styles.cardFooter, { backgroundColor: colors.border }]} />
@@ -222,7 +225,7 @@ function DiscoveryButton({
           disabled ? { opacity: 0.5 } : null,
           animatedStyle,
         ]}>
-        {icon && <Ionicons name={icon} size={32} color={colors.onPrimary} style={{ marginRight: 12 }} />}
+        {icon && <Ionicons name={icon} size={26} color={colors.onPrimary} style={{ marginRight: 8 }} />}
         <AppText
           style={
             isPrimary
@@ -264,7 +267,8 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     width: '100%',
-    aspectRatio: 4 / 5,
+    flex: 1, // Let it expand instead of forcing aspect ratio
+    maxHeight: 500, // Still constrain the maximum height for tablets
     maxWidth: 400,
     shadowColor: 'transparent',
     shadowOffset: { width: 0, height: 10 },
@@ -289,19 +293,20 @@ const styles = StyleSheet.create({
   cardHeader: {
     width: '100%',
     alignItems: 'center',
-    paddingTop: 8,
+    marginTop: -8,
   },
   iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cardContent: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 16,
     width: '100%',
     gap: 24,
   },
@@ -341,7 +346,6 @@ const styles = StyleSheet.create({
   goldText: {
     fontSize: 13,
     fontWeight: '700',
-    color: 'transparent',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
@@ -353,7 +357,6 @@ const styles = StyleSheet.create({
   },
   helperText: {
     fontSize: 18,
-    color: 'transparent',
     textAlign: 'center',
     lineHeight: 26,
     maxWidth: 280,
@@ -380,12 +383,12 @@ const styles = StyleSheet.create({
   },
   actionsContainer: {
     paddingHorizontal: 24,
-    paddingBottom: 40,
-    gap: 16,
+    paddingBottom: 16,
+    gap: 12,
   },
   recordButton: {
-    height: 72,
-    borderRadius: 36,
+    height: 64,
+    borderRadius: 32,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -395,21 +398,20 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   recordButtonText: {
-    color: 'transparent',
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   secondaryButton: {
-    height: 56,
-    borderRadius: 28,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
   secondaryButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
   },
 });

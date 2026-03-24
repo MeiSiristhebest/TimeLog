@@ -18,9 +18,10 @@ function formatTime(millis: number): string {
 
 interface AudioPlayerProps {
   uri: string;
+  fallbackDurationMs?: number;
 }
 
-export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
+export function AudioPlayer({ uri, fallbackDurationMs }: AudioPlayerProps): JSX.Element {
   const theme = useHeritageTheme();
   const {
     load,
@@ -64,7 +65,7 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
 
   const handleSkip = (seconds: number) => {
     const newPosition = positionMillis + seconds * 1000;
-    seek(Math.max(0, Math.min(newPosition, durationMillis || 0)));
+    seek(Math.max(0, Math.min(newPosition, durationMillis || fallbackDurationMs || 0)));
   };
 
   const handleToggleOutputMode = () => {
@@ -107,13 +108,13 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
             {formatTime(positionMillis)}
           </AppText>
           <AppText className="font-semibold text-sm tabular-nums" style={{ color: theme.colors.textMuted }}>
-            {formatTime(durationMillis)}
+            {formatTime(durationMillis || fallbackDurationMs || 0)}
           </AppText>
         </View>
         <Slider
           style={{ width: '100%', height: 40 }}
           minimumValue={0}
-          maximumValue={durationMillis || 1}
+          maximumValue={durationMillis || fallbackDurationMs || 1}
           value={positionMillis}
           onSlidingComplete={handleSeek}
           minimumTrackTintColor={theme.colors.primary}

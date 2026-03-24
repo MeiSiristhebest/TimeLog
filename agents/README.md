@@ -16,10 +16,10 @@ AI-powered voice assistant for helping elderly users record life stories through
 |:----------|:-----------|:--------|
 | **Runtime** | Python 3.12+ | Modern async support |
 | **Agent Framework** | LiveKit Agents SDK | Real-time voice processing |
-| **STT** | Deepgram Nova-3 | Speech recognition (multi-language) |
-| **TTS** | Deepgram Aura | Natural emotional voice |
+| **STT** | Deepgram Nova-3/Flux | Speech recognition |
+| **TTS** | Deepgram Aura-2 | Natural emotional voice |
 | **VAD** | Silero | Voice activity detection |
-| **LLM** | Google Gemini (via livekit-plugins-google) | Conversation generation |
+| **LLM** | Google Gemini 3 Flash | Conversation generation |
 | **Turn Detection** | MultilingualModel | Better end-of-turn detection |
 
 ## 📋 Prerequisites
@@ -54,9 +54,9 @@ LIVEKIT_API_KEY=your-livekit-api-key
 LIVEKIT_API_SECRET=your-livekit-secret
 DEEPGRAM_API_KEY=your-deepgram-api-key
 GEMINI_API_KEY=your-gemini-api-key
-AGENT_LLM_MODEL=gemini-2.5-flash
+AGENT_LLM_MODEL=gemini-3-flash-preview
 AGENT_STT_MODEL=nova-3
-AGENT_TTS_MODEL=aura-asteria-en
+AGENT_TTS_MODEL=aura-2-asteria-en
 AGENT_MIN_SILENCE_DURATION=3.0
 AGENT_LANGUAGE=multi
 ```
@@ -187,16 +187,16 @@ stt = deepgram.STT(
 
 ```python
 tts = deepgram.TTS(
-    model="aura-asteria-en",  # Emotional voice
+    model="aura-2-asteria-en",  # Emotional voice
     encoding="linear16",
     sample_rate=24000,
 )
 ```
 
 **Available voices**:
-- `aura-asteria-en`: Warm, empathetic (English)
-- `aura-luna-en`: Calm, soothing (English)
-- `aura-stella-en`: Clear, professional (English)
+- `aura-2-asteria-en`: Warm, empathetic (English)
+- `aura-2-luna-en`: Calm, soothing (English)
+- `aura-2-stella-en`: Clear, professional (English)
 
 ## 🎨 Customization
 

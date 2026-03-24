@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {
   startRecordingStream,
+  prepareRecordingTarget,
   type RecordingHandle,
   InsufficientStorageError,
 } from '@/features/recorder/services/recorderService';
@@ -20,6 +21,7 @@ import { useUnreadActivities } from '@/features/home/hooks/useUnreadActivities';
 import { useIsTopicAnswered } from '@/features/recorder/hooks/useAnsweredTopics';
 import { updateAppBadge } from '@/lib/notifications/badgeService';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { getStoredRole } from '@/features/auth/services/roleStorage';
 import { showErrorToast } from '@/components/ui/feedback/toast';
 import { mmkv } from '@/lib/mmkv';
 import { useWeather } from '@/features/home/hooks/useWeather';
@@ -172,6 +174,7 @@ export function useHomeLogic() {
     const stored = mmkv.getString(RECORDING_MODE_KEY);
     return stored === 'ai' || stored === 'basic' ? stored : 'basic';
   });
+  const [appRole, setAppRole] = useState<string | null>(null);
   const recordingModeRef = useRef<RecordingMode>(recordingMode);
 
   const { currentAmplitude, updateAmplitude } = useAudioAmplitude();
@@ -236,6 +239,14 @@ export function useHomeLogic() {
   useEffect(() => {
     cloudAIEnabledRef.current = cloudAIEnabled;
   }, [cloudAIEnabled]);
+
+  useEffect(() => {
+    let mounted = true;
+    void getStoredRole()
+      .then((role) => { if (mounted) setAppRole(role); })
+      .catch(() => { if (mounted) setAppRole(null); });
+    return () => { mounted = false; };
+  }, []);
 
   useEffect(() => {
     recordingModeRef.current = recordingMode;
@@ -352,12 +363,14 @@ export function useHomeLogic() {
     startWaitingForAiResponse,
     transcripts,
     error: cloudDialogError,
+    setMicrophoneEnabled,
   } = useLiveKitDialog({
     storyId: recordingHandle?.metadata.id,
     topicText: currentQuestion?.text ?? HOME_STRINGS.questionCard.defaultQuestion,
     language: aiLanguage,
     onError: handleCloudDialogError,
   });
+
 
   useEffect(() => {
     cloudDialogModeRef.current = cloudDialogMode;
@@ -499,7 +512,26 @@ export function useHomeLogic() {
     }
 
     try {
+      // SEQUENTIAL STARTUP: Connect AI first, then local recorder
+      // This prevents the AudioSession from being reset mid-recording.
+      let aiStoryId: string | undefined;
+      if (recordingModeRef.current === 'ai' && !cloudDialogConnectedRef.current) {
+        const preTarget = await prepareRecordingTarget({
+          topicId: currentQuestion?.id,
+          userId: sessionUserId ?? undefined,
+        });
+        aiStoryId = preTarget.id;
+        devLog.info('[useHomeLogic] Sequential: connecting AI for storyId', aiStoryId);
+        await connectCloudDialog(aiStoryId).catch((err: unknown) => {
+          devLog.warn('[useHomeLogic] AI connection failed, falling back to basic:', err);
+          setRecordingMode('basic');
+          recordingModeRef.current = 'basic';
+          mmkv.set(RECORDING_MODE_KEY, 'basic');
+        });
+      }
+
       const handle = await startRecordingStream({
+        recordingId: aiStoryId,
         topicId: currentQuestion?.id,
         userId: sessionUserId ?? undefined,
         onSilence: () => {
@@ -687,6 +719,12 @@ export function useHomeLogic() {
       await recordingHandle.pause();
       setIsRecordingPaused(true);
       setRecordingPausedAtMs(Date.now());
+      // Mute the AI microphone so it stops listening and transcribing while paused.
+      if (cloudDialogConnectedRef.current) {
+        await setMicrophoneEnabled(false).catch((err: unknown) =>
+          devLog.warn('[useHomeLogic] Failed to mute AI mic on pause', err)
+        );
+      }
     } catch (error) {
       devLog.warn('[useHomeLogic] Failed to pause recording', error);
       showErrorToast('Unable to pause right now. Recording is still running.');
@@ -694,7 +732,7 @@ export function useHomeLogic() {
       isPauseTransitioningRef.current = false;
       setIsPauseTransitioning(false);
     }
-  }, [recordingHandle]);
+  }, [recordingHandle, setMicrophoneEnabled]);
 
   const handleResumeRecording = useCallback(async () => {
     if (
@@ -714,6 +752,12 @@ export function useHomeLogic() {
       }
       setRecordingPausedAtMs(null);
       setIsRecordingPaused(false);
+      // Unmute the AI microphone so it resumes listening after the user continues.
+      if (cloudDialogConnectedRef.current) {
+        await setMicrophoneEnabled(true).catch((err: unknown) =>
+          devLog.warn('[useHomeLogic] Failed to unmute AI mic on resume', err)
+        );
+      }
     } catch (error) {
       devLog.warn('[useHomeLogic] Failed to resume recording', error);
       showErrorToast('Unable to resume right now. Please try again.');
@@ -721,7 +765,7 @@ export function useHomeLogic() {
       isPauseTransitioningRef.current = false;
       setIsPauseTransitioning(false);
     }
-  }, [recordingHandle, recordingPausedAtMs]);
+  }, [recordingHandle, recordingPausedAtMs, setMicrophoneEnabled]);
 
   const setRecordingModeAndPersist = useCallback((mode: RecordingMode) => {
     const effectiveCloudAiEnabled = isCloudAiEnabledLocally();
@@ -819,6 +863,7 @@ export function useHomeLogic() {
         isStoppingRecording,
         isPauseTransitioning,
         isStartingRecording,
+        isRecordAllowed: appRole !== 'family' && appRole !== 'listener',
       },
       actions: {
         setLastSavedId,
@@ -831,6 +876,7 @@ export function useHomeLogic() {
         replayQuestion: replay,
         navigateToSettings: () => router.push(APP_ROUTES.SETTINGS),
         navigateToListen: () => router.push(APP_ROUTES.GALLERY),
+        navigateToFamilyTab: () => router.replace(APP_ROUTES.FAMILY_TAB),
         navigateToStory: (storyId: string) => router.push(toStoryRoute(storyId)),
       },
     }),
@@ -857,11 +903,11 @@ export function useHomeLogic() {
       canEnableAiMode,
       shouldRecommendAi,
       cloudAIEnabled,
-        cloudDialogMode,
-        cloudNetworkQuality,
+      cloudDialogMode,
+      cloudNetworkQuality,
       isCloudDialogConnected,
-        cloudDialogError,
-        transcripts,
+      cloudDialogError,
+      transcripts,
       recordingDurationSec,
       isStoppingRecording,
       isPauseTransitioning,

@@ -1,30 +1,35 @@
 /**
  * Audio Session Configuration
- * 
+ *
  * Manages LiveKit audio session for React Native.
  * Configures audio routing and background audio handling.
+ * AI voice is always routed to the loudspeaker.
  */
 
 import { AudioSession } from '@livekit/react-native';
 import { devLog } from '@/lib/devLogger';
 
 /**
- * Configure and start audio session for LiveKit
+ * Configure and start audio session for LiveKit.
+ * Forces playback through the loudspeaker so the AI voice is audible.
+ *
+ * On iOS: `defaultOutput: 'speaker'` routes remote audio to the loudspeaker.
+ * On Android: `audioMode: 'inCommunication'` keeps mic active while playing to speaker.
  */
 export async function startAudioSession(): Promise<void> {
   try {
     await AudioSession.configureAudio({
       android: {
-        // Use COMMUNICATION preset for voice (not media playback)
-        // This enables echo cancellation, noise suppression, and AGC
+        // 'inCommunication' keeps microphone active while routing speaker audio
+        // to the loudspeaker rather than the earpiece.
         audioTypeOptions: {
           manageAudioFocus: true,
-          audioMode: 'inCommunication', // Correct value for communication mode
+          audioMode: 'inCommunication',
         },
       },
       ios: {
-        // Configure for VoIP-style audio (not music playback)
-        defaultOutput: 'speaker', // Default to speaker for elderly users
+        // Explicitly route AI voice to the loudspeaker.
+        defaultOutput: 'speaker',
       },
     });
 

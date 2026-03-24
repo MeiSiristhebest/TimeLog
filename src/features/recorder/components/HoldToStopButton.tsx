@@ -3,11 +3,13 @@ import { useCallback, useEffect, useRef } from 'react';
 import { Pressable, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Animated } from '@/tw/animated';
-import { cancelAnimation,
+import {
+  cancelAnimation,
   Easing,
   useAnimatedProps,
   useSharedValue,
-  withTiming, } from 'react-native-reanimated';
+  withTiming,
+} from 'react-native-reanimated';
 
 interface HoldToStopButtonProps {
   onHoldComplete: () => void;
@@ -102,52 +104,69 @@ export function HoldToStopButton({
   }, [clearHoldTimer]);
 
   return (
-    <View style={{ width: ringSize, height: ringSize, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg
-        width={ringSize}
-        height={ringSize}
-        style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
-        <Circle
-          cx={ringSize / 2}
-          cy={ringSize / 2}
-          r={radius}
-          stroke={trackColor}
-          strokeWidth={strokeWidth}
-          fill="none"
-        />
-        <AnimatedCircle
-          cx={ringSize / 2}
-          cy={ringSize / 2}
-          r={radius}
-          stroke={progressColor}
-          strokeWidth={strokeWidth}
-          fill="none"
-          strokeLinecap="round"
-          strokeDasharray={`${circumference} ${circumference}`}
-          animatedProps={animatedProps}
-        />
-      </Svg>
+    <Pressable
+      onPressIn={startProgress}
+      onPressOut={resetProgress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      style={{
+        width: ringSize,
+        height: ringSize,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+      {({ pressed }) => (
+        <>
+          {pressed && !disabled && (
+            <Svg
+              width={ringSize}
+              height={ringSize}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                transform: [{ rotate: '-90deg' }]
+              }}>
+              <Circle
+                cx={ringSize / 2}
+                cy={ringSize / 2}
+                r={radius}
+                stroke={trackColor}
+                strokeWidth={strokeWidth}
+                fill="none"
+              />
+              <AnimatedCircle
+                cx={ringSize / 2}
+                cy={ringSize / 2}
+                r={radius}
+                stroke={progressColor}
+                strokeWidth={strokeWidth}
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray={`${circumference} ${circumference}`}
+                animatedProps={animatedProps}
+              />
+            </Svg>
+          )}
 
-      <Pressable
-        onPressIn={startProgress}
-        onPressOut={resetProgress}
-        disabled={disabled}
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel}
-        style={({ pressed }) => ({
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: buttonColor,
-          borderColor: buttonBorderColor,
-          borderWidth: buttonBorderWidth,
-          transform: [{ scale: pressed ? 0.94 : 1 }],
-          opacity: pressed ? 0.92 : 1,
-        })}>
-        <Ionicons name="close" size={Math.round(size * 0.46)} color={iconColor} />
-      </Pressable>
-    </View>
+          <View
+            style={{
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: buttonColor,
+              borderColor: buttonBorderColor,
+              borderWidth: buttonBorderWidth,
+              opacity: disabled ? 0.6 : 1,
+              transform: [{ scale: pressed && !disabled ? 0.94 : 1 }],
+            }}>
+            <Ionicons name="close" size={Math.round(size * 0.46)} color={iconColor} />
+          </View>
+        </>
+      )}
+    </Pressable>
   );
 }

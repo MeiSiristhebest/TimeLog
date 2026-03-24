@@ -11,20 +11,16 @@ describe('date-utils', () => {
   });
 
   describe('formatDate', () => {
-    it('formats date to Chinese absolute date format', () => {
+    it('formats date to English absolute date format', () => {
       const date = new Date('2026-01-15T15:00:00');
-      // Note: The exact string depends on the runtime's ICU data.
-      // In many environments zh-CN with long month looks like "2026年1月15日 15:00"
-      // or "2026年1月15日 下午3:00"
       const formatted = formatDate(date);
 
       expect(formatted).toContain('2026');
-      expect(formatted).toContain('1');
       expect(formatted).toContain('15');
-      // For zh-CN locale, year should be followed by 年
-      expect(formatted).toMatch(/2026年/);
-      expect(formatted).toMatch(/1月/);
-      expect(formatted).toMatch(/15日/);
+      // For en-US locale, year should be preceded/followed by month/day like January 15, 2026
+      expect(formatted).toMatch(/2026/);
+      expect(formatted).toMatch(/January/);
+      expect(formatted).toMatch(/15/);
     });
   });
 });
