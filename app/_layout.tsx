@@ -28,8 +28,6 @@ import {
   getRootStackDefaultScreenOptions,
   ROOT_STACK_ROUTES,
 } from '@/features/app/navigation/rootStackConfig';
-import { useBondingRequests } from '@/features/family-listener/hooks/useBondingRequests';
-import { BondingConsentModal } from '@/features/app/components/BondingConsentModal';
 
 bootstrapNativeRuntime();
 
@@ -102,9 +100,6 @@ function RootLayoutContent({ isDark }: { readonly isDark: boolean }) {
   const { foregroundNotification, navigateToNotification, dismissForegroundNotification } =
     useNotifications();
 
-  // Bonding request listener (Senior Side)
-  const { activeRequest, dismissRequest } = useBondingRequests();
-
   return (
     <View style={{ flex: 1, backgroundColor: colors.surfaceDim }}>
       <OfflineBanner />
@@ -118,9 +113,6 @@ function RootLayoutContent({ isDark }: { readonly isDark: boolean }) {
           onDismiss={dismissForegroundNotification}
         />
       )}
-
-      {/* Bonding Consent Modal (Senior Side) */}
-      <BondingConsentModal request={activeRequest} onClose={dismissRequest} />
 
       <ThemeProvider value={navigationTheme}>
         <Stack screenOptions={getRootStackDefaultScreenOptions(colors)}>

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { Icon } from '@/components/ui/Icon';
-import { AppButton } from '@/components/ui/AppButton';
+import { Ionicons } from '@/components/ui/Icon';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { BreathingGlow } from '@/components/ui/heritage/BreathingGlow';
 import { HomeNotification } from '@/features/home/components/HomeNotification';
 import { HomeRecordButton } from '@/features/home/components/HomeRecordButton';
@@ -12,11 +13,9 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { useHomeLogic } from '@/features/home/hooks/useHomeLogic';
 import { HOME_STRINGS } from '@/features/home/data/mockHomeData';
 import { AppText } from '@/components/ui/AppText';
-import { View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Animated } from '@/tw/animated';
 import { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { Container } from '@/components/ui/Container';
-
 const RECORD_BUTTON_CONTAINER_SIZE = 142;
 const BREATHING_GLOW_SIZE = 140;
 const BREATHING_RING_SIZE = Math.round(BREATHING_GLOW_SIZE * 1.04);
@@ -67,26 +66,29 @@ export default function HomeTabScreen(): JSX.Element {
 
   if (!isRecordAllowed) {
     return (
-      <Container safe className="items-center justify-center p-6 gap-6">
-        <Icon name="headset" size={64} color={colors.primary} />
-        <AppText variant="headline" className="text-center">
-          Listener Mode
-        </AppText>
-        <AppText variant="body" className="text-center text-textMuted max-w-[360px]">
-          Recording is unavailable for family listeners. Open the Listen tab to continue.
-        </AppText>
-        <AppButton
-          label="Open Listen"
-          onPress={actions.navigateToFamilyTab}
-          variant="primary"
-          icon="headset"
-          className="w-full mt-4"
-        />
-      </Container>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.surface }]}>
+        <View style={styles.blockedContainer}>
+          <Ionicons name="headset" size={56} color={colors.primary} />
+          <AppText style={[styles.blockedTitle, { color: colors.onSurface }]}>
+            Listener Mode
+          </AppText>
+          <AppText style={[styles.blockedBody, { color: colors.textMuted }]}>
+            Recording is unavailable for family listeners. Open the Listen tab to continue.
+          </AppText>
+          <HeritageButton
+            title="Open Listen"
+            onPress={actions.navigateToFamilyTab}
+            variant="primary"
+            icon="headset"
+          />
+        </View>
+      </SafeAreaView>
     );
   }
 
-  // Active Recording View Overlays
+  // -- Views --
+
+  // Active Recording View (New Heritage Hybrid Design)
   if (recordingHandle) {
     if (recordingMode === 'ai') {
       const shouldShowAiConnecting =
@@ -125,21 +127,21 @@ export default function HomeTabScreen(): JSX.Element {
     }
 
     return (
-      <ActiveRecordingView
-        amplitude={currentAmplitude}
-        questionText={currentQuestion?.text}
-        recordingDurationSec={recordingDurationSec}
-        isPaused={isRecordingPaused}
-        isOnline={isOnline}
-        canSwitchToAi={canEnableAiMode}
-        controlsDisabled={isStoppingRecording || isPauseTransitioning}
-        onSwitchToAi={() => actions.setRecordingMode('ai')}
-        onPause={actions.handlePauseRecording}
-        onResume={actions.handleResumeRecording}
-        onStop={actions.handleStopRecording}
-      />
-    );
-  }
+        <ActiveRecordingView
+          amplitude={currentAmplitude}
+          questionText={currentQuestion?.text}
+          recordingDurationSec={recordingDurationSec}
+          isPaused={isRecordingPaused}
+          isOnline={isOnline}
+          canSwitchToAi={canEnableAiMode}
+          controlsDisabled={isStoppingRecording || isPauseTransitioning}
+          onSwitchToAi={() => actions.setRecordingMode('ai')}
+          onPause={actions.handlePauseRecording}
+          onResume={actions.handleResumeRecording}
+          onStop={actions.handleStopRecording}
+        />
+      );
+    }
 
   if (recordingMode === 'ai' && canEnableAiMode && isStartingRecording) {
     return (
@@ -160,43 +162,34 @@ export default function HomeTabScreen(): JSX.Element {
           actions.setLastSavedId(null);
           actions.navigateToListen();
         }}
-        onSetTimeCapsule={() => {
-          const id = lastSavedId;
-          actions.setLastSavedId(null);
-          if (id) {
-            actions.navigateToEditTimeCapsule(id);
-          }
-        }}
         storyTitle={currentQuestion?.text || HOME_STRINGS.questionCard.defaultQuestion}
         category={currentQuestion?.category}
       />
     );
   }
 
-  // Idle Home Dashboard View
+  // Idle Home View (New Design)
   return (
-    <Container safe scrollable contentContainerClassName="px-4 pb-24 gap-4">
-      {/* Header Section */}
-      <Animated.View entering={FadeInDown.duration(600)} className="flex-row items-start justify-between px-2 pt-6 pb-2">
-        <View className="flex-1">
-          <AppText variant="headline" className="leading-tight">
-            {greeting}
-          </AppText>
-          <View className="flex-row items-center mt-1 gap-3">
-            <AppText variant="small" className="font-bold text-textMuted">
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.surface }]}>
+      {/* Header */}
+      <Animated.View entering={FadeInDown.duration(600)} style={styles.header}>
+        <View>
+          <AppText style={[styles.greeting, { color: colors.onSurface }]}>{greeting}</AppText>
+          <View style={styles.dateRow}>
+            <AppText style={[styles.dateText, { color: colors.textMuted }]}>
               {formattedDate}
             </AppText>
             {!weather.isLoading && (
               <>
-                <View className="w-1 h-1 rounded-full opacity-30" style={{ backgroundColor: colors.textMuted }} />
-                <View className="flex-row items-center gap-1.5">
-                  <Icon
-                    name={weatherIcon as any}
-                    size={20}
+                <View style={[styles.dot, { backgroundColor: `${colors.textMuted}50` }]} />
+                <View style={styles.weatherContainer}>
+                  <Ionicons
+                    name={weatherIcon as keyof typeof Ionicons.glyphMap}
+                    size={18}
                     color={colors.warning}
                     accessibilityLabel={`Weather: ${weather.condition}`}
                   />
-                  <AppText variant="small" className="font-bold text-textMuted">
+                  <AppText style={[styles.weatherText, { color: colors.textMuted }]}>
                     {weather.error ? '--' : weather.temperature}
                     {HOME_STRINGS.weather.unit}
                   </AppText>
@@ -207,7 +200,11 @@ export default function HomeTabScreen(): JSX.Element {
         </View>
       </Animated.View>
 
-        {/* Unread Activities / Notification Bar */}
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}>
+        {/* Notification Card */}
         {hasUnread && activities.length > 0 && (
           <HomeNotification
             onPress={() => {
@@ -225,31 +222,36 @@ export default function HomeTabScreen(): JSX.Element {
           />
         )}
 
-        {/* Paper-Styled Question Prompt Card */}
+        {/* Question Card */}
         <Animated.View
           entering={FadeInDown.delay(300).duration(600)}
-          className="flex-1 justify-center mt-2">
+          style={{ flex: 1, justifyContent: 'center', marginTop: 8 }}>
           <View
-            className="rounded-card border p-6 items-center gap-4 elevation-4 shadow-xl"
-            style={{ borderColor: colors.border, backgroundColor: colors.surfaceWarm, shadowColor: colors.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12 }}>
-            
-            {/* Decorative Heritage Elements */}
-            <View className="absolute -top-1 right-6 z-10">
-              <View className="rotate-[-12deg]">
-                <Icon name="attach" size={48} color={`${colors.handle}CC`} />
-              </View>
+            style={[
+              styles.paperCard,
+              { borderColor: colors.border, backgroundColor: colors.surfaceWarm },
+            ]}>
+            {/* Decorative elements */}
+            <View style={styles.clipIcon}>
+              <Ionicons
+                name="attach"
+                size={48}
+                color={colors.handle}
+                style={{ transform: [{ rotate: '-12deg' }] }}
+              />
             </View>
-            <View className="absolute -top-3.5 self-center w-28 h-7.5 rounded-sm z-10 rotate-[-2deg]" style={{ backgroundColor: `${colors.textMuted}4D` }} />
+            <View style={[styles.tape, { backgroundColor: `${colors.textMuted}80` }]} />
 
-            <View className="w-full">
-              <AppText variant="display" className="text-center px-2">
+            <View>
+              <AppText style={[styles.questionText, { color: colors.onSurface }]}>
                 {renderedWords.map((word, index) => (
                   <AppText
-                    variant="display"
                     key={`${currentQuestion?.id ?? 'question'}-${word}-${index}`}
                     style={[
                       isSpeaking && index === currentWordIndex
-                        ? { color: colors.primary }
+                        ? {
+                            color: colors.primary,
+                          }
                         : { color: colors.onSurface },
                     ]}>
                     {word + (index === renderedWords.length - 1 ? '' : ' ')}
@@ -257,48 +259,71 @@ export default function HomeTabScreen(): JSX.Element {
                 ))}
               </AppText>
 
-              {/* Answered Status Badge */}
+              {/* Answered Status Indicator */}
               {isCurrentTopicAnswered && (
-                <View className="flex-row items-center justify-center mt-4 gap-1.5 self-center px-4 py-2 rounded-pill" style={{ backgroundColor: `${colors.success}26` }}>
-                  <Icon name="checkmark-circle" size={18} color={colors.success} />
-                  <AppText variant="small" className="font-bold uppercase tracking-wider" style={{ color: colors.success }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginTop: 12,
+                    gap: 6,
+                    backgroundColor: `${colors.success}15`,
+                    alignSelf: 'center',
+                    paddingHorizontal: 12,
+                    paddingVertical: 4,
+                    borderRadius: 12,
+                  }}>
+                  <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                  <AppText style={{ fontSize: 13, color: colors.success, fontWeight: '600' }}>
                     {HOME_STRINGS.questionCard.answeredBadge}
                   </AppText>
                 </View>
               )}
             </View>
 
-            {/* Quick Actions Container */}
-            <View className="mt-4 flex-row items-center gap-3 w-full px-1">
-              <AppButton
-                label="Play"
+            <View
+              style={{
+                marginTop: 8,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                width: '100%',
+                paddingHorizontal: 12,
+              }}>
+              <HeritageButton
+                title="Play"
                 onPress={actions.replayQuestion}
                 variant="secondary"
-                size="md"
+                size="small"
                 icon="volume-high-outline"
-                className="flex-1"
+                style={{ flex: 1, height: 48 }}
+                accessibilityLabel="Replay the question"
               />
 
-              <AppButton
-                label={HOME_STRINGS.questionCard.newQuestionButton}
+              <HeritageButton
+                title={HOME_STRINGS.questionCard.newQuestionButton}
                 onPress={actions.newTopic}
                 variant="outline"
-                size="md"
+                size="small"
                 icon="arrow-forward"
-                className="flex-1"
+                style={{ flex: 1, height: 48 }}
+                accessibilityLabel="Get a new question prompt"
               />
             </View>
           </View>
         </Animated.View>
 
-        {/* Start Recording (The Heritage Orb) Area */}
-        <Animated.View entering={FadeIn.delay(600).duration(800)} className="items-center mt-8 px-4">
-          <View className="relative items-center justify-center overflow-visible" style={{ width: RECORD_BUTTON_CONTAINER_SIZE, height: RECORD_BUTTON_CONTAINER_SIZE }}>
-            <View pointerEvents="none" className="absolute inset-0 items-center justify-center overflow-visible">
+        {/* Record Button Area */}
+        <Animated.View entering={FadeIn.delay(600).duration(800)} style={styles.recordArea}>
+          <View style={styles.recordButtonContainer}>
+            <View pointerEvents="none" style={styles.breathingLayer}>
               <BreathingGlow
                 color={colors.primary}
                 size={BREATHING_GLOW_SIZE}
                 profile="home"
+                style={styles.breathingGlow}
               />
             </View>
             <HomeRecordButton
@@ -308,10 +333,140 @@ export default function HomeTabScreen(): JSX.Element {
               disabled={isStartingRecording}
             />
           </View>
-          <AppText variant="title" className="font-bold text-center mt-6">
+          <AppText style={[styles.tapToRecord, { color: colors.onSurface }]}>
             {HOME_STRINGS.recording.tapToRecord}
           </AppText>
         </Animated.View>
-      </Container>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 16,
+  },
+  greeting: {
+    fontFamily: 'Fraunces_600SemiBold',
+    fontSize: 28, // md:text-3xl
+    lineHeight: 40,
+    letterSpacing: -0.5,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 12,
+  },
+  dateText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  dot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+  },
+  weatherContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  weatherText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 96, // Space for tab bar
+    gap: 16,
+  },
+  clipIcon: {
+    position: 'absolute',
+    right: 24,
+    top: -4,
+    zIndex: 10,
+  },
+  tape: {
+    position: 'absolute',
+    top: -15,
+    width: 120,
+    height: 30,
+    alignSelf: 'center',
+    transform: [{ rotate: '-2deg' }],
+    borderRadius: 0,
+    zIndex: 10,
+  },
+  paperCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'center',
+    gap: 16,
+    elevation: 4,
+  },
+  questionText: {
+    fontFamily: 'Fraunces_600SemiBold',
+    fontSize: 26,
+    textAlign: 'center',
+    lineHeight: 36,
+    marginTop: 12,
+    marginBottom: 6,
+    paddingHorizontal: 8,
+  },
+  recordArea: {
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  recordButtonContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: RECORD_BUTTON_CONTAINER_SIZE,
+    height: RECORD_BUTTON_CONTAINER_SIZE,
+    overflow: 'visible',
+  },
+  breathingLayer: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'visible',
+  },
+  breathingGlow: {
+    left: BREATHING_GLOW_OFFSET,
+    top: BREATHING_GLOW_OFFSET,
+  },
+  tapToRecord: {
+    fontSize: 18,
+    fontWeight: '600',
+    lineHeight: 24,
+    marginTop: 16,
+    minHeight: 24,
+    textAlign: 'center',
+  },
+  blockedContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    gap: 16,
+  },
+  blockedTitle: {
+    fontFamily: 'Fraunces_600SemiBold',
+    fontSize: 30,
+    textAlign: 'center',
+  },
+  blockedBody: {
+    fontSize: 17,
+    lineHeight: 26,
+    textAlign: 'center',
+    maxWidth: 360,
+  },
+});

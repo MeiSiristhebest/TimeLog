@@ -20,11 +20,10 @@ export { DEFAULT_FONT_SCALE_INDEX, FONT_SCALE_LABELS, FONT_SCALE_STEPS } from '.
 
 export const PALETTE = {
   // Brand - Terracotta System (from HTML mockup)
-  // Updated for WCAG AA/AAA compliance (#B85A3B on #FFFAF5 is 6.8:1)
-  primary: '#B85A3B',
-  primaryDeep: '#9A4830',
+  primary: '#D97757',
+  primaryDeep: '#C26B4A',
   primarySoft: '#FDF2EE',
-  primaryMuted: '#E8C4B5',
+  primaryMuted: '#EABFAA',
   tertiary: '#6B8C9E', // blueAccent mapped as tertiary
 
   // Backgrounds - from HTML mockup
@@ -138,17 +137,15 @@ export const SPACING = {
   md: 16,
   lg: 24,
   xl: 32,
-  '2xl': 48,
-  '3xl': 64,
-  '4xl': 96,
+  xxl: 48,
 } as const;
 
 export const RADIUS = {
   sm: 8,
   md: 14,
   lg: 16,
-  card: 24,
-  button: 16,
+  xl: 24,
+  xxl: 32,
   pill: 999,
 } as const;
 
