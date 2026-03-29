@@ -1,10 +1,10 @@
 import { Link } from 'expo-router';
-import { Ionicons } from '@/components/ui/Icon';
+import { Icon } from '@/components/ui/Icon';
 import { Animated } from '@/tw/animated';
 import { ZoomIn, FadeInDown } from 'react-native-reanimated';
 import { Container } from '@/components/ui/Container';
-import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
-import { HeritageInput } from '@/components/ui/heritage/HeritageInput';
+import { AppButton } from '@/components/ui/AppButton';
+import { AppInput } from '@/components/ui/AppInput';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useLoginLogic } from '@/features/auth/hooks/useLoginLogic';
 import { AppText } from '@/components/ui/AppText';
@@ -18,86 +18,84 @@ export default function LoginScreen(): JSX.Element {
   const { email, password, loading, message, error, isSubmitDisabled, isResetDisabled } = state;
 
   return (
-    <Container>
+    <Container safe scrollable={false}>
       <View className="flex-1 justify-center gap-10 px-6">
         <View className="w-full items-center gap-4">
           <Animated.View
             entering={ZoomIn.delay(300).springify()}
-            className="mb-4 h-20 w-20 items-center justify-center rounded-3xl border-[1.5px]"
+            className="mb-4 h-20 w-20 items-center justify-center rounded-3xl border-[2px]"
             style={{
-              backgroundColor: `${colors.primary}15`,
+              backgroundColor: `${colors.primary}10`,
               borderColor: `${colors.primary}25`,
             }}>
-            <Ionicons name="book" size={40} color={colors.primary} />
+            <Icon name="book" size={44} color={colors.primary} />
           </Animated.View>
           <AppText
-            className="text-center font-serif text-4xl font-semibold"
-            style={{ color: colors.onSurface }}>
+            variant="headline"
+            className="text-center">
             Welcome Back
           </AppText>
           <AppText
-            className="px-8 text-center text-base leading-6"
-            style={{ color: colors.textMuted }}>
+            variant="body"
+            className="px-8 text-center text-textMuted leading-relaxed">
             Sign in to continue your story journey.
           </AppText>
         </View>
 
         <Animated.View entering={FadeInDown.delay(400).springify()} className="w-full gap-4">
-          <View className="gap-2">
-            <HeritageInput
-              label="Email"
-              value={email}
-              onChangeText={actions.setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              placeholder="you@example.com"
-              accessibilityLabel="Email Address"
-              accessibilityHint="Please enter your email address"
-            />
-          </View>
+          <AppInput
+            label="Email"
+            value={email}
+            onChangeText={actions.setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            placeholder="you@example.com"
+            accessibilityLabel="Email Address"
+            leftIcon="mail"
+            error={error ? ' ' : undefined} // Keep spacing consistent if we have error
+          />
 
-          <View className="gap-2">
-            <HeritageInput
-              label="Password"
-              value={password}
-              onChangeText={actions.setPassword}
-              secureTextEntry
-              placeholder="••••••••"
-              accessibilityLabel="Password"
-              accessibilityHint="Please enter your password"
-            />
-          </View>
+          <AppInput
+            label="Password"
+            value={password}
+            onChangeText={actions.setPassword}
+            secureTextEntry
+            placeholder="••••••••"
+            accessibilityLabel="Password"
+            leftIcon="lock-closed"
+          />
 
           {error ? (
-            <AppText className="text-center text-sm font-medium" style={{ color: colors.error }}>
+            <AppText variant="small" className="text-center font-bold" style={{ color: colors.error }}>
               {error}
             </AppText>
           ) : null}
           {message ? (
-            <AppText className="text-center text-sm font-medium" style={{ color: colors.success }}>
+            <AppText variant="small" className="text-center font-bold" style={{ color: colors.success }}>
               {message}
             </AppText>
           ) : null}
 
-          <View className="gap-4 pt-4">
-            <HeritageButton
-              title={loading ? 'Signing in…' : 'Sign in'}
+          <View className="gap-5 pt-4">
+            <AppButton
               onPress={actions.handleSignIn}
               disabled={isSubmitDisabled}
               variant="primary"
+              label={loading ? 'Signing in…' : 'Sign in'}
             />
 
-            <HeritageButton
-              title="Forgot Password?"
+            <AppButton
               onPress={actions.handleResetPassword}
               disabled={isResetDisabled}
               variant="ghost"
+              className="mt-2"
+              label="Forgot Password?"
             />
           </View>
         </Animated.View>
 
         <Link href="/(tabs)" asChild>
-          <HeritageButton title="Back to Home" variant="secondary" onPress={() => {}} />
+          <AppButton variant="secondary" label="Back to Home" onPress={() => {}} />
         </Link>
       </View>
     </Container>

@@ -38,7 +38,7 @@ export function useReaction(storyId: string | null): UseReactionResult {
   });
 
   // Mutation for adding/removing reaction with optimistic updates
-  const { mutate: toggleReaction, isPending } = useMutation<
+  const { mutate: toggleReactionMutate, isPending } = useMutation<
     Reaction | null,
     Error,
     void,
@@ -86,18 +86,23 @@ export function useReaction(storyId: string | null): UseReactionResult {
       // Return context with previous value for rollback
       return { previousReaction };
     },
-    onError: (err, _variables, context) => {
-      // Rollback to previous state on error
-      if (context?.previousReaction !== undefined) {
-        queryClient.setQueryData(queryKey, context.previousReaction);
-      }
-      devLog.error('[useReaction] Toggle failed:', err);
-    },
-    onSettled: () => {
-      // Always refetch after mutation settles to ensure consistency
-      queryClient.invalidateQueries({ queryKey });
-    },
   });
+
+  const toggleReaction = () => {
+    toggleReactionMutate(undefined, {
+      onError: (err, _variables, context) => {
+        // Rollback to previous state on error
+        if (context?.previousReaction !== undefined) {
+          queryClient.setQueryData(queryKey, context.previousReaction);
+        }
+        devLog.error('[useReaction] Toggle failed:', err);
+      },
+      onSettled: () => {
+        // Always refetch after mutation settles to ensure consistency
+        queryClient.invalidateQueries({ queryKey });
+      },
+    });
+  };
 
   return {
     /** Whether the current user has reacted to this story */

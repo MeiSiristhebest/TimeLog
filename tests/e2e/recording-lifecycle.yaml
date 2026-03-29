@@ -1,0 +1,20 @@
+appId: com.meisiris.timelog
+---
+- launchApp
+- tapOn:
+    id: "home-record-button"
+- assertVisible: "What is your story today?" # ActiveRecordingView
+- assertVisible: "TODAY'S TOPIC"
+- assertVisible: "Pause"
+- tapOn: "Pause"
+- assertVisible: "Resume"
+- tapOn: "Resume"
+- tapOn: "AI Mode"
+- assertVisible: "AI Assistant" # AiRecordingView
+- assertVisible: "Status"
+- tapOn: "Classic" # Switch back
+- assertVisible: "TODAY'S TOPIC"
+- longPressOn: "Hold to End"
+- assertVisible: "Story Saved" # StorySavedView
+- tapOn: "Dismiss"
+- assertVisible: "Recorded" # Back to dashboard

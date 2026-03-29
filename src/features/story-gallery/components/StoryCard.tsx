@@ -14,7 +14,7 @@
  * - Shows unread comment count badge for seniors
  */
 
-import { Ionicons } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import type { SyncStatus } from '@/types/entities';
 import { SyncStatusBadge } from './SyncStatusBadge';
 import { CommentBadge } from './CommentBadge';
@@ -22,7 +22,9 @@ import { formatDate, formatDuration } from '../utils/date-utils';
 import { useHeritageTheme } from '@/theme/heritage';
 import { STORY_ACCESSIBILITY } from '../constants';
 import { AppText } from '@/components/ui/AppText';
-import { View, TouchableOpacity } from 'react-native';
+import { AppPressable } from '@/components/ui/AppPressable';
+import { View } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 type StoryCardProps = {
   id: string;
@@ -81,33 +83,13 @@ export function StoryCard({
     : STORY_ACCESSIBILITY.AVAILABLE_LABEL(displayTitle, formattedDate, commentCountLabel);
 
   return (
-    <TouchableOpacity
+    <AppPressable
       onPress={onPress}
-      activeOpacity={0.7}
-      style={{
-        backgroundColor: colors.surface,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: colors.border,
-        padding: 18,
-        marginBottom: 14,
-        // Premium Heritage Shadow
-        // Premium Heritage Shadow
-        // shadowColor: colors.shadow,
-        // shadowOffset: { width: 0, height: 8 },
-        // shadowOpacity: 0.12,
-        // shadowRadius: 16,
-        // elevation: 6,
-        // @ts-ignore - RN 0.76+
-        boxShadow: '0 8px 16px rgba(0, 0, 0, 0.12)',
-        opacity: isUnavailable ? 0.6 : 1,
-      }}
-      accessibilityRole="button"
+      disabled={isUnavailable}
+      className={`bg-surface rounded-card border mb-4 p-4 shadow-sm overflow-visible ${isUnavailable ? 'opacity-60' : ''}`}
+      style={{ borderColor: colors.border }}
       accessibilityLabel={accessibilityLabel}
-      accessibilityHint={
-        isUnavailable ? STORY_ACCESSIBILITY.UNAVAILABLE_HINT : STORY_ACCESSIBILITY.AVAILABLE_HINT
-      }
-      accessibilityState={{ disabled: isUnavailable }}>
+      role="button">
       {/* Story 4.5: Comment badge for unread comments */}
       <CommentBadge count={unreadCommentCount} />
 
@@ -130,50 +112,29 @@ export function StoryCard({
         </View>
       )}
 
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: 14,
-        }}>
+      <View className="flex-row items-start justify-between gap-3">
         {/* Left: Icon + Title + Date + Duration */}
-        <View style={{ flex: 1, flexDirection: 'row', gap: 14 }}>
+        <View className="flex-1 flex-row gap-4">
           <View
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 14,
-              backgroundColor: isUnavailable ? colors.disabled : `${colors.primary}15`,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-            <Ionicons
+            className={`w-14 h-14 rounded-2xl items-center justify-center`}
+            style={{ backgroundColor: isUnavailable ? colors.disabled : `${colors.primary}15` }}>
+            <Icon
               name={isUnavailable ? 'cloud-offline' : 'mic'}
-              size={22}
+              size={28}
               color={isUnavailable ? colors.handle : colors.primary}
             />
           </View>
 
-          <View style={{ flex: 1 }}>
+          <View className="flex-1 justify-center">
             <AppText
+              variant="title"
               numberOfLines={1}
-              style={{
-                fontFamily: 'Fraunces_600SemiBold',
-                fontSize: 18,
-                color: colors.onSurface,
-                marginBottom: 4,
-                lineHeight: 24,
-              }}>
+              className="mb-1">
               {displayTitle}
             </AppText>
             <AppText
-              style={{
-                fontSize: 14,
-                color: colors.textMuted,
-                fontFamily: 'System',
-                marginBottom: 6,
-              }}>
+              variant="small"
+              className="text-textMuted mb-2">
               {formattedDate} · {formattedDuration}
             </AppText>
             {/* Sync Badge */}
@@ -182,88 +143,48 @@ export function StoryCard({
         </View>
 
         {/* Right: Actions */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          {/* Offload Button (Only if synced and not offloaded) */}
+        <View className="flex-row items-center gap-3">
+          {/* Offload Button */}
           {syncStatus === 'synced' && !isOffline && !isUnavailable && onOffload && (
-            <TouchableOpacity
-              onPress={(e) => {
-                e.stopPropagation();
-                onOffload();
-              }}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: colors.surface,
-                borderWidth: 1,
-                borderColor: colors.border,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Free up space"
-              accessibilityHint="Removes download from device, keeps in cloud">
-              <Ionicons name="phone-portrait-outline" size={20} color={colors.textMuted} />
-            </TouchableOpacity>
+            <AppPressable
+              onPress={onOffload}
+              haptic={Haptics.ImpactFeedbackStyle.Light}
+              className="w-12 h-12 rounded-full bg-surface border items-center justify-center shadow-sm"
+              style={{ borderColor: colors.border }}
+              accessibilityLabel="Free up space">
+              <Icon name="phone-portrait-outline" size={20} color={colors.textMuted} />
+            </AppPressable>
           )}
 
           {/* Delete Button */}
           {onDelete && (
-            <TouchableOpacity
-              onPress={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={{
-                width: 40,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: `${colors.error}10`,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              accessibilityRole="button"
+            <AppPressable
+              onPress={onDelete}
+              haptic={Haptics.ImpactFeedbackStyle.Medium}
+              className="w-12 h-12 rounded-full items-center justify-center"
+              style={{ backgroundColor: `${colors.error}10` }}
               accessibilityLabel="Delete story">
-              <Ionicons name="trash-outline" size={22} color={colors.error} />
-            </TouchableOpacity>
+              <Icon name="trash-outline" size={24} color={colors.error} />
+            </AppPressable>
           )}
 
           {/* Play button */}
-          <TouchableOpacity
-            onPress={(e) => {
-              e.stopPropagation();
-              onPlay();
-            }}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              backgroundColor: isUnavailable ? colors.disabled : colors.primary,
-              alignItems: 'center',
-              justifyContent: 'center',
-              // shadowColor: colors.primary,
-              // shadowOffset: { width: 0, height: 4 },
-              // shadowOpacity: isUnavailable ? 0 : 0.25,
-              // shadowRadius: 8,
-              // elevation: 4,
-              // @ts-ignore
-              boxShadow: isUnavailable ? 'none' : '0 4px 8px rgba(234, 191, 170, 0.25)', // Using primary color approx or theme ref
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={isUnavailable ? 'Cannot play' : 'Play story'}
-            disabled={isUnavailable}>
-            <Ionicons
+          <AppPressable
+            onPress={onPlay}
+            disabled={isUnavailable}
+            haptic={Haptics.ImpactFeedbackStyle.Heavy}
+            className={`w-14 h-14 rounded-full items-center justify-center shadow-md`}
+            style={{ backgroundColor: isUnavailable ? colors.disabled : colors.primary }}
+            accessibilityLabel={isUnavailable ? 'Cannot play' : 'Play story'}>
+            <Icon
               name="play"
-              size={22}
+              size={28}
               color={isUnavailable ? colors.handle : colors.onPrimary}
-              style={{ marginLeft: 2 }}
+              style={{ marginLeft: 4 }}
             />
-          </TouchableOpacity>
+          </AppPressable>
         </View>
       </View>
-    </TouchableOpacity>
+    </AppPressable>
   );
 }

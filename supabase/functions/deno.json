@@ -6,6 +6,7 @@
   },
   "imports": {
     "supabase": "https://esm.sh/@supabase/supabase-js@2",
-    "livekit": "https://esm.sh/livekit-server-sdk@2"
+    "livekit": "https://esm.sh/livekit-server-sdk@2",
+    "std/": "https://deno.land/std@0.168.0/"
   }
 }

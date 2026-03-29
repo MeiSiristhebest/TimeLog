@@ -11,7 +11,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const GROUPING_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
 
-serve(async (req) => {
+serve(async (req: Request) => {
   try {
     const { event_type, event_id, user_id } = await req.json();
 
@@ -50,7 +50,7 @@ serve(async (req) => {
     if (recentEvents && recentEvents.length > 0) {
       // Group with existing notification
       const existingNotification = recentEvents[0];
-      const groupedEventIds = [...recentEvents.map((e) => e.event_id), event_id];
+      const groupedEventIds = [...recentEvents.map((e: { event_id: string }) => e.event_id), event_id];
 
       await supabase
         .from('notification_queue')
@@ -84,7 +84,8 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error('Notification grouping error:', error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: errorMessage }), { status: 500 });
   }
 });
 

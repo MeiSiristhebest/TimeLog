@@ -1,0 +1,12 @@
+appId: com.timelog.elderly
+---
+- clearState
+- launchApp
+- tapOn: "Me"
+- assertVisible: "Family Members"
+- tapOn: "Family Members"
+- assertVisible: "Family Management"
+- assertVisible: "Generate Recovery Code"
+- tapOn: "Generate Recovery Code"
+- assertVisible: "Expires: .*"
+- assertVisible: "Copy Code"

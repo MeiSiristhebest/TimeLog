@@ -13,7 +13,15 @@ import { FilterCategory, GALLERY_STRINGS, mapRawCategoryToFilter } from '../data
 import { SortOption } from '../components/SortOptionsModal';
 import { getQuestionById, TOPIC_QUESTIONS } from '@/features/recorder/data/topicQuestions';
 import { db } from '@/db/client';
-import { transcriptSegments } from '@/db/schema';
+import { transcriptSegments, type TranscriptSegment } from '@/db/schema';
+import { supabase } from '@/lib/supabase';
+import { devLog } from '@/lib/devLogger';
+
+interface SemanticSearchResult {
+  id: string;
+  score: number;
+  metadata?: Record<string, unknown>;
+}
 
 const SEARCH_DEBOUNCE_MS = 180;
 
@@ -60,6 +68,52 @@ export function useStoryGallery() {
     db.select().from(transcriptSegments).orderBy(asc(transcriptSegments.storyId), asc(transcriptSegments.segmentIndex))
   );
 
+  const [semanticStoryIds, setSemanticStoryIds] = useState<string[]>([]);
+  const [isSearchingSemantic, setIsSearchingSemantic] = useState(false);
+
+  useEffect(() => {
+    const normalizedQuery = debouncedSearchQuery.trim();
+    if (!normalizedQuery) {
+      setSemanticStoryIds([]);
+      setIsSearchingSemantic(false);
+      return;
+    }
+
+    let isMounted = true;
+    setIsSearchingSemantic(true);
+
+    const performSemanticSearch = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('semantic-search', {
+          body: {
+            action: 'search',
+            query: normalizedQuery,
+          }
+        });
+        
+        if (error) {
+          devLog.warn('[useStoryGallery] Semantic search failed:', error);
+          return;
+        }
+
+        if (isMounted && data?.results) {
+          const results = data.results as SemanticSearchResult[];
+          setSemanticStoryIds(results.map((r) => r.id));
+        }
+      } catch (err) {
+        devLog.warn('[useStoryGallery] Failed to invoke semantic-search:', err);
+      } finally {
+        if (isMounted) setIsSearchingSemantic(false);
+      }
+    };
+
+    performSemanticSearch();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [debouncedSearchQuery]);
+
   const matchingStoryIds = useMemo(() => {
     const normalizedQuery = debouncedSearchQuery.trim().toLowerCase();
     if (!normalizedQuery) {
@@ -67,7 +121,9 @@ export function useStoryGallery() {
     }
 
     const matched = new Set<string>();
-    (segments ?? []).forEach((segment) => {
+    semanticStoryIds.forEach(id => matched.add(id));
+
+    (segments ?? []).forEach((segment: TranscriptSegment) => {
       const text = segment.text.trim().toLowerCase();
       if (!text) {
         return;
@@ -78,7 +134,7 @@ export function useStoryGallery() {
     });
 
     return [...matched];
-  }, [debouncedSearchQuery, segments]);
+  }, [debouncedSearchQuery, segments, semanticStoryIds]);
 
   const { stories, isLoading } = useStories({
     searchQuery: debouncedSearchQuery,
@@ -110,7 +166,7 @@ export function useStoryGallery() {
     const fallback = new Map<string, string[]>();
     const finalOnly = new Map<string, string[]>();
 
-    (segments ?? []).forEach((segment) => {
+    (segments ?? []).forEach((segment: TranscriptSegment) => {
       const text = segment.text.trim();
       if (!text) return;
 

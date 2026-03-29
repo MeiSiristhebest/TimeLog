@@ -272,7 +272,7 @@ export function HeritageButton({
               />
             )}
             <AppText
-              variant="label"
+              variant="caption"
               style={[sizeStyles.text, variantStyles.text, textStyle]}
               className={styles.text}>
               {title}

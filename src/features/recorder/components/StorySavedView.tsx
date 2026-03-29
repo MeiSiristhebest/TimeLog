@@ -42,6 +42,7 @@ const PAPER_TEXTURE = require('../../../../assets/images/paper-texture.png');
 
 interface StorySavedViewProps {
   onDismiss: () => void;
+  onSetTimeCapsule?: () => void;
   storyTitle?: string;
   category?: string;
 }
@@ -80,6 +81,7 @@ function getCategoryIllustration(category?: string): number {
 
 export function StorySavedView({
   onDismiss,
+  onSetTimeCapsule,
   storyTitle = EN_COPY.storySaved.defaultStoryTitle,
   category,
 }: StorySavedViewProps): JSX.Element {
@@ -211,6 +213,17 @@ export function StorySavedView({
                 fullWidth
                 icon="checkmark"
               />
+              {onSetTimeCapsule && (
+                <View style={{ marginTop: 12 }}>
+                  <HeritageButton
+                    title={`🕰️ ${EN_COPY.timeCapsule.label}`}
+                    onPress={onSetTimeCapsule}
+                    variant="secondary"
+                    size="large"
+                    fullWidth
+                  />
+                </View>
+              )}
             </Animated.View>
           </View>
           </View>

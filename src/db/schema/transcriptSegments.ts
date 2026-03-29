@@ -1,4 +1,5 @@
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { InferSelectModel } from 'drizzle-orm';
 
 export const transcriptSegments = sqliteTable('transcript_segments', {
     id: text('id').primaryKey(),
@@ -13,3 +14,5 @@ export const transcriptSegments = sqliteTable('transcript_segments', {
     syncedAt: integer('synced_at'), // Stored as timestamp number
     createdAt: integer('created_at').notNull(), // Stored as timestamp number
 });
+
+export type TranscriptSegment = InferSelectModel<typeof transcriptSegments>;

@@ -16,6 +16,7 @@ interface BreathingGlowProps {
   size?: number;
   profile?: BreathingProfile;
   style?: StyleProp<ViewStyle>;
+  className?: string;
 }
 
 export type BreathingProfile = 'home' | 'recording';
@@ -95,6 +96,7 @@ export function BreathingGlow({
   size = 130,
   profile = 'home',
   style,
+  className = '',
 }: BreathingGlowProps) {
   const { colors } = useHeritageTheme();
   const shouldReduceMotion = useReducedMotion();
@@ -213,17 +215,14 @@ export function BreathingGlow({
   return (
     <View
       pointerEvents="none"
+      className={`absolute self-center overflow-visible z-0 ${className}`}
       style={[
         {
-          position: 'absolute',
           width: ringSize,
           height: ringSize,
-          alignSelf: 'center',
           borderRadius: ringSize / 2,
           justifyContent: 'center',
           alignItems: 'center',
-          overflow: 'visible',
-          zIndex: 0,
           opacity: isWarm ? 1 : 0,
         },
         style,
@@ -241,8 +240,8 @@ export function BreathingGlow({
       />
       <Animated.View
         key="outer-pulse"
-        renderToHardwareTextureAndroid
-        needsOffscreenAlphaCompositing
+        renderToHardwareTextureAndroid={true}
+        needsOffscreenAlphaCompositing={true}
         style={[
           {
             position: 'absolute',
@@ -262,8 +261,8 @@ export function BreathingGlow({
       </Animated.View>
       <Animated.View
         key="pulse"
-        renderToHardwareTextureAndroid
-        needsOffscreenAlphaCompositing
+        renderToHardwareTextureAndroid={true}
+        needsOffscreenAlphaCompositing={true}
         style={[
           {
             position: 'absolute',

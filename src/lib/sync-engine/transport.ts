@@ -4,7 +4,7 @@
  */
 
 import * as Upload from 'tus-js-client';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import * as Crypto from 'expo-crypto';
 import { supabase } from '@/lib/supabase';
 import { getSupabaseRuntimeConfig, RuntimeConfigError } from '@/lib/config/runtimeConfig';

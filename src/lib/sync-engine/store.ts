@@ -468,6 +468,24 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
                 userId: cloudEligibility.userId,
                 allowUpsertFallback: true,
               });
+
+              // Index for semantic search if transcription was updated
+              if (payload.updates.transcription && typeof payload.updates.transcription === 'string') {
+                try {
+                  const { error: invokeError } = await supabase.functions.invoke('semantic-search', {
+                    body: {
+                      action: 'index',
+                      story_id: payload.recordingId,
+                      text: payload.updates.transcription,
+                    }
+                  });
+                  if (invokeError) {
+                    devLog.warn('[sync-store] Failed to index story for semantic search', invokeError);
+                  }
+                } catch (err) {
+                  devLog.warn('[sync-store] Failed to invoke semantic-search function', err);
+                }
+              }
             } else if (item.type === 'upload_transcript_segment') {
               const payload = JSON.parse(item.payload) as TranscriptSegmentSyncPayload;
               const row: Record<string, unknown> = {

@@ -1,32 +1,44 @@
 # Contributing to TimeLog
 
-First off, thank you for considering contributing to TimeLog! It's people like you that make TimeLog such a great tool.
+We love your input! We want to make contributing to TimeLog as easy and transparent as possible, whether it's:
 
-## Code of Conduct
+- Reporting a bug
+- Discussing the current state of the code
+- Submitting a fix
+- Proposing new features
+- Becoming a maintainer
 
-Help us keep this project a welcoming and safe place for everyone.
+## Development Process
 
-## How Can I Contribute?
+We use GitHub to host code, to track issues and feature requests, as well as accept pull requests.
 
-### Reporting Bugs
-If you find a bug, please create an issue on GitHub with as much detail as possible, including steps to reproduce.
+1. Fork the repo and create your branch from `master`.
+2. If you've added code that should be tested, add tests.
+3. If you've changed APIs, update the documentation.
+4. Ensure the test suite passes.
+5. Make sure your code lints.
+6. Issue that pull request!
 
-### Suggesting Enhancements
-We welcome ideas for new features! Please open an issue to discuss your proposal first.
+## Any contributions you make will be under the MIT Software License
 
-### Pull Requests
-1. Fork the repo and create your branch from `main`.
-2. Ensure your code follows our linting and formatting rules.
-3. Include tests for any new features or bug fixes.
-4. Update the documentation (README.md) if necessary.
+In short, when you submit github contributions, you're agreeing to license them under the same terms as the project's license.
 
-## Development Workflow
+## Report bugs using GitHub's [issue tracker]
 
-1. `npm install`
-2. Configure your `.env`
-3. `npm start`
-4. Run tests: `npm test`
+We use GitHub issues to track public bugs. Report a bug by opening a new issue; it's that easy!
 
----
+## Write bug reports with detail, background, and sample code
 
-*Thank you for your contributions!*
+**Great Bug Reports** tend to have:
+
+- A quick summary and/or background
+- Steps to reproduce
+  - Be specific!
+  - Give sample code if you can.
+- What you expected would happen
+- What actually happens
+- Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
+
+## License
+
+By contributing, you agree that your contributions will be licensed under its MIT License.

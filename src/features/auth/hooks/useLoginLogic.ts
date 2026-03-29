@@ -19,7 +19,7 @@ export function useLoginLogic() {
     try {
       await signInWithEmailPassword(email, password);
       setMessage('Login successful.');
-      router.replace(APP_ROUTES.TABS);
+      router.replace(APP_ROUTES.FAMILY_TAB);
     } catch (err) {
       const friendly =
         err instanceof Error ? err.message : 'Something went wrong. Please try again.';

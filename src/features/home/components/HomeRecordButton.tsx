@@ -1,7 +1,8 @@
 import { memo } from 'react';
-import { Ionicons } from '@/components/ui/Icon';
+import { Icon } from '@/components/ui/Icon';
 import { Animated } from '@/tw/animated';
 import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 export interface HomeRecordButtonProps {
   readonly onPress: () => void;
@@ -9,21 +10,6 @@ export interface HomeRecordButtonProps {
   readonly iconColor: string;
   readonly disabled?: boolean;
 }
-
-const buttonBaseStyle = {
-  width: 100,
-  height: 100,
-  borderRadius: 999,
-  alignItems: 'center' as const,
-  justifyContent: 'center' as const,
-  overflow: 'hidden' as const,
-  shadowColor: '#C26B4A',
-  shadowOffset: { width: 0, height: 0 },
-  shadowOpacity: 0.4,
-  shadowRadius: 20,
-  elevation: 10,
-  zIndex: 1,
-};
 
 function HomeRecordButtonImpl({
   onPress,
@@ -39,6 +25,10 @@ function HomeRecordButtonImpl({
   }));
 
   const handlePressIn = () => {
+    // Provide immediate "Heavy" impact for starting a significant action (Recording)
+    if (!disabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    }
     scale.value = withSpring(0.9, { damping: 10, stiffness: 300 });
   };
 
@@ -55,8 +45,19 @@ function HomeRecordButtonImpl({
       accessibilityRole="button"
       accessibilityLabel="Start recording your story"
       accessibilityHint="Tap to begin recording audio">
-      <Animated.View style={[buttonBaseStyle, animatedStyle, { opacity: disabled ? 0.5 : 1 }]}>
-        <Ionicons name="mic" size={52} color={iconColor} />
+      <Animated.View 
+        className="w-[100px] h-[100px] rounded-full items-center justify-center overflow-hidden elevation-10"
+        style={[
+          animatedStyle, 
+          { 
+            opacity: disabled ? 0.5 : 1,
+            shadowColor: '#C26B4A',
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.4,
+            shadowRadius: 20,
+          }
+        ]}>
+        <Icon name="mic" size={52} color={iconColor} />
       </Animated.View>
     </Animated.Pressable>
   );

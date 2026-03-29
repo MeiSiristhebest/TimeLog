@@ -1,17 +1,17 @@
 /**
- * Stories Tab (Gallery) - Final Polish
+ * Stories Tab (Gallery) - Final Polish (Standardized)
  *
  * Matches Record screen layout:
- * - SafeAreaView + inline backgroundColor
- * - Typography: Fraunces for Title (matches "Good Morning" on Home)
+ * - SafeAreaView + inline backgroundColor (NativeWind v4)
+ * - Typography: Fraunces for Title
  * - Functional Sort Feature
  */
 
 import type { AudioRecording } from '@/types/entities';
 import { useCallback } from 'react';
-import { View, StyleSheet, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@/components/ui/Icon';
+import { View, TextInput } from 'react-native';
+import { Icon } from '@/components/ui/Icon';
+import { showSuccessToast, showErrorToast } from '@/components/ui/feedback/toast';
 import { StoryList } from '@/features/story-gallery/components/StoryList';
 import { DeleteConfirmModal } from '@/features/story-gallery/components/DeleteConfirmModal';
 import { SortOptionsModal } from '@/features/story-gallery/components/SortOptionsModal';
@@ -22,13 +22,17 @@ import { FilterBar } from '@/features/story-gallery/components/FilterBar';
 import { useStoryGallery } from '@/features/story-gallery/hooks/useStoryGallery';
 import { GALLERY_STRINGS } from '@/features/story-gallery/data/mockGalleryData';
 import { AppText } from '@/components/ui/AppText';
+import { AppPressable } from '@/components/ui/AppPressable';
 import { Animated } from '@/tw/animated';
-import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { usePdfExport } from '../hooks/usePdfExport';
+import { EN_COPY } from '@/features/app/copy/en';
+import { Container } from '@/components/ui/Container';
+import * as Haptics from 'expo-haptics';
 
 export default function StoriesTabScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
 
-  // Logic Separation: All logic in hook
+  // Logic Separation: All logic in library-standard hook
   const {
     isLoading,
     recordings,
@@ -70,45 +74,88 @@ export default function StoriesTabScreen(): JSX.Element {
     [actions.onPlayStory, actions.onSelectStory, focusedStoryId]
   );
 
+  const { exportPdf, isExporting } = usePdfExport();
+
+  const handleExportAll = async () => {
+    const storiesToExport = recordings.filter(r => r.transcription).map(r => ({
+      title: r.title || EN_COPY.storySaved.defaultStoryTitle,
+      transcript: r.transcription!,
+      date: new Date(r.startedAt).toLocaleDateString()
+    }));
+    
+    if (storiesToExport.length === 0) {
+      showErrorToast(EN_COPY.photoToTopic.errorAnalysis);
+      return;
+    }
+    
+    try {
+      showSuccessToast(EN_COPY.photoToTopic.processing);
+      await exportPdf(storiesToExport, true);
+    } catch {
+      showErrorToast(EN_COPY.photoToTopic.errorAnalysis);
+    }
+  };
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.surfaceWarm }]}>
+    <Container safe scrollable={false} className="bg-surfaceWarm">
       {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <AppText style={[styles.title, { color: colors.onSurface }]}>
+      <View className="flex-row items-start justify-between px-6 pt-6 pb-2">
+        <View className="flex-1 pr-4">
+          <AppText variant="headline" className="leading-tight">
             {GALLERY_STRINGS.header.title}
           </AppText>
-          <AppText style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</AppText>
+          <AppText variant="small" className="font-bold mt-1" style={{ color: colors.textMuted }}>
+            {subtitle}
+          </AppText>
         </View>
-        <SortButton onPress={() => setSortModalVisible(true)} />
+        <View className="flex-row items-center gap-3">
+          {recordings.length > 0 && (
+            <AppPressable
+              disabled={isExporting}
+              onPress={handleExportAll}
+              haptic={Haptics.ImpactFeedbackStyle.Medium}
+              className={`w-12 h-12 rounded-full bg-surfaceCard items-center justify-center shadow-md ${isExporting ? 'opacity-50' : 'opacity-100'}`}
+              style={{ borderColor: colors.border, borderWidth: 1 }}
+            >
+              <Icon name="book" size={24} color={colors.primary} />
+            </AppPressable>
+          )}
+          <PhotoTopicButton onPress={() => {
+            // @ts-ignore - typed router
+            import('expo-router').then(m => m.router.push('/photo-topic'));
+          }} />
+          {recordings.length > 0 && (
+            <SortButton onPress={() => setSortModalVisible(true)} />
+          )}
+        </View>
       </View>
 
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder={GALLERY_STRINGS.header.searchPlaceholder}
-          placeholderTextColor={`${colors.onSurface}55`}
-          style={[
-            styles.searchInput,
-            {
-              borderColor: colors.border,
-              color: colors.onSurface,
-              backgroundColor: colors.surfaceCard,
-            },
-          ]}
-          autoCapitalize="none"
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-        />
-      </View>
+      {/* Search Section - Only show when recordings exist */}
+      {recordings.length > 0 && (
+        <View className="px-6 pb-2">
+          <View className="flex-row items-center h-14 rounded-2xl border px-4 bg-surfaceCard shadow-sm" style={{ borderColor: colors.border }}>
+            <Icon name="search" size={22} color={`${colors.onSurface}88`} />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder={GALLERY_STRINGS.header.searchPlaceholder}
+              placeholderTextColor={`${colors.onSurface}55`}
+              className="flex-1 ml-3 text-lg text-onSurface h-full"
+              autoCapitalize="none"
+              autoCorrect={false}
+              clearButtonMode="while-editing"
+            />
+          </View>
+        </View>
+      )}
 
-      {/* Filter Bar */}
-      <FilterBar selectedCategory={filter} onSelectCategory={setFilter} />
+      {/* Filter Bar - Only show when recordings exist */}
+      {recordings.length > 0 && (
+        <FilterBar selectedCategory={filter} onSelectCategory={setFilter} />
+      )}
 
       {/* Content Area */}
-      <View style={[styles.content, { backgroundColor: colors.surfaceWarm }]}>
+      <View className="flex-1" style={{ backgroundColor: colors.surfaceWarm }}>
         <StoryList
           recordings={recordings}
           onSelectStory={actions.onSelectStory}
@@ -143,83 +190,41 @@ export default function StoriesTabScreen(): JSX.Element {
         onUndo={actions.onUndo}
         onTimeout={actions.onUndoTimeout}
       />
-    </SafeAreaView>
+    </Container>
   );
 }
 
 // Interactive Sort Button
 function SortButton({ onPress }: { onPress: () => void }) {
   const { colors } = useHeritageTheme();
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.95, { damping: 10, stiffness: 300 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
-  };
 
   return (
-    <Animated.Pressable onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut}>
-      <Animated.View style={[styles.sortButton, animatedStyle]}>
-        <AppText style={[styles.sortText, { color: colors.primary }]}>
-          {GALLERY_STRINGS.header.sortButton}
-        </AppText>
-        <Ionicons name="filter" size={18} color={colors.primary} />
-      </Animated.View>
-    </Animated.Pressable>
+    <AppPressable 
+      onPress={onPress} 
+      haptic={Haptics.ImpactFeedbackStyle.Light}
+      className="flex-row items-center gap-1.5 px-3 py-2 rounded-pill bg-surfaceAccent/10"
+    >
+      <AppText variant="small" className="font-bold" style={{ color: colors.primary }}>
+        {GALLERY_STRINGS.header.sortButton}
+      </AppText>
+      <Icon name="filter" size={20} color={colors.primary} />
+    </AppPressable>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 8,
-  },
-  title: {
-    fontFamily: 'Fraunces_600SemiBold',
-    fontSize: 34,
-    fontWeight: '400',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 17,
-    marginTop: 4,
-  },
-  sortButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    padding: 8,
-  },
-  sortText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  searchContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 10,
-  },
-  searchInput: {
-    height: 46,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    fontSize: 16,
-  },
-  content: {
-    flex: 1,
-  },
-});
+// Interactive Photo Topic Button
+function PhotoTopicButton({ onPress }: { onPress: () => void }) {
+  const { colors } = useHeritageTheme();
+
+  return (
+    <AppPressable 
+      onPress={onPress} 
+      haptic={Haptics.ImpactFeedbackStyle.Light}
+      className="flex-row items-center gap-1.5 px-3 py-2 rounded-pill bg-surfaceAccent/10"
+    >
+      <AppText variant="small" className="font-bold" style={{ color: colors.primary }}>
+        📷 {EN_COPY.photoToTopic.title}
+      </AppText>
+    </AppPressable>
+  );
+}

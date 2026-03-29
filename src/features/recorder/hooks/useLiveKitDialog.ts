@@ -15,6 +15,7 @@ import { transcriptSyncService } from '@/features/recorder/services/TranscriptSy
 import { playOfflineCue } from '@/features/recorder/services/soundCueService';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { getCurrentUserId } from '@/features/auth/services/sessionService';
+import { devLog } from '@/lib/devLogger';
 
 const AGENT_PARTICIPANT_TIMEOUT_MS = 2500;
 
@@ -40,17 +41,18 @@ export interface UseLiveKitDialogReturn {
   networkMetrics: NetworkMetrics | null;
   transcripts: TranscriptionSegment[];
   error: Error | null;
+  setMicrophoneEnabled: (enabled: boolean) => Promise<void>;
 }
 
 export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDialogReturn {
   const { storyId, topicText, language, onModeChange, onNetworkQualityChange, onError } = options;
-  
+
   const sessionUserId = useAuthStore((state) => state.sessionUserId);
-  
+
   const clientRef = useRef<LiveKitClient | null>(null);
   const orchestratorRef = useRef<AiDialogOrchestrator | null>(null);
   const networkServiceRef = useRef<NetworkQualityService | null>(null);
-  
+
   const [connectionState, setConnectionState] = useState<LiveKitConnectionState>('disconnected');
   const [dialogMode, setDialogMode] = useState<DialogMode>('DIALOG');
   const [networkQuality, setNetworkQuality] = useState<NetworkQuality | null>(null);
@@ -104,6 +106,7 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
 
   const connect = useCallback(async (storyIdOverride?: string) => {
     const resolvedStoryId = storyIdOverride ?? storyId;
+    devLog.info(`[useLiveKitDialog] Connecting session for StoryId: ${resolvedStoryId}`);
     if (!resolvedStoryId) {
       const err = new Error('Missing story id for LiveKit dialog session');
       setError(err);
@@ -112,6 +115,9 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
     }
 
     try {
+      // Safety: Ensure any existing connection is closed before starting a new one
+      await disconnect();
+
       setError(null);
       setTranscripts([]);
       const identity = await resolveIdentity();
@@ -122,7 +128,7 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
       // Initialize services
       const orchestrator = new AiDialogOrchestrator();
       const networkService = new NetworkQualityService();
-      
+
       orchestratorRef.current = orchestrator;
       networkServiceRef.current = networkService;
 
@@ -158,6 +164,7 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
 
       // Fetch LiveKit token
       const roomName = `story_${resolvedStoryId}`;
+      devLog.info(`[useLiveKitDialog] Fetching token for room: ${roomName}`);
       const tokenData = await livekitTokenService.fetchToken({
         roomName,
         identity,
@@ -165,6 +172,7 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
         topicText,
         language,
       });
+      devLog.info('[useLiveKitDialog] Token fetched, connecting client...');
 
       // Create and connect LiveKit client
       const client = new LiveKitClient();
@@ -179,7 +187,7 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
       let segmentIndex = 0;
       client.onTranscription((segment) => {
         setTranscripts((prev) => [...prev, segment]);
-        
+
         // Save to SQLite
         void transcriptSyncService.saveSegment(resolvedStoryId, segment, segmentIndex++);
 
@@ -197,16 +205,18 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
         token: tokenData.token,
       });
 
-      // Enable microphone
-      await client.enableMicrophone();
+      // Initialize microphone hardware (only once per session)
+      await client.startMicrophoneHardware();
 
+      devLog.info('[useLiveKitDialog] Waiting for AI agent presence...');
       // Hard gate: room connected but no remote worker means AI is unavailable.
       await waitForAgentPresence(client);
+      devLog.info('[useLiveKitDialog] AI agent presence confirmed, session ready');
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to connect');
       setError(error);
       onError?.(error);
-      
+
       // Cleanup on error
       if (clientRef.current) {
         await clientRef.current.disconnect();
@@ -278,6 +288,19 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
     orchestratorRef.current?.startWaitingForResponse();
   }, []);
 
+  const setMicrophoneEnabled = useCallback(async (enabled: boolean) => {
+    if (!clientRef.current) {
+      devLog.warn('[useLiveKitDialog] Cannot set mic: client not initialized');
+      return;
+    }
+    devLog.info(`[useLiveKitDialog] Setting microphone enabled: ${enabled}`);
+    if (enabled) {
+      await clientRef.current.enableMicrophone();
+    } else {
+      await clientRef.current.disableMicrophone();
+    }
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -298,5 +321,6 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
     networkMetrics,
     transcripts,
     error,
+    setMicrophoneEnabled,
   };
 }

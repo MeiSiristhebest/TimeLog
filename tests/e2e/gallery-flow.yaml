@@ -1,0 +1,18 @@
+appId: com.meisiris.timelog
+---
+- launchApp
+- tapOn: "Gallery"
+- assertVisible: "Stories"
+- assertVisible: "Search for stories..."
+- assertVisible: "All"
+- tapOn:
+    id: "story-card-0" # Featured card
+- assertVisible: "Story Details"
+- assertVisible: "TRANSCRIPTION"
+- tapOn: "Back"
+- scrollUntilVisible:
+    element: "CompactStoryCard"
+    direction: DOWN
+- tapOn:
+    point: "50%,50%" # Tap on a list item
+- assertVisible: "Story Details"

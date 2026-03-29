@@ -1,4 +1,4 @@
-import { Ionicons } from '@/components/ui/Icon';
+import { Icon } from '@/components/ui/Icon';
 import { useCallback, useEffect, useRef } from 'react';
 import { Pressable, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
@@ -9,7 +9,10 @@ import {
   useAnimatedProps,
   useSharedValue,
   withTiming,
+  useAnimatedReaction,
+  runOnJS,
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 interface HoldToStopButtonProps {
   onHoldComplete: () => void;
@@ -32,7 +35,7 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 export function HoldToStopButton({
   onHoldComplete,
   size,
-  holdDurationMs = 500,
+  holdDurationMs = 700,
   buttonColor,
   iconColor = '#FFFFFF',
   progressColor = '#FBBF24',
@@ -50,12 +53,26 @@ export function HoldToStopButton({
   const circumference = 2 * Math.PI * radius;
 
   const progress = useSharedValue(0);
+  const lastHapticMilestone = useRef(0);
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const holdCompletedRef = useRef(false);
 
+  // Animated props for the progress ring
   const animatedProps = useAnimatedProps(() => ({
     strokeDashoffset: circumference * (1 - progress.value),
   }));
+
+  // Incremental haptic feedback during hold
+  useAnimatedReaction(
+    () => progress.value,
+    (current) => {
+      const milestone = Math.floor(current * 5); // 0, 1, 2, 3, 4, 5
+      if (milestone > lastHapticMilestone.current && milestone < 5) {
+        lastHapticMilestone.current = milestone;
+        runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
+      }
+    }
+  );
 
   const clearHoldTimer = useCallback(() => {
     if (holdTimerRef.current) {
@@ -65,13 +82,16 @@ export function HoldToStopButton({
   }, []);
 
   const startProgress = useCallback(() => {
-    if (disabled) {
-      return;
-    }
+    if (disabled) return;
 
     clearHoldTimer();
     holdCompletedRef.current = false;
+    lastHapticMilestone.current = 0;
     progress.value = 0;
+    
+    // Provide initial feedback on press start
+    Haptics.selectionAsync();
+
     progress.value = withTiming(1, {
       duration: holdDurationMs,
       easing: Easing.linear,
@@ -79,9 +99,7 @@ export function HoldToStopButton({
 
     holdTimerRef.current = setTimeout(() => {
       holdTimerRef.current = null;
-      if (disabled || holdCompletedRef.current) {
-        return;
-      }
+      if (disabled || holdCompletedRef.current) return;
       holdCompletedRef.current = true;
       onHoldComplete();
     }, holdDurationMs);
@@ -89,12 +107,13 @@ export function HoldToStopButton({
 
   const resetProgress = useCallback(() => {
     clearHoldTimer();
-    holdCompletedRef.current = false;
-    cancelAnimation(progress);
-    progress.value = withTiming(0, {
-      duration: 140,
-      easing: Easing.out(Easing.quad),
-    });
+    if (!holdCompletedRef.current) {
+      cancelAnimation(progress);
+      progress.value = withTiming(0, {
+        duration: 140,
+        easing: Easing.out(Easing.quad),
+      });
+    }
   }, [clearHoldTimer, progress]);
 
   useEffect(() => {
@@ -110,24 +129,15 @@ export function HoldToStopButton({
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      style={{
-        width: ringSize,
-        height: ringSize,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
+      className="items-center justify-center"
+      style={{ width: ringSize, height: ringSize }}>
       {({ pressed }) => (
         <>
           {pressed && !disabled && (
             <Svg
               width={ringSize}
               height={ringSize}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                transform: [{ rotate: '-90deg' }]
-              }}>
+              className="absolute top-0 left-0 rotate-[-90deg]">
               <Circle
                 cx={ringSize / 2}
                 cy={ringSize / 2}
@@ -151,19 +161,18 @@ export function HoldToStopButton({
           )}
 
           <View
+            className="items-center justify-center elevation-5"
             style={{
               width: size,
               height: size,
               borderRadius: size / 2,
-              alignItems: 'center',
-              justifyContent: 'center',
               backgroundColor: buttonColor,
               borderColor: buttonBorderColor,
               borderWidth: buttonBorderWidth,
               opacity: disabled ? 0.6 : 1,
               transform: [{ scale: pressed && !disabled ? 0.94 : 1 }],
             }}>
-            <Ionicons name="close" size={Math.round(size * 0.46)} color={iconColor} />
+            <Icon name="square" size={Math.round(size * 0.42)} color={iconColor} />
           </View>
         </>
       )}

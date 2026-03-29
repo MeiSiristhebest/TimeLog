@@ -208,6 +208,7 @@ export async function updateStoryMetadata(
     coverImagePath?: string;
     topicId?: string; // For category changes (mapped via topic)
     startedAt?: number;
+    unlockAt?: number | null;
   }
 ): Promise<void> {
   try {

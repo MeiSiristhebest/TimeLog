@@ -11,7 +11,7 @@
 import { AppText } from '@/components/ui/AppText';
 import { useEffect, useMemo } from 'react';
 import { View } from 'react-native';
-import { Ionicons } from '@/components/ui/Icon';
+import { Icon, Ionicons } from '@/components/ui/Icon';
 import { Animated } from '@/tw/animated';
 import { useSharedValue,
   useAnimatedStyle,
@@ -34,7 +34,7 @@ type StatusConfig = {
   text: string;
 };
 
-export function SyncStatusBadge({ status, showText = true }: SyncStatusBadgeProps): JSX.Element {
+export function SyncStatusBadge({ status, className = '', showText = true }: SyncStatusBadgeProps): JSX.Element {
   const { colors } = useHeritageTheme();
   const rotation = useSharedValue(0);
 
@@ -96,15 +96,15 @@ export function SyncStatusBadge({ status, showText = true }: SyncStatusBadgeProp
 
   return (
     <View
-      className="flex-row items-center gap-1.5"
+      className={`flex-row items-center gap-1 ${className}`}
       accessibilityRole="text"
       accessibilityLabel={config.text}
       accessibilityLiveRegion="polite">
       <Animated.View style={status === 'syncing' ? animatedStyle : {}}>
-        <Ionicons name={config.icon} size={18} color={config.color} />
+        <Icon name={config.icon} size={16} color={config.color} />
       </Animated.View>
 
-      {showText && <AppText className="text-sm font-semibold" style={{ color: config.color }}>{config.text}</AppText>}
+      {showText && <AppText className="text-[11px] font-bold uppercase tracking-wider" style={{ color: config.color }}>{config.text}</AppText>}
     </View>
   );
 }

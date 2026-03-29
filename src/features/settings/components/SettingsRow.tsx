@@ -134,7 +134,7 @@ export const SettingsRow = forwardRef<React.ElementRef<typeof View>, SettingsRow
                   ]}>
                   {!isCentered && value ? (
                     <AppText
-                      variant="label"
+                      variant="caption"
                       className="text-[15px] mr-1"
                       style={{ fontSize: 15, marginRight: 4, color: colors.textMuted }}>
                       {value}

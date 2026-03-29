@@ -1,274 +1,121 @@
-/**
- * LiveKit Client
- * 
- * Wraps LiveKit Room connection, track management, and event handling.
- * Manages dual audio path: local recording (@siteed) + LiveKit streaming (mic).
- */
+import {
+  Participant,
+  Room,
+  RoomEvent,
+  RemoteParticipant,
+  ParticipantEvent,
+  TrackPublication,
+  TranscriptionSegment as LiveKitTranscriptionSegment,
+} from 'livekit-client';
+import { devLog } from '../devLogger';
 
-import { Room, RoomEvent, RemoteAudioTrack } from 'livekit-client';
-import type { ConnectionQuality } from 'livekit-client';
-
-export type LiveKitConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
-
-export interface LiveKitConfig {
-  url: string;
-  token: string;
-}
+export type LiveKitConnectionState = 'connected' | 'connecting' | 'disconnected' | 'reconnecting';
 
 export interface TranscriptionSegment {
-  speaker: 'user' | 'agent';
+  id: string;
   text: string;
+  speaker: 'user' | 'agent';
   isFinal: boolean;
   timestamp: number;
+  confidence?: number;
+  startTimeMs?: number;
+  endTimeMs?: number;
 }
 
 type LiveKitListener = (...args: unknown[]) => void;
 
-function isConnectionState(value: unknown): value is LiveKitConnectionState {
-  return (
-    value === 'disconnected' ||
-    value === 'connecting' ||
-    value === 'connected' ||
-    value === 'reconnecting'
-  );
-}
-
+/**
+ * Enhanced LiveKit Client for Expo with strict typing.
+ */
 export class LiveKitClient {
   private room: Room;
-  private connectionState: LiveKitConnectionState = 'disconnected';
-  private listeners: Map<string, Set<LiveKitListener>> = new Map();
+  private listeners: Map<string, LiveKitListener[]> = new Map();
 
   constructor() {
     this.room = new Room({
-      // Optimize for voice (not video)
       adaptiveStream: true,
       dynacast: true,
-
-      // Audio settings for elderly users
-      audioCaptureDefaults: {
-        autoGainControl: true,
-        // Keep assistant voice audible in local story recordings (AI mode).
-        // Echo cancellation can aggressively suppress speaker output from capture.
-        echoCancellation: false,
-        noiseSuppression: true,
-      },
     });
-
-    this.setupEventListeners();
   }
 
-  /**
-   * Connect to LiveKit room
-   */
-  async connect(config: LiveKitConfig): Promise<void> {
-    this.connectionState = 'connecting';
-    this.emit('connectionStateChange', this.connectionState);
-
-    try {
-      await this.room.connect(config.url, config.token);
-      this.connectionState = 'connected';
-      this.emit('connectionStateChange', this.connectionState);
-    } catch (error) {
-      this.connectionState = 'disconnected';
-      this.emit('connectionStateChange', this.connectionState);
-      throw error;
-    }
-  }
-
-  /**
-   * Disconnect from room
-   */
-  async disconnect(): Promise<void> {
-    await this.room.disconnect();
-    this.connectionState = 'disconnected';
-    this.emit('connectionStateChange', this.connectionState);
-  }
-
-  /**
-   * Start microphone hardware and create the initial track.
-   * This should only be called once when the session enters 'connected' state.
-   */
-  async startMicrophoneHardware(): Promise<void> {
-    console.log('[LiveKitClient] Initializing microphone hardware');
-    await this.room.localParticipant.setMicrophoneEnabled(true);
-    console.log('[LiveKitClient] Microphone hardware initialized');
-  }
-
-  /**
-   * Enable microphone (Soft Unmute)
-   */
-  async enableMicrophone(): Promise<void> {
-    console.log('[LiveKitClient] Soft Unmuting microphone tracks');
-    this.room.localParticipant.audioTrackPublications.forEach((pub) => {
-      if (pub.audioTrack) {
-        void pub.audioTrack.unmute();
-      }
-    });
-    console.log('[LiveKitClient] Microphone soft unmuted');
-  }
-
-  /**
-   * Disable microphone (Soft Mute)
-   */
-  async disableMicrophone(): Promise<void> {
-    console.log('[LiveKitClient] Soft Muting microphone tracks');
-    this.room.localParticipant.audioTrackPublications.forEach((pub) => {
-      if (pub.audioTrack) {
-        void pub.audioTrack.mute();
-      }
-    });
-    console.log('[LiveKitClient] Microphone soft muted');
-  }
-
-  /**
-   * Get current connection state
-   */
-  getConnectionState(): LiveKitConnectionState {
-    return this.connectionState;
-  }
-
-  /**
-   * Get network quality
-   */
-  getNetworkQuality(): ConnectionQuality {
-    return this.room.localParticipant.connectionQuality;
-  }
-
-  /**
-   * Subscribe to agent audio output
-   */
-  onAgentAudio(callback: (track: RemoteAudioTrack) => void): () => void {
-    const handler: LiveKitListener = (track) => {
-      if (track instanceof RemoteAudioTrack) {
-        callback(track);
-      }
+  onConnectionStateChange(callback: (state: LiveKitConnectionState) => void): () => void {
+    const handleStateChange = () => {
+      callback(this.room.state as LiveKitConnectionState);
     };
 
-    this.on('trackSubscribed', handler);
+    this.room.on(RoomEvent.Connected, handleStateChange);
+    this.room.on(RoomEvent.Reconnecting, handleStateChange);
+    this.room.on(RoomEvent.Reconnected, handleStateChange);
+    this.room.on(RoomEvent.Disconnected, handleStateChange);
 
-    return () => this.off('trackSubscribed', handler);
-  }
-
-  /**
-   * Subscribe to remote participant join events.
-   * In TimeLog rooms this effectively signals agent worker presence.
-   */
-  onParticipantConnected(callback: () => void): () => void {
-    const handler: LiveKitListener = () => {
-      callback();
+    return () => {
+      this.room.off(RoomEvent.Connected, handleStateChange);
+      this.room.off(RoomEvent.Reconnecting, handleStateChange);
+      this.room.off(RoomEvent.Reconnected, handleStateChange);
+      this.room.off(RoomEvent.Disconnected, handleStateChange);
     };
-
-    this.on('participantConnected', handler);
-    return () => this.off('participantConnected', handler);
   }
 
-  /**
-   * Current remote participant count.
-   */
-  getRemoteParticipantCount(): number {
-    return this.room.remoteParticipants.size;
-  }
-
-  /**
-   * Subscribe to transcription updates
-   */
   onTranscription(callback: (segment: TranscriptionSegment) => void): () => void {
-    const handler = (segments: any[], participant: any, publication: any) => {
-      // LiveKit sends transcription as array of segments
-      segments.forEach((seg: any) => {
+    const handleTranscription = (
+      segments: LiveKitTranscriptionSegment[],
+      participant?: Participant,
+      _publication?: TrackPublication
+    ) => {
+      if (!participant) return;
+
+      segments.forEach((seg) => {
         callback({
-          speaker: participant.isLocal ? 'user' : 'agent',
-          text: seg.text || '',
-          isFinal: seg.final || false,
+          id: seg.id,
+          text: seg.text,
+          speaker: participant.identity.includes('agent') ? 'agent' : 'user',
+          isFinal: seg.final,
           timestamp: Date.now(),
+          confidence: undefined, // LiveKit SDK segment might not have it directly
+          startTimeMs: undefined,
+          endTimeMs: undefined,
         });
       });
     };
 
-    this.room.on(RoomEvent.TranscriptionReceived, handler);
-
-    return () => this.room.off(RoomEvent.TranscriptionReceived, handler);
-  }
-
-  /**
-   * Subscribe to connection state changes
-   */
-  onConnectionStateChange(callback: (state: LiveKitConnectionState) => void): () => void {
-    const handler: LiveKitListener = (state) => {
-      if (isConnectionState(state)) {
-        callback(state);
-      }
+    this.room.on(RoomEvent.TranscriptionReceived, handleTranscription);
+    return () => {
+      this.room.off(RoomEvent.TranscriptionReceived, handleTranscription);
     };
-
-    this.on('connectionStateChange', handler);
-    return () => this.off('connectionStateChange', handler);
   }
 
-  /**
-   * Setup internal event listeners
-   */
-  private setupEventListeners(): void {
-    this.room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
-      this.emit('trackSubscribed', track, publication, participant);
-    });
-
-    this.room.on(RoomEvent.ParticipantConnected, (participant) => {
-      this.emit('participantConnected', participant);
-    });
-
-    this.room.on(RoomEvent.Disconnected, () => {
-      this.connectionState = 'disconnected';
-      this.emit('connectionStateChange', this.connectionState);
-    });
-
-    this.room.on(RoomEvent.Reconnecting, () => {
-      this.connectionState = 'reconnecting';
-      this.emit('connectionStateChange', this.connectionState);
-    });
-
-    this.room.on(RoomEvent.Reconnected, () => {
-      this.connectionState = 'connected';
-      this.emit('connectionStateChange', this.connectionState);
-    });
+  async connect(options: { url: string; token: string }): Promise<void> {
+    await this.room.connect(options.url, options.token);
   }
 
-  /**
-   * Generic event emitter
-   */
-  private emit(event: string, ...args: unknown[]): void {
-    const handlers = this.listeners.get(event);
-    if (handlers) {
-      handlers.forEach(handler => handler(...args));
-    }
+  async disconnect(): Promise<void> {
+    await this.room.disconnect();
   }
 
-  /**
-   * Register event listener
-   */
-  private on(event: string, handler: LiveKitListener): void {
-    let handlers = this.listeners.get(event);
-    if (!handlers) {
-      handlers = new Set();
-      this.listeners.set(event, handlers);
-    }
-    handlers.add(handler);
-  }
-
-  /**
-   * Unregister event listener
-   */
-  private off(event: string, handler: LiveKitListener): void {
-    const handlers = this.listeners.get(event);
-    if (handlers) {
-      handlers.delete(handler);
-    }
-  }
-
-  /**
-   * Cleanup resources
-   */
   destroy(): void {
     this.room.removeAllListeners();
-    this.listeners.clear();
+  }
+
+  getRemoteParticipantCount(): number {
+    return this.room.remoteParticipants.size;
+  }
+
+  onParticipantConnected(callback: (participant: RemoteParticipant) => void): () => void {
+    this.room.on(RoomEvent.ParticipantConnected, callback);
+    return () => {
+      this.room.off(RoomEvent.ParticipantConnected, callback);
+    };
+  }
+
+  async startMicrophoneHardware(): Promise<void> {
+    await this.room.localParticipant.setMicrophoneEnabled(true);
+  }
+
+  async enableMicrophone(): Promise<void> {
+    await this.room.localParticipant.setMicrophoneEnabled(true);
+  }
+
+  async disableMicrophone(): Promise<void> {
+    await this.room.localParticipant.setMicrophoneEnabled(false);
   }
 }

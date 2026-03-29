@@ -37,7 +37,7 @@ function SpringPressable({
   onPress,
   style,
   ...props
-}: SpringPressableProps): JSX.Element {
+}: SpringPressableProps) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -70,43 +70,44 @@ function MemberCard({
 }: {
   member: FamilyMemberMock;
   onRemove: (id: string, name: string) => void;
-}): JSX.Element {
+}) {
   const theme = useHeritageTheme();
 
   return (
     <View
+      className="flex-row items-center justify-between rounded-2xl border p-4 mb-3"
       style={[
-        styles.memberCard,
         { borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceCard },
       ]}>
-      <View style={styles.memberInfo}>
+      <View className="flex-row items-center flex-1 gap-3">
         {member.avatarUrl ? (
-          <Image source={{ uri: member.avatarUrl }} style={styles.avatar} contentFit="cover" />
+          <Image source={{ uri: member.avatarUrl }} className="w-12 h-12 rounded-full" contentFit="cover" />
         ) : (
           <View
-            style={[styles.avatarPlaceholder, { backgroundColor: `${theme.colors.primary}20` }]}>
-            <AppText style={[styles.avatarInitial, { color: theme.colors.primary }]}>
+            className="w-12 h-12 rounded-full items-center justify-center"
+            style={{ backgroundColor: `${theme.colors.primary}20` }}>
+            <AppText className="text-xl font-semibold" style={{ color: theme.colors.primary }}>
               {member.name.charAt(0)}
             </AppText>
           </View>
         )}
-        <View style={styles.memberDetails}>
-          <View style={styles.nameRow}>
-            <AppText style={[styles.memberName, { color: theme.colors.onSurface }]}>
+        <View className="flex-1">
+          <View className="flex-row items-center gap-2">
+            <AppText className="text-[17px] font-semibold" style={{ color: theme.colors.onSurface }}>
               {member.name}
             </AppText>
             {member.role === 'admin' && (
-              <View style={[styles.adminBadge, { backgroundColor: `${theme.colors.primary}15` }]}>
-                <AppText style={[styles.adminText, { color: theme.colors.primary }]}>
+              <View className="px-2 py-0.5 rounded-lg" style={{ backgroundColor: `${theme.colors.primary}15` }}>
+                <AppText className="text-[11px] font-semibold" style={{ color: theme.colors.primary }}>
                   {FAMILY_STRINGS.familyMembers.adminBadge}
                 </AppText>
               </View>
             )}
           </View>
-          <AppText style={[styles.memberEmail, { color: `${theme.colors.onSurface}60` }]}>
+          <AppText className="text-sm mt-0.5" style={{ color: `${theme.colors.onSurface}60` }}>
             {member.email}
           </AppText>
-          <AppText style={[styles.linkedDate, { color: `${theme.colors.onSurface}40` }]}>
+          <AppText className="text-xs mt-0.5" style={{ color: `${theme.colors.onSurface}40` }}>
             {FAMILY_STRINGS.familyMembers.linkedSince.replace('{date}', member.linkedAt)}
           </AppText>
         </View>
@@ -114,7 +115,7 @@ function MemberCard({
       {member.role !== 'admin' && (
         <SpringPressable
           onPress={() => onRemove(member.id, member.name)}
-          style={styles.removeButton}>
+          className="p-2 ml-2">
           <Ionicons name="close" size={20} color={theme.colors.error} />
         </SpringPressable>
       )}
@@ -122,7 +123,7 @@ function MemberCard({
   );
 }
 
-export default function FamilyMembersScreen(): JSX.Element {
+export default function FamilyMembersScreen() {
   const theme = useHeritageTheme();
   const router = useRouter();
   const { profile } = useProfile();
@@ -160,7 +161,7 @@ export default function FamilyMembersScreen(): JSX.Element {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
+    <View className="flex-1" style={{ backgroundColor: theme.colors.surface }}>
       <HeritageHeader
         title={FAMILY_STRINGS.familyMembers.title}
         showBack
@@ -169,11 +170,11 @@ export default function FamilyMembersScreen(): JSX.Element {
       />
 
       {isLoading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 }}>
-          <Animated.View style={{ opacity: 0.6 }}>
+        <View className="flex-1 justify-center items-center pt-[100px]">
+          <Animated.View className="opacity-60">
             <Ionicons name="hourglass" size={32} color={theme.colors.primary} />
           </Animated.View>
-          <AppText style={{ marginTop: 16, color: theme.colors.textMuted }}>
+          <AppText className="mt-4" style={{ color: theme.colors.textMuted }}>
             {FAMILY_STRINGS.familyMembers.loadingText}
           </AppText>
         </View>
@@ -182,26 +183,26 @@ export default function FamilyMembersScreen(): JSX.Element {
           data={members}
           keyExtractor={(item) => item.id}
           renderItem={renderMember}
-          style={styles.scrollView}
-          contentContainerStyle={styles.content}
+          className="flex-1"
+          contentContainerStyle={{ padding: 24, paddingTop: 100 }}
           contentInsetAdjustmentBehavior="automatic"
           onScroll={actions.scrollHandler}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
             <>
-              <AppText style={[styles.headerText, { color: theme.colors.onSurface }]}>
+              <AppText variant="headline" className="mb-2" style={{ color: theme.colors.onSurface }}>
                 {FAMILY_STRINGS.familyMembers.headerTitle}
               </AppText>
-              <AppText style={[styles.subText, { color: `${theme.colors.onSurface}80` }]}>
+              <AppText className="text-[15px] leading-[22px] mb-6" style={{ color: `${theme.colors.onSurface}80` }}>
                 {FAMILY_STRINGS.familyMembers.subText}
               </AppText>
             </>
           }
           ListEmptyComponent={
-            <View style={styles.emptyState}>
+            <View className="items-center py-12">
               <Ionicons name="people-outline" size={48} color={`${theme.colors.onSurface}30`} />
-              <AppText style={[styles.emptyText, { color: `${theme.colors.onSurface}60` }]}>
+              <AppText className="text-base mt-4" style={{ color: `${theme.colors.onSurface}60` }}>
                 {FAMILY_STRINGS.familyMembers.emptyText}
               </AppText>
             </View>
@@ -213,95 +214,4 @@ export default function FamilyMembersScreen(): JSX.Element {
   );
 }
 
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: 24,
-    paddingTop: 100,
-  },
-  headerText: {
-    fontSize: 24,
-    fontFamily: 'Fraunces_600SemiBold',
-    marginBottom: 8,
-  },
-  subText: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  memberCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'transparent',
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 12,
-  },
-  memberInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 12,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-  },
-  avatarPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarInitial: {
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  memberDetails: {
-    flex: 1,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  memberName: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  adminBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  adminText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  memberEmail: {
-    fontSize: 14,
-    marginTop: 2,
-  },
-  linkedDate: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  removeButton: {
-    padding: 8,
-    marginLeft: 8,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 48,
-  },
-  emptyText: {
-    fontSize: 16,
-    marginTop: 16,
-  },
-});
+

@@ -1,9 +1,10 @@
-import { Ionicons } from '@/components/ui/Icon';
+import { Icon } from '@/components/ui/Icon';
 import { triggerHaptic } from '@/utils/haptics';
 import { useHeritageTheme } from '@/theme/heritage';
 import { AppText } from '@/components/ui/AppText';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { HoldToStopButton } from './HoldToStopButton';
+import * as Haptics from 'expo-haptics';
 
 interface RecordingControlsProps {
   isRecording: boolean;
@@ -35,15 +36,15 @@ export function RecordingControls({
   if (!isRecording) {
     // Idle State - Large, inviting Start button
     return (
-      <View style={styles.idleContainer}>
+      <View className="items-center justify-center">
         <Pressable
           onPress={() => {
-            triggerHaptic.success();
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
             onStart();
           }}
           disabled={disabled}
+          className="items-center justify-center rounded-full elevation-10"
           style={({ pressed }) => [
-            styles.roundButton,
             {
               width: START_BUTTON_SIZE,
               height: START_BUTTON_SIZE,
@@ -58,13 +59,11 @@ export function RecordingControls({
           ]}
           accessibilityLabel="Start Recording"
           accessibilityRole="button">
-          <Ionicons name="mic" size={40} color={colors.onPrimary} />
+          <Icon name="mic" size={40} color={colors.onPrimary} />
         </Pressable>
         <AppText
-          style={[
-            styles.label,
-            { color: colors.primary, opacity: 0.9, marginTop: 16, fontSize: 15, fontWeight: '600' },
-          ]}
+          className="mt-4 text-[15px] font-semibold opacity-90"
+          style={{ color: colors.primary }}
         >
           Tap to start
         </AppText>
@@ -74,10 +73,10 @@ export function RecordingControls({
 
   // Active State - Pause + Hold to Finish
   return (
-    <View style={styles.controlsRow}>
+    <View className="flex-row items-center justify-center column-gap-[30px] pb-3">
       {/* 1. Pause / Resume */}
-      <View style={styles.controlItem}>
-        <View style={styles.buttonWrapper}>
+      <View className="items-center row-gap-3 min-w-[112px]">
+        <View className="w-[112px] h-[112px] items-center justify-center">
           <Pressable
             onPress={() => {
               triggerHaptic.selection();
@@ -88,8 +87,8 @@ export function RecordingControls({
               onPause();
             }}
             disabled={disabled}
+            className="items-center justify-center border-2"
             style={({ pressed }) => [
-              styles.actionOuterRing,
               {
                 width: ACTION_OUTER_SIZE,
                 height: ACTION_OUTER_SIZE,
@@ -101,13 +100,12 @@ export function RecordingControls({
             ]}>
             {({ pressed }) => (
               <View
+                className="rounded-full items-center justify-center border-2 elevation-5"
                 style={[
-                  styles.roundButton,
                   {
                     width: ACTION_BUTTON_SIZE,
                     height: ACTION_BUTTON_SIZE,
                     backgroundColor: colors.primarySoft,
-                    borderWidth: 2,
                     borderColor: colors.primaryDeep,
                     transform: [{ scale: pressed && !disabled ? 0.94 : 1 }],
                     shadowColor: colors.primaryDeep,
@@ -116,7 +114,7 @@ export function RecordingControls({
                     shadowOffset: { width: 0, height: 4 },
                   },
                 ]}>
-                <Ionicons
+                <Icon
                   name={isPaused ? 'play' : 'pause'}
                   size={34}
                   color={colors.primaryDeep}
@@ -126,18 +124,18 @@ export function RecordingControls({
             )}
           </Pressable>
         </View>
-        <AppText style={[styles.label, { color: colors.primaryDeep }]}>
+        <AppText className="text-[15px] font-semibold tracking-[0.3px]" style={{ color: colors.primaryDeep }}>
           {isPaused ? 'Resume' : 'Pause'}
         </AppText>
       </View>
 
       {/* 2. Hold to Finish - Prominent */}
-      <View style={styles.controlItem}>
-        <View style={styles.buttonWrapper}>
+      <View className="items-center row-gap-3 min-w-[112px]">
+        <View className="w-[112px] h-[112px] items-center justify-center">
           <HoldToStopButton
             onHoldComplete={() => {
               if (disabled) return;
-              triggerHaptic.success();
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
               onStop();
             }}
             size={ACTION_BUTTON_SIZE}
@@ -154,51 +152,10 @@ export function RecordingControls({
             disabled={disabled}
           />
         </View>
-        <AppText style={[styles.label, { color: colors.error, fontWeight: '700' }]}>
+        <AppText className="text-[15px] font-bold tracking-[0.3px]" style={{ color: colors.error }}>
           Hold to End
         </AppText>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  idleContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  controlsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    columnGap: 30,
-    paddingBottom: 12,
-  },
-  controlItem: {
-    alignItems: 'center',
-    rowGap: 12,
-    minWidth: ACTION_OUTER_SIZE + 8,
-  },
-  buttonWrapper: {
-    width: ACTION_OUTER_SIZE,
-    height: ACTION_OUTER_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionOuterRing: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-  },
-  roundButton: {
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  label: {
-    fontSize: 15,
-    lineHeight: 21,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-  },
-});

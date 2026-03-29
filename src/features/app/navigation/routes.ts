@@ -2,7 +2,9 @@ import type { Href } from 'expo-router';
 
 export const APP_ROUTES = {
   ROOT: '/',
+  SPLASH: '/splash',
   TABS: '/(tabs)',
+  FAMILY_TAB: '/(tabs)/family',
   GALLERY: '/(tabs)/gallery',
   SETTINGS: '/(tabs)/settings',
   SETTINGS_APP_SETTINGS: '/(tabs)/settings/app-settings',
@@ -25,6 +27,7 @@ export const APP_ROUTES = {
   INVITE: '/invite',
   ACCEPT_INVITE: '/accept-invite',
   UPGRADE_ACCOUNT: '/upgrade-account',
+  FAMILY_MANAGEMENT: '/family-management' as Href,
 } as const satisfies Record<string, Href>;
 
 export function toStoryRoute(storyId: string): Href {

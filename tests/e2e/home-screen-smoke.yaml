@@ -1,0 +1,11 @@
+appId: com.meisiris.timelog
+---
+- launchApp
+- assertVisible: "Good morning" # Or whatever the dynamic greeting might be (partial match works)
+- assertVisible: "Recorded"
+- assertVisible: "Tap to record"
+- tapOn: "New Question"
+- tapOn: "Play"
+- tapOn:
+    id: "home-record-button" # Ensure the testID is correct in HomeRecordButton or used by Maestro
+- assertVisible: "What is your story today?" # Transition to ActiveRecordingView

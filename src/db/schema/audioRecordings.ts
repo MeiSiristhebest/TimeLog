@@ -29,6 +29,11 @@ export const audioRecordings = sqliteTable('audio_recordings', {
   sizeBytes: integer('size_bytes').notNull().default(0),
   startedAt: integer('started_at').notNull(),
   endedAt: integer('ended_at'),
+  // Feature integration fields
+  isFavorite: integer('is_favorite', { mode: 'boolean' }).notNull().default(false),
+  familyQuestionId: text('family_question_id'), // Optional, if this recording answers a family question
+  unlockAt: integer('unlock_at', { mode: 'number' }), // Time Capsule unlock timestamp (null = not a time capsule)
+  
   isSynced: integer('is_synced', { mode: 'boolean' }).notNull().default(false), // Legacy field, kept for migration
   // Sync status: local/local_only → queued → syncing → synced/failed
   syncStatus: text('sync_status').notNull().default('local').$type<SyncStatus>(),

@@ -1,19 +1,20 @@
 import { AppText } from '@/components/ui/AppText';
 import { BreathingGlow } from '@/components/ui/heritage/BreathingGlow';
-import { Ionicons } from '@/components/ui/Icon';
+import { Icon } from '@/components/ui/Icon';
 import type { NetworkQuality } from '@/features/recorder/services/NetworkQualityService';
 import type { TranscriptionSegment } from '@/lib/livekit/LiveKitClient';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useEffect, useMemo, useState } from 'react';
-import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 import { Animated } from '@/tw/animated';
 import { FadeIn, SharedValue, useSharedValue } from 'react-native-reanimated';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ConnectivityBadge } from './ConnectivityBadge';
 import { RecordingControls } from './RecordingControls';
 import { RecordingModeSwitcher } from './RecordingModeSwitcher';
 import { WaveformVisualizer } from './WaveformVisualizer';
+import { Container } from '@/components/ui/Container';
 
 interface AiRecordingViewProps {
   questionText?: string;
@@ -141,260 +142,122 @@ export function AiRecordingView({
     : 'Status';
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.surface }]}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <View style={styles.screen}>
-
-          {/* 1. Unified Header */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <View
-                style={[
-                  styles.timerPill,
-                  { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }
-                ]}
-              >
-                <Ionicons name="timer-outline" size={14} color={isDark ? colors.textMuted : colors.textFaint} />
-                <AppText
-                  style={{
-                    fontSize: 15,
-                    fontWeight: '600',
-                    color: colors.onSurface,
-                    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-                    fontVariant: ['tabular-nums'],
-                    letterSpacing: 0.5,
-                  }}>
-                  {formatTime(recordingDurationSec)}
-                </AppText>
-              </View>
-            </View>
-
-            <View style={styles.headerCenter}>
-              <RecordingModeSwitcher
-                mode="ai"
-                onSwitch={(mode) => {
-                  if (mode === 'basic' && onSwitchToClassic) {
-                    onSwitchToClassic();
-                  }
-                }}
-              />
-            </View>
-
-            <View style={styles.headerRight}>
-              <ConnectivityBadge
-                quality={effectiveQuality}
-                mode={dialogMode}
-                minimal
-              />
-            </View>
-          </View>
-
-
-          {/* 2. Content: Typography First */}
-          <View style={styles.content}>
-            <Animated.View
-              entering={FadeIn.duration(600)}
-              style={[styles.textWrap, { maxWidth: Math.min(width - 40, 380) }]}>
-
-              {/* Primary: The Prompt */}
+    <Container className="flex-1 bg-surface">
+      <View className="flex-1 px-4">
+        {/* 1. Unified Header */}
+        <View className="flex-row items-center justify-between pt-2 h-12">
+          <View className="flex-1 items-start">
+            <View
+              className="flex-row items-center gap-1.5 rounded-full px-3 py-1.5 shadow-sm"
+              style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }}>
+              <Icon name="timer" size={14} color={isDark ? colors.textMuted : colors.textFaint} />
               <AppText
-                style={[
-                  styles.promptText,
-                  {
-                    color: colors.onSurface,
-                    fontFamily: 'Fraunces_600SemiBold',
-                  },
-                ]}>
-                {prompt}
+                className="text-sm font-semibold text-onSurface"
+                style={{
+                  fontVariant: ['tabular-nums'],
+                  letterSpacing: 0.5,
+                }}>
+                {formatTime(recordingDurationSec)}
               </AppText>
-
-              {/* Secondary: The Transcript / Status */}
-              <View style={styles.transcriptContainer}>
-                <AppText style={[styles.speakerLabel, { color: colors.tertiary }]}>
-                  {transcriptSpeaker}
-                </AppText>
-                <AppText
-                  style={[
-                    styles.transcriptText,
-                    { color: colors.textMuted }
-                  ]}
-                  numberOfLines={3}
-                >
-                  {transcriptText}
-                </AppText>
-              </View>
-            </Animated.View>
-
-            {/* 3. Visualizer */}
-            <View style={styles.orbWrap}>
-              <View
-                style={[
-                  styles.orbContainer,
-                  {
-                    width: orbSize,
-                    height: orbSize,
-                    borderRadius: orbSize / 2,
-                    // No border
-                  },
-                ]}>
-                <View style={styles.orbBackground}>
-                  <BreathingGlow color={visualConfig.accentColor} size={glowSize} profile="recording" />
-                </View>
-                <View
-                  style={[
-                    styles.innerCircle,
-                    {
-                      width: innerCircleSize,
-                      height: innerCircleSize,
-                      borderRadius: innerCircleSize / 2,
-                      backgroundColor: isDark ? `${visualConfig.accentColor}45` : `${visualConfig.accentColor}30`,
-                    },
-                  ]}
-                />
-                {showVisualizer && (
-                  <View style={{ width: waveformWidth, height: waveformHeight, zIndex: 10 }}>
-                    <WaveformVisualizer
-                      amplitude={effectiveAmplitude}
-                      isRecording
-                      isPaused={isPaused}
-                      color={colors.tertiary}
-                    />
-                  </View>
-                )}
-              </View>
             </View>
           </View>
 
-          {/* 4. Footer */}
-          <View style={[styles.footer, { paddingBottom: bottomPadding }]}>
-            <RecordingControls
-              isRecording={true}
-              isPaused={isPaused}
-              onStart={() => { }}
-              onStop={onStop}
-              onPause={onPause}
-              onResume={onResume}
-              disabled={controlsDisabled}
+          <View className="flex-[2] items-center">
+            <RecordingModeSwitcher
+              mode="ai"
+              onSwitch={(mode) => {
+                if (mode === 'basic' && onSwitchToClassic) {
+                  onSwitchToClassic();
+                }
+              }}
             />
-            <AppText style={[styles.footerText, { color: colors.textMuted }]}>
-              Press and hold to end session
-            </AppText>
+          </View>
+
+          <View className="flex-1 items-end">
+            <ConnectivityBadge
+              quality={effectiveQuality}
+              mode={dialogMode}
+              minimal
+            />
           </View>
         </View>
-      </SafeAreaView>
-    </View>
+
+        {/* 2. Content: Typography First */}
+        <View className="flex-1 items-center justify-center row-gap-8 px-2">
+          <Animated.View
+            entering={FadeIn.duration(600)}
+            className="items-center row-gap-6"
+            style={{ maxWidth: Math.min(width - 40, 380) }}>
+
+            {/* Primary: The Prompt */}
+            <AppText
+              className="text-[28px] leading-[36px] font-serif text-center tracking-tighter text-onSurface">
+              {prompt}
+            </AppText>
+
+            {/* Secondary: The Transcript / Status */}
+            <View className="items-center row-gap-1 max-w-[90%]">
+              <AppText className="text-[11px] font-bold tracking-[1.5px] uppercase text-center mb-1" style={{ color: colors.tertiary }}>
+                {transcriptSpeaker}
+              </AppText>
+              <AppText
+                className="text-base leading-6 text-center opacity-90"
+                style={{ color: colors.textMuted }}
+                numberOfLines={3}>
+                {transcriptText}
+              </AppText>
+            </View>
+          </Animated.View>
+
+          {/* 3. Visualizer */}
+          <View className="items-center justify-center shrink-0">
+            <View
+              className="items-center justify-center overflow-hidden"
+              style={{ width: orbSize, height: orbSize, borderRadius: orbSize / 2 }}>
+              <View className="absolute inset-0 items-center justify-center">
+                <BreathingGlow color={visualConfig.accentColor} size={glowSize} profile="recording" />
+              </View>
+              <View
+                className="absolute"
+                style={{
+                  width: innerCircleSize,
+                  height: innerCircleSize,
+                  borderRadius: innerCircleSize / 2,
+                  backgroundColor: isDark ? `${visualConfig.accentColor}45` : `${visualConfig.accentColor}30`,
+                }}
+              />
+              {showVisualizer && (
+                <View className="z-10" style={{ width: waveformWidth, height: waveformHeight }}>
+                  <WaveformVisualizer
+                    amplitude={effectiveAmplitude}
+                    isRecording
+                    isPaused={isPaused}
+                    color={colors.tertiary}
+                  />
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* 4. Footer */}
+        <View className="items-center justify-end pt-1" style={{ paddingBottom: bottomPadding }}>
+          <RecordingControls
+            isRecording={true}
+            isPaused={isPaused}
+            onStart={() => { }}
+            onStop={onStop}
+            onPause={onPause}
+            onResume={onResume}
+            disabled={controlsDisabled}
+          />
+          <AppText className="mt-4 text-[13px] font-medium opacity-60 tracking-[0.4px] text-center" style={{ color: colors.textMuted }}>
+            Press and hold to end session
+          </AppText>
+        </View>
+      </View>
+    </Container>
   );
 }
 
 export default AiRecordingView;
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  safeArea: {
-    flex: 1,
-  },
-  screen: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 8,
-    height: 48,
-  },
-  headerLeft: {
-    flex: 1,
-    alignItems: 'flex-start',
-  },
-  headerCenter: {
-    flex: 2,
-    alignItems: 'center',
-  },
-  headerRight: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  timerPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    columnGap: 6,
-    borderRadius: 999,
-    paddingHorizontal: 12, // Reduced padding
-    paddingVertical: 6,
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    rowGap: 32, // Space between text groups and orb
-    paddingHorizontal: 8,
-  },
-  textWrap: {
-    width: '100%',
-    alignItems: 'center',
-    rowGap: 24,
-  },
-  promptText: {
-    fontSize: 28, // Magazine style
-    lineHeight: 36,
-    textAlign: 'center',
-    letterSpacing: -0.5,
-  },
-  transcriptContainer: {
-    alignItems: 'center',
-    rowGap: 4,
-    maxWidth: '90%',
-  },
-  speakerLabel: {
-    fontSize: 11,
-    lineHeight: 14,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  transcriptText: {
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: 'center',
-    opacity: 0.9,
-  },
-  orbWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  orbContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  orbBackground: {
-    position: 'absolute',
-    inset: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  innerCircle: {
-    position: 'absolute',
-  },
-  footer: {
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingTop: 4,
-  },
-  footerText: {
-    marginTop: 16,
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '500',
-    opacity: 0.6,
-    letterSpacing: 0.4,
-  },
-});

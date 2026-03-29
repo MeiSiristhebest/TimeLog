@@ -11,25 +11,11 @@
  */
 
 import { db } from '@/db/client';
-import { transcriptSegments } from '@/db/schema';
+import { transcriptSegments, type TranscriptSegment } from '@/db/schema';
 import { syncQueueService } from '@/lib/sync-engine/queue';
-import type { TranscriptionSegment } from '@/lib/livekit/LiveKitClient';
+import type { TranscriptionSegment as LiveKitSegment } from '@/lib/livekit/LiveKitClient';
 import { eq, asc } from 'drizzle-orm';
 import { supabase } from '@/lib/supabase';
-
-export interface TranscriptSegmentRecord {
-  id: string;
-  storyId: string;
-  segmentIndex: number;
-  speaker: 'user' | 'agent';
-  text: string;
-  confidence?: number;
-  startTimeMs?: number;
-  endTimeMs?: number;
-  isFinal: boolean;
-  syncedAt?: number;
-  createdAt: number;
-}
 
 export class TranscriptSyncService {
   /**
@@ -41,12 +27,12 @@ export class TranscriptSyncService {
    */
   async saveSegment(
     storyId: string,
-    segment: TranscriptionSegment,
+    segment: LiveKitSegment,
     segmentIndex: number
   ): Promise<void> {
     try {
       const id = this.generateId();
-      const record: TranscriptSegmentRecord = {
+      const record: TranscriptSegment = {
         id,
         storyId,
         segmentIndex,
@@ -54,6 +40,10 @@ export class TranscriptSyncService {
         text: segment.text,
         isFinal: segment.isFinal,
         createdAt: segment.timestamp,
+        confidence: segment.confidence ?? null,
+        startTimeMs: segment.startTimeMs ?? null,
+        endTimeMs: segment.endTimeMs ?? null,
+        syncedAt: null,
       };
 
       // Insert into SQLite using Drizzle
@@ -74,7 +64,7 @@ export class TranscriptSyncService {
   /**
    * Get all transcript segments for a story
    */
-  async getTranscript(storyId: string): Promise<TranscriptSegmentRecord[]> {
+  async getTranscript(storyId: string): Promise<TranscriptSegment[]> {
     try {
       const results = await db
         .select()
@@ -82,13 +72,7 @@ export class TranscriptSyncService {
         .where(eq(transcriptSegments.storyId, storyId))
         .orderBy(asc(transcriptSegments.segmentIndex));
 
-      return results.map((r) => ({
-        ...r,
-        confidence: r.confidence ?? undefined,
-        startTimeMs: r.startTimeMs ?? undefined,
-        endTimeMs: r.endTimeMs ?? undefined,
-        syncedAt: r.syncedAt ?? undefined,
-      }));
+      return results;
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('Failed to get transcript:', error);
@@ -99,17 +83,23 @@ export class TranscriptSyncService {
   /**
    * Queue transcript segment for sync to Supabase
    */
-  private async queueForSync(record: TranscriptSegmentRecord): Promise<void> {
+  private async queueForSync(record: TranscriptSegment): Promise<void> {
     // Use existing sync-engine to queue upload
     // This ensures offline support and automatic retry
-    await syncQueueService.enqueueTranscriptSegment(record);
+    await syncQueueService.enqueueTranscriptSegment({
+      ...record,
+      confidence: record.confidence ?? undefined,
+      startTimeMs: record.startTimeMs ?? undefined,
+      endTimeMs: record.endTimeMs ?? undefined,
+      syncedAt: record.syncedAt ?? undefined,
+    });
   }
 
   /**
    * Sync transcript to Supabase
    * Called by sync-engine when online
    */
-  async syncToSupabase(record: TranscriptSegmentRecord): Promise<void> {
+  async syncToSupabase(record: TranscriptSegment): Promise<void> {
     try {
       // Upload to Supabase table with RLS
       const { error } = await supabase.from('transcript_segments').insert({
@@ -140,7 +130,7 @@ export class TranscriptSyncService {
    */
   private generateId(): string {
     // Simple timestamp-based ID (replace with UUID v7 library in production)
-    return `seg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `seg_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   }
 
   /**

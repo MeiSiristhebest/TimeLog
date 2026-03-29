@@ -16,10 +16,10 @@ import {
   DeviceSummary,
 } from '../services/deviceCodesService';
 import { generateRecoveryCode, getActiveRecoveryCode } from '../services/recoveryCodeService';
-import { signInAnonymously } from '../services/anonymousAuthService';
 import { useActiveSession } from './useActiveSession';
 import { devLog } from '@/lib/devLogger';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
+import { ensureStorytellerSession } from '../services/storytellerSessionService';
 
 // Hook for Role Screen Logic
 export function useRoleLogic() {
@@ -31,14 +31,13 @@ export function useRoleLogic() {
   // Constants to avoid magic strings re-use
   const ROLE_STORYTELLER = 'storyteller';
   const ROLE_FAMILY = 'family';
+  const ROLE_LISTENER_LEGACY = 'listener';
 
   useEffect(() => {
     if (hasInitializedRef.current) {
       return;
     }
     hasInitializedRef.current = true;
-
-    let mounted = true;
 
     async function checkAuthState() {
       try {
@@ -47,37 +46,40 @@ export function useRoleLogic() {
         const resolvedSession = sessionResult.data ?? session;
         const role = await rolePromise;
 
+        const isStorytellerRole = role === ROLE_STORYTELLER;
+        const isFamilyRole = role === ROLE_FAMILY || role === ROLE_LISTENER_LEGACY;
+
         if (resolvedSession) {
           devLog.info('[useRoleLogic] Found existing session, redirecting to app');
-          if (role === ROLE_STORYTELLER) {
+          if (isStorytellerRole) {
             router.replace(APP_ROUTES.DEVICE_CODE);
           } else {
-            router.replace(APP_ROUTES.TABS);
+            router.replace(APP_ROUTES.FAMILY_TAB);
           }
           return;
         }
 
         // No session, check stored role for routing
-        if (role === ROLE_STORYTELLER) {
-          router.replace(APP_ROUTES.DEVICE_CODE);
+        if (isStorytellerRole) {
+          try {
+            await ensureStorytellerSession();
+            router.replace(APP_ROUTES.TABS);
+            return;
+          } catch (error) {
+            devLog.warn('[useRoleLogic] Failed to bootstrap storyteller session', error);
+          }
           return;
         }
-        if (role === ROLE_FAMILY) {
-          router.replace(APP_ROUTES.TABS);
+        if (isFamilyRole) {
+          router.replace(APP_ROUTES.LOGIN);
           return;
         }
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     }
 
     void checkAuthState();
-
-    return () => {
-      mounted = false;
-    };
   }, [router, refetchSession, session]);
 
   const handleSelect = useCallback(async (role: string) => {
@@ -85,22 +87,13 @@ export function useRoleLogic() {
       await setStoredRole(role);
 
       if (role === ROLE_STORYTELLER) {
-        // Re-fetch session to avoid stale reads during role switching.
-        const latestSessionResult = await refetchSession();
-        const resolvedSession = latestSessionResult.data ?? session;
+        const bootstrap = await ensureStorytellerSession();
+        devLog.info('[useRoleLogic] Storyteller session ready via', bootstrap.source);
 
-        if (!resolvedSession) {
-          // Auto sign in anonymously for storytellers (only if no session exists)
-          devLog.info('[useRoleLogic] Signing in storyteller anonymously');
-          await signInAnonymously();
-        } else {
-          devLog.info('[useRoleLogic] Using existing session:', resolvedSession.user.id);
-        }
-
-        router.replace(APP_ROUTES.DEVICE_CODE);
+        router.replace(APP_ROUTES.TABS);
       } else {
         // Family users need to login
-        router.replace(APP_ROUTES.TABS);
+        router.replace(APP_ROUTES.LOGIN);
       }
     } catch (error) {
       devLog.error('[useRoleLogic] Failed to handle role selection:', error);
@@ -110,7 +103,7 @@ export function useRoleLogic() {
         variant: 'error',
       });
     }
-  }, [refetchSession, router, session]);
+  }, [router]);
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -275,9 +268,21 @@ export function useDeviceCodeLogic() {
     loadCode();
   }, [loadCode]);
 
-  const handleReady = () => {
-    router.replace(APP_ROUTES.TABS);
-  };
+  const handleReady = useCallback(async () => {
+    try {
+      await ensureStorytellerSession();
+      router.replace(APP_ROUTES.TABS);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Authentication is required to continue.';
+      HeritageAlert.show({
+        title: 'Unable to continue',
+        message,
+        variant: 'error',
+      });
+      router.replace(APP_ROUTES.ROLE);
+    }
+  }, [router]);
 
   const handleBack = () => {
     if (router.canGoBack()) router.back();

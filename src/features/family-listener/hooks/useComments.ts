@@ -130,24 +130,6 @@ export function useComments(storyId: string): UseCommentsReturn {
 
       return { previousComments, optimisticComment };
     },
-    onError: (err, _content, context) => {
-      // Rollback on error
-      if (context?.previousComments) {
-        queryClient.setQueryData(queryKey, context.previousComments);
-      }
-      devLog.error('[useComments] Post error:', err);
-    },
-    onSuccess: (newComment, _content, context) => {
-      // Replace temp comment with real one
-      queryClient.setQueryData<Comment[]>(queryKey, (old = []) => {
-        const withoutTemp = old.filter((c) => c.id !== context?.optimisticComment.id);
-        // Avoid duplicate if realtime already added it
-        if (withoutTemp.some((c) => c.id === newComment.id)) {
-          return withoutTemp;
-        }
-        return [...withoutTemp, newComment];
-      });
-    },
   });
 
   // Delete comment mutation
@@ -164,13 +146,6 @@ export function useComments(storyId: string): UseCommentsReturn {
 
       return { previousComments };
     },
-    onError: (err, _commentId, context) => {
-      // Rollback on error
-      if (context?.previousComments) {
-        queryClient.setQueryData(queryKey, context.previousComments);
-      }
-      devLog.error('[useComments] Delete error:', err);
-    },
   });
 
   // Wrapped post function
@@ -180,9 +155,28 @@ export function useComments(storyId: string): UseCommentsReturn {
         devLog.warn('[useComments] Cannot post while offline');
         return;
       }
-      postMutation.mutate(content);
+      postMutation.mutate(content, {
+        onSuccess: (newComment, _content, context) => {
+          // Replace temp comment with real one
+          queryClient.setQueryData<Comment[]>(queryKey, (old = []) => {
+            const withoutTemp = old.filter((c) => c.id !== context?.optimisticComment.id);
+            // Avoid duplicate if realtime already added it
+            if (withoutTemp.some((c) => c.id === newComment.id)) {
+              return withoutTemp;
+            }
+            return [...withoutTemp, newComment];
+          });
+        },
+        onError: (err, _content, context) => {
+          // Rollback on error
+          if (context?.previousComments) {
+            queryClient.setQueryData(queryKey, context.previousComments);
+          }
+          devLog.error('[useComments] Post error:', err);
+        },
+      });
     },
-    [postMutation, netInfo.isConnected]
+    [postMutation, queryClient, queryKey, netInfo.isConnected]
   );
 
   // Wrapped delete function
@@ -192,9 +186,17 @@ export function useComments(storyId: string): UseCommentsReturn {
         devLog.warn('[useComments] Cannot delete while offline');
         return;
       }
-      deleteMutation.mutate(commentId);
+      deleteMutation.mutate(commentId, {
+        onError: (err, _commentId, context) => {
+          // Rollback on error
+          if (context?.previousComments) {
+            queryClient.setQueryData(queryKey, context.previousComments);
+          }
+          devLog.error('[useComments] Delete error:', err);
+        },
+      });
     },
-    [deleteMutation, netInfo.isConnected]
+    [deleteMutation, queryClient, queryKey, netInfo.isConnected]
   );
 
   return {

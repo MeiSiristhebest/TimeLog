@@ -1,6 +1,6 @@
 import { AppText } from '@/components/ui/AppText';
 import { Pressable, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@/components/ui/Icon';
+import { Icon } from '@/components/ui/Icon';
 import { AudioRecording } from '@/types/entities';
 import { useHeritageTheme } from '@/theme/heritage';
 import { CommentBadge } from './CommentBadge';
@@ -37,22 +37,14 @@ export function CompactStoryCard({
   onOffload,
 }: CompactStoryCardProps): JSX.Element {
   const { colors } = useHeritageTheme();
-
-  // Animations
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
-  // Status
   const isSynced = story.syncStatus === 'synced';
   const isDisabled = isOffline && !isPlayable;
-  const accentColor = colors.primaryMuted; // #EABFAA
-
-  // Font adjustments
-  const FONTS = {
-    serifLight: 'Fraunces_300Light',
-  };
+  const accentColor = colors.primaryMuted;
 
   const question = story.topicId ? getQuestionById(story.topicId) : null;
   const questionCategory = question?.category;
@@ -63,92 +55,56 @@ export function CompactStoryCard({
 
   return (
     <View className="relative mb-4 w-full items-center pt-2 px-4 z-10">
-      {/* Center Timeline Dot - Absolute Container for perfect centering */}
-      <View
-        className="absolute left-0 right-0 items-center"
-        style={[{ top: 20, zIndex: 20 }]}
-        pointerEvents="none">
-        <View
-          className="w-[9px] h-[9px] rounded-full border"
-          style={{
-            borderColor: colors.border,
-            backgroundColor: colors.surface,
-          }}
-        />
+      {/* Timeline Centered Dot */}
+      <View className="absolute left-0 right-0 items-center top-5 z-20" pointerEvents="none">
+        <View className="w-2.5 h-2.5 rounded-full border bg-surface" style={{ borderColor: colors.border }} />
       </View>
 
-      {/* Outer Shadow Container */}
       <Pressable
         onPress={() => onSelect(story.id)}
         disabled={isDisabled}
         onPressIn={() => (scale.value = withSpring(0.98, { damping: 10, stiffness: 300 }))}
         onPressOut={() => (scale.value = withSpring(1, { damping: 10, stiffness: 300 }))}
+        className="w-full"
       >
         <Animated.View
-          className="w-full rounded-2xl min-h-[100px] shadow-sm elevation-3"
-          style={[
-            {
-              backgroundColor: colors.surfaceCard,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.06,
-              shadowRadius: 8,
-            },
-            isDisabled && { opacity: 0.6 },
-            animatedStyle,
-          ]}>
-          {/* Inner Content Container */}
-          <View className="w-full min-h-[100px] flex-row items-center overflow-hidden rounded-2xl" style={{ backgroundColor: colors.surfaceCard }}>
-            {/* Left Accent Bar */}
-            <View className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: accentColor }} />
+          className="w-full min-h-[100px] rounded-2xl shadow-sm elevation-3 bg-surfaceCard overflow-hidden"
+          style={[{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10 }, isDisabled && { opacity: 0.6 }, animatedStyle]}>
+          
+          <View className="flex-row items-center w-full min-h-[100px] py-4 relative">
+            {/* Design Accent */}
+            <View className="absolute left-0 top-0 bottom-0 w-1 px-0.5" style={{ backgroundColor: accentColor }} />
 
-            {/* Content */}
-            <View className="flex-1 py-5 pl-7 pr-5">
-              <AppText className="mb-1 text-[11px] font-medium tracking-[0.5px]" style={{ color: colors.textMuted }}>
+            {/* Information Section */}
+            <View className="flex-1 pl-7 pr-4">
+              <AppText className="text-[10px] font-bold tracking-widest text-textMuted uppercase mb-1">
                 {dateObj.getFullYear()}
               </AppText>
-
-              <AppText
-                className="mb-1 text-xl"
-                style={{ fontFamily: FONTS.serifLight, color: colors.onSurface }}
-                numberOfLines={2}>
+              <AppText className="text-xl font-serif text-onSurface mb-1 leading-tight" numberOfLines={2}>
                 {displayTitle}
               </AppText>
-
-              <AppText className="mb-3 text-xl font-medium tracking-[0.3px]" style={{ color: colors.textFaint }}>
+              <AppText className="text-lg font-medium text-textFaint mb-2">
                 {fullDateStr}
               </AppText>
-
-              <AppText className="mb-3 text-xs font-medium tracking-[0.2px]" style={{ color: colors.textMuted }}>
-                {categoryLabel ? `${durationStr} · ${categoryLabel}` : durationStr}
+              <AppText className="text-xs font-semibold text-textMuted uppercase tracking-wider">
+                {durationStr} {categoryLabel ? `• ${categoryLabel}` : ''}
               </AppText>
-
             </View>
 
-            <View className="mr-5 flex-row items-center gap-2">
-              {/* Offload Button - Only if Synced and Not Offloaded */}
+            {/* Actions Section */}
+            <View className="flex-row items-center px-5 gap-3">
               {isSynced && story.filePath !== 'OFFLOADED' && onOffload && (
                 <TouchableOpacity
                   onPress={() => onOffload(story.id)}
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                    backgroundColor: colors.surface,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 8,
-                  }}>
-                  <Ionicons name="phone-portrait-outline" size={16} color={colors.textMuted} />
+                  className="w-10 h-10 rounded-full bg-surface border items-center justify-center"
+                  style={{ borderColor: colors.border }}>
+                  <Icon name="phone-portrait-outline" size={16} color={colors.textMuted} />
                 </TouchableOpacity>
               )}
 
-              {/* Cloud Only Indicator */}
               {story.filePath === 'OFFLOADED' && (
-                <View style={{ marginRight: 8 }}>
-                  <Ionicons name="cloud-done" size={16} color={colors.primary} />
+                <View className="w-8 h-8 items-center justify-center">
+                  <Icon name="cloud-done" size={20} color={colors.primary} />
                 </View>
               )}
 
@@ -156,42 +112,23 @@ export function CompactStoryCard({
                 title=""
                 onPress={() => onPlay(story.id)}
                 disabled={isDisabled}
-                style={{
-                  width: 48,
-                  height: 48,
-                  flexShrink: 0,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 24,
-                  backgroundColor: colors.primarySoft,
-                  paddingHorizontal: 0
-                }}
+                className="w-12 h-12 rounded-full bg-primarySoft p-0"
                 iconElement={
-                  <Ionicons
-                    name="play"
-                    size={28}
-                    color={isDisabled ? colors.disabledText : colors.primaryDeep}
-                    style={{ marginLeft: 3 }}
-                  />
+                  <Icon name="play" size={28} color={isDisabled ? colors.disabledText : colors.primaryDeep} style={{ marginLeft: 3 }} />
                 }
                 accessibilityLabel="Play story"
               />
 
               {unreadCommentCount > 0 && <CommentBadge count={unreadCommentCount} />}
             </View>
-          </View>
 
-          <View
-            style={{
-              position: 'absolute',
-              right: 16,
-              bottom: 10,
-              zIndex: 5,
-            }}>
-            <SyncStatusBadge status={story.syncStatus} />
+            {/* Sync Status Badge (Absolute Bottom Right) */}
+            <View className="absolute right-4 bottom-3">
+              <SyncStatusBadge status={story.syncStatus} />
+            </View>
           </View>
         </Animated.View>
       </Pressable>
-    </View >
+    </View>
   );
 }

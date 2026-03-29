@@ -33,6 +33,9 @@ const IONICON_TO_SF_SYMBOL: Partial<Record<IconName, SFSymbol>> = {
   filter: 'line.3.horizontal.decrease.circle',
   headset: 'headphones',
   hourglass: 'hourglass',
+  'information-circle-outline': 'info.circle',
+  'key-outline': 'key',
+  'link-outline': 'link',
   mic: 'mic',
   'musical-notes-outline': 'music.note',
   'notifications-off-outline': 'bell.slash',
@@ -41,10 +44,12 @@ const IONICON_TO_SF_SYMBOL: Partial<Record<IconName, SFSymbol>> = {
   pencil: 'pencil',
   'people-circle-outline': 'person.2.circle',
   person: 'person',
+  'person-add-outline': 'person.badge.plus',
   'phone-portrait-sharp': 'iphone',
   play: 'play',
   'partly-sunny': 'cloud.sun',
   rainy: 'cloud.rain',
+  'shield-checkmark-outline': 'checkmark.shield',
   search: 'magnifyingglass',
   send: 'paperplane',
   'settings-outline': 'gearshape',
@@ -64,6 +69,7 @@ export type IconProps = {
   size?: number;
   color?: ColorValue;
   style?: StyleProp<ViewStyle>;
+  className?: string;
   fallback?: ReactNode;
 } & Omit<SymbolViewProps, 'name' | 'size' | 'tintColor' | 'style' | 'fallback'>;
 
