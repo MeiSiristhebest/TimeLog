@@ -10,7 +10,6 @@ import {
   type TranscriptEntry,
   type TranscriptSpeaker,
 } from '@/features/story-gallery/hooks/useStoryTranscript';
-import { useStoryCommentCount } from '@/features/story-gallery/hooks/useStoryCommentCount';
 import { AudioPlayer } from '@/features/story-gallery/components/AudioPlayer';
 import { usePlayerStore } from '@/features/story-gallery/store/usePlayerStore';
 import type { SyncStatus } from '@/types/entities';
@@ -21,8 +20,8 @@ import { UndoToast } from '@/components/ui/UndoToast';
 import { showErrorToast } from '@/components/ui/feedback/toast';
 import { getQuestionById } from '@/features/recorder/data/topicQuestions';
 import { CATEGORY_DATA, mapRawCategoryToFilter } from '@/features/story-gallery/data/mockGalleryData';
-import { toStoryCommentsRoute, toStoryEditRoute } from '@/features/app/navigation/routes';
-import { EN_COPY, formatCommentsButtonLabel } from '@/features/app/copy/en';
+import { toStoryEditRoute } from '@/features/app/navigation/routes';
+import { EN_COPY } from '@/features/app/copy/en';
 import { usePdfExport } from '@/features/story-gallery/hooks/usePdfExport';
 import { showSuccessToast } from '@/components/ui/feedback/toast';
 
@@ -59,9 +58,6 @@ export default function StoryDetailScreen(): JSX.Element {
       };
     }, [resetPlayer])
   );
-
-  // Story 4.5: Fetch comments for this story
-  const { count: commentCount } = useStoryCommentCount(id);
 
   // Story 3.3 State
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -183,11 +179,6 @@ export default function StoryDetailScreen(): JSX.Element {
     } catch {
       showErrorToast(EN_COPY.story.restoreFailed);
     }
-  };
-
-  // Navigate to comments screen
-  const handleViewComments = () => {
-    router.push(toStoryCommentsRoute(id));
   };
 
   const syncStatus: SyncStatus = story.syncStatus;
@@ -361,17 +352,6 @@ export default function StoryDetailScreen(): JSX.Element {
             </View>
           ) : (
             <>
-              {/* Comments - with real count */}
-              <View style={{ flex: 1 }}>
-                <HeritageButton
-                  title={formatCommentsButtonLabel(commentCount)}
-                  onPress={handleViewComments}
-                  variant="secondary"
-                  icon="chatbubble-outline"
-                  style={{ height: 56 }}
-                />
-              </View>
-
               {/* Edit - opens Full Story Edit Screen */}
               <View style={{ flex: 1 }}>
                 <HeritageButton

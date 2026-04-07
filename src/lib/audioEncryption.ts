@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
 import { DeviceEventEmitter } from 'react-native';
@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
 import { devLog } from '@/lib/devLogger';
+import aesjs from 'aes-js';
 
 const AUDIO_ENCRYPTION_KEY = 'timelog.audio_encryption_key_v1';
 const DECRYPTED_TEMP_DIR = 'timelog-audio-tmp';
@@ -18,6 +19,15 @@ type EncryptionPayloadV1 = {
   cipherTextBase64: string;
   macHex: string;
 };
+
+type EncryptionPayloadV2 = {
+  v: 2;
+  algorithm: 'aes-256-ctr';
+  ivHex: string;
+  cipherTextBase64: string;
+};
+
+type EncryptionPayload = EncryptionPayloadV1 | EncryptionPayloadV2;
 
 export type DecryptedAudioHandle = {
   path: string;
@@ -162,24 +172,37 @@ export async function encryptFileAtRest(filePath: string): Promise<string> {
   });
 
   const keyHex = await getOrCreateEncryptionKeyHex();
-  const nonceHex = toHex(await Crypto.getRandomBytesAsync(16));
-  const cipherTextBase64 = await xorCipher(sourceBase64, keyHex, nonceHex);
-  const macHex = await createMacHex(keyHex, nonceHex, cipherTextBase64);
+  const keyBytes = hexToBytes(keyHex);
+  
+  // Create IV for AES-CTR (16 bytes)
+  const iv = await Crypto.getRandomBytesAsync(16);
+  const ivHex = toHex(iv);
 
-  const payload: EncryptionPayloadV1 = {
-    v: 1,
-    algorithm: 'xor-sha256',
-    nonceHex,
-    cipherTextBase64,
-    macHex,
-  };
+  try {
+    const sourceBytes = base64ToBytes(sourceBase64);
+    
+    // AES-256-CTR using aes-js
+    const aesCtr = new aesjs.ModeOfOperation.ctr(keyBytes, new aesjs.Counter(iv));
+    const encryptedBytes = aesCtr.encrypt(sourceBytes);
 
-  const encryptedPath = toEncryptedAudioPath(filePath);
-  await FileSystem.writeAsStringAsync(encryptedPath, JSON.stringify(payload));
-  await moveAnalysisCacheIfPresent(filePath, encryptedPath);
-  await FileSystem.deleteAsync(filePath, { idempotent: true });
+    const payload: EncryptionPayloadV2 = {
+      v: 2,
+      algorithm: 'aes-256-ctr',
+      ivHex,
+      cipherTextBase64: bytesToBase64(encryptedBytes),
+    };
 
-  return encryptedPath;
+    const encryptedPath = toEncryptedAudioPath(filePath);
+    await FileSystem.writeAsStringAsync(encryptedPath, JSON.stringify(payload));
+    await moveAnalysisCacheIfPresent(filePath, encryptedPath);
+    await FileSystem.deleteAsync(filePath, { idempotent: true });
+
+    return encryptedPath;
+  } catch (error) {
+    devLog.error('[audioEncryption] AES Encryption failed', error);
+    // Silent fail if needed, but here we throw to indicate critical failure
+    throw new Error('Encryption failed');
+  }
 }
 
 function buildTempPath(encryptedPath: string): string {
@@ -207,18 +230,31 @@ export async function resolveDecryptedAudioPath(filePath: string): Promise<Decry
   }
 
   const encryptedPayloadRaw = await FileSystem.readAsStringAsync(filePath);
-  const payload = JSON.parse(encryptedPayloadRaw) as EncryptionPayloadV1;
-  if (payload.v !== 1 || payload.algorithm !== 'xor-sha256') {
-    throw new Error('Unsupported encrypted audio payload');
-  }
+  const payload = JSON.parse(encryptedPayloadRaw) as EncryptionPayload;
+  let sourceBase64: string;
 
-  const keyHex = await getOrCreateEncryptionKeyHex();
-  const macHex = await createMacHex(keyHex, payload.nonceHex, payload.cipherTextBase64);
-  if (macHex !== payload.macHex) {
-    throw new Error('Encrypted audio integrity check failed');
-  }
+  if (payload.v === 2 && payload.algorithm === 'aes-256-ctr') {
+    // V2: AES-256-CTR
+    const keyHex = await getOrCreateEncryptionKeyHex();
+    const keyBytes = hexToBytes(keyHex);
+    const ivBytes = hexToBytes(payload.ivHex);
+    const cipherBytes = base64ToBytes(payload.cipherTextBase64);
 
-  const sourceBase64 = await xorCipher(payload.cipherTextBase64, keyHex, payload.nonceHex);
+    const aesCtr = new aesjs.ModeOfOperation.ctr(keyBytes, new aesjs.Counter(ivBytes));
+    const decryptedBytes = aesCtr.decrypt(cipherBytes);
+    sourceBase64 = bytesToBase64(decryptedBytes);
+  } else if (payload.v === 1 && payload.algorithm === 'xor-sha256') {
+    // V1: Legacy XOR
+    const keyHex = await getOrCreateEncryptionKeyHex();
+    const macHex = await createMacHex(keyHex, payload.nonceHex, payload.cipherTextBase64);
+    if (macHex !== payload.macHex) {
+      throw new Error('Encrypted audio integrity check failed (V1)');
+    }
+    sourceBase64 = await xorCipher(payload.cipherTextBase64, keyHex, payload.nonceHex);
+  } else {
+    throw new Error('Unsupported encrypted audio payload version or algorithm');
+  }
+  
   const tempPath = buildTempPath(filePath);
   const tempDir = tempPath.slice(0, tempPath.lastIndexOf('/'));
   await FileSystem.makeDirectoryAsync(tempDir, { intermediates: true });

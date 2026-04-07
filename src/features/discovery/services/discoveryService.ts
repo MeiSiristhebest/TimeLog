@@ -8,7 +8,6 @@
 import { supabase } from '@/lib/supabase';
 import { devLog } from '@/lib/devLogger';
 import { TOPIC_QUESTIONS } from '@/features/recorder/data/topicQuestions';
-import { getUnansweredQuestions, type FamilyQuestion } from '@/features/family-listener/services/questionService';
 
 export interface DiscoveryQuestion {
     id: string;
@@ -45,16 +44,7 @@ function transformQuestion(row: DiscoveryQuestionRow): DiscoveryQuestion {
     };
 }
 
-function transformFamilyQuestion(row: FamilyQuestion): DiscoveryQuestion {
-  return {
-    id: row.id,
-    text: row.questionText,
-    category: row.category ?? 'family',
-    priority: 0,
-    tags: ['family', 'family_prompt'],
-    createdAt: row.createdAt,
-  };
-}
+
 
 function transformLocalPresetQuestion(
   question: (typeof TOPIC_QUESTIONS)[number],
@@ -174,45 +164,28 @@ export async function fetchDiscoveryQuestions(
         discoveryQuery = discoveryQuery.in('category', expandedCategories);
       }
 
-      const [discoveryResult, familyResult] = await Promise.allSettled([
-        discoveryQuery,
-        seniorUserId ? getUnansweredQuestions(seniorUserId) : Promise.resolve([] as FamilyQuestion[]),
-      ]);
+      const { data, error } = await discoveryQuery;
 
-      const remoteDiscoveryQuestions: DiscoveryQuestion[] = [];
-      const familyQuestions: DiscoveryQuestion[] = [];
-
-      if (discoveryResult.status === 'fulfilled') {
-        if (discoveryResult.value.error) {
-          devLog.error('[discoveryService] Failed to fetch discovery questions:', discoveryResult.value.error);
-        } else {
-          remoteDiscoveryQuestions.push(
-            ...(discoveryResult.value.data ?? []).map((row: DiscoveryQuestionRow) => transformQuestion(row))
-          );
-        }
-      } else {
-        devLog.error('[discoveryService] Discovery query rejected:', discoveryResult.reason);
+      if (error) {
+        devLog.error('[discoveryService] Failed to fetch discovery questions:', error);
+        return localPresetQuestions;
       }
 
-      if (familyResult.status === 'fulfilled') {
-        const filteredFamilyRows = expandedCategories && expandedCategories.length > 0
-          ? familyResult.value.filter((row) =>
-            expandedCategories.includes((row.category ?? 'general').toLowerCase())
-          )
-          : familyResult.value;
-
-        familyQuestions.push(...filteredFamilyRows.map((row) => transformFamilyQuestion(row)));
-      } else {
-        devLog.error('[discoveryService] Family query rejected:', familyResult.reason);
-      }
+      const remoteDiscoveryQuestions: DiscoveryQuestion[] = (data ?? []).map((row: any) => ({
+        id: row.id,
+        text: row.question_text,
+        category: row.category,
+        priority: row.priority,
+        tags: row.tags || [],
+        createdAt: row.created_at,
+      }));
 
       const mergedLibrary = dedupeByQuestionText([
         ...localPresetQuestions,
         ...remoteDiscoveryQuestions,
       ]).sort(sortQuestions);
 
-      // Family prompts are always pinned to top after dedupe.
-      return dedupeByQuestionText([...familyQuestions, ...mergedLibrary]).slice(0, limit);
+      return mergedLibrary.slice(0, limit);
     } catch (error) {
       devLog.error('[discoveryService] Error fetching discovery questions:', error);
       return localPresetQuestions;

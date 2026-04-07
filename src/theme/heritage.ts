@@ -258,7 +258,7 @@ export function createHeritageTheme({
 }
 
 export function useHeritageTheme(): HeritageTheme {
-  const { colorScheme } = useColorScheme();
+  const { colorScheme, setColorScheme } = useColorScheme();
   const { themeMode, fontScaleIndex, isLoaded, hydrate } = useDisplaySettingsStore();
 
   useEffect(() => {
@@ -267,7 +267,7 @@ export function useHeritageTheme(): HeritageTheme {
     }
   }, [hydrate, isLoaded]);
 
-  return useMemo(
+  const theme = useMemo(
     () =>
       createHeritageTheme({
         themeMode,
@@ -276,4 +276,14 @@ export function useHeritageTheme(): HeritageTheme {
       }),
     [themeMode, fontScaleIndex, colorScheme]
   );
+
+  // Sync NativeWind color scheme
+  useEffect(() => {
+    const targetScheme = theme.isDark ? 'dark' : 'light';
+    if (colorScheme !== targetScheme) {
+      setColorScheme(targetScheme);
+    }
+  }, [theme.isDark, colorScheme, setColorScheme]);
+
+  return theme;
 }

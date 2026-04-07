@@ -73,14 +73,22 @@ export default function DeletedItemsScreen(): JSX.Element {
     if (!selectedId) return;
     try {
       setModalVisible(false);
-      await offloadStory(selectedId);
-      showSuccessToast('Download removed (Space saved)');
+      const success = await offloadStory(selectedId);
+      if (success) {
+        showSuccessToast('Download removed (Space saved)');
+      } else {
+        HeritageAlert.show({
+          title: 'Not Synced',
+          message: 'This story has not been fully synced to the cloud yet. We cannot remove the local copy until it is safely backed up.',
+          variant: 'warning',
+        });
+      }
       setSelectedId(null);
     } catch (error) {
       devLog.error('[DeletedItemsScreen] Failed to offload story:', error);
       HeritageAlert.show({
         title: 'Error',
-        message: 'Failed to offload story. It might strictly be unsynced.',
+        message: 'Failed to offload story. Please try again.',
         variant: 'error',
       });
     }

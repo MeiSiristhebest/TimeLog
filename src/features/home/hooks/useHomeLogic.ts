@@ -321,9 +321,7 @@ export function useHomeLogic() {
       replayQuestion: tts.replay,
       navigateToSettings: () => router.push(APP_ROUTES.SETTINGS),
       navigateToListen: () => router.push(APP_ROUTES.GALLERY),
-      navigateToFamilyTab: () => router.replace(APP_ROUTES.FAMILY_TAB),
       navigateToStory: (id: string) => router.push(toStoryRoute(id)),
-      navigateToEditTimeCapsule: (id: string) => router.push(`/story/${id}?editTimeCapsule=true`),
     },
   }), [
     recording, lastSavedId, tts, isCurrentTopicAnswered, formattedDate, greeting, 

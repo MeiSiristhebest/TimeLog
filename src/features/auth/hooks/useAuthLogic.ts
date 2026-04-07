@@ -54,7 +54,7 @@ export function useRoleLogic() {
           if (isStorytellerRole) {
             router.replace(APP_ROUTES.DEVICE_CODE);
           } else {
-            router.replace(APP_ROUTES.FAMILY_TAB);
+            router.replace(APP_ROUTES.LOGIN);
           }
           return;
         }

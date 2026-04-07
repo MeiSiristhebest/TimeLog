@@ -18,7 +18,6 @@ export const SETTINGS_STRINGS = {
   items: {
     account: {
       security: 'Account & Security',
-      family: 'Family Sharing',
     },
     preferences: {
       display: 'Display & Accessibility',
@@ -31,11 +30,8 @@ export const SETTINGS_STRINGS = {
       help: 'About & Help',
     },
   },
-  // Keep existing sub-page strings for compatibility
-  // New additions for Refactor
   home: {
     myStories: 'My Stories',
-    familyMembers: 'Family Members',
     favorites: 'Favorites',
   },
   appSettings: {
@@ -47,7 +43,6 @@ export const SETTINGS_STRINGS = {
     },
     items: {
       accountSecurity: 'Account & Security',
-      familySharing: 'Family Sharing',
       notifications: 'Notifications',
       display: 'Display & Accessibility',
       dataStorage: 'Data & Storage',
@@ -85,7 +80,6 @@ export const SETTINGS_STRINGS = {
     ],
   },
 
-  // Existing...
   accountSecurity: {
     title: 'Account & Security',
     loading: 'Loading profile details...',
@@ -120,17 +114,6 @@ export const SETTINGS_STRINGS = {
     storage: {
       title: 'Storage',
       deletedItems: 'Deleted Items',
-    },
-  },
-  familySharing: {
-    title: 'Family Sharing',
-    connections: {
-      familyMembers: 'Family Members',
-      inviteFamily: 'Invite Family',
-      acceptInvite: 'Accept Invite',
-    },
-    stories: {
-      askQuestion: 'Ask a Question',
     },
   },
   notifications: {
@@ -214,13 +197,6 @@ export const SETTINGS_STRUCTURE = [
         route: '/(tabs)/settings/account-security',
         icon: 'shield-checkmark-outline' as const,
         colorKey: 'sageGreen',
-      },
-      {
-        id: 'acc_family',
-        label: SETTINGS_STRINGS.items.account.family,
-        route: '/family-members', // Direct route as per User Plan
-        icon: 'people-outline' as const,
-        colorKey: 'primary',
       },
     ] as SettingsLinkData[],
   },

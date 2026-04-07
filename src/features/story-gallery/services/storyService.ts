@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import { DeviceEventEmitter } from 'react-native';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
@@ -121,7 +121,7 @@ export async function offloadStory(id: string): Promise<boolean> {
     if (!recording) throw new Error('Recording not found');
 
     if (recording.syncStatus !== 'synced') {
-      devLog.warn('[storyService] Cannot offload unsynced story');
+      devLog.warn(`[storyService] Cannot offload unsynced story ${id}`);
       return false;
     }
 
@@ -134,11 +134,19 @@ export async function offloadStory(id: string): Promise<boolean> {
       const fileInfo = await FileSystem.getInfoAsync(recording.filePath);
       if (fileInfo.exists) {
         await FileSystem.deleteAsync(recording.filePath);
+        devLog.info(`[storyService] Deleted local recording file: ${recording.filePath}`);
       }
-      await FileSystem.deleteAsync(getAnalysisPath(recording.filePath), { idempotent: true });
+      
+      const analysisPath = getAnalysisPath(recording.filePath);
+      const analysisInfo = await FileSystem.getInfoAsync(analysisPath);
+      if (analysisInfo.exists) {
+        await FileSystem.deleteAsync(analysisPath, { idempotent: true });
+        devLog.info(`[storyService] Deleted analysis cache: ${analysisPath}`);
+      }
     } catch (fsError) {
-      devLog.warn('[storyService] Failed to delete local file', fsError);
-      // Continue to update DB anyway since we effectively lost the file locally
+      devLog.error('[storyService] Failed to physically delete files during offload', fsError);
+      // We still update the DB because the offload intent is clear, and we'll try again if needed,
+      // but ideally we should confirm deletion.
     }
 
     // Update DB
@@ -152,7 +160,7 @@ export async function offloadStory(id: string): Promise<boolean> {
     return true;
   } catch (error) {
     devLog.error('[storyService] offloadStory failed:', error);
-    throw new Error('Failed to offload story to cloud. Please check your connection.');
+    throw new Error('Failed to offload story. It may have already been deleted.');
   }
 }
 

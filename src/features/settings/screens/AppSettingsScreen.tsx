@@ -49,10 +49,7 @@ export function AppSettingsScreen(): JSX.Element {
         {/* Group 1: Account */}
         <SettingsSection title={STRINGS.sections.account}>
           <Link href={APP_ROUTES.SETTINGS_ACCOUNT_SECURITY} asChild>
-            <SettingsRow label={STRINGS.items.accountSecurity} />
-          </Link>
-          <Link href={APP_ROUTES.SETTINGS_FAMILY_SHARING} asChild>
-            <SettingsRow label={STRINGS.items.familySharing} isLast />
+            <SettingsRow label={STRINGS.items.accountSecurity} isLast />
           </Link>
         </SettingsSection>
 

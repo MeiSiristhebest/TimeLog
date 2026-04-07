@@ -72,15 +72,6 @@ export const EN_COPY = {
     errorGallery: 'Could not open gallery',
     errorAnalysis: 'Analysis failed, please try again',
   },
-  comments: {
-    familyComments: 'Family Comments',
-    comments: 'Comments',
-    cannotLoadStory: 'Cannot load story',
-    loadingComments: 'Loading comments...',
-    emptyTitle: 'No comments yet',
-    emptyReadOnlyDescription: "Family hasn't left any comments yet",
-    emptyDescription: 'Be the first to comment!',
-  },
   storySaved: {
     successTitle: 'Story Kept Safe.',
     successSubtitle: 'Saving to your library...',
@@ -102,12 +93,6 @@ export const EN_COPY = {
     } satisfies Record<StoryCategory, string>,
   },
 } as const;
-
-export function formatCommentsButtonLabel(commentCount: number): string {
-  return commentCount > 0
-    ? `${EN_COPY.comments.comments} (${commentCount})`
-    : EN_COPY.comments.comments;
-}
 
 export function getStorySavedCategoryLabel(category?: string): string {
   if (!category) {

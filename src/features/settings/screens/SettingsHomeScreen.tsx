@@ -130,13 +130,6 @@ export function SettingsHomeScreen(): JSX.Element {
               iconColor={colors.iconBlue} // Blue
             />
           </Link>
-          <Link href={APP_ROUTES.FAMILY_MEMBERS} asChild>
-            <SettingsRow
-              label={SETTINGS_STRINGS.home.familyMembers}
-              iconName="people-outline"
-              iconColor={colors.iconOrange} // Orange
-            />
-          </Link>
           <Link href="/settings/favorites" asChild>
             <SettingsRow
               label={SETTINGS_STRINGS.home.favorites}

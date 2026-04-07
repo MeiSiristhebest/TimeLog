@@ -103,17 +103,19 @@ export default function UpgradeAccountScreen(): JSX.Element {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       const message = recoveryCode
-        ? `${displayName}'s account has been set up successfully!\n\n` +
+        ? `${displayName}'s account has been created!\n\n` +
           `Recovery Code:\n${recoveryCode}\n\n` +
-          'IMPORTANT: Save this code in a safe place. You can use it to login on other devices or if you forget your password.'
-        : `${displayName}'s account has been set up successfully!`;
+          'IMPORTANT: Save this code in a safe place. You will need it if you forget your password.\n\n' +
+          'Next Step: We have sent a confirmation link to your email. Please check your inbox (and spam folder) and click the link to verify your account.'
+        : `${displayName}'s account has been created!\n\n` +
+          'Next Step: We have sent a confirmation link to your email. Please check your inbox (and spam folder) and click the link to verify your account.';
 
       HeritageAlert.show({
         title: 'Account Created!',
         message,
         variant: 'success',
         primaryAction: {
-          label: recoveryCode ? "I've Saved It" : 'Continue',
+          label: 'Got it, Continue',
           onPress: () => {
             router.replace(nextRoute as Href);
           },

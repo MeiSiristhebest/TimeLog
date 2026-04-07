@@ -129,8 +129,10 @@ async function resolveCloudSyncEligibility(): Promise<CloudSyncEligibility> {
       return { eligible: false, userId: null };
     }
 
-    const provider = String(user.app_metadata?.provider ?? '').toLowerCase();
-    const isAnonymous = provider === 'anonymous' || Boolean((user as { is_anonymous?: boolean }).is_anonymous);
+    // Supabase quirk: When an anonymous user is upgraded via updateUser(email, password),
+    // their app_metadata.provider REMAINS 'anonymous', but user.is_anonymous becomes false.
+    // relying on provider === 'anonymous' will erroneously block upgraded accounts!
+    const isAnonymous = Boolean((user as { is_anonymous?: boolean }).is_anonymous);
 
     return {
       eligible: !isAnonymous,

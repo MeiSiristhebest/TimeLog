@@ -15,7 +15,7 @@ import '@/lib/logger';
 import { useDbMigrations } from '@/db/useMigrations';
 import { ToastProvider } from '@/components/ui/feedback/ToastProvider';
 import { OfflineBanner } from '@/components/ui/feedback/OfflineBanner';
-import { useNotifications, NotificationBanner } from '@/features/family-listener';
+
 import { HeritageAlertProvider } from '@/components/ui/HeritageAlert';
 import { useHeritageTheme } from '@/theme/heritage';
 import { PortalProvider } from '@gorhom/portal';
@@ -96,23 +96,12 @@ function RootLayoutContent({ isDark }: { readonly isDark: boolean }) {
     },
   };
 
-  // Notification listeners
-  const { foregroundNotification, navigateToNotification, dismissForegroundNotification } =
-    useNotifications();
+
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.surfaceDim }}>
       <OfflineBanner />
-      {/* Foreground notification banner */}
-      {foregroundNotification && (
-        <NotificationBanner
-          title={foregroundNotification.title}
-          body={foregroundNotification.body}
-          data={foregroundNotification.data}
-          onPress={navigateToNotification}
-          onDismiss={dismissForegroundNotification}
-        />
-      )}
+
 
       <ThemeProvider value={navigationTheme}>
         <Stack screenOptions={getRootStackDefaultScreenOptions(colors)}>
