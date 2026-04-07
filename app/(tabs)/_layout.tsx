@@ -80,13 +80,7 @@ export default function TabsLayout(): JSX.Element {
           title: 'Topics',
         }}
       />
-      <Tabs.Screen
-        name="family"
-        options={{
-          href: null,
-          headerShown: false,
-        }}
-      />
+
     </Tabs>
   );
 }

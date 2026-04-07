@@ -82,17 +82,7 @@ export default function RoleScreen(): JSX.Element {
             />
           </Animated.View>
 
-          {/* Listener Card */}
-          <Animated.View entering={FadeInDown.delay(400).duration(600)} style={{ width: '100%' }}>
-            <RoleCard
-              title={STRINGS.listener.title}
-              subtitle={STRINGS.listener.subtitle}
-              icon="headset"
-              onPress={() => handleSelect(ROLE_FAMILY)}
-              accessibilityLabel={STRINGS.listener.accessibilityLabel}
-              baseDelay={400}
-            />
-          </Animated.View>
+
         </View>
       </ScrollView>
     </SafeAreaView>
