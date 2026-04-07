@@ -51,6 +51,8 @@ type HeritageInputProps = Omit<TextInputProps, 'style'> & {
   showClear?: boolean;
   /** Left icon name */
   leftIcon?: keyof typeof Ionicons.glyphMap;
+  /** Whether to show a password visibility toggle */
+  showPasswordToggle?: boolean;
   /** Container style */
   containerStyle?: object;
   /** Custom input style */
@@ -73,12 +75,15 @@ export function HeritageInput({
   maxLength,
   showCounter = false,
   showClear = true,
+  showPasswordToggle = false,
   leftIcon,
   containerStyle,
   onFocus,
   onBlur,
+  secureTextEntry,
   ...props
 }: HeritageInputProps): JSX.Element {
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const theme = useHeritageTheme();
   const { colors, typography } = theme;
   const scale = typography.body / 24;
@@ -145,6 +150,11 @@ export function HeritageInput({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [onChangeText]);
 
+  const togglePasswordVisibility = useCallback(() => {
+    setIsPasswordVisible(!isPasswordVisible);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, [isPasswordVisible]);
+
   const handleContainerPress = useCallback(() => {
     inputRef.current?.focus();
   }, []);
@@ -158,10 +168,25 @@ export function HeritageInput({
       : interpolateColor(
         focusProgress.value,
         [0, 1],
-        [colors.border, colors.handleActive] // Use handleActive (primary) for focus
+        [colors.border, colors.handleActive]
       ),
     backgroundColor: colors.surface,
   }));
+
+  const labelAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { translateY: interpolate(labelPosition.value, [0, 1], [0, -22]) },
+        { scale: interpolate(labelPosition.value, [0, 1], [1, 0.75]) },
+        { translateX: interpolate(labelPosition.value, [0, 1], [0, -10]) }, // Adjust for scale shrinkage
+      ],
+      color: interpolateColor(
+        labelPosition.value,
+        [0, 1],
+        [colors.textMuted, colors.primary]
+      ),
+    };
+  });
 
   const glowStyle = useAnimatedStyle(() => ({
     opacity: focusProgress.value * 0.15,
@@ -190,11 +215,24 @@ export function HeritageInput({
           {/* Input area */}
           <View className={styles.inputArea}>
             {/* Floating label */}
-            {/* @ts-ignore */}
+            <Animated.Text
+              style={[
+                labelAnimatedStyle,
+                {
+                  fontSize: labelFontSize,
+                  fontFamily: 'Fraunces_600SemiBold',
+                  position: 'absolute',
+                  left: 0,
+                },
+              ]}
+              pointerEvents="none">
+              {label}
+            </Animated.Text>
+            
             <Animated.TextInput
               ref={inputRef}
               style={[
-                { color: colors.onSurface, fontSize: labelFontSize },
+                { color: colors.onSurface, fontSize: labelFontSize, marginTop: 10 },
                 props.inputStyle,
               ]}
               className={styles.input}
@@ -206,10 +244,25 @@ export function HeritageInput({
               selectionColor={colors.primary}
               maxLength={maxLength}
               {...props}
+              secureTextEntry={secureTextEntry && !isPasswordVisible}
               // Only show placeholder when label is lifted (focused or has value)
-              placeholder={isFocused || hasValue ? props.placeholder : ''}
+              placeholder={(isFocused || hasValue) ? props.placeholder : ''}
             />
           </View>
+
+          {/* Password toggle button */}
+          {secureTextEntry && showPasswordToggle && (
+            <Pressable
+              className={styles.clearButton}
+              onPress={togglePasswordVisibility}
+              hitSlop={12}>
+              <Ionicons
+                name={isPasswordVisible ? 'eye-off' : 'eye'}
+                size={22}
+                color={colors.textMuted}
+              />
+            </Pressable>
+          )}
 
           {/* Clear button */}
           {showClear && hasValue && (

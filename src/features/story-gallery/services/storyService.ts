@@ -7,6 +7,8 @@ import { syncQueueService } from '@/lib/sync-engine/queue';
 import { devLog } from '@/lib/devLogger';
 
 /**
+
+/**
  * Story service for managing story lifecycle operations.
  * Implements Service Layer Mandate - all database operations go through services.
  *
@@ -40,7 +42,7 @@ export async function softDeleteStory(id: string): Promise<void> {
     // Local operation completes immediately - sync happens in background
   } catch (error) {
     devLog.error('[storyService] softDeleteStory failed:', error);
-    throw error;
+    throw new Error('Failed to move story to trash. Please try again.');
   }
 }
 
@@ -68,7 +70,7 @@ export async function restoreStory(id: string): Promise<void> {
     // Local operation completes immediately - sync happens in background
   } catch (error) {
     devLog.error('[storyService] restoreStory failed:', error);
-    throw error;
+    throw new Error('Failed to restore story. Please try again.');
   }
 }
 
@@ -102,7 +104,7 @@ export async function updateStoryTitle(id: string, title: string): Promise<void>
     await syncQueueService.enqueueMetadataUpdate(id, { title });
   } catch (error) {
     devLog.error('[storyService] updateStoryTitle failed:', error);
-    throw error;
+    throw new Error('Failed to update story title. Please try again.');
   }
 }
 
@@ -150,7 +152,7 @@ export async function offloadStory(id: string): Promise<boolean> {
     return true;
   } catch (error) {
     devLog.error('[storyService] offloadStory failed:', error);
-    throw error;
+    throw new Error('Failed to offload story to cloud. Please check your connection.');
   }
 }
 
@@ -192,7 +194,7 @@ export async function permanentlyDeleteStory(id: string): Promise<void> {
     DeviceEventEmitter.emit('story-collection-updated');
   } catch (error) {
     devLog.error('[storyService] permanentlyDeleteStory failed:', error);
-    throw error;
+    throw new Error('Failed to permanently delete story. Please try again.');
   }
 }
 
@@ -227,7 +229,36 @@ export async function updateStoryMetadata(
     DeviceEventEmitter.emit(`story-updated-${id}`); // Specific event for detail screen
   } catch (error) {
     devLog.error('[storyService] updateStoryMetadata failed:', error);
-    throw error;
+    throw new Error('Failed to save story changes. Please try again.');
+  }
+}
+
+/**
+ * Toggle favorite status of a story.
+ * Implements AC for Story 3.6 (Favorites)
+ *
+ * @param id - Story ID
+ * @param isFavorite - New favorite status
+ */
+export async function toggleStoryFavorite(id: string, isFavorite: boolean): Promise<void> {
+  try {
+    // 1. Update local SQLite first (optimistic UI)
+    await db
+      .update(audioRecordings)
+      .set({ isFavorite })
+      .where(eq(audioRecordings.id, id));
+
+    // 2. Enqueue cloud sync
+    await syncQueueService.enqueueMetadataUpdate(id, { isFavorite });
+
+    // 3. Emit events to refresh UI
+    DeviceEventEmitter.emit('story-collection-updated');
+    DeviceEventEmitter.emit(`story-updated-${id}`);
+    
+    devLog.info(`[storyService] Toggled favorite for ${id} to ${isFavorite}`);
+  } catch (error) {
+    devLog.error('[storyService] toggleStoryFavorite failed:', error);
+    throw new Error('Failed to update favorite status. Please try again.');
   }
 }
 function getAnalysisPath(filePath: string): string {

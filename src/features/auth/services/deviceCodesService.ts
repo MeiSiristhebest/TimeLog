@@ -4,6 +4,30 @@ import {
   getStoredDeviceCode,
   setStoredDeviceCode,
 } from './deviceCodeStorage';
+import { devLog } from '@/lib/devLogger';
+
+/**
+ * Utility to map device code RPC errors to user-friendly messages.
+ */
+function mapDeviceCodeError(error: any): string {
+  if (!error) return 'An unknown error occurred.';
+  const message = error.message || '';
+
+  if (message.includes('rate_limit_exceeded')) {
+    return 'You have reached the limit for generating codes. Please try again in an hour.';
+  }
+  if (message.includes('function generate_device_code() does not exist')) {
+    return 'Device sign-in is temporarily unavailable. Please try again later.';
+  }
+  if (message.includes('Policy check failed') || message.includes('permission denied')) {
+    return 'You do not have permission to manage family devices.';
+  }
+  if (message.includes('invalid input syntax for type uuid')) {
+    return 'Invalid device identifier provided.';
+  }
+
+  return 'A connection error occurred while managing devices. Please try again.';
+}
 
 export type DeviceCodeResult = {
   code: string;
@@ -39,10 +63,8 @@ export async function generateDeviceCode(): Promise<DeviceCodeResult> {
   // 3. Generate new code via RPC
   const { data, error } = await supabase.rpc('generate_device_code');
   if (error) {
-    if (error.message.includes('rate_limit_exceeded')) {
-      throw new Error('You have reached the hourly limit. Please try again later.');
-    }
-    throw new Error(error.message);
+    devLog.error('[deviceCodesService] Failed to generate device code:', error);
+    throw new Error(mapDeviceCodeError(error));
   }
 
   recordDeviceCodeAttempt('device-code-global');
@@ -66,7 +88,8 @@ export async function generateDeviceCode(): Promise<DeviceCodeResult> {
 export async function listFamilyDevices(): Promise<DeviceSummary[]> {
   const { data, error } = await supabase.rpc('list_family_devices');
   if (error) {
-    throw new Error(error.message);
+    devLog.error('[deviceCodesService] Failed to list devices:', error);
+    throw new Error(mapDeviceCodeError(error));
   }
 
   return ((data as RpcDeviceRow[] | null | undefined) ?? []).map((row) => ({
@@ -85,6 +108,7 @@ export async function revokeDevice(deviceId: string): Promise<void> {
 
   const { error } = await supabase.rpc('revoke_device', { p_device_id: deviceId });
   if (error) {
-    throw new Error(error.message);
+    devLog.error('[deviceCodesService] Failed to revoke device:', error);
+    throw new Error(mapDeviceCodeError(error));
   }
 }

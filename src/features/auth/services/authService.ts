@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { checkRateLimit, recordAttempt, clearRateLimit, RateLimitError } from '@/lib/rateLimiter';
 import type { User } from '@supabase/supabase-js';
+import { mapAuthError } from './anonymousAuthService';
 
 // Re-export RateLimitError for consumers
 export { RateLimitError };
@@ -29,7 +30,7 @@ export async function signInWithEmailPassword(
     if (error.message.toLowerCase().includes('invalid login credentials')) {
       throw new Error('Email or password is incorrect. Please try again.');
     }
-    throw new Error(error.message);
+    throw new Error(mapAuthError(error));
   }
 
   // Clear rate limit on successful login
@@ -54,7 +55,7 @@ export async function sendResetEmail(email: string): Promise<void> {
   const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, { redirectTo });
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(mapAuthError(error));
   }
 
   // Note: Don't clear rate limit on success for password reset
@@ -64,6 +65,6 @@ export async function sendResetEmail(email: string): Promise<void> {
 export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut();
   if (error) {
-    throw new Error(error.message);
+    throw new Error(mapAuthError(error));
   }
 }

@@ -56,8 +56,6 @@ type HeritageHeaderProps = {
   transparent?: boolean;
   /** Container style overrides */
   style?: StyleProp<ViewStyle>;
-  /** NativeWind class name */
-  className?: string;
 };
 
 export function HeritageHeader({
@@ -71,7 +69,6 @@ export function HeritageHeader({
   scrollY,
   transparent = false,
   style,
-  className,
 }: HeritageHeaderProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -132,7 +129,7 @@ export function HeritageHeader({
   });
 
   return (
-    <View style={[style, { paddingTop: insets.top }]} className={`z-10 w-full bg-transparent ${className || ''}`}>
+    <View style={[style, { paddingTop: insets.top }]} className="z-10 w-full bg-transparent">
       {/* Background */}
       <Animated.View
         className="absolute inset-0 border-b border-b-gray-200 dark:border-b-white/10"

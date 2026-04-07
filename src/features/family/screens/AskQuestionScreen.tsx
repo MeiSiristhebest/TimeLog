@@ -54,8 +54,8 @@ function SpringTab({
       onPressIn={() => (scale.value = withSpring(0.95, { damping: 10, stiffness: 300 }))}
       onPressOut={() => (scale.value = withSpring(1, { damping: 10, stiffness: 300 }))}>
       <Animated.View
-        className="px-4 py-2 rounded-[20px] mr-2 border"
         style={[
+          styles.tab,
           {
             backgroundColor: isSelected ? colors.primary : 'transparent',
             borderColor: isSelected ? colors.primary : colors.border,
@@ -63,9 +63,9 @@ function SpringTab({
           animatedStyle,
         ]}>
         <AppText
-          className="font-medium"
           style={{
             color: isSelected ? colors.onPrimary : colors.onSurface,
+            fontWeight: '500',
           }}>
           {category.icon} {category.name.split(' ')[0]}
         </AppText>
@@ -94,8 +94,8 @@ function SpringQuestionCard({
       onPressIn={() => (scale.value = withSpring(0.98, { damping: 10, stiffness: 300 }))}
       onPressOut={() => (scale.value = withSpring(1, { damping: 10, stiffness: 300 }))}>
       <Animated.View
-        className="p-5 rounded-2xl mb-3 border shadow-sm"
         style={[
+          styles.questionCard,
           {
             backgroundColor: colors.surface,
             borderColor: colors.border,
@@ -103,20 +103,16 @@ function SpringQuestionCard({
           },
           animatedStyle,
         ]}>
-        <AppText className="text-lg leading-[26px]" style={{ color: colors.onSurface }}>
-          {item}
-        </AppText>
-        <View className="flex-row justify-end mt-3">
-          <AppText className="font-semibold" style={{ color: colors.primary }}>
-            Use this ›
-          </AppText>
+        <AppText style={[styles.questionText, { color: colors.onSurface }]}>{item}</AppText>
+        <View style={styles.useButton}>
+          <AppText style={{ color: colors.primary, fontWeight: '600' }}>Use this ›</AppText>
         </View>
       </Animated.View>
     </Pressable>
   );
 }
 
-export default function AskQuestionScreen() {
+export default function AskQuestionScreen(): JSX.Element {
   const router = useRouter();
   const params = useLocalSearchParams<{ seniorUserId?: string }>();
   const insets = useSafeAreaInsets();
@@ -294,34 +290,36 @@ export default function AskQuestionScreen() {
   );
 
   return (
-    <View className="flex-1" style={{ backgroundColor: colors.surfaceDim }}>
+    <View style={[styles.container, { backgroundColor: colors.surfaceDim }]}>
       {/* Header */}
       <View
-        className="px-5 pb-5 border-b"
-        style={{
-          paddingTop: insets.top,
-          backgroundColor: colors.surface,
-          borderBottomColor: colors.border,
-        }}>
-        <View className="flex-row items-center justify-between">
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top,
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.border,
+          },
+        ]}>
+        <View style={styles.headerContent}>
           <Pressable onPress={() => router.back()} hitSlop={20}>
             <Ionicons name="arrow-back" size={24} color={colors.onSurface} />
           </Pressable>
-          <AppText variant="title" className="font-serif" style={{ color: colors.onSurface }}>
+          <AppText style={[styles.headerTitle, { color: colors.onSurface }]}>
             Ask a Question
           </AppText>
-          <View className="w-6" />
+          <View style={{ width: 24 }} />
         </View>
       </View>
 
       <View style={{ flex: 1 }}>
         {/* Category Tabs */}
-        <View className="h-[60px]" style={{ backgroundColor: colors.surface }}>
+        <View style={[styles.tabContainer, { backgroundColor: colors.surface }]}>
           <ScrollView
             contentInsetAdjustmentBehavior="automatic"
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16, alignItems: 'center' }}>
+            contentContainerStyle={styles.tabScroll}>
             {library?.categories.map((category) => (
               <SpringTab
                 key={category.id}
@@ -336,12 +334,11 @@ export default function AskQuestionScreen() {
 
         {availableSeniorIds.length > 1 && (
           <View
-            className="border-b px-4 pb-3 pt-1"
-            style={{ backgroundColor: colors.surface, borderBottomColor: colors.border }}>
-            <AppText
-              variant="small"
-              className="font-semibold mb-2"
-              style={{ color: colors.onSurface }}>
+            style={[
+              styles.seniorPickerContainer,
+              { backgroundColor: colors.surface, borderBottomColor: colors.border },
+            ]}>
+            <AppText style={[styles.seniorPickerLabel, { color: colors.onSurface }]}>
               Send to
             </AppText>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -352,11 +349,13 @@ export default function AskQuestionScreen() {
                   <Pressable
                     key={id}
                     onPress={() => selectSenior(id)}
-                    className="border rounded-full px-3 py-2 mr-2"
-                    style={{
-                      backgroundColor: isSelected ? colors.primary : colors.surfaceDim,
-                      borderColor: isSelected ? colors.primary : colors.border,
-                    }}>
+                    style={[
+                      styles.seniorChip,
+                      {
+                        backgroundColor: isSelected ? colors.primary : colors.surfaceDim,
+                        borderColor: isSelected ? colors.primary : colors.border,
+                      },
+                    ]}>
                     <AppText style={{ color: isSelected ? colors.onPrimary : colors.onSurface }}>
                       {`Senior ${index + 1} (${shortId})`}
                     </AppText>
@@ -372,10 +371,10 @@ export default function AskQuestionScreen() {
           data={questions}
           keyExtractor={(item, index) => `${selectedCategory ?? 'none'}-${index}`}
           renderItem={renderQuestion}
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={styles.listContent}
           contentInsetAdjustmentBehavior="automatic"
           ListHeaderComponent={
-            <AppText variant="headline" className="mb-4" style={{ color: colors.onSurface }}>
+            <AppText style={[styles.categoryTitle, { color: colors.onSurface }]}>
               {activeCategory?.name}
             </AppText>
           }
@@ -392,21 +391,25 @@ export default function AskQuestionScreen() {
         }}
         color={colors.primary}
         label="Write Custom"
-      />      {/* Edit/Send Modal */}
+      />
+
+      {/* Edit/Send Modal */}
       <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}>
-        <View className="flex-1 bg-black/50 justify-end">
+        <View style={styles.modalOverlay}>
           <View
-            className="rounded-t-3xl p-6"
-            style={{
-              backgroundColor: colors.surface,
-              paddingBottom: insets.bottom + 24,
-            }}>
-            <View className="flex-row justify-between items-center mb-5">
-              <AppText variant="headline" style={{ color: colors.onSurface }}>
+            style={[
+              styles.modalContent,
+              {
+                backgroundColor: colors.surface,
+                paddingBottom: insets.bottom + 24,
+              },
+            ]}>
+            <View style={styles.modalHeader}>
+              <AppText style={[styles.modalTitle, { color: colors.onSurface }]}>
                 Send Question
               </AppText>
               <Pressable onPress={() => setModalVisible(false)}>
@@ -420,13 +423,14 @@ export default function AskQuestionScreen() {
               onChangeText={setQuestionText}
               placeholder="What would you like to ask?"
               placeholderTextColor={colors.handle}
-              className="rounded-xl p-4 text-lg min-h-[120px] mb-5 border"
-              style={{
-                backgroundColor: colors.surfaceDim,
-                color: colors.onSurface,
-                borderColor: colors.border,
-                textAlignVertical: 'top',
-              }}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.surfaceDim,
+                  color: colors.onSurface,
+                  borderColor: colors.border,
+                },
+              ]}
               autoFocus
             />
 
@@ -435,19 +439,21 @@ export default function AskQuestionScreen() {
               disabled={
                 isSubmitting || !questionText.trim() || isResolvingSenior || !resolvedSeniorUserId
               }
-              className="py-4 rounded-2xl items-center shadow-lg"
-              style={{
-                backgroundColor: colors.primary,
-                shadowColor: colors.primary,
-                opacity:
-                  isSubmitting ||
-                  !questionText.trim() ||
-                  isResolvingSenior ||
-                  !resolvedSeniorUserId
-                    ? 0.6
-                    : 1,
-              }}>
-              <AppText className="text-lg font-bold" style={{ color: colors.onPrimary }}>
+              style={[
+                styles.submitButton,
+                {
+                  backgroundColor: colors.primary,
+                  shadowColor: colors.primary,
+                  opacity:
+                    isSubmitting ||
+                    !questionText.trim() ||
+                    isResolvingSenior ||
+                    !resolvedSeniorUserId
+                      ? 0.6
+                      : 1,
+                },
+              ]}>
+              <AppText style={[styles.submitText, { color: colors.onPrimary }]}>
                 {isSubmitting
                   ? 'Sending...'
                   : isResolvingSenior
@@ -457,9 +463,11 @@ export default function AskQuestionScreen() {
             </Pressable>
             {!resolvedSeniorUserId && (
               <AppText
-                variant="small"
-                className="mt-3 text-center"
-                style={{ color: colors.textMuted }}>
+                style={{
+                  marginTop: 12,
+                  textAlign: 'center',
+                  color: colors.textMuted,
+                }}>
                 Select a senior before sending this question.
               </AppText>
             )}
@@ -488,15 +496,152 @@ function SpringFab({
     <Pressable
       onPress={onPress}
       onPressIn={() => (scale.value = withSpring(0.9, { damping: 10, stiffness: 300 }))}
-      onPressOut={() => (scale.value = withSpring(1, { damping: 10, stiffness: 300 }))}
-      className="absolute bottom-[30px] right-5">
+      onPressOut={() => (scale.value = withSpring(1, { damping: 10, stiffness: 300 }))}>
       <Animated.View
-        className="py-3 px-5 rounded-[30px] flex-row items-center gap-2 shadow-lg"
-        style={[{ backgroundColor: color, shadowColor: color }, animatedStyle]}>
+        style={[styles.fab, { backgroundColor: color, shadowColor: color }, animatedStyle]}>
         <Ionicons name="pencil" size={20} color="#FFF" />
-        <AppText className="font-bold text-base text-white">{label}</AppText>
+        <AppText style={[styles.fabText, { color: '#FFF' }]}>{label}</AppText>
       </Animated.View>
     </Pressable>
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontFamily: 'Fraunces_600SemiBold',
+  },
+  tabContainer: {
+    height: 60,
+  },
+  seniorPickerContainer: {
+    borderBottomWidth: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    paddingTop: 4,
+  },
+  seniorPickerLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  seniorChip: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+  },
+  tabScroll: {
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  tab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+  },
+  listContent: {
+    padding: 16,
+  },
+  categoryTitle: {
+    fontSize: 24,
+    fontFamily: 'Fraunces_600SemiBold',
+    marginBottom: 16,
+  },
+  questionCard: {
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  questionText: {
+    fontSize: 18,
+    lineHeight: 26,
+  },
+  useButton: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 12,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  fabText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontFamily: 'Fraunces_600SemiBold',
+  },
+  input: {
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 18,
+    minHeight: 120,
+    textAlignVertical: 'top',
+    marginBottom: 20,
+    borderWidth: 1,
+  },
+  submitButton: {
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  submitText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+});

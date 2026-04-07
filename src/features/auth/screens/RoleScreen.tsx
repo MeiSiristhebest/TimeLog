@@ -9,7 +9,7 @@ import { AppText } from '@/components/ui/AppText';
 import { HeritageSkeleton } from '@/components/ui/heritage/HeritageSkeleton';
 import { StyleSheet, View, Pressable, ScrollView } from 'react-native';
 
-export default function RoleScreen() {
+export default function RoleScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
 
   // Logic Separation
@@ -22,21 +22,22 @@ export default function RoleScreen() {
   if (loading) {
     return (
       <SafeAreaView
-        className="flex-1 items-center justify-center"
-        style={{ backgroundColor: colors.surface }}>
-        <View className="w-[72%] items-center gap-4">
+        style={[
+          styles.container,
+          { backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' },
+        ]}>
+        <View style={styles.loadingContainer}>
           <View
-            className="w-16 h-16 rounded-full items-center justify-center"
-            style={{ backgroundColor: `${colors.primary}14` }}>
+            style={[
+              styles.loadingIconWrap,
+              { backgroundColor: `${colors.primary}14` },
+            ]}>
             <Ionicons name="hourglass-outline" size={28} color={colors.primary} />
           </View>
-          <AppText
-            variant="title"
-            className="font-semibold"
-            style={{ color: colors.onSurface }}>
+          <AppText style={{ fontSize: 18, color: colors.onSurface, fontWeight: '600' }}>
             {STRINGS.loading}
           </AppText>
-          <View className="w-full gap-2.5">
+          <View style={styles.loadingSkeleton}>
             <HeritageSkeleton variant="text" width="100%" />
             <HeritageSkeleton variant="text" width="84%" />
           </View>
@@ -46,15 +47,12 @@ export default function RoleScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.surface }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.surface }]}>
       {/* Header with Back Button */}
-      <View className="px-6 pt-4 pb-2">
+      <View style={styles.header}>
         <Pressable
           onPress={handleBack}
-          className="w-12 h-12 items-center justify-center rounded-full active:opacity-70"
-          style={({ pressed }) => ({
-            backgroundColor: pressed ? PALETTE.overlayMedium : PALETTE.overlayLight,
-          })}
+          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
           accessibilityRole="button"
           accessibilityLabel={STRINGS.backAccessibility}>
           <Ionicons name="arrow-back" size={28} color={colors.onSurface} />
@@ -64,22 +62,16 @@ export default function RoleScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: 48 }}>
+        contentContainerStyle={styles.scrollContent}>
         {/* Title Section */}
-        <Animated.View
-          entering={FadeInDown.duration(600)}
-          className="px-8 pt-2 pb-8">
-          <AppText
-            className="font-serif text-[42px] leading-[48px] -tracking-[0.5px]"
-            style={{ color: colors.onSurface }}>
-            {STRINGS.title}
-          </AppText>
+        <Animated.View entering={FadeInDown.duration(600)} style={styles.titleContainer}>
+          <AppText style={[styles.title, { color: colors.onSurface }]}>{STRINGS.title}</AppText>
         </Animated.View>
 
         {/* Role Cards */}
-        <View className="px-6 gap-4">
+        <View style={styles.cardsContainer}>
           {/* Storyteller Card */}
-          <Animated.View entering={FadeInDown.delay(200).duration(600)} className="w-full">
+          <Animated.View entering={FadeInDown.delay(200).duration(600)} style={{ width: '100%' }}>
             <RoleCard
               title={STRINGS.storyteller.title}
               subtitle={STRINGS.storyteller.subtitle}
@@ -91,7 +83,7 @@ export default function RoleScreen() {
           </Animated.View>
 
           {/* Listener Card */}
-          <Animated.View entering={FadeInDown.delay(400).duration(600)} className="w-full">
+          <Animated.View entering={FadeInDown.delay(400).duration(600)} style={{ width: '100%' }}>
             <RoleCard
               title={STRINGS.listener.title}
               subtitle={STRINGS.listener.subtitle}
@@ -145,34 +137,108 @@ function RoleCard({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}>
       <Animated.View
-        className="w-full py-12 px-6 border-2 rounded-[20px] items-center justify-center shadow-sm"
         style={[
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            shadowColor: PALETTE.shadowNeutral,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.05,
-            shadowRadius: 4,
-            elevation: 2,
-          },
+          styles.card,
+          { backgroundColor: colors.surface, borderColor: colors.border },
           animatedStyle,
         ]}>
-        <View className="mb-6">
+        <View style={styles.iconContainer}>
           <Ionicons name={icon} size={84} color={colors.primary} />
         </View>
-        <AppText
-          className="text-2xl font-serif text-center mb-2 -tracking-[0.5px]"
-          style={{ color: colors.onSurface }}>
-          {title}
-        </AppText>
-        <AppText
-          className="text-lg font-medium text-center"
-          style={{ color: colors.textMuted }}>
-          {subtitle}
-        </AppText>
+        <AppText style={[styles.cardTitle, { color: colors.onSurface }]}>{title}</AppText>
+        <AppText style={[styles.cardSubtitle, { color: colors.textMuted }]}>{subtitle}</AppText>
       </Animated.View>
     </Pressable>
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  backButton: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 24,
+    backgroundColor: PALETTE.overlayLight,
+  },
+  backButtonPressed: {
+    backgroundColor: PALETTE.overlayMedium,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 48,
+  },
+  titleContainer: {
+    paddingHorizontal: 32,
+    paddingTop: 8,
+    paddingBottom: 32,
+  },
+  loadingContainer: {
+    width: '72%',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingSkeleton: {
+    width: '100%',
+    gap: 10,
+  },
+  title: {
+    fontFamily: 'Fraunces_600SemiBold',
+    fontSize: 42,
+    lineHeight: 48, // Tight leading
+    letterSpacing: -0.5,
+  },
+  cardsContainer: {
+    paddingHorizontal: 24,
+    gap: 16,
+  },
+  card: {
+    width: '100%',
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+    borderWidth: 2,
+    borderRadius: 20, // Approx 'xl' in tailwind
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Shadow isn't on the original request but makes it pop slightly in RN
+    shadowColor: PALETTE.shadowNeutral,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  iconContainer: {
+    marginBottom: 24,
+    // Add optional hover/scale effect logic here if using Reanimated,
+    // but simple press scale on parent is usually enough for native feels.
+  },
+  cardTitle: {
+    fontSize: 24, // 3xl approx
+    fontFamily: 'Fraunces_600SemiBold',
+    fontWeight: 'normal',
+    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: -0.5,
+  },
+  cardSubtitle: {
+    fontSize: 18,
+    fontFamily: 'System',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+});

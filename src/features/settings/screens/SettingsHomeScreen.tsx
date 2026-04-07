@@ -7,7 +7,7 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { useSettingsHome } from '../hooks/useSettingsLogic';
 import { SETTINGS_STRINGS } from '../data/mockSettingsData';
 import { SettingsSection } from '../components/SettingsSection';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View, StyleSheet } from 'react-native';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { AppText } from '@/components/ui/AppText';
 import {
@@ -75,12 +75,11 @@ export function SettingsHomeScreen(): JSX.Element {
 
         {shouldShowUpgradePrompt ? (
           <View
-            className="mx-4 mb-4 rounded-2xl border px-4 py-4"
-            style={{ backgroundColor: colors.surfaceCard, borderColor: colors.border }}>
-            <AppText className="text-base font-semibold mb-1" style={{ color: colors.onSurface }}>
+            style={[styles.promptCard, { backgroundColor: colors.surfaceCard, borderColor: colors.border }]}>
+            <AppText style={[styles.promptTitle, { color: colors.onSurface }]}>
               Upgrade to a permanent account
             </AppText>
-            <AppText className="text-sm mb-3" style={{ color: colors.textMuted }}>
+            <AppText style={[styles.promptSubtext, { color: colors.textMuted }]}>
               You can keep using TimeLog now, but upgrading protects your stories and unlocks family
               sharing.
             </AppText>
@@ -90,8 +89,8 @@ export function SettingsHomeScreen(): JSX.Element {
               variant="primary"
               fullWidth
             />
-            <Pressable onPress={handleDismissPrompt} className="mt-3 items-center">
-              <AppText className="text-sm" style={{ color: colors.textMuted }}>
+            <Pressable onPress={handleDismissPrompt} style={styles.promptSkip}>
+              <AppText style={[styles.skipText, { color: colors.textMuted }]}>
                 Skip for now
               </AppText>
             </Pressable>
@@ -100,12 +99,11 @@ export function SettingsHomeScreen(): JSX.Element {
 
         {shouldShowProfilePrompt ? (
           <View
-            className="mx-4 mb-4 rounded-2xl border px-4 py-4"
-            style={{ backgroundColor: colors.surfaceCard, borderColor: colors.border }}>
-            <AppText className="text-base font-semibold mb-1" style={{ color: colors.onSurface }}>
+            style={[styles.promptCard, { backgroundColor: colors.surfaceCard, borderColor: colors.border }]}>
+            <AppText style={[styles.promptTitle, { color: colors.onSurface }]}>
               Complete your profile
             </AppText>
-            <AppText className="text-sm mb-3" style={{ color: colors.textMuted }}>
+            <AppText style={[styles.promptSubtext, { color: colors.textMuted }]}>
               Add your birthday, language, and preferred text size for a more comfortable
               experience.
             </AppText>
@@ -115,8 +113,8 @@ export function SettingsHomeScreen(): JSX.Element {
               variant="primary"
               fullWidth
             />
-            <Pressable onPress={handleDismissPrompt} className="mt-3 items-center">
-              <AppText className="text-sm" style={{ color: colors.textMuted }}>
+            <Pressable onPress={handleDismissPrompt} style={styles.promptSkip}>
+              <AppText style={[styles.skipText, { color: colors.textMuted }]}>
                 Skip for now
               </AppText>
             </Pressable>
@@ -139,13 +137,14 @@ export function SettingsHomeScreen(): JSX.Element {
               iconColor={colors.iconOrange} // Orange
             />
           </Link>
-          <SettingsRow
-            label={SETTINGS_STRINGS.home.favorites}
-            iconName="heart-outline"
-            iconColor={colors.iconRed} // Red
-            onPress={NO_OP} // Placeholder
-            isLast
-          />
+          <Link href="/settings/favorites" asChild>
+            <SettingsRow
+              label={SETTINGS_STRINGS.home.favorites}
+              iconName="heart-outline"
+              iconColor={colors.iconRed} // Red
+              isLast
+            />
+          </Link>
         </SettingsSection>
 
         {/* Settings Section - Link to new Options Page */}
@@ -163,3 +162,32 @@ export function SettingsHomeScreen(): JSX.Element {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  promptCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+  },
+  promptTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  promptSubtext: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  promptSkip: {
+    marginTop: 12,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  skipText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+});

@@ -10,10 +10,6 @@ export interface ToastOptions {
   message: string;
   type?: ToastType;
   duration?: 'short' | 'long';
-  action?: {
-    label: string;
-    onPress: () => void;
-  };
 }
 
 type ToastListener = (options: ToastOptions) => void;

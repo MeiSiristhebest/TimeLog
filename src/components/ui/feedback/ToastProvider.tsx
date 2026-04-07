@@ -62,7 +62,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }): JSX.
               entering={FadeInUp.springify()}
               exiting={FadeOutUp}
               className="flex-row items-center justify-between w-[90%] max-w-[400px] py-3 px-4 rounded-xl mt-2 shadow-sm elevation-[6]"
-              style={[
+                style={[
                 toastPalette ? { backgroundColor: toastPalette.backgroundColor } : undefined,
                 {
                   shadowColor: colors.shadowNeutral,
@@ -71,52 +71,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }): JSX.
                   shadowRadius: 8
                 }
               ]}>
-              <View className="flex-1 flex-col gap-2">
-                <View className="flex-row items-center gap-3">
-                  <Ionicons
-                    name={getIconName(toast.type)}
-                    size={24}
-                    color={toastPalette?.foregroundColor ?? colors.onSurface}
-                  />
-                  <AppText
-                    className="flex-1 text-base font-medium"
-                    style={{
-                      color: toastPalette?.foregroundColor ?? colors.onSurface,
-                      fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-                    }}>
-                    {toast.message}
-                  </AppText>
-                </View>
-                {/* CTA Action rendered conditionally */}
-                {toast.action && (
-                  <TouchableOpacity
-                    onPress={() => {
-                      toast.action?.onPress();
-                      dismiss();
-                    }}
-                    style={{
-                      alignSelf: 'flex-end',
-                      backgroundColor: 'rgba(255,255,255,0.2)',
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 16,
-                      marginTop: 4,
-                      marginBottom: 2,
-                    }}>
-                    <AppText
-                      style={{
-                        color: toastPalette?.foregroundColor ?? colors.onSurface,
-                        fontWeight: '700',
-                        fontSize: 14,
-                        textTransform: 'uppercase',
-                        letterSpacing: 0.5,
-                      }}>
-                      {toast.action.label}
-                    </AppText>
-                  </TouchableOpacity>
-                )}
+              <View className="flex-1 flex-row items-center gap-3">
+                <Ionicons
+                  name={getIconName(toast.type)}
+                  size={24}
+                  color={toastPalette?.foregroundColor ?? colors.onSurface}
+                />
+                <AppText
+                  className="flex-1 text-base font-medium"
+                  style={{
+                    color: toastPalette?.foregroundColor ?? colors.onSurface,
+                    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+                  }}>
+                  {toast.message}
+                </AppText>
               </View>
-              <TouchableOpacity onPress={dismiss} hitSlop={12} style={{ alignSelf: 'flex-start' }}>
+              <TouchableOpacity onPress={dismiss} hitSlop={12}>
                 <Ionicons
                   name="close"
                   size={20}

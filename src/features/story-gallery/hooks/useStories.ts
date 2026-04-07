@@ -29,6 +29,8 @@ interface UseStoriesOptions {
   matchingTopicIds?: string[];
   /** Story ids whose transcript segments match the search query */
   matchingStoryIds?: string[];
+  /** Only show favorites items (default: false) */
+  onlyFavorites?: boolean;
 }
 
 /**
@@ -49,11 +51,12 @@ export function useStories(options: UseStoriesOptions = {}): UseStoriesResult {
     searchQuery,
     matchingTopicIds = [],
     matchingStoryIds = [],
+    onlyFavorites = false,
   } = options;
   const normalizedSearchQuery = (searchQuery ?? '').trim();
   const searchTopicKey = [...new Set(matchingTopicIds)].sort().join(',');
   const searchStoryKey = [...new Set(matchingStoryIds)].sort().join(',');
-  const cacheKey = `${includeDeleted ? '1' : '0'}:${onlyDeleted ? '1' : '0'}:${normalizedSearchQuery.toLowerCase()}:${searchTopicKey}:${searchStoryKey}`;
+  const cacheKey = `${includeDeleted ? '1' : '0'}:${onlyDeleted ? '1' : '0'}:${onlyFavorites ? '1' : '0'}:${normalizedSearchQuery.toLowerCase()}:${searchTopicKey}:${searchStoryKey}`;
   const shouldUseCache = process.env.NODE_ENV !== 'test';
   const cachedStories = shouldUseCache ? (storyQueryCache.get(cacheKey) ?? []) : [];
 
@@ -71,6 +74,11 @@ export function useStories(options: UseStoriesOptions = {}): UseStoriesResult {
       conditions.push(isNull(audioRecordings.deletedAt));
     }
     // If includeDeleted=true and onlyDeleted=false: show all items (no deletedAt filter)
+
+    // Handle favorites filtering
+    if (onlyFavorites) {
+      conditions.push(eq(audioRecordings.isFavorite, true));
+    }
 
     if (normalizedSearchQuery.length > 0) {
       const wildcard = `%${normalizedSearchQuery}%`;

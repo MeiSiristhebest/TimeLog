@@ -1,6 +1,5 @@
 import React from 'react';
 import { ScrollView, View } from 'react-native';
-import Constants from 'expo-constants';
 import { useRouter, Link } from 'expo-router';
 import { AppText } from '@/components/ui/AppText';
 import { SettingsRow } from '../components/SettingsRow';
@@ -35,11 +34,6 @@ export function AppSettingsScreen(): JSX.Element {
         label: 'Cancel',
       },
     });
-  };
-
-  const handleSwitchAccount = () => {
-    // Navigate to role selection/login
-    router.push(APP_ROUTES.ROLE);
   };
 
   const STRINGS = SETTINGS_STRINGS.appSettings;
@@ -81,11 +75,7 @@ export function AppSettingsScreen(): JSX.Element {
             <SettingsRow label={STRINGS.items.help} />
           </Link>
           <Link href={APP_ROUTES.SETTINGS_ABOUT_TIMELOG} asChild>
-            <SettingsRow 
-              label={STRINGS.items.about} 
-              value={`v${Constants.expoConfig?.version || '1.0.0'}`} 
-              isLast 
-            />
+            <SettingsRow label={STRINGS.items.about} value="v1.0.0" isLast />
           </Link>
         </SettingsSection>
 
@@ -93,7 +83,7 @@ export function AppSettingsScreen(): JSX.Element {
         <View className="mt-6 mb-6 gap-3">
           <HeritageButton
             title={STRINGS.items.switchAccount}
-            onPress={handleSwitchAccount}
+            onPress={handleSignOut}
             variant="secondary"
             fullWidth
           />

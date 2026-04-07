@@ -17,7 +17,7 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { getCurrentUserId } from '@/features/auth/services/sessionService';
 import { devLog } from '@/lib/devLogger';
 
-const AGENT_PARTICIPANT_TIMEOUT_MS = 2500;
+const AGENT_PARTICIPANT_TIMEOUT_MS = 10000; // Reduced to 10s as requested
 
 export interface UseLiveKitDialogOptions {
   storyId?: string;
@@ -92,7 +92,8 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
         unsubscribe?.();
       };
 
-      unsubscribe = client.onParticipantConnected(() => {
+      unsubscribe = client.onParticipantConnected((participant) => {
+        devLog.info(`[useLiveKitDialog] Remote participant joined: ${participant.identity}`);
         cleanup();
         resolve();
       });
@@ -200,10 +201,12 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
       });
 
       // Connect to room
+      devLog.info(`[useLiveKitDialog] Calling client.connect(url=${tokenData.url.substring(0, 15)}...)`);
       await client.connect({
         url: tokenData.url,
         token: tokenData.token,
       });
+      devLog.info('[useLiveKitDialog] Room connection established');
 
       // Initialize microphone hardware (only once per session)
       await client.startMicrophoneHardware();

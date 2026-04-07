@@ -123,9 +123,10 @@ export async function fetchComments(storyId: string): Promise<Comment[]> {
 export async function postComment(storyId: string, content: string): Promise<Comment> {
   // Get current user
   const {
-    data: { user },
+    data: authData,
     error: authError,
   } = await supabase.auth.getUser();
+  const user = authData?.user;
 
   if (authError || !user) {
     throw new Error('Not authenticated');

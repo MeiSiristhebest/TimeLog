@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   codeCard: {
-    backgroundColor: 'transparent',
+    // backgroundColor set via inline style (theme.colors.surfaceCard)
     borderRadius: 20,
     borderWidth: 2,
     padding: 24,
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   noCodeCard: {
-    backgroundColor: 'transparent',
+    // backgroundColor set via inline style (theme.colors.surfaceCard)
     borderRadius: 20,
     borderWidth: 1,
     padding: 32,
@@ -196,6 +196,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
-    color: 'transparent',
+    // color set via inline style (theme.colors.error)
   },
 });

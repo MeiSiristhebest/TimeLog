@@ -23,7 +23,12 @@ export async function persistAvatarAssetUri(uri: string): Promise<string> {
   const extMatch = uri.match(/\.(jpg|jpeg|png|webp|heic)(?:\?|$)/i);
   const extension = extMatch?.[1]?.toLowerCase() ?? 'jpg';
   const targetUri = `${avatarDir}avatar_${Date.now()}.${extension}`;
-  await FileSystem.copyAsync({ from: uri, to: targetUri });
+
+  try {
+    await FileSystem.copyAsync({ from: uri, to: targetUri });
+  } catch (error) {
+    throw new Error('Could not save your profile photo locally. Please try again.');
+  }
 
   return targetUri;
 }

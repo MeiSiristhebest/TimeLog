@@ -60,11 +60,11 @@ export async function getRecommendedTopics(seniorUserId: string): Promise<Topic[
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('name')
+          .select('display_name')
           .eq('id', fq.familyUserId)
           .single();
         if (data) {
-          familyMemberName = data.name || 'Family Member';
+          familyMemberName = data.display_name || 'Family Member';
         }
       } catch (error) {
         devLog.error('Failed to fetch family member name:', error);

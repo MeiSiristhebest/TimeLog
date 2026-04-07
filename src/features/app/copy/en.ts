@@ -47,6 +47,10 @@ export const EN_COPY = {
     speakerYou: 'You',
     speakerAi: 'AI',
     speakerTranscript: 'Transcript',
+    exportPdf: 'Export to PDF',
+    exporting: 'Polishing & Exporting...',
+    exportSuccess: 'Story exported successfully!',
+    exportFailed: 'Export failed, please try again',
   },
   timeCapsule: {
     label: 'Time Capsule',

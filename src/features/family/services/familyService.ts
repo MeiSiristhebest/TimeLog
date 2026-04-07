@@ -16,6 +16,23 @@ type FamilyMemberRpcRow = {
 };
 
 /**
+ * Utility to map family-related errors to user-friendly messages.
+ */
+function mapFamilyError(error: any): string {
+  if (!error) return 'An unknown error occurred.';
+  const message = error.message || '';
+
+  if (message.includes('permission denied') || message.includes('Policy')) {
+    return 'You do not have permission to manage this family connection.';
+  }
+  if (message.includes('not found')) {
+    return 'The family member or connection could not be found.';
+  }
+
+  return message;
+}
+
+/**
  * Fetch connected family members for the current user.
  * Uses RPC 'get_family_members' to get safely formatted list.
  */
@@ -23,7 +40,7 @@ export async function getFamilyMembers(): Promise<FamilyMember[]> {
   const { data, error } = await supabase.rpc('get_family_members');
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(mapFamilyError(error));
   }
 
   if (!Array.isArray(data)) return [];
@@ -46,6 +63,9 @@ export async function getFamilyMembers(): Promise<FamilyMember[]> {
 
 /**
  * Remove a family member connection.
+
+/**
+ * Remove a family member connection.
  */
 export async function removeFamilyMember(targetUserId: string): Promise<void> {
   const { error } = await supabase.rpc('remove_family_member', {
@@ -53,6 +73,6 @@ export async function removeFamilyMember(targetUserId: string): Promise<void> {
   });
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(mapFamilyError(error));
   }
 }

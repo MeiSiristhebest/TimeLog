@@ -139,6 +139,15 @@ export async function submitQuestion(
   familyUserId: string,
   category?: string
 ): Promise<FamilyQuestion> {
+  // 1. Validation
+  const trimmedText = questionText.trim();
+  if (!trimmedText) {
+    throw new Error('Please enter a question.');
+  }
+  if (trimmedText.length > 500) {
+    throw new Error('Question is too long. Please keep it under 500 characters.');
+  }
+
   const normalizedCategory = normalizeFamilyQuestionCategory(category);
 
   const { data, error } = await supabase
@@ -146,7 +155,7 @@ export async function submitQuestion(
     .insert({
       senior_user_id: seniorUserId,
       family_user_id: familyUserId,
-      question_text: questionText,
+      question_text: trimmedText,
       category: normalizedCategory,
     })
     .select(
@@ -164,7 +173,7 @@ export async function submitQuestion(
 
   if (error) {
     devLog.error('[questionService] Failed to submit question:', error);
-    throw error;
+    throw new Error('Failed to send your question. Please check your connection.');
   }
 
   const remoteRow = data as FamilyQuestionRow;
@@ -256,7 +265,7 @@ export async function markQuestionAsAnswered(
 
   if (error) {
     devLog.error('[questionService] Failed to mark question as answered:', error);
-    throw error;
+    throw new Error('Failed to update question status. Your recording was saved safely.');
   }
 }
 

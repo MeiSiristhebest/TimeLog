@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { asc } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useStories } from '../hooks/useStories';
-import { softDeleteStory, restoreStory, offloadStory } from '../services/storyService';
+import { softDeleteStory, restoreStory, offloadStory, toggleStoryFavorite } from '../services/storyService';
 import {
   showSuccessToast,
   showErrorToast,
@@ -248,6 +248,7 @@ export function useStoryGallery() {
         : transcriptFallbackByStoryId.get(record.id) ?? null,
       coverImagePath: record.coverImagePath,
       isOffloaded: record.filePath === 'OFFLOADED',
+      isFavorite: !!record.isFavorite,
     }));
   }, [stories, filter, sortOption, transcriptFallbackByStoryId]);
 
@@ -315,6 +316,15 @@ export function useStoryGallery() {
     }
   }, []);
 
+  const handleToggleFavorite = useCallback(async (id: string, isFavorite: boolean) => {
+    try {
+      await toggleStoryFavorite(id, isFavorite);
+      showSuccessToast(isFavorite ? 'Added to favorites' : 'Removed from favorites');
+    } catch {
+      showErrorToast('Failed to update favorite status');
+    }
+  }, []);
+
   return {
     isLoading,
     recordings,
@@ -340,6 +350,7 @@ export function useStoryGallery() {
       onDeleteStory: handleDeleteStory,
       onOffloadStory: handleOffloadStory,
       onUnavailableStoryTap: handleUnavailableStoryTap,
+      onToggleFavorite: handleToggleFavorite,
       onConfirmDelete: handleConfirmDelete,
       onUndo: handleUndo,
       onUndoTimeout: handleUndoTimeout,

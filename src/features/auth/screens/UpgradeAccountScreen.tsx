@@ -20,6 +20,14 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { upgradeAnonymousAccount } from '@/features/auth/services/anonymousAuthService';
 import { devLog } from '@/lib/devLogger';
 
+/**
+ * Validates email address format.
+ */
+const isValidEmailCase = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
 export default function UpgradeAccountScreen(): JSX.Element {
   const theme = useHeritageTheme();
   const router = useRouter();
@@ -43,6 +51,15 @@ export default function UpgradeAccountScreen(): JSX.Element {
       HeritageAlert.show({
         title: 'Email Required',
         message: 'Please enter an email address',
+        variant: 'warning',
+      });
+      return;
+    }
+
+    if (!isValidEmailCase(trimmedEmail)) {
+      HeritageAlert.show({
+        title: 'Invalid Email',
+        message: 'Please enter a valid email address (e.g., name@example.com)',
         variant: 'warning',
       });
       return;
@@ -142,25 +159,29 @@ export default function UpgradeAccountScreen(): JSX.Element {
             value={displayName}
             onChangeText={setDisplayName}
             autoCapitalize="words"
+            leftIcon="person-outline"
           />
 
           <HeritageInput
-            label="Email"
+            label="Email Address"
             placeholder="elder@example.com"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
+            leftIcon="mail-outline"
           />
 
           <HeritageInput
-            label="Password"
+            label="Create Password"
             placeholder="Minimum 6 characters"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
             autoComplete="password-new"
+            leftIcon="lock-closed-outline"
+            showPasswordToggle
           />
 
           <HeritageInput
@@ -170,6 +191,8 @@ export default function UpgradeAccountScreen(): JSX.Element {
             onChangeText={setConfirmPassword}
             secureTextEntry
             autoComplete="password-new"
+            leftIcon="shield-checkmark-outline"
+            showPasswordToggle
           />
         </View>
 

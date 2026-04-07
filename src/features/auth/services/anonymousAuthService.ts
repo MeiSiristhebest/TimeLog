@@ -4,6 +4,12 @@
  * Handles anonymous authentication for storytellers who need immediate
  * access without registration. Supports account upgrade to permanent accounts.
  */
+/**
+ * Anonymous Authentication Service
+ * 
+ * Handles anonymous authentication for storytellers who need immediate
+ * access without registration. Supports account upgrade to permanent accounts.
+ */
 
 import { supabase } from '@/lib/supabase';
 import { devLog } from '@/lib/devLogger';
@@ -15,6 +21,32 @@ export type AnonymousAuthResult = {
     isAnonymous: boolean;
     session: any;
 };
+
+/**
+ * Utility to map Supabase Auth errors to user-friendly messages.
+ */
+export function mapAuthError(error: any): string {
+  if (!error) return 'An unknown error occurred.';
+  const message = error.message || '';
+
+  if (message.includes('New password should be different')) {
+    return 'Your new password must be different from your temporary password.';
+  }
+  if (message.includes('Unable to validate email address: invalid format')) {
+    return 'The email address format is not valid. Please check and try again.';
+  }
+  if (message.includes('User already exists')) {
+    return 'This email address is already registered to another account.';
+  }
+  if (message.includes('Password should be at least 6 characters')) {
+    return 'Password must be at least 6 characters long.';
+  }
+  if (message.includes('Email address not allowed')) {
+    return 'This email domain is not allowed for registration.';
+  }
+
+  return message;
+}
 
 /**
  * Sign in anonymously for storytellers.
@@ -95,9 +127,10 @@ export async function upgradeAnonymousAccount(
 ): Promise<{ recoveryCode: string }> {
     // Get current user
     const {
-        data: { user },
+        data: authData,
         error: userError,
     } = await supabase.auth.getUser();
+    const user = authData?.user;
 
     if (userError || !user) {
         throw new Error('No user session found');
@@ -116,8 +149,9 @@ export async function upgradeAnonymousAccount(
     });
 
     if (updateError) {
+        const friendlyMessage = mapAuthError(updateError);
         devLog.error('[anonymousAuthService] Failed to update user:', updateError);
-        throw new Error(`Failed to upgrade account: ${updateError.message}`);
+        throw new Error(friendlyMessage);
     }
 
     // Update profile with email and mark as upgraded
@@ -178,6 +212,19 @@ export async function upgradeAnonymousAccount(
         recoveryCode = '';
     }
 
+    // Refresh session to clear is_anonymous flag in local JWT/User object
+    try {
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) throw refreshError;
+        
+        devLog.info('[anonymousAuthService] Session refreshed successfully after upgrade:', refreshData.user?.id);
+        
+        // Brief delay to allow session storage to persist across all platform listeners
+        await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (refreshError) {
+        devLog.warn('[anonymousAuthService] Session refresh warning (non-fatal):', refreshError);
+    }
+
     devLog.info('[anonymousAuthService] Account upgraded successfully');
 
     return { recoveryCode };
@@ -185,13 +232,12 @@ export async function upgradeAnonymousAccount(
 
 /**
  * Internal function to generate recovery code.
- * Imported from recoveryCodeService.
+ * Aligned with database format: REC-XXXXXX
  */
 async function generateRecoveryCodeInternal(userId: string): Promise<{ code: string }> {
-    // Generate unique code: RCV-XXX-XXX format
-    const part1 = Math.floor(100 + Math.random() * 900);
-    const part2 = Math.floor(100 + Math.random() * 900);
-    const code = `RCV-${part1}-${part2}`;
+    // Generate unique code: REC-XXXXXX format
+    const codeNum = Math.floor(100000 + Math.random() * 900000);
+    const code = `REC-${codeNum}`;
 
     // Insert recovery code
     const expiresAt = new Date();
@@ -217,10 +263,10 @@ async function generateRecoveryCodeInternal(userId: string): Promise<{ code: str
  */
 export async function isAnonymousUser(): Promise<boolean> {
     const {
-        data: { user },
+        data: authData,
     } = await supabase.auth.getUser();
 
-    return user?.is_anonymous || false;
+    return authData?.user?.is_anonymous || false;
 }
 
 /**
@@ -234,8 +280,9 @@ export async function getAnonymousAccountStatus(): Promise<{
     upgradedAt: string | null;
 }> {
     const {
-        data: { user },
+        data: authData,
     } = await supabase.auth.getUser();
+    const user = authData?.user;
 
     if (!user) {
         return {

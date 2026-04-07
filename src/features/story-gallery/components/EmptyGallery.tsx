@@ -24,7 +24,7 @@ export function EmptyGallery(): JSX.Element {
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 24,
-        backgroundColor: 'transparent',
+        backgroundColor: colors.surface,
       }}>
       {/* Illustration Circle - with subtle warm shadow like Record screen */}
       <View

@@ -21,8 +21,11 @@ export async function fetchSeniorStoryById(storyId: string): Promise<SeniorStory
     .single();
 
   if (error) {
-    devLog.error('[seniorStoryService] Failed to fetch story by id', error.message);
-    throw new Error(error.message);
+    devLog.error('[seniorStoryService] Failed to fetch story by id:', error);
+    if (error.code === 'PGRST116') {
+      throw new Error('Story was not found. It may have been removed.');
+    }
+    throw new Error('Unable to load story details. Please try again.');
   }
 
   const row = data as SeniorStoryRow;

@@ -1,14 +1,14 @@
 import { Link } from 'expo-router';
-import { Icon } from '@/components/ui/Icon';
+import { Ionicons } from '@/components/ui/Icon';
 import { Animated } from '@/tw/animated';
 import { ZoomIn, FadeInDown } from 'react-native-reanimated';
 import { Container } from '@/components/ui/Container';
-import { AppButton } from '@/components/ui/AppButton';
-import { AppInput } from '@/components/ui/AppInput';
+import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
+import { HeritageInput } from '@/components/ui/heritage/HeritageInput';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useLoginLogic } from '@/features/auth/hooks/useLoginLogic';
 import { AppText } from '@/components/ui/AppText';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 
 export default function LoginScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
@@ -18,86 +18,142 @@ export default function LoginScreen(): JSX.Element {
   const { email, password, loading, message, error, isSubmitDisabled, isResetDisabled } = state;
 
   return (
-    <Container safe scrollable={false}>
-      <View className="flex-1 justify-center gap-10 px-6">
-        <View className="w-full items-center gap-4">
+    <Container>
+      <View style={styles.mainContainer}>
+        <View style={styles.headerSection}>
           <Animated.View
             entering={ZoomIn.delay(300).springify()}
-            className="mb-4 h-20 w-20 items-center justify-center rounded-3xl border-[2px]"
-            style={{
-              backgroundColor: `${colors.primary}10`,
-              borderColor: `${colors.primary}25`,
-            }}>
-            <Icon name="book" size={44} color={colors.primary} />
+            style={[
+              styles.iconWrapper,
+              {
+                backgroundColor: `${colors.primary}15`,
+                borderColor: `${colors.primary}25`,
+              },
+            ]}>
+            <Ionicons name="book" size={40} color={colors.primary} />
           </Animated.View>
           <AppText
-            variant="headline"
-            className="text-center">
+            style={[styles.title, { color: colors.onSurface }]}>
             Welcome Back
           </AppText>
           <AppText
-            variant="body"
-            className="px-8 text-center text-textMuted leading-relaxed">
+            style={[styles.subtitle, { color: colors.textMuted }]}>
             Sign in to continue your story journey.
           </AppText>
         </View>
 
-        <Animated.View entering={FadeInDown.delay(400).springify()} className="w-full gap-4">
-          <AppInput
-            label="Email"
-            value={email}
-            onChangeText={actions.setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            placeholder="you@example.com"
-            accessibilityLabel="Email Address"
-            leftIcon="mail"
-            error={error ? ' ' : undefined} // Keep spacing consistent if we have error
-          />
+        <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.formSection}>
+          <View style={styles.inputGap}>
+            <HeritageInput
+              label="Email Address"
+              value={email}
+              onChangeText={actions.setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              placeholder="you@example.com"
+              accessibilityLabel="Email Address"
+              accessibilityHint="Please enter your email address"
+              leftIcon="mail-outline"
+            />
+          </View>
 
-          <AppInput
-            label="Password"
-            value={password}
-            onChangeText={actions.setPassword}
-            secureTextEntry
-            placeholder="••••••••"
-            accessibilityLabel="Password"
-            leftIcon="lock-closed"
-          />
+          <View style={styles.inputGap}>
+            <HeritageInput
+              label="Password"
+              value={password}
+              onChangeText={actions.setPassword}
+              secureTextEntry
+              placeholder="••••••••"
+              accessibilityLabel="Password"
+              accessibilityHint="Please enter your password"
+              leftIcon="lock-closed-outline"
+              showPasswordToggle
+            />
+          </View>
 
           {error ? (
-            <AppText variant="small" className="text-center font-bold" style={{ color: colors.error }}>
+            <AppText style={[styles.statusText, { color: colors.error }]}>
               {error}
             </AppText>
           ) : null}
           {message ? (
-            <AppText variant="small" className="text-center font-bold" style={{ color: colors.success }}>
+            <AppText style={[styles.statusText, { color: colors.success }]}>
               {message}
             </AppText>
           ) : null}
 
-          <View className="gap-5 pt-4">
-            <AppButton
+          <View style={styles.buttonSection}>
+            <HeritageButton
+              title={loading ? 'Signing in…' : 'Sign in'}
               onPress={actions.handleSignIn}
               disabled={isSubmitDisabled}
               variant="primary"
-              label={loading ? 'Signing in…' : 'Sign in'}
             />
 
-            <AppButton
+            <HeritageButton
+              title="Forgot Password?"
               onPress={actions.handleResetPassword}
               disabled={isResetDisabled}
               variant="ghost"
-              className="mt-2"
-              label="Forgot Password?"
             />
           </View>
         </Animated.View>
 
         <Link href="/(tabs)" asChild>
-          <AppButton variant="secondary" label="Back to Home" onPress={() => {}} />
+          <HeritageButton title="Back to Home" variant="secondary" onPress={() => {}} />
         </Link>
       </View>
     </Container>
   );
 }
+
+const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 40,
+    paddingHorizontal: 24,
+  },
+  headerSection: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 16,
+  },
+  iconWrapper: {
+    marginBottom: 16,
+    height: 80,
+    width: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 24,
+    borderWidth: 1.5,
+  },
+  title: {
+    textAlign: 'center',
+    fontFamily: 'Fraunces_600SemiBold',
+    fontSize: 34,
+    fontWeight: '600',
+  },
+  subtitle: {
+    paddingHorizontal: 32,
+    textAlign: 'center',
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  formSection: {
+    width: '100%',
+    gap: 16,
+  },
+  inputGap: {
+    gap: 8,
+  },
+  statusText: {
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  buttonSection: {
+    gap: 16,
+    paddingTop: 16,
+  },
+});

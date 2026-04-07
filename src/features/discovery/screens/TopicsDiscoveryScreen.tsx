@@ -7,7 +7,7 @@ import { useDiscoveryLogic } from '@/features/discovery/hooks/useDiscoveryLogic'
 import { CategoryFilter } from '@/features/discovery/components/CategoryFilter';
 import { AppText } from '@/components/ui/AppText';
 import { Image } from 'expo-image';
-import { Pressable, View, ScrollView, TextInput } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useIsTopicAnswered } from '@/features/recorder/hooks/useAnsweredTopics';
 import {
   DISCOVERY_STRINGS,
@@ -17,7 +17,7 @@ import {
 // Paper texture asset - could typically be moved to a shared asset constant but acceptable here or via theme
 const PAPER_TEXTURE = require('../../../../assets/images/paper-texture.png');
 
-export default function TopicsDiscoveryScreen() {
+export default function TopicsDiscoveryScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
   const pressedOverlayColor = `${colors.onSurface}0D`;
   const goldBadgeBackground = `${colors.warning}14`;
@@ -39,23 +39,22 @@ export default function TopicsDiscoveryScreen() {
 
   return (
     <SafeAreaView
-      className="flex-1"
-      style={{ backgroundColor: colors.surfaceDim }}
+      style={[styles.container, { backgroundColor: colors.surfaceDim }]}
       edges={['top']}>
       {/* 1. Header (Simple) */}
-      <View className="flex-row items-center justify-between px-4 py-3">
+      <View style={styles.header}>
         <Pressable
           onPress={actions.goBack}
-          className="p-2 rounded-full"
           style={({ pressed }) => [
+            styles.iconButton,
             { backgroundColor: pressed ? pressedOverlayColor : 'transparent' },
           ]}>
           <Ionicons name="arrow-back" size={28} color={colors.textMuted} />
         </Pressable>
-        <AppText variant="title" className="font-serif" style={{ color: colors.onSurface }}>
+        <AppText style={[styles.headerTitle, { color: colors.onSurface }]}>
           {DISCOVERY_STRINGS.header.title}
         </AppText>
-        <Pressable className="p-2 rounded-full">
+        <Pressable style={styles.iconButton}>
           <Ionicons name="settings-outline" size={28} color={colors.textMuted} />
         </Pressable>
       </View>
@@ -67,43 +66,39 @@ export default function TopicsDiscoveryScreen() {
       />
 
       {/* 2. Main Card Deck */}
-      <View className="flex-1 items-center justify-center p-6 pb-10">
+      <View style={styles.deckContainer}>
         <Animated.View
-          className="w-full flex-1 max-h-[500px] max-w-[400px] shadow-lg"
-          style={[{ shadowColor: colors.shadowNeutral }, animatedCardStyle]}>
+          style={[styles.cardWrapper, { shadowColor: colors.shadowNeutral }, animatedCardStyle]}>
           {/* Paper Card */}
           <View
-            className="flex-1 rounded-[32px] border p-8 items-center justify-between overflow-hidden"
             style={[
+              styles.card,
               {
                 backgroundColor: colors.surface,
                 borderColor: `${colors.onSurface}0D`,
               },
             ]}>
             {/* Texture Overlay */}
-            <Image source={PAPER_TEXTURE} className="absolute inset-0 opacity-40" contentFit="cover" />
+            <Image source={PAPER_TEXTURE} style={styles.texture} contentFit="cover" />
 
             {/* Top: Icon */}
-            <View className="w-full items-center mt-[-8px]">
-              <View className="w-16 h-16 rounded-full items-center justify-center" style={{ backgroundColor: `${meta.color}15` }}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconCircle, { backgroundColor: `${meta.color}15` }]}>
                 <Ionicons
                   name={meta.icon as keyof typeof Ionicons.glyphMap}
-                  size={28}
+                  size={40}
                   color={meta.color}
                 />
               </View>
             </View>
 
             {/* Middle: Content */}
-            <ScrollView
-              className="flex-1 w-full"
-              contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 16, width: '100%', gap: 24 }}
-              showsVerticalScrollIndicator={false}>
+            <View style={styles.cardContent}>
               {/* Gold Badge */}
               {isFamilyTopic ? (
                 <View
-                  className="flex-row items-center border rounded-full pl-1 pr-4 py-1 shadow-sm gap-2"
                   style={[
+                    styles.goldBadge,
                     {
                       backgroundColor: goldBadgeBackground,
                       borderColor: goldBadgeBorder,
@@ -113,51 +108,52 @@ export default function TopicsDiscoveryScreen() {
                   {MOCK_FAMILY_REQUEST.avatar ? (
                     <Image
                       source={{ uri: MOCK_FAMILY_REQUEST.avatar }}
-                      className="w-8 h-8 rounded-full border-[1.5px]"
-                      style={{ borderColor: colors.surface }}
+                      style={[styles.avatar, { borderColor: colors.surface }]}
                       contentFit="cover"
                     />
                   ) : (
                     <View
-                      className="w-8 h-8 rounded-full border-[1.5px] items-center justify-center"
-                      style={{ borderColor: colors.surface, backgroundColor: `${colors.warning}24` }}>
+                      style={[
+                        styles.avatarFallback,
+                        { borderColor: colors.surface, backgroundColor: `${colors.warning}24` },
+                      ]}>
                       <Ionicons name="people" size={16} color={goldBadgeText} />
                     </View>
                   )}
-                  <AppText className="text-[13px] font-bold tracking-widest uppercase" style={{ color: goldBadgeText }}>
+                  <AppText style={[styles.goldText, { color: goldBadgeText }]}>
                     {DISCOVERY_STRINGS.card.badge}
                   </AppText>
                 </View>
               ) : null}
 
               {/* Question */}
-              <AppText variant="headline" className="font-serif text-center leading-10" style={{ color: colors.onSurface }}>
+              <AppText style={[styles.questionText, { color: colors.onSurface }]}>
                 {currentCard?.text ?? 'No topics found for selected categories'}
               </AppText>
 
               {/* Helper Text */}
-              <AppText variant="title" className="text-center max-w-[280px]" style={{ color: helperTextColor }}>
+              <AppText style={[styles.helperText, { color: helperTextColor }]}>
                 {DISCOVERY_STRINGS.card.helperText}
               </AppText>
 
               {isTopicAnswered ? (
-                <View className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ backgroundColor: answeredBadgeBackground }}>
+                <View style={[styles.answeredBadge, { backgroundColor: answeredBadgeBackground }]}>
                   <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-                  <AppText className="text-[13px] font-bold" style={{ color: colors.success }}>
+                  <AppText style={[styles.answeredText, { color: colors.success }]}>
                     Answered
                   </AppText>
                 </View>
               ) : null}
-            </ScrollView>
+            </View>
 
             {/* Bottom Decor */}
-            <View className="w-12 h-1.5 rounded-sm opacity-50 mt-4" style={{ backgroundColor: colors.border }} />
+            <View style={[styles.cardFooter, { backgroundColor: colors.border }]} />
           </View>
         </Animated.View>
       </View>
 
       {/* 3. Actions */}
-      <View className="px-6 pb-4 gap-3" style={{ backgroundColor: colors.surfaceDim }}>
+      <View style={[styles.actionsContainer, { backgroundColor: colors.surfaceDim }]}>
         {/* Primary Record Button */}
         <DiscoveryButton
           onPress={actions.handleSelectTopic}
@@ -218,25 +214,20 @@ function DiscoveryButton({
       onPressOut={handlePressOut}
       disabled={disabled}>
       <Animated.View
-        className={isPrimary 
-          ? "h-16 rounded-[32px] flex-row items-center justify-center shadow-lg" 
-          : "h-12 rounded-3xl items-center justify-center border-2 border-transparent"}
         style={[
+          isPrimary ? styles.recordButton : styles.secondaryButton,
           isPrimary
             ? { backgroundColor: colors.primary, shadowColor: colors.primary }
-            : null,
+            : { borderColor: 'transparent' },
           disabled ? { opacity: 0.5 } : null,
           animatedStyle,
         ]}>
-        {icon && <Ionicons name={icon} size={26} color={colors.onPrimary} className="mr-2" />}
+        {icon && <Ionicons name={icon} size={32} color={colors.onPrimary} style={{ marginRight: 12 }} />}
         <AppText
-          className={isPrimary 
-            ? "text-xl font-bold tracking-tight" 
-            : "text-base font-semibold"}
           style={
             isPrimary
-              ? { color: colors.onPrimary }
-              : { color: colors.textMuted }
+              ? [styles.recordButtonText, { color: colors.onPrimary }]
+              : [styles.secondaryButtonText, { color: colors.textMuted }]
           }>
           {label}
         </AppText>
@@ -244,3 +235,188 @@ function DiscoveryButton({
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontFamily: 'Fraunces_700Bold',
+  },
+  iconButton: {
+    padding: 8,
+    borderRadius: 999,
+  },
+  deckContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    paddingBottom: 40,
+  },
+  cardWrapper: {
+    width: '100%',
+    aspectRatio: 4 / 5,
+    maxWidth: 400,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  card: {
+    flex: 1,
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: '#EDE0D4',
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    overflow: 'hidden', // Contain texture
+  },
+  texture: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.4,
+  },
+  cardHeader: {
+    width: '100%',
+    alignItems: 'center',
+    paddingTop: 8,
+  },
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F5F5F5',
+  },
+  cardContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    gap: 24,
+  },
+  goldBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF9F0',
+    borderWidth: 1,
+    borderColor: '#FFD700',
+    borderRadius: 999,
+    paddingLeft: 4,
+    paddingRight: 16,
+    paddingVertical: 4,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    gap: 8,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  avatarFallback: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F5F5F5',
+  },
+  goldText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#D4AF37',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  questionText: {
+    fontSize: 32,
+    fontFamily: 'Fraunces_700Bold', 
+    textAlign: 'center',
+    lineHeight: 40,
+    color: '#3C2F2F',
+  },
+  helperText: {
+    fontSize: 18,
+    color: '#8E7F7F',
+    textAlign: 'center',
+    lineHeight: 26,
+    maxWidth: 280,
+  },
+  answeredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: '#E8F5E9',
+  },
+  answeredText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#2E7D32',
+  },
+  cardFooter: {
+    width: 48,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#E0C8B0',
+    opacity: 0.5,
+    marginTop: 16,
+  },
+  actionsContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    gap: 16,
+  },
+  recordButton: {
+    height: 72,
+    borderRadius: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3C2F2F',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  recordButtonText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  secondaryButton: {
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#3C2F2F',
+  },
+  secondaryButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#3C2F2F',
+  },
+});

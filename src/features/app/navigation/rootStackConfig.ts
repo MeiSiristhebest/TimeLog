@@ -55,7 +55,6 @@ export const ROOT_STACK_ROUTES: readonly RootStackRouteConfig[] = [
   { name: 'story-comments/[id]' },
   { name: 'family-story/[id]' },
   { name: 'upgrade-account' },
-  { name: 'photo-topic', options: { presentation: 'modal', headerShown: false } },
   { name: 'splash', options: { headerShown: false, animation: 'fade' } },
   { name: '(auth)/welcome', options: { headerShown: false, animation: 'fade' } },
 ] as const;

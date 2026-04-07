@@ -16,6 +16,7 @@ import {
   ScrollView,
   TextInput,
   View,
+  StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import { Image } from 'expo-image';
@@ -251,116 +252,122 @@ export function EditProfileScreen(): JSX.Element {
   };
 
   return (
-    <View className="flex-1" style={{ backgroundColor: colors.surfaceDim }}>
+    <View style={styles.root}>
       <HeritageHeader title="Edit Profile" showBack />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1">
+        style={styles.keyboardView}>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ padding: 24, paddingBottom: 80 }}>
-          {/* Avatar */}
-          <Pressable onPress={handlePickImage} className="items-center mb-6">
+          contentContainerStyle={styles.scrollContent}>
+          
+          {/* Avatar Section */}
+          <Pressable onPress={handlePickImage} style={styles.avatarSection}>
             {avatarUri ? (
               <Image
                 source={{ uri: avatarUri }}
-                style={{
-                  width: 120,
-                  height: 120,
-                  borderRadius: 60,
-                  borderWidth: 4,
-                  borderColor: '#fff',
-                }}
+                style={styles.avatarImage}
                 contentFit="cover"
               />
             ) : (
               <View
-                className="w-[120px] h-[120px] rounded-full items-center justify-center"
-                style={{ backgroundColor: `${colors.primary}20` }}>
+                style={[styles.avatarPlaceholder, { backgroundColor: `${colors.primary}20` }]}>
                 <Ionicons name="person" size={48} color={colors.primary} />
               </View>
             )}
-            <AppText className="text-sm mt-3" style={{ color: colors.textMuted }}>
+            <AppText style={[styles.avatarHint, { color: colors.textMuted }]}>
               Tap to change photo
             </AppText>
           </Pressable>
 
-          {/* Display Name */}
-          <View className="mb-5">
-            <AppText className="text-base font-semibold mb-2" style={{ color: colors.onSurface }}>
-              Display Name
-            </AppText>
-            <TextInput
-              className="w-full h-14 rounded-xl border px-4 text-lg"
-              style={{
-                backgroundColor: `${colors.primary}08`,
-                borderColor: colors.border,
-                color: colors.onSurface,
-              }}
-              value={displayName}
-              onChangeText={setDisplayName}
-              placeholder="Enter your name"
-              placeholderTextColor={`${colors.onSurface}40`}
-              autoCapitalize="words"
-              returnKeyType="done"
-            />
-          </View>
-
-          {/* Birthday */}
-          <View className="mb-5">
-            <AppText className="text-base font-semibold mb-2" style={{ color: colors.onSurface }}>
-              Birthday
-            </AppText>
-            <Pressable
-              onPress={openDatePicker}
-              className="w-full h-14 rounded-xl border px-4 items-center justify-between flex-row"
-              style={{ backgroundColor: colors.surfaceCard, borderColor: colors.border }}>
-              <AppText style={{ color: birthDate ? colors.onSurface : colors.textMuted }}>
-                {birthDateLabel}
+          {/* Form Fields Section */}
+          <View style={styles.formSection}>
+            {/* Display Name */}
+            <View style={styles.fieldContainer}>
+              <AppText style={[styles.fieldLabel, { color: colors.onSurface }]}>
+                Display Name
               </AppText>
-              <Ionicons name="calendar-outline" size={22} color={colors.textMuted} />
-            </Pressable>
-          </View>
+              <TextInput
+                style={[
+                  styles.textInput,
+                  {
+                    backgroundColor: `${colors.primary}08`,
+                    borderColor: colors.border,
+                    color: colors.onSurface,
+                  },
+                ]}
+                value={displayName}
+                onChangeText={setDisplayName}
+                placeholder="Enter your name"
+                placeholderTextColor={`${colors.onSurface}40`}
+                autoCapitalize="words"
+                returnKeyType="done"
+              />
+            </View>
 
-          {/* Language */}
-          <View className="mb-5">
-            <AppText className="text-base font-semibold mb-2" style={{ color: colors.onSurface }}>
-              Language
-            </AppText>
-            <Pressable
-              onPress={handleLanguagePress}
-              className="w-full h-14 rounded-xl border px-4 items-center justify-between flex-row"
-              style={{ backgroundColor: colors.surfaceCard, borderColor: colors.border }}>
-              <AppText style={{ color: colors.onSurface }}>{languageLabel}</AppText>
-              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-            </Pressable>
-          </View>
+            {/* Birthday */}
+            <View style={styles.fieldContainer}>
+              <AppText style={[styles.fieldLabel, { color: colors.onSurface }]}>
+                Birthday
+              </AppText>
+              <Pressable
+                onPress={openDatePicker}
+                style={[
+                  styles.pressableInput,
+                  { backgroundColor: colors.surfaceCard, borderColor: colors.border }
+                ]}>
+                <AppText style={{ color: birthDate ? colors.onSurface : colors.textMuted }}>
+                  {birthDateLabel}
+                </AppText>
+                <Ionicons name="calendar-outline" size={22} color={colors.textMuted} />
+              </Pressable>
+            </View>
 
-          {/* Font Size */}
-          <View className="mb-6">
-            <AppText className="text-base font-semibold mb-3" style={{ color: colors.onSurface }}>
-              Font Size
-            </AppText>
-            <View className="flex-row flex-wrap gap-2">
-              {FONT_SCALE_LABELS.map((label, index) => (
-                <Pressable
-                  key={label}
-                  onPress={() => handleFontSelect(index)}
-                  className="px-4 py-3 rounded-xl border"
-                  style={{
-                    borderColor: index === fontScaleIndex ? colors.primary : colors.border,
-                    backgroundColor: index === fontScaleIndex ? `${colors.primary}15` : colors.surfaceCard,
-                  }}>
-                  <AppText
-                    style={{
-                      color: index === fontScaleIndex ? colors.primary : colors.onSurface,
-                      fontSize: Math.round(14 * (typography.body / 24)),
-                    }}>
-                    {label}
-                  </AppText>
-                </Pressable>
-              ))}
+            {/* Language */}
+            <View style={styles.fieldContainer}>
+              <AppText style={[styles.fieldLabel, { color: colors.onSurface }]}>
+                Language
+              </AppText>
+              <Pressable
+                onPress={handleLanguagePress}
+                style={[
+                  styles.pressableInput,
+                  { backgroundColor: colors.surfaceCard, borderColor: colors.border }
+                ]}>
+                <AppText style={{ color: colors.onSurface }}>{languageLabel}</AppText>
+                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+              </Pressable>
+            </View>
+
+            {/* Font Size */}
+            <View style={styles.fontSizeSection}>
+              <AppText style={[styles.fieldLabel, { color: colors.onSurface }]}>
+                Font Size
+              </AppText>
+              <View style={styles.chipGroup}>
+                {FONT_SCALE_LABELS.map((label, index) => (
+                  <Pressable
+                    key={label}
+                    onPress={() => handleFontSelect(index)}
+                    style={[
+                      styles.chip,
+                      {
+                        borderColor: index === fontScaleIndex ? colors.primary : colors.border,
+                        backgroundColor: index === fontScaleIndex ? `${colors.primary}15` : colors.surfaceCard,
+                      },
+                    ]}>
+                    <AppText
+                      style={{
+                        color: index === fontScaleIndex ? colors.primary : colors.onSurface,
+                        fontSize: Math.round(14 * (typography.body / 24)),
+                        fontWeight: index === fontScaleIndex ? '700' : '400',
+                      }}>
+                      {label}
+                    </AppText>
+                  </Pressable>
+                ))}
+              </View>
             </View>
           </View>
 
@@ -370,11 +377,11 @@ export function EditProfileScreen(): JSX.Element {
             variant="primary"
             fullWidth
             disabled={saving}
-            style={{ marginTop: 12 }}
+            style={styles.saveButton}
           />
 
           {isLoading ? (
-            <View className="items-center mt-4">
+            <View style={styles.loadingWrapper}>
               <ActivityIndicator color={colors.primary} />
             </View>
           ) : null}
@@ -396,3 +403,91 @@ export function EditProfileScreen(): JSX.Element {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#FAF9F6', // Heritage surfaceDim fallback
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 24,
+    paddingBottom: 80,
+  },
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  avatarImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 4,
+    borderColor: '#fff',
+  },
+  avatarPlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarHint: {
+    fontSize: 14,
+    marginTop: 12,
+  },
+  formSection: {
+    width: '100%',
+  },
+  fieldContainer: {
+    marginBottom: 20,
+  },
+  fieldLabel: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  textInput: {
+    width: '100%',
+    height: 56,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    fontSize: 18,
+  },
+  pressableInput: {
+    width: '100%',
+    height: 56,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexDirection: 'row',
+  },
+  fontSizeSection: {
+    marginBottom: 24,
+  },
+  chipGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  saveButton: {
+    marginTop: 12,
+  },
+  loadingWrapper: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+});

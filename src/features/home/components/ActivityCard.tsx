@@ -18,7 +18,7 @@ interface ActivityCardProps {
   testID?: string;
 }
 
-const ACTIVITY_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
+const ACTIVITY_DATE_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
   month: 'numeric',
   day: 'numeric',
   hour: 'numeric',

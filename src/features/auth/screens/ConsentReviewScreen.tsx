@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   },
   consentCard: {
     flexDirection: 'row',
-    backgroundColor: 'transparent',
+    // backgroundColor set via inline style (theme.colors.surfaceCard)
     borderRadius: 16,
     borderWidth: 1,
     padding: 16,
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   },
   consentDate: {
     fontSize: 13,
-    color: 'transparent',
+    // color set via inline style (theme.colors.success)
     fontWeight: '500',
   },
   infoBox: {

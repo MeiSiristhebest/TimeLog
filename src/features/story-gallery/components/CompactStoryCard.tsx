@@ -1,6 +1,6 @@
 import { AppText } from '@/components/ui/AppText';
-import { Pressable, TouchableOpacity, View } from 'react-native';
-import { Icon } from '@/components/ui/Icon';
+import { Pressable, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { Ionicons } from '@/components/ui/Icon';
 import { AudioRecording } from '@/types/entities';
 import { useHeritageTheme } from '@/theme/heritage';
 import { CommentBadge } from './CommentBadge';
@@ -22,6 +22,10 @@ export interface CompactStoryCardProps {
   onPlay: (id: string) => void;
   onSelect: (id: string) => void;
   onOffload?: (id: string) => void;
+  /** Whether the story is favorited (Story 3.6) */
+  isFavorite?: boolean;
+  /** Callback to toggle favorite (Story 3.6) */
+  onToggleFavorite?: (id: string) => void;
 }
 
 export function CompactStoryCard({
@@ -35,16 +39,26 @@ export function CompactStoryCard({
   onPlay,
   onSelect,
   onOffload,
+  isFavorite = false,
+  onToggleFavorite,
 }: CompactStoryCardProps): JSX.Element {
   const { colors } = useHeritageTheme();
+
+  // Animations
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
+  // Status
   const isSynced = story.syncStatus === 'synced';
   const isDisabled = isOffline && !isPlayable;
-  const accentColor = colors.primaryMuted;
+  const accentColor = colors.primaryMuted; // #EABFAA
+
+  // Font adjustments
+  const FONTS = {
+    serifLight: 'Fraunces_300Light',
+  };
 
   const question = story.topicId ? getQuestionById(story.topicId) : null;
   const questionCategory = question?.category;
@@ -54,81 +68,239 @@ export function CompactStoryCard({
   const displayTitle = story.title?.trim() || (categoryLabel ? `${categoryLabel} Story` : 'Untitled Story');
 
   return (
-    <View className="relative mb-4 w-full items-center pt-2 px-4 z-10">
-      {/* Timeline Centered Dot */}
-      <View className="absolute left-0 right-0 items-center top-5 z-20" pointerEvents="none">
-        <View className="w-2.5 h-2.5 rounded-full border bg-surface" style={{ borderColor: colors.border }} />
+    <View style={styles.wrapper}>
+      {/* Center Timeline Dot - Absolute Container for perfect centering */}
+      <View
+        style={styles.timelineDotContainer}
+        pointerEvents="none">
+        <View
+          style={[
+            styles.timelineDot,
+            {
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+            },
+          ]}
+        />
       </View>
 
+      {/* Outer Shadow Container */}
       <Pressable
         onPress={() => onSelect(story.id)}
         disabled={isDisabled}
         onPressIn={() => (scale.value = withSpring(0.98, { damping: 10, stiffness: 300 }))}
         onPressOut={() => (scale.value = withSpring(1, { damping: 10, stiffness: 300 }))}
-        className="w-full"
+        style={{ width: '100%' }}
       >
         <Animated.View
-          className="w-full min-h-[100px] rounded-2xl shadow-sm elevation-3 bg-surfaceCard overflow-hidden"
-          style={[{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10 }, isDisabled && { opacity: 0.6 }, animatedStyle]}>
-          
-          <View className="flex-row items-center w-full min-h-[100px] py-4 relative">
-            {/* Design Accent */}
-            <View className="absolute left-0 top-0 bottom-0 w-1 px-0.5" style={{ backgroundColor: accentColor }} />
+          style={[
+            styles.cardContainer,
+            {
+              backgroundColor: colors.surfaceCard,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 8,
+              elevation: 3,
+            },
+            isDisabled && { opacity: 0.6 },
+            animatedStyle,
+          ]}>
+          {/* Inner Content Container */}
+          <View style={[styles.innerContent, { backgroundColor: colors.surfaceCard }]}>
+            {/* Left Accent Bar */}
+            <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
 
-            {/* Information Section */}
-            <View className="flex-1 pl-7 pr-4">
-              <AppText className="text-[10px] font-bold tracking-widest text-textMuted uppercase mb-1">
+            {/* Content */}
+            <View style={styles.content}>
+              <AppText style={[styles.yearText, { color: colors.textMuted }]}>
                 {dateObj.getFullYear()}
               </AppText>
-              <AppText className="text-xl font-serif text-onSurface mb-1 leading-tight" numberOfLines={2}>
+
+              <AppText
+                style={[styles.titleText, { fontFamily: FONTS.serifLight, color: colors.onSurface }]}
+                numberOfLines={2}>
                 {displayTitle}
               </AppText>
-              <AppText className="text-lg font-medium text-textFaint mb-2">
+
+              <AppText style={[styles.dateText, { color: colors.textMuted }]}>
                 {fullDateStr}
               </AppText>
-              <AppText className="text-xs font-semibold text-textMuted uppercase tracking-wider">
-                {durationStr} {categoryLabel ? `• ${categoryLabel}` : ''}
+
+              <AppText style={[styles.durationText, { color: colors.textMuted }]}>
+                {categoryLabel ? `${durationStr} · ${categoryLabel}` : durationStr}
               </AppText>
             </View>
 
-            {/* Actions Section */}
-            <View className="flex-row items-center px-5 gap-3">
+            <View style={styles.rightActions}>
+              {/* Offload Button - Only if Synced and Not Offloaded */}
               {isSynced && story.filePath !== 'OFFLOADED' && onOffload && (
                 <TouchableOpacity
                   onPress={() => onOffload(story.id)}
-                  className="w-10 h-10 rounded-full bg-surface border items-center justify-center"
-                  style={{ borderColor: colors.border }}>
-                  <Icon name="phone-portrait-outline" size={16} color={colors.textMuted} />
+                  style={[
+                    styles.offloadButton,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                    },
+                  ]}>
+                  <Ionicons name="phone-portrait-outline" size={16} color={colors.textMuted} />
                 </TouchableOpacity>
               )}
 
+              {/* Cloud Only Indicator */}
               {story.filePath === 'OFFLOADED' && (
-                <View className="w-8 h-8 items-center justify-center">
-                  <Icon name="cloud-done" size={20} color={colors.primary} />
+                <View style={{ marginRight: 8 }}>
+                  <Ionicons name="cloud-done" size={16} color={colors.primary} />
                 </View>
               )}
+
+              {/* Favorite Button */}
+              <TouchableOpacity
+                onPress={() => onToggleFavorite?.(story.id)}
+                style={[
+                  styles.offloadButton,
+                  {
+                    backgroundColor: isFavorite ? `${colors.iconRed}15` : colors.surface,
+                    borderColor: isFavorite ? colors.iconRed : colors.border,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Add to favorites'}>
+                <Ionicons
+                  name={isFavorite ? 'heart' : 'heart-outline'}
+                  size={16}
+                  color={isFavorite ? colors.iconRed : colors.textMuted}
+                />
+              </TouchableOpacity>
 
               <HeritageButton
                 title=""
                 onPress={() => onPlay(story.id)}
                 disabled={isDisabled}
-                className="w-12 h-12 rounded-full bg-primarySoft p-0"
+                style={styles.playButton}
                 iconElement={
-                  <Icon name="play" size={28} color={isDisabled ? colors.disabledText : colors.primaryDeep} style={{ marginLeft: 3 }} />
+                  <Ionicons
+                    name="play"
+                    size={28}
+                    color={isDisabled ? colors.disabledText : colors.primaryDeep}
+                    style={{ marginLeft: 3 }}
+                  />
                 }
                 accessibilityLabel="Play story"
               />
 
               {unreadCommentCount > 0 && <CommentBadge count={unreadCommentCount} />}
             </View>
+          </View>
 
-            {/* Sync Status Badge (Absolute Bottom Right) */}
-            <View className="absolute right-4 bottom-3">
-              <SyncStatusBadge status={story.syncStatus} />
-            </View>
+          <View style={styles.syncBadge}>
+            <SyncStatusBadge status={story.syncStatus} />
           </View>
         </Animated.View>
       </Pressable>
-    </View>
+    </View >
   );
 }
+
+const styles = StyleSheet.create({
+  wrapper: {
+    position: 'relative',
+    marginBottom: 16,
+    width: '100%',
+    alignItems: 'center',
+    paddingTop: 8,
+    paddingHorizontal: 16,
+    zIndex: 10,
+  },
+  timelineDotContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    top: 20,
+    zIndex: 20,
+  },
+  timelineDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    borderWidth: 1,
+  },
+  cardContainer: {
+    width: '100%',
+    borderRadius: 16,
+    minHeight: 100,
+  },
+  innerContent: {
+    width: '100%',
+    minHeight: 100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderRadius: 16,
+  },
+  accentBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+  },
+  content: {
+    flex: 1,
+    paddingVertical: 20,
+    paddingLeft: 28,
+    paddingRight: 20,
+  },
+  yearText: {
+    marginBottom: 4,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  titleText: {
+    marginBottom: 4,
+    fontSize: 20,
+  },
+  dateText: {
+    marginBottom: 8,
+    fontSize: 15,
+    fontWeight: '500',
+    letterSpacing: 0.3,
+  },
+  durationText: {
+    fontSize: 13,
+    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
+  rightActions: {
+    marginRight: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  offloadButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  playButton: {
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 26,
+    backgroundColor: '#F7E7DF',
+    paddingHorizontal: 0
+  },
+  syncBadge: {
+    position: 'absolute',
+    right: 16,
+    bottom: 10,
+    zIndex: 5,
+  },
+});

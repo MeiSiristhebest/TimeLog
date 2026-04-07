@@ -550,7 +550,7 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
                       user_id: payload.userId,
                       ...patch,
                     },
-                    { onConflict: 'user_id' }
+                    { onConflict: 'id' }
                   );
 
                 if (upsertError) {

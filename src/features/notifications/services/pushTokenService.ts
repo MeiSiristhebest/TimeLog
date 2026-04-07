@@ -1,4 +1,17 @@
 import { supabase } from '@/lib/supabase';
+import { devLog } from '@/lib/devLogger';
+
+/**
+ * Utility to map push token related errors.
+ */
+function mapPushTokenError(error: any): string {
+  if (!error) return 'An unknown error occurred.';
+  const message = error.message || '';
+  if (message.includes('permission denied')) {
+    return 'Notification permissions are required to sync your push token.';
+  }
+  return message;
+}
 
 export async function storePushToken(
   userId: string,
@@ -18,14 +31,16 @@ export async function storePushToken(
   );
 
   if (error) {
-    throw new Error(error.message);
+    devLog.error('[pushTokenService] Failed to store push token:', error.message);
+    throw new Error(mapPushTokenError(error));
   }
 }
 
 export async function removePushToken(pushToken: string): Promise<void> {
   const { error } = await supabase.from('user_push_tokens').delete().eq('push_token', pushToken);
   if (error) {
-    throw new Error(error.message);
+    devLog.error('[pushTokenService] Failed to remove push token:', error.message);
+    throw new Error(mapPushTokenError(error));
   }
 }
 
@@ -33,18 +48,13 @@ export async function storePushTokenForCurrentUser(
   pushToken: string,
   deviceType: string
 ): Promise<void> {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  const { data, error: userError } = await supabase.auth.getUser();
 
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  if (!user?.id) {
+  if (userError || !data?.user) {
+    devLog.warn('[pushTokenService] Cannot store push token: Not authenticated');
     return;
   }
 
+  const user = data.user;
   await storePushToken(user.id, pushToken, deviceType);
 }

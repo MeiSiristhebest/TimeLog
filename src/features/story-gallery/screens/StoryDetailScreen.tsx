@@ -1,9 +1,9 @@
 import { AppText } from '@/components/ui/AppText';
 import { useCallback, useState } from 'react';
-import { View, Pressable, Platform } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { Icon } from '@/components/ui/Icon';
+import { Ionicons } from '@/components/ui/Icon';
 import { useStory } from '@/features/story-gallery/hooks/useStory';
 import {
   useStoryTranscript,
@@ -14,7 +14,6 @@ import { useStoryCommentCount } from '@/features/story-gallery/hooks/useStoryCom
 import { AudioPlayer } from '@/features/story-gallery/components/AudioPlayer';
 import { usePlayerStore } from '@/features/story-gallery/store/usePlayerStore';
 import type { SyncStatus } from '@/types/entities';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { SyncStatusBadge } from '@/features/story-gallery/components/SyncStatusBadge';
 import { softDeleteStory, restoreStory } from '@/features/story-gallery/services/storyService';
 import { DeleteConfirmModal } from '@/features/story-gallery/components/DeleteConfirmModal';
@@ -24,6 +23,8 @@ import { getQuestionById } from '@/features/recorder/data/topicQuestions';
 import { CATEGORY_DATA, mapRawCategoryToFilter } from '@/features/story-gallery/data/mockGalleryData';
 import { toStoryCommentsRoute, toStoryEditRoute } from '@/features/app/navigation/routes';
 import { EN_COPY, formatCommentsButtonLabel } from '@/features/app/copy/en';
+import { usePdfExport } from '@/features/story-gallery/hooks/usePdfExport';
+import { showSuccessToast } from '@/components/ui/feedback/toast';
 
 // Heritage
 import { useHeritageTheme } from '@/theme/heritage';
@@ -36,7 +37,6 @@ import {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { Container } from '@/components/ui/Container';
 
 type HeritageTheme = ReturnType<typeof useHeritageTheme>;
 
@@ -60,57 +60,94 @@ export default function StoryDetailScreen(): JSX.Element {
     }, [resetPlayer])
   );
 
-  // Navigate to comments screen
+  // Story 4.5: Fetch comments for this story
   const { count: commentCount } = useStoryCommentCount(id);
 
-  // Modal States
+  // Story 3.3 State
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [undoToastVisible, setUndoToastVisible] = useState(false);
-  
-  // Time Capsule State
-  const { editTimeCapsule } = useLocalSearchParams<{ editTimeCapsule?: string }>();
-  const [showDatePicker, setShowDatePicker] = useState(editTimeCapsule === 'true');
-  const [tempUnlockDate, setTempUnlockDate] = useState<Date>(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000));
 
-  // Scroll Handler
+  // Scroll Handler for header transparency (if needed)
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
   });
 
+  const { exportPdf, isExporting } = usePdfExport();
+
+  const handleExportPdf = async () => {
+    if (!story || entries.length === 0) {
+      showErrorToast(EN_COPY.story.transcriptUnavailable);
+      return;
+    }
+    
+    try {
+      const exportData = [{
+        title: displayTitle,
+        transcript: entries.map(e => e.text).join('\n\n'),
+        date: formattedDate,
+      }];
+      // Use AI polishing for a better memoir feel
+      await exportPdf(exportData, true);
+      showSuccessToast(EN_COPY.story.exportSuccess);
+    } catch (err) {
+      showErrorToast(EN_COPY.story.exportFailed);
+    }
+  };
+
   if (isLoading) {
     return (
-      <Container className="flex-1 bg-surface px-6 pt-20">
-        <View className="mb-5">
+      <View
+        style={{
+          flex: 1,
+          paddingHorizontal: 24,
+          paddingTop: 84,
+          backgroundColor: theme.colors.surface,
+        }}>
+        <View style={{ marginBottom: 20 }}>
           <HeritageSkeleton variant="text" width={120} height={24} />
         </View>
-        <View className="mb-7 gap-3">
+        <View style={{ gap: 12, marginBottom: 28 }}>
           <HeritageSkeleton variant="title" width="72%" />
           <HeritageSkeleton variant="text" width="42%" />
         </View>
-        <View className="gap-4">
+        <View style={{ gap: 14 }}>
           <HeritageSkeleton variant="text" width="100%" lines={3} />
           <HeritageSkeleton variant="text" width="95%" lines={3} />
           <HeritageSkeleton variant="text" width="90%" lines={2} />
         </View>
-      </Container>
+      </View>
     );
   }
 
   if (error || !story) {
     return (
-      <Container className="flex-1 bg-surface items-center justify-center p-6">
-        <Icon name="alert-circle-outline" size={64} color={theme.colors.primary} />
-        <AppText className="text-3xl font-serif text-center mt-4 text-onSurface">
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+          backgroundColor: theme.colors.surface,
+        }}>
+        <Ionicons name="alert-circle-outline" size={64} color={theme.colors.primary} />
+        <AppText
+          style={{
+            fontSize: 24,
+            color: theme.colors.onSurface,
+            fontFamily: 'Fraunces_600SemiBold',
+            textAlign: 'center',
+            marginTop: 16,
+          }}>
           {EN_COPY.story.notFound}
         </AppText>
         <HeritageButton
           title={EN_COPY.story.goBack}
           onPress={() => router.back()}
           variant="secondary"
-          className="mt-8"
+          style={{ marginTop: 32 }}
         />
-      </Container>
+      </View>
     );
   }
 
@@ -119,7 +156,6 @@ export default function StoryDetailScreen(): JSX.Element {
     month: 'long',
     day: 'numeric',
   });
-  
   const question = story.topicId ? getQuestionById(story.topicId) : null;
   const questionCategory = question?.category;
   const categoryLabel = questionCategory
@@ -129,6 +165,7 @@ export default function StoryDetailScreen(): JSX.Element {
     story.title?.trim() ||
     (categoryLabel ? `${categoryLabel} ${EN_COPY.story.storyWord}` : EN_COPY.story.untitled);
 
+  // Story 3.3 Handlers
   const confirmDelete = async () => {
     try {
       await softDeleteStory(id);
@@ -148,15 +185,28 @@ export default function StoryDetailScreen(): JSX.Element {
     }
   };
 
+  // Navigate to comments screen
+  const handleViewComments = () => {
+    router.push(toStoryCommentsRoute(id));
+  };
+
   const syncStatus: SyncStatus = story.syncStatus;
-  const isLocked = story.unlockAt ? story.unlockAt > Date.now() : false;
 
   return (
-    <View className="flex-1 bg-surface">
+    <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Navigation Header */}
-      <View className="flex-row items-center justify-between px-5 pt-14 pb-4 z-10">
+      {/* 1. Header (Custom) */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingTop: 60, // Safe area
+          paddingBottom: 16,
+          paddingHorizontal: 20,
+          zIndex: 10,
+        }}>
         <HeaderHelperButton
           onPress={() => router.back()}
           icon="chevron-back"
@@ -164,55 +214,93 @@ export default function StoryDetailScreen(): JSX.Element {
           color={`${theme.colors.primary}CC`}
         />
 
-        <HeaderHelperButton
-          onPress={() => setDeleteModalVisible(true)}
-          icon="ellipsis-horizontal"
-          color={theme.colors.textMuted}
-        />
+        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+          <HeaderHelperButton
+            onPress={handleExportPdf}
+            icon={isExporting ? "hourglass-outline" : "share-outline"}
+            disabled={isExporting}
+            color={isExporting ? theme.colors.textMuted : theme.colors.primaryDeep}
+          />
+
+          <HeaderHelperButton
+            onPress={() => setDeleteModalVisible(true)}
+            icon="ellipsis-horizontal"
+            color={theme.colors.textMuted}
+          />
+        </View>
       </View>
 
-      <View className="flex-1 relative">
+      {/* 2. Content (Transcript) */}
+      <View style={{ flex: 1, position: 'relative' }}>
         <Animated.ScrollView
           contentInsetAdjustmentBehavior="automatic"
-          contentContainerClassName="px-8 pb-32"
+          contentContainerStyle={{ paddingHorizontal: 32, paddingBottom: 120 }}
           onScroll={scrollHandler}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}>
-          
-          {/* Metadata Section */}
-          <View className="mb-6">
-            <View className="mb-2">
+          {/* Metadata */}
+          <View style={{ marginBottom: 24 }}>
+            {/* Sync Status Badge */}
+            <View style={{ marginBottom: 8 }}>
               <SyncStatusBadge status={syncStatus} />
             </View>
-            <AppText className="text-4xl font-serif text-onSurface leading-tight mb-2">
+
+            <AppText
+              style={{
+                fontSize: 32,
+                fontFamily: 'Fraunces_600SemiBold',
+                color: theme.colors.onSurface,
+                lineHeight: 40,
+                marginBottom: 8,
+              }}>
               {displayTitle}
             </AppText>
-            <AppText className="text-lg font-medium" style={{ color: theme.colors.textMuted }}>
+            <AppText style={{ color: theme.colors.textMuted, fontSize: 18, fontWeight: '500' }}>
               {formattedDate}
             </AppText>
           </View>
 
           {/* Transcript Visualization */}
-          <View className="pb-14">
+          <View style={{ position: 'relative', paddingBottom: 60 }}>
             {entries.length > 0 ? (
-              <View className="gap-4">
+              <View style={{ gap: 16 }}>
                 {entries.map((entry) => (
                   <TranscriptBlock key={entry.id} entry={entry} theme={theme} />
                 ))}
               </View>
             ) : (
-              <AppText className="text-lg leading-relaxed italic" style={{ color: theme.colors.textMuted }}>
+              <AppText
+                style={{
+                  fontSize: 18,
+                  fontFamily: 'System',
+                  lineHeight: 30,
+                  color: theme.colors.textMuted,
+                }}>
                 {EN_COPY.story.transcriptUnavailable}
               </AppText>
             )}
           </View>
 
-          {/* Details Card */}
-          <View className="mt-6 bg-surface p-5 rounded-2xl border" style={{ borderColor: `${theme.colors.primary}15` }}>
-            <AppText className="text-base font-serif font-semibold text-onSurface mb-3">
+          {/* Story Details Card */}
+          <View
+            style={{
+              marginTop: 24,
+              backgroundColor: theme.colors.surface,
+              padding: 20,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: `${theme.colors.primary}15`,
+            }}>
+            <AppText
+              style={{
+                color: theme.colors.onSurface,
+                fontSize: 16,
+                fontFamily: 'Fraunces_600SemiBold',
+                marginBottom: 12,
+              }}>
               {EN_COPY.story.detailsTitle}
             </AppText>
-            <View className="gap-2">
+            <View style={{ gap: 8 }}>
               <DetailRow
                 label={EN_COPY.story.detailDuration}
                 value={`${Math.round(story.durationMs / 1000)} ${EN_COPY.story.unitSeconds}`}
@@ -225,99 +313,81 @@ export default function StoryDetailScreen(): JSX.Element {
               />
               <DetailRow
                 label={EN_COPY.story.detailBackup}
-                value={syncStatus === 'synced' ? EN_COPY.story.backupCloudSaved : EN_COPY.story.backupLocalOnly}
+                value={
+                  syncStatus === 'synced' ? EN_COPY.story.backupCloudSaved : EN_COPY.story.backupLocalOnly
+                }
                 theme={theme}
               />
-              {story.unlockAt && (
-                <DetailRow
-                  label={`🕰️ ${EN_COPY.timeCapsule.label}`}
-                  value={`${EN_COPY.timeCapsule.unlocksOn} ${new Date(story.unlockAt).toLocaleDateString()}`}
-                  theme={theme}
-                />
-              )}
             </View>
           </View>
+
+          <View style={{ height: 40 }} />
         </Animated.ScrollView>
       </View>
 
-      {/* Floating Action Player Footer */}
-      <View className="bg-surface rounded-t-3xl border-t px-6 pt-6 pb-12 shadow-lg elevation-10" style={{ borderColor: `${theme.colors.primary}10` }}>
-        <View className="mb-6">
-          {isLocked ? (
-            <View className="p-6 items-center rounded-2xl bg-surfaceCard/50">
-              <Icon name="lock-closed" size={48} color={theme.colors.primaryMuted} />
-              <AppText className="mt-3 text-base text-center text-textMuted">
-                {EN_COPY.timeCapsule.description} {new Date(story.unlockAt!).toLocaleDateString()}
-              </AppText>
-              {!showDatePicker && (
-                <HeritageButton
-                  title={EN_COPY.timeCapsule.changeDate}
-                  onPress={() => setShowDatePicker(true)}
-                  variant="outline"
-                  size="small"
-                  className="mt-4"
-                />
-              )}
-            </View>
-          ) : (
-            <AudioPlayer uri={story.filePath} fallbackDurationMs={story.durationMs} />
-          )}
+      {/* 3. Footer (Player + Actions) */}
+      <View
+        style={{
+          backgroundColor: theme.colors.surface,
+          borderTopLeftRadius: 32,
+          borderTopRightRadius: 32,
+          borderTopWidth: 1,
+          borderColor: `${theme.colors.primary}10`,
+          paddingHorizontal: 24,
+          paddingTop: 24,
+          paddingBottom: 40,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.03,
+          shadowRadius: 12,
+          elevation: 10,
+        }}>
+        {/* Audio Player */}
+        <View style={{ marginBottom: 24 }}>
+          <AudioPlayer uri={story.filePath} />
         </View>
 
-        {showDatePicker && (
-          <View className="bg-surfaceCard p-4 rounded-xl mb-6 shadow-sm">
-            <AppText className="text-base font-semibold text-onSurface mb-4">
-              {EN_COPY.timeCapsule.setDate}
-            </AppText>
-            <DateTimePicker
-              value={tempUnlockDate}
-              mode="date"
-              display="spinner"
-              minimumDate={new Date()}
-              onChange={(_ev, date) => date && setTempUnlockDate(date)}
-            />
-            <View className="flex-row gap-3 mt-4">
-              <HeritageButton className="flex-1" title={EN_COPY.common.cancel} onPress={() => setShowDatePicker(false)} variant="secondary" />
-              <HeritageButton className="flex-1" title={EN_COPY.timeCapsule.seal} onPress={async () => {
-                const { updateStoryMetadata } = await import('@/features/story-gallery/services/storyService');
-                await updateStoryMetadata(id, { unlockAt: tempUnlockDate.getTime() });
-                setShowDatePicker(false);
-              }} variant="primary" />
-            </View>
-          </View>
-        )}
-
-        {/* Primary Screen Actions */}
-        <View className="flex-row gap-4">
+        {/* Action Buttons */}
+        <View style={{ flexDirection: 'row', gap: 16 }}>
           {isDeletedPreview ? (
-            <HeritageButton
-              title={EN_COPY.story.readOnlyPreview}
-              onPress={() => undefined}
-              variant="secondary"
-              disabled
-              className="flex-1 h-14"
-            />
+            <View style={{ flex: 1 }}>
+              <HeritageButton
+                title={EN_COPY.story.readOnlyPreview}
+                onPress={() => undefined}
+                variant="secondary"
+                disabled
+                style={{ height: 56 }}
+              />
+            </View>
           ) : (
             <>
-              <HeritageButton
-                title={formatCommentsButtonLabel(commentCount)}
-                onPress={() => router.push(toStoryCommentsRoute(id))}
-                variant="secondary"
-                icon="chatbubble-outline"
-                className="flex-1 h-14"
-              />
-              <HeritageButton
-                title={EN_COPY.story.editStory}
-                onPress={() => router.push(toStoryEditRoute(id))}
-                variant="primary"
-                icon="pencil"
-                className="flex-1 h-14"
-              />
+              {/* Comments - with real count */}
+              <View style={{ flex: 1 }}>
+                <HeritageButton
+                  title={formatCommentsButtonLabel(commentCount)}
+                  onPress={handleViewComments}
+                  variant="secondary"
+                  icon="chatbubble-outline"
+                  style={{ height: 56 }}
+                />
+              </View>
+
+              {/* Edit - opens Full Story Edit Screen */}
+              <View style={{ flex: 1 }}>
+                <HeritageButton
+                  title={EN_COPY.story.editStory}
+                  onPress={() => router.push(toStoryEditRoute(id))}
+                  variant="primary"
+                  icon="pencil"
+                  style={{ height: 56 }}
+                />
+              </View>
             </>
           )}
         </View>
       </View>
 
+      {/* Delete Modal */}
       <DeleteConfirmModal
         visible={deleteModalVisible}
         onCancel={() => setDeleteModalVisible(false)}
@@ -325,6 +395,7 @@ export default function StoryDetailScreen(): JSX.Element {
         storyTitle={displayTitle || undefined}
       />
 
+      {/* Undo Toast */}
       <UndoToast
         visible={undoToastVisible}
         onUndo={handleUndo}
@@ -337,50 +408,137 @@ export default function StoryDetailScreen(): JSX.Element {
   );
 }
 
-function DetailRow({ label, value, theme }: { label: string; value: string; theme: HeritageTheme }) {
+function DetailRow({
+  label,
+  value,
+  theme,
+}: {
+  label: string;
+  value: string;
+  theme: HeritageTheme;
+}): JSX.Element {
   return (
-    <View className="flex-row justify-between items-center">
-      <AppText className="text-sm" style={{ color: theme.colors.textMuted }}>{label}</AppText>
-      <AppText className="text-sm font-medium text-onSurface">{value}</AppText>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <AppText style={{ color: theme.colors.textMuted, fontSize: 14 }}>{label}</AppText>
+      <AppText style={{ color: theme.colors.onSurface, fontSize: 14, fontWeight: '500' }}>
+        {value}
+      </AppText>
     </View>
   );
 }
 
-function TranscriptBlock({ entry, theme }: { entry: TranscriptEntry; theme: HeritageTheme }) {
-  const isAgent = entry.speaker === 'agent';
-  const label = isAgent ? EN_COPY.story.speakerAi : EN_COPY.story.speakerYou;
-  const labelColor = isAgent ? theme.colors.tertiary : theme.colors.primaryDeep;
-  const bgColor = isAgent ? `${theme.colors.tertiary}12` : `${theme.colors.primary}12`;
-  const textColor = `${theme.colors.onSurface}F0`;
+function getSpeakerStyle(speaker: TranscriptSpeaker, theme: HeritageTheme): {
+  label: string;
+  labelColor: string;
+  backgroundColor: string;
+  textColor: string;
+} {
+  if (speaker === 'user') {
+    return {
+      label: EN_COPY.story.speakerYou,
+      labelColor: theme.colors.primaryDeep,
+      backgroundColor: `${theme.colors.primary}12`,
+      textColor: `${theme.colors.onSurface}F0`,
+    };
+  }
+
+  if (speaker === 'agent') {
+    return {
+      label: EN_COPY.story.speakerAi,
+      labelColor: theme.colors.tertiary,
+      backgroundColor: `${theme.colors.tertiary}12`,
+      textColor: `${theme.colors.onSurface}F0`,
+    };
+  }
+
+  return {
+    label: EN_COPY.story.speakerTranscript,
+    labelColor: theme.colors.textMuted,
+    backgroundColor: `${theme.colors.textMuted}14`,
+    textColor: `${theme.colors.onSurface}E6`,
+  };
+}
+
+function TranscriptBlock({
+  entry,
+  theme,
+}: {
+  entry: TranscriptEntry;
+  theme: HeritageTheme;
+}): JSX.Element {
+  const style = getSpeakerStyle(entry.speaker, theme);
 
   return (
     <View
-      className={`max-w-[85%] px-4 py-3.5 rounded-2xl ${isAgent ? 'self-start rounded-bl-sm' : 'self-end rounded-br-sm'}`}
-      style={{ backgroundColor: bgColor }}>
+      style={{
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderRadius: 14,
+        backgroundColor: style.backgroundColor,
+      }}>
       <AppText
-        className={`text-[10px] font-bold tracking-widest uppercase mb-1.5 ${isAgent ? 'self-start' : 'self-end'}`}
-        style={{ color: labelColor }}>
-        {label}
+        style={{
+          color: style.labelColor,
+          fontSize: 13,
+          fontWeight: '700',
+          letterSpacing: 0.2,
+          marginBottom: 8,
+          textTransform: 'uppercase',
+        }}>
+        {style.label}
       </AppText>
-      <AppText className="text-lg leading-relaxed" style={{ color: textColor }}>
+      <AppText
+        style={{
+          fontSize: 20,
+          fontFamily: 'System',
+          lineHeight: 32,
+          color: style.textColor,
+        }}>
         {entry.text}
       </AppText>
     </View>
   );
 }
 
-function HeaderHelperButton({ onPress, icon, label, color }: { onPress: () => void; icon: any; label?: string; color: string }) {
+function HeaderHelperButton({
+  onPress,
+  icon,
+  label,
+  color,
+  disabled,
+}: {
+  onPress: () => void;
+  icon: keyof typeof Ionicons.glyphMap;
+  label?: string;
+  color: string;
+  disabled?: boolean;
+}) {
   const scale = useSharedValue(1);
-  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: disabled ? 0.5 : 1,
+  }));
 
   return (
     <Pressable
       onPress={onPress}
-      onPressIn={() => (scale.value = withSpring(0.9, { damping: 10, stiffness: 300 }))}
-      onPressOut={() => (scale.value = withSpring(1, { damping: 10, stiffness: 300 }))}>
-      <Animated.View className="flex-row items-center p-1" style={animatedStyle}>
-        <Icon name={icon} size={28} color={color} />
-        {label && <AppText className="text-lg font-semibold -ml-1" style={{ color }}>{label}</AppText>}
+      disabled={disabled}
+      onPressIn={() => !disabled && (scale.value = withSpring(0.9, { damping: 10, stiffness: 300 }))}
+      onPressOut={() => (scale.value = withSpring(1, { damping: 10, stiffness: 300 }))}
+      style={{ flexDirection: 'row', alignItems: 'center', padding: 4 }}>
+      <Animated.View style={[{ flexDirection: 'row', alignItems: 'center' }, animatedStyle]}>
+        <Ionicons name={icon} size={28} color={color} />
+        {label && (
+          <AppText
+            style={{
+              fontSize: 18,
+              fontWeight: '600',
+              color: color,
+              marginLeft: -4,
+            }}>
+            {label}
+          </AppText>
+        )}
       </Animated.View>
     </Pressable>
   );

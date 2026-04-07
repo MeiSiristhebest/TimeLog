@@ -49,7 +49,7 @@ export default function StoriesTabScreen(): JSX.Element {
   } = useStoryGallery();
 
   const renderTimelineItem = useCallback(
-    ({ item, index }: { item: AudioRecording & { isPlayable: boolean }; index: number }) => {
+    ({ item, index }: { item: AudioRecording & { isPlayable: boolean; isFavorite?: boolean }; index: number }) => {
       // Feature logic:
       // If focusedStoryId is set, that story is featured.
       // If NO focusedStoryId is set, the FIRST story (index 0) is featured by default.
@@ -64,10 +64,12 @@ export default function StoriesTabScreen(): JSX.Element {
           index={index}
           variant={isFeatured ? 'featured' : 'default'}
           isBeingListened={isBeingListened}
+          isFavorite={item.isFavorite}
+          onToggleFavorite={() => actions.onToggleFavorite(item.id, !item.isFavorite)}
         />
       );
     },
-    [actions.onPlayStory, actions.onSelectStory, focusedStoryId]
+    [actions.onPlayStory, actions.onSelectStory, actions.onToggleFavorite, focusedStoryId]
   );
 
   return (
@@ -115,6 +117,7 @@ export default function StoriesTabScreen(): JSX.Element {
           onPlayStory={actions.onPlayStory}
           onDeleteStory={actions.onDeleteStory}
           onOffloadStory={actions.onOffloadStory}
+          onToggleFavorite={actions.onToggleFavorite}
           isLoading={isLoading}
           onUnavailableStoryTap={actions.onUnavailableStoryTap}
           renderItem={recordings.length > 0 ? renderTimelineItem : undefined}

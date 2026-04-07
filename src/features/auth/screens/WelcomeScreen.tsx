@@ -1,5 +1,5 @@
 import React from 'react';
-import { ImageBackground, View } from 'react-native';
+import { ImageBackground, View, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -90,12 +90,12 @@ export default function WelcomeScreen(): JSX.Element {
         />
         <SafeAreaView style={{ flex: 1 }}>
         {/* Top Section: Logo & Image */}
-        <View style={{ flex: 1, alignItems: 'center', paddingTop: 32, paddingBottom: 16 }}>
+        <View style={styles.topSection}>
           {/* Logo Mark */}
-          <Animated.View entering={FadeInDown.delay(200).duration(800)} className="mb-8 opacity-80">
+          <Animated.View entering={FadeInDown.delay(200).duration(800)} style={styles.logoWrapper}>
             <Image
               source={require('../../../../assets/images/brand_logo.png')}
-              style={{ width: 180, height: 60 }} // 3:1 ratio
+              style={styles.logo}
               contentFit="contain"
             />
           </Animated.View>
@@ -123,18 +123,20 @@ export default function WelcomeScreen(): JSX.Element {
         </View>
 
         {/* Content Section */}
-        <View className="w-full pb-12 pt-4">
-          <View className="mx-auto w-full max-w-[480px] items-center self-center px-6">
+        <View style={styles.contentSection}>
+          <View style={styles.innerContent}>
             {/* Headline */}
             <Animated.Text
               allowFontScaling={false}
               entering={FadeInDown.delay(600).duration(800)}
-              className="mb-4 text-center font-serif tracking-tighter"
-              style={{
-                color: colors.onSurface,
-                fontSize: Math.round(34 * scale),
-                lineHeight: Math.round(40 * scale),
-              }}>
+              style={[
+                styles.headline,
+                {
+                  color: colors.onSurface,
+                  fontSize: Math.round(34 * scale),
+                  lineHeight: Math.round(40 * scale),
+                },
+              ]}>
               Preserve your voice for your family.
             </Animated.Text>
 
@@ -142,34 +144,25 @@ export default function WelcomeScreen(): JSX.Element {
             <Animated.Text
               allowFontScaling={false}
               entering={FadeInDown.delay(700).duration(800)}
-              className="mb-10 max-w-xs text-center text-lg leading-7 opacity-80"
-              style={{ color: colors.onSurface }}>
+              style={[
+                styles.bodyText,
+                { color: colors.onSurface },
+              ]}>
               Your stories are a legacy. Start recording them today in your own words.
             </Animated.Text>
 
             {/* Primary Button */}
             <Animated.View
               entering={FadeInDown.delay(900).duration(800)}
-              className="w-full"
-              style={animatedButtonStyle}>
+              style={[styles.buttonWrapper, animatedButtonStyle]}>
               <HeritageButton
                 title="Get Started"
                 onPress={handleGetStarted}
                 variant="primary"
                 size="large"
                 fullWidth
-                style={{
-                  height: 64,
-                  borderRadius: 9999, // Full rounded
-                  shadowOpacity: 0.25,
-                  shadowRadius: 12,
-                  elevation: 6,
-                }}
-                textStyle={{
-                  fontSize: 20, // Larger text
-                  fontWeight: '600',
-                  letterSpacing: 0.5,
-                }}
+                style={styles.ctaButton}
+                textStyle={styles.ctaButtonText}
               />
             </Animated.View>
           </View>
@@ -179,3 +172,76 @@ export default function WelcomeScreen(): JSX.Element {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  topSection: {
+    flex: 1,
+    alignItems: 'center',
+    paddingTop: 32,
+    paddingBottom: 16,
+  },
+  logoWrapper: {
+    marginBottom: 32,
+    opacity: 0.8,
+  },
+  logo: {
+    width: 180,
+    height: 60,
+  },
+  heroWrapper: {
+    width: '100%',
+    maxWidth: 480,
+    paddingHorizontal: 24,
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heroImageContainer: {
+    width: '100%',
+    height: '100%',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+  },
+  contentSection: {
+    width: '100%',
+    paddingBottom: 48,
+    paddingTop: 16,
+  },
+  innerContent: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  headline: {
+    marginBottom: 16,
+    textAlign: 'center',
+    fontFamily: 'Fraunces_600SemiBold',
+    letterSpacing: -1,
+  },
+  bodyText: {
+    marginBottom: 40,
+    maxWidth: 320,
+    textAlign: 'center',
+    fontSize: 18,
+    lineHeight: 28,
+    opacity: 0.8,
+  },
+  buttonWrapper: {
+    width: '100%',
+  },
+  ctaButton: {
+    height: 64,
+    borderRadius: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  ctaButtonText: {
+    fontSize: 20,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+});

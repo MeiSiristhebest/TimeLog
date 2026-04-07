@@ -132,9 +132,84 @@ export function useHomeLogic() {
   const canEnableAiMode = isAiAvailable && isSyncOnline;
   const aiLanguage = profile?.language?.trim() || Intl.DateTimeFormat().resolvedOptions().locale || 'en';
 
+  const aiDialogRef = useRef<any>(null);
+
+  // --- Recording Session Management ---
+  const recording = useRecordingSession({
+    userId: sessionUserId ?? undefined,
+    topicId: tts.currentQuestion?.id,
+    onSilence: () => {
+      const ad = aiDialogRef.current;
+      if (recordingMode === 'ai' && ad?.isConnected && ad?.dialogMode === 'DIALOG') return;
+      void tts.replay();
+    },
+    onSilenceThreshold: () => {
+      const ad = aiDialogRef.current;
+      if (recordingMode === 'ai' && ad?.isConnected && ad?.dialogMode === 'DIALOG') {
+        ad.startWaitingForAiResponse();
+        return;
+      }
+      void tts.newTopic();
+    },
+    onPause: async () => {
+      if (aiDialogRef.current?.isConnected) await aiDialogRef.current.setMicrophoneEnabled(false);
+    },
+    onResume: async () => {
+      if (aiDialogRef.current?.isConnected) await aiDialogRef.current.setMicrophoneEnabled(true);
+    },
+    onStop: async (finalized) => {
+      // 1. Immediate UI Feedback
+      setLastSavedId(finalized.id);
+      void playSuccess();
+      
+      // 2. Immediate non-blocking AI cleanup
+      if (aiDialogRef.current?.isConnected) {
+        void aiDialogRef.current.disconnect();
+      }
+
+      // 3. Move heavy processing to background
+      // This allows the UI to transition immediately
+      (async () => {
+        try {
+          const uploadAsset = await resolveUploadAssetWithTimeout(finalized.filePath).catch(() => ({ 
+            localPath: finalized.filePath, 
+            extension: 'wav' as const 
+          }));
+
+          const securedAssets = await secureRecordingAssetsAtRest({
+            recordingId: finalized.id,
+            filePath: finalized.filePath,
+            uploadPath: uploadAsset.localPath,
+            uploadExtension: uploadAsset.extension,
+          }).catch(() => ({
+            encryptedFilePath: finalized.filePath,
+            encryptedUploadPath: uploadAsset.localPath,
+          }));
+
+          if (tts.currentQuestion?.isFromFamily) {
+            await markQuestionAsAnswered(tts.currentQuestion.id, finalized.id).catch(err => 
+              devLog.warn('[useHomeLogic] Mark answered failed', err)
+            );
+          }
+
+          await enqueueRecording(finalized.id, securedAssets.encryptedFilePath, {
+            uploadPath: securedAssets.encryptedUploadPath,
+            uploadExtension: uploadAsset.extension,
+            transcodeStatus: uploadAsset.extension === 'opus' ? 'ready' : 'fallback_wav',
+          });
+          
+          devLog.info(`[useHomeLogic] Background save complete for ${finalized.id}`);
+        } catch (error) {
+          devLog.error('[useHomeLogic] Background processing failed', error);
+          showErrorToast('Recording saved. Optimization will continue in background.');
+        }
+      })();
+    }
+  });
+
   // --- AI Session Management ---
   const aiDialog = useAiDialogSession({
-    storyId: undefined, // Will be updated reactively below
+    storyId: recording.recordingHandle?.metadata.id,
     topicText: tts.currentQuestion?.text ?? HOME_STRINGS.questionCard.defaultQuestion,
     language: aiLanguage,
     isAiAvailable,
@@ -142,63 +217,7 @@ export function useHomeLogic() {
     recordingMode,
     setRecordingMode,
   });
-
-  // --- Recording Session Management ---
-  const recording = useRecordingSession({
-    userId: sessionUserId ?? undefined,
-    topicId: tts.currentQuestion?.id,
-    onSilence: () => {
-      if (recordingMode === 'ai' && aiDialog.isConnected && aiDialog.dialogMode === 'DIALOG') return;
-      void tts.replay();
-    },
-    onSilenceThreshold: () => {
-      if (recordingMode === 'ai' && aiDialog.isConnected && aiDialog.dialogMode === 'DIALOG') {
-        aiDialog.startWaitingForAiResponse();
-        return;
-      }
-      void tts.newTopic();
-    },
-    onPause: async () => {
-      if (aiDialog.isConnected) await aiDialog.setMicrophoneEnabled(false);
-    },
-    onResume: async () => {
-      if (aiDialog.isConnected) await aiDialog.setMicrophoneEnabled(true);
-    },
-    onStop: async (finalized) => {
-      setLastSavedId(finalized.id);
-      
-      const uploadAsset = await resolveUploadAssetWithTimeout(finalized.filePath).catch(() => ({ 
-        localPath: finalized.filePath, 
-        extension: 'wav' as const 
-      }));
-
-      const securedAssets = await secureRecordingAssetsAtRest({
-        recordingId: finalized.id,
-        filePath: finalized.filePath,
-        uploadPath: uploadAsset.localPath,
-        uploadExtension: uploadAsset.extension,
-      }).catch(() => ({
-        encryptedFilePath: finalized.filePath,
-        encryptedUploadPath: uploadAsset.localPath,
-      }));
-
-      if (tts.currentQuestion?.isFromFamily) {
-        await markQuestionAsAnswered(tts.currentQuestion.id, finalized.id).catch(err => 
-          devLog.warn('[useHomeLogic] Mark answered failed', err)
-        );
-      }
-
-      await Promise.all([
-        enqueueRecording(finalized.id, securedAssets.encryptedFilePath, {
-          uploadPath: securedAssets.encryptedUploadPath,
-          uploadExtension: uploadAsset.extension,
-          transcodeStatus: uploadAsset.extension === 'opus' ? 'ready' : 'fallback_wav',
-        }),
-        playSuccess(),
-        aiDialog.isConnected ? aiDialog.disconnect() : Promise.resolve(),
-      ]);
-    }
-  });
+  aiDialogRef.current = aiDialog;
 
   // --- Composition & Orchestration ---
 
@@ -235,18 +254,11 @@ export function useHomeLogic() {
   const handleStartRecording = useCallback(async () => {
     tts.stop();
     
-    let aiStoryId: string | undefined;
-    if (recordingMode === 'ai' && !aiDialog.isConnected) {
-      const preTarget = await prepareRecordingTarget({
-        topicId: tts.currentQuestion?.id,
-        userId: sessionUserId ?? undefined,
-      });
-      aiStoryId = preTarget.id;
-      await aiDialog.connect(aiStoryId).catch(() => setRecordingMode('basic'));
-    }
-
-    await recording.start(aiStoryId);
-  }, [recording, aiDialog, recordingMode, tts, sessionUserId]);
+    // Start local recording IMMEDIATELY.
+    // The aiDialog (useAiDialogSession) will auto-connect reactively 
+    // when it detects a recording is active in AI mode.
+    await recording.start();
+  }, [recording, tts]);
 
   const setRecordingModeAndPersist = useCallback((mode: RecordingMode) => {
     const effectiveCloudAiEnabled = isCloudAiEnabledLocally();

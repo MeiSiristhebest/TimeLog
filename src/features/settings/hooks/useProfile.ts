@@ -48,7 +48,6 @@ export function useProfile(): UseProfileResult {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [isAnonymous, setIsAnonymous] = useState<boolean>(true);
   const setFontScaleIndex = useDisplaySettingsStore((state) => state.setFontScaleIndex);
   const systemLocale = getSystemLocale();
   const hasLoadedProfileRef = useRef(false);
@@ -120,7 +119,6 @@ export function useProfile(): UseProfileResult {
         }
       }
 
-      setIsAnonymous(local.isAnonymous);
       setProfile(mapLocalToProfile(local));
       if (local.fontScaleIndex !== null && local.fontScaleIndex !== undefined) {
         setFontScaleIndex(local.fontScaleIndex);
@@ -129,24 +127,6 @@ export function useProfile(): UseProfileResult {
 
       void (async () => {
         let localSnapshot = local;
-        let resolvedAnonymous = localSnapshot.isAnonymous;
-
-        try {
-          resolvedAnonymous = await isAnonymousUser();
-          if (resolvedAnonymous !== localSnapshot.isAnonymous) {
-            localSnapshot = await updateLocalProfile(userId, {
-              isAnonymous: resolvedAnonymous,
-            });
-            setProfile(mapLocalToProfile(localSnapshot));
-          }
-          setIsAnonymous(resolvedAnonymous);
-        } catch (err) {
-          devLog.warn('[useProfile] Failed to refresh anonymous status, keeping local value', err);
-        }
-
-        if (resolvedAnonymous) {
-          return;
-        }
 
         try {
           const hasPendingProfileSync = await syncQueueService.hasPendingProfileUpsert(userId);
@@ -190,16 +170,17 @@ export function useProfile(): UseProfileResult {
         throw new Error('No active user session');
       }
 
+      const currentIsAnonymous = profile?.isAnonymous ?? true;
+
       try {
         const existing = await getLocalProfile(userId);
         if (!existing) {
           await ensureLocalProfile(userId, {
             displayName: updates.displayName ?? 'Storyteller',
             role: updates.role ?? 'storyteller',
-            isAnonymous,
+            isAnonymous: currentIsAnonymous,
             language: updates.language ?? systemLocale,
-            fontScaleIndex:
-              updates.fontScaleIndex ?? DEFAULT_FONT_SCALE_INDEX,
+            fontScaleIndex: updates.fontScaleIndex ?? DEFAULT_FONT_SCALE_INDEX,
           });
         }
 
@@ -211,7 +192,7 @@ export function useProfile(): UseProfileResult {
           avatarUri: updates.avatarUri,
           avatarUrl: updates.avatarUrl,
           role: updates.role,
-          isAnonymous,
+          isAnonymous: currentIsAnonymous,
         });
 
         setProfile(mapLocalToProfile(local));
@@ -219,7 +200,7 @@ export function useProfile(): UseProfileResult {
           setFontScaleIndex(updates.fontScaleIndex);
         }
 
-        if (!isAnonymous) {
+        if (!currentIsAnonymous) {
           const remoteUpdates: ProfileUpdate = {
             displayName: updates.displayName,
             birthDate: updates.birthDate,
@@ -231,9 +212,7 @@ export function useProfile(): UseProfileResult {
             bio: updates.bio,
           };
 
-          const hasRemoteChanges = Object.values(remoteUpdates).some(
-            (value) => value !== undefined
-          );
+          const hasRemoteChanges = Object.values(remoteUpdates).some((value) => value !== undefined);
 
           if (hasRemoteChanges) {
             try {
@@ -241,7 +220,6 @@ export function useProfile(): UseProfileResult {
               const merged = mergeRemoteIntoLocal(local, updatedRemote);
               setProfile(mapLocalToProfile(merged));
             } catch (remoteErr) {
-              // Local-first: keep local save successful even if remote sync fails.
               devLog.warn('[useProfile] Remote profile sync failed, keeping local changes', remoteErr);
               const queuePayload: ProfileSyncPayload = {
                 userId,
@@ -259,7 +237,10 @@ export function useProfile(): UseProfileResult {
               try {
                 await syncQueueService.enqueueProfileUpsert(queuePayload);
               } catch (queueErr) {
-                devLog.warn('[useProfile] Failed to enqueue profile retry after remote sync error', queueErr);
+                devLog.warn(
+                  '[useProfile] Failed to enqueue profile retry after remote sync error',
+                  queueErr
+                );
               }
             }
           }
@@ -268,7 +249,7 @@ export function useProfile(): UseProfileResult {
         throw err instanceof Error ? err : new Error('Failed to update profile');
       }
     },
-    [resolveUserId, profile?.id, isAnonymous, mapLocalToProfile, setFontScaleIndex, systemLocale]
+    [resolveUserId, profile?.id, profile?.isAnonymous, mapLocalToProfile, setFontScaleIndex, systemLocale]
   );
 
   const uploadProfileAvatar = useCallback(
@@ -279,13 +260,15 @@ export function useProfile(): UseProfileResult {
         throw new Error('No active user session');
       }
 
+      const currentIsAnonymous = profile?.isAnonymous ?? true;
+
       try {
         const existing = await getLocalProfile(userId);
         if (!existing) {
           await ensureLocalProfile(userId, {
             displayName: 'Storyteller',
             role: 'storyteller',
-            isAnonymous,
+            isAnonymous: currentIsAnonymous,
             language: systemLocale,
             fontScaleIndex: DEFAULT_FONT_SCALE_INDEX,
           });
@@ -297,7 +280,7 @@ export function useProfile(): UseProfileResult {
 
         setProfile(mapLocalToProfile(local));
 
-        if (!isAnonymous) {
+        if (!currentIsAnonymous) {
           try {
             const newAvatarUrl = await uploadAvatar(userId, imageUri);
             const updated = await updateLocalProfile(userId, {
@@ -306,7 +289,10 @@ export function useProfile(): UseProfileResult {
             setProfile(mapLocalToProfile(updated));
             return newAvatarUrl;
           } catch (remoteErr) {
-            devLog.warn('[useProfile] Remote avatar upload failed, keeping local avatar uri', remoteErr);
+            devLog.warn(
+              '[useProfile] Remote avatar upload failed, keeping local avatar uri',
+              remoteErr
+            );
             return null;
           }
         }
@@ -316,7 +302,7 @@ export function useProfile(): UseProfileResult {
         throw err instanceof Error ? err : new Error('Failed to upload avatar');
       }
     },
-    [resolveUserId, profile?.id, isAnonymous, mapLocalToProfile, systemLocale]
+    [resolveUserId, profile?.id, profile?.isAnonymous, mapLocalToProfile, systemLocale]
   );
 
   return {

@@ -12,6 +12,29 @@ type FamilyInviteResult = {
   inviteLink?: string;
 };
 
+/**
+ * Utility to map invite-related errors to user-friendly messages.
+ */
+function mapInviteError(error: any): string {
+  if (!error) return 'An unknown error occurred.';
+  const message = error.message || '';
+
+  if (message.includes('Invite already exists')) {
+    return 'An invitation has already been sent to this email address.';
+  }
+  if (message.includes('User already connected')) {
+    return 'This person is already connected to your family.';
+  }
+  if (message.includes('Invalid token') || message.includes('Request not found')) {
+    return 'This invitation link is invalid or has expired.';
+  }
+  if (message.includes('Unauthorized')) {
+    return 'You do not have permission to perform this invitation action.';
+  }
+
+  return message;
+}
+
 export async function createFamilyInvite(email: string): Promise<FamilyInviteResult> {
   const normalized = email.trim().toLowerCase();
   if (!normalized) {
@@ -27,7 +50,7 @@ export async function createFamilyInvite(email: string): Promise<FamilyInviteRes
   });
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(mapInviteError(error));
   }
 
   // Handle various response formats from Supabase RPC
@@ -54,7 +77,7 @@ export async function acceptFamilyInvite(token: string): Promise<void> {
   const { error } = await supabase.rpc('accept_family_invite', { p_token: token });
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(mapInviteError(error));
   }
 }
 

@@ -29,8 +29,9 @@ export interface SuggestedTopic {
  * Creates a new bonding request from Family to Senior.
  */
 export async function createBondingRequest(seniorId: string): Promise<BondingRequest> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) throw new Error('Not authenticated');
+  const user = userData.user;
 
   const { data, error } = await supabase
     .from('bonding_requests')
@@ -54,10 +55,11 @@ export async function createBondingRequest(seniorId: string): Promise<BondingReq
  * Fetches pending requests for the current user (Senior).
  */
 export async function fetchPendingRequestsForSenior(): Promise<BondingRequest[]> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  const { data, error: userError } = await supabase.auth.getUser();
+  if (userError || !data?.user) return [];
+  const user = data.user;
 
-  const { data, error } = await supabase
+  const { data: requests, error } = await supabase
     .from('bonding_requests')
     .select('*')
     .eq('target_id', user.id)
@@ -68,7 +70,7 @@ export async function fetchPendingRequestsForSenior(): Promise<BondingRequest[]>
     throw new Error(`Failed to fetch requests: ${error.message}`);
   }
 
-  return data as BondingRequest[];
+  return (requests || []) as BondingRequest[];
 }
 
 /**
@@ -91,8 +93,9 @@ export async function respondToRequest(requestId: string, status: 'approved' | '
  * Uses existing 'family_questions' table.
  */
 export async function suggestTopicFromFamily(seniorId: string, text: string): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) throw new Error('Not authenticated');
+  const user = userData.user;
 
   const { error } = await supabase
     .from('family_questions')

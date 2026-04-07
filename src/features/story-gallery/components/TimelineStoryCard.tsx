@@ -22,7 +22,11 @@ export interface TimelineStoryCardProps {
   isPlayable?: boolean;
   isOffline?: boolean;
   unreadCommentCount?: number;
-  onOffload?: () => void;
+  onOffload?: (id: string) => void;
+  /** Whether the story is favorited (Story 3.6) */
+  isFavorite?: boolean;
+  /** Callback to toggle favorite (Story 3.6) */
+  onToggleFavorite?: (id: string) => void;
 }
 
 export function TimelineStoryCard({
@@ -36,6 +40,8 @@ export function TimelineStoryCard({
   isOffline = false,
   unreadCommentCount = 0,
   onOffload,
+  isFavorite = false,
+  onToggleFavorite,
 }: TimelineStoryCardProps): JSX.Element {
   // Logic Extraction: Date Data
   // In a larger app, this `useMemo` block could be its own hook `useStoryDisplayData(story)`
@@ -78,7 +84,9 @@ export function TimelineStoryCard({
         unreadCommentCount={unreadCommentCount}
         onPlay={onPlay}
         onSelect={onSelect}
-        onOffload={onOffload ? () => onOffload() : undefined}
+        onOffload={onOffload ? () => onOffload(story.id) : undefined}
+        isFavorite={isFavorite}
+        onToggleFavorite={onToggleFavorite}
       />
     );
   }
@@ -94,7 +102,9 @@ export function TimelineStoryCard({
       unreadCommentCount={unreadCommentCount}
       onPlay={onPlay}
       onSelect={onSelect}
-      onOffload={onOffload ? () => onOffload() : undefined}
+      onOffload={onOffload ? () => onOffload(story.id) : undefined}
+      isFavorite={isFavorite}
+      onToggleFavorite={onToggleFavorite}
     />
   );
 }

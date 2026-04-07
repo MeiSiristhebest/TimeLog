@@ -143,10 +143,11 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
     try {
       const {
-        data: { user },
+        data,
         error: userError,
       } = await supabase.auth.getUser();
       if (userError) throw userError;
+      const user = data?.user;
       if (user?.id) {
         const { error: upsertError } = await supabase.from('user_push_tokens').upsert(
           {
@@ -159,7 +160,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
         );
         if (upsertError) throw upsertError;
       }
-      devLog.info('[Notifications] Push token stored successfully');
+      devLog.info('[Notifications] Got push token stored successfully');
     } catch (error) {
       devLog.error('[Notifications] Failed to store push token:', error);
     }

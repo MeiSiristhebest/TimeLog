@@ -96,10 +96,13 @@ export function WaveformVisualizer({
     let amp: number;
     let hasLiveMetering = false;
     if (!isRecording && !isPaused) {
+      // Idle state - no amplitude
       amp = 0;
     } else if (isPaused) {
+      // Paused - use frozen amplitude
       amp = frozenAmplitude.value;
     } else {
+      // Recording - use live amplitude; if unavailable (Expo Go), show a smooth fallback pulse.
       const liveAmp = amplitude.value;
       hasLiveMetering = liveAmp > 0.02;
       amp = hasLiveMetering ? liveAmp : 0.42 + fallbackPulse.value * 0.58;
@@ -110,8 +113,8 @@ export function WaveformVisualizer({
     for (let i = 0; i < BAR_COUNT; i++) {
       const dist = Math.abs(i - centerIdx);
       const sensitivity = 1 - (dist / centerIdx) * 0.5;
-      const liveAmpValue = Math.max(0, Math.min(1, amp));
-      const responseAmp = Math.pow(liveAmpValue, 0.62);
+      const liveAmp = Math.max(0, Math.min(1, amp));
+      const responseAmp = Math.pow(liveAmp, 0.62);
       const fineGrain =
         hasLiveMetering || !isRecording
           ? 1
@@ -125,6 +128,7 @@ export function WaveformVisualizer({
       const y = centerY - barHeight / 2;
       const cornerRadius = BAR_WIDTH / 2;
 
+      // Draw rounded rectangle using path
       skPath.addRRect(
         Skia.RRectXY(Skia.XYWHRect(x, y, BAR_WIDTH, barHeight), cornerRadius, cornerRadius)
       );
@@ -144,7 +148,8 @@ export function WaveformVisualizer({
 
   return (
     <View
-      className="w-full h-full items-center justify-center overflow-hidden bg-transparent"
+      className="w-full items-center justify-center overflow-hidden bg-transparent"
+      style={{ height: '100%' }}
       onLayout={handleLayout}>
       {ready && layout.width > 0 && layout.height > 0 && (
         <Canvas style={{ width: layout.width, height: layout.height }}>
@@ -155,4 +160,5 @@ export function WaveformVisualizer({
   );
 }
 
+// Default export for React.lazy() compatibility
 export default WaveformVisualizer;

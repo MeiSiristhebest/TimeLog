@@ -30,6 +30,9 @@ type RecoveryCodeRow = {
 
 /**
  * Generate a new recovery code for the current user.
+
+/**
+ * Generate a new recovery code for the current user.
  * Auto-revokes any existing active codes.
  * 
  * @returns Newly generated recovery code
@@ -37,14 +40,15 @@ type RecoveryCodeRow = {
  */
 export async function generateRecoveryCode(): Promise<RecoveryCode> {
     // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    const user = authData?.user;
 
     if (authError || !user) {
         devLog.error('[recoveryCodeService] User not authenticated:', authError);
         throw new Error('You must be logged in to generate a recovery code');
     }
 
-    // Generate unique code: RCV-XXX-XXX format
+    // Generate unique code: REC-XXXXXX format
     const code = generateCodeFormat();
 
     // Insert new code (trigger will auto-revoke old ones)
@@ -72,7 +76,8 @@ export async function generateRecoveryCode(): Promise<RecoveryCode> {
  * @throws Error if user not authenticated
  */
 export async function getActiveRecoveryCode(): Promise<RecoveryCode | null> {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    const user = authData?.user;
 
     if (authError || !user) {
         devLog.error('[recoveryCodeService] User not authenticated:', authError);
@@ -149,11 +154,10 @@ export async function validateRecoveryCode(code: string): Promise<{
     };
 }
 
-// Helper: Generate recovery code in RCV-XXX-XXX format
+// Helper: Generate recovery code in REC-XXXXXX format
 function generateCodeFormat(): string {
-    const part1 = Math.floor(100 + Math.random() * 900); // 100-999
-    const part2 = Math.floor(100 + Math.random() * 900); // 100-999
-    return `RCV-${part1}-${part2}`;
+    const code = Math.floor(100000 + Math.random() * 900000); // 100000-999999
+    return `REC-${code}`;
 }
 
 // Helper: Map database row to RecoveryCode type

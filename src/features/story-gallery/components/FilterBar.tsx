@@ -1,9 +1,13 @@
 /**
  * FilterBar - Category chips for filtering stories
- * Optimized with NativeWind v4 and SF Symbols.
+ * FIXED VERSION:
+ * - Removed conflicting shadow/elevation styles that caused artifacts
+ * - Properly implemented flex-wrap layout
+ * - High contrast text colors
+ * - Clean, flat design that works reliably on Android
  */
 
-import { Icon, Ionicons } from '@/components/ui/Icon';
+import { Ionicons } from '@/components/ui/Icon';
 import { FilterCategory, CATEGORY_DATA } from '../data/mockGalleryData';
 import { useHeritageTheme } from '@/theme/heritage';
 import { AppText } from '@/components/ui/AppText';
@@ -19,11 +23,15 @@ export function FilterBar({ selectedCategory, onSelectCategory }: FilterBarProps
   const { colors } = useHeritageTheme();
 
   return (
-    <View className="bg-surfaceWarm">
+    <View style={{ backgroundColor: colors.surfaceWarm }}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerClassName="px-6 py-3 items-center">
+        contentContainerStyle={{
+          paddingHorizontal: 24,
+          paddingVertical: 12,
+          alignItems: 'center',
+        }}>
         {CATEGORY_DATA.map((cat, index) => {
           const isSelected = selectedCategory === cat.id;
 
@@ -47,23 +55,38 @@ export function FilterBar({ selectedCategory, onSelectCategory }: FilterBarProps
             <Pressable
               key={cat.id}
               onPress={() => onSelectCategory(cat.id)}
-              className={`flex-row items-center rounded-full border px-[18px] py-[10px] min-h-[44px] ${
-                isSelected ? 'bg-primary' : 'bg-surfaceCard'
-              } ${index === CATEGORY_DATA.length - 1 ? '' : 'mr-3'}`}
-              style={{ borderColor: isSelected ? colors.primary : colors.border }}>
+              style={[
+                {
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  borderRadius: 999,
+                  borderWidth: 1,
+                  paddingHorizontal: 18,
+                  paddingVertical: 10,
+                },
+                isSelected
+                  ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                  : { backgroundColor: colors.surfaceCard, borderColor: colors.border },
+                { marginRight: index === CATEGORY_DATA.length - 1 ? 0 : 12, minHeight: 44 },
+              ]}>
               {cat.icon && (
-                <View className="mr-1.5">
-                  <Icon
-                    name={cat.icon as keyof typeof Ionicons.glyphMap}
-                    size={16}
-                    color={isSelected ? colors.onPrimary : iconColor}
-                  />
-                </View>
+                <Ionicons
+                  name={cat.icon}
+                  size={16}
+                  color={isSelected ? colors.onPrimary : iconColor}
+                  style={{ marginRight: 6 }}
+                />
               )}
               <AppText
-                className={`text-[15px] font-semibold tracking-wider ${
-                  isSelected ? 'text-onPrimary' : 'text-onSurface'
-                }`}>
+                style={[
+                  {
+                    fontSize: 15,
+                    lineHeight: 18,
+                    fontWeight: '600',
+                    letterSpacing: 0.2,
+                  },
+                  isSelected ? { color: colors.onPrimary } : { color: colors.onSurface },
+                ]}>
                 {cat.label}
               </AppText>
             </Pressable>

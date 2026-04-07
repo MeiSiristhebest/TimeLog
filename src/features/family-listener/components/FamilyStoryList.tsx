@@ -73,7 +73,7 @@ export function FamilyStoryList({
   const handlePlayStory = useCallback(
     (storyId: string) => {
       router.push({
-        pathname: '/family-story/[id]',
+        pathname: '/story/[id]',
         params: { id: storyId },
       });
     },
@@ -82,7 +82,7 @@ export function FamilyStoryList({
 
   const renderItem = useCallback(
     ({ item }: { item: FamilyStory }) => (
-      <Link href={{ pathname: '/family-story/[id]', params: { id: item.id } }} asChild>
+      <Link href={{ pathname: '/story/[id]', params: { id: item.id } }} asChild>
         <FamilyStoryCard
           story={item}
           // onPress is handled by Link asChild

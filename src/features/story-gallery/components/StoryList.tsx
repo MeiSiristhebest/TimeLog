@@ -24,11 +24,13 @@ type StoryListProps = {
   onDeleteStory?: (id: string) => void;
   /** Callback to offload story (Local Delete) */
   onOffloadStory?: (id: string) => void;
+  /** Callback to toggle favorite (Story 3.6) */
+  onToggleFavorite?: (id: string, isFavorite: boolean) => void;
   /** Optional custom renderer for list items */
-  renderItem?: ListRenderItem<AudioRecording & { isPlayable: boolean }>;
+  renderItem?: ListRenderItem<AudioRecording & { isPlayable: boolean; isFavorite?: boolean }>;
   /** Optional custom separator */
   ItemSeparatorComponent?: FlatListProps<
-    AudioRecording & { isPlayable: boolean }
+    AudioRecording & { isPlayable: boolean; isFavorite?: boolean }
   >['ItemSeparatorComponent'];
   /** Apple HIG: Pull to Refresh callback */
   onRefresh?: () => void;
@@ -40,7 +42,7 @@ type StoryListProps = {
 
 type StoryListRow =
   | { kind: 'header'; id: string; title: string }
-  | { kind: 'story'; id: string; story: AudioRecording & { isPlayable: boolean }; storyIndex: number };
+  | { kind: 'story'; id: string; story: AudioRecording & { isPlayable: boolean; isFavorite?: boolean }; storyIndex: number };
 
 /**
  * Loading state component with skeleton cards (UX spec: no spinners).
@@ -78,6 +80,7 @@ export function StoryList({
   ItemSeparatorComponent,
   onRefresh,
   isRefreshing = false,
+  onToggleFavorite,
   extraData,
 }: StoryListProps): JSX.Element {
   const { colors } = useHeritageTheme();
@@ -120,8 +123,9 @@ export function StoryList({
 
     return rows;
   }, [displayStories]);
+
   const renderTimelineItem = useCallback(
-    ({ item, index }: { item: AudioRecording & { isPlayable: boolean }; index: number }) => (
+    ({ item, index }: { item: AudioRecording & { isPlayable: boolean; isFavorite?: boolean }; index: number }) => (
       <TimelineStoryCard
         story={item}
         index={index}
@@ -133,14 +137,16 @@ export function StoryList({
             onPlayStory(item.id);
           }
         }}
-        onOffload={onOffloadStory ? () => onOffloadStory(item.id) : undefined}
+        onOffload={onOffloadStory ? (id) => onOffloadStory(id) : undefined}
         variant={index === 0 ? 'featured' : 'default'}
         isPlayable={item.isPlayable}
         isOffline={isOffline}
         unreadCommentCount={getCount(item.id)}
+        isFavorite={item.isFavorite}
+        onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(item.id, !item.isFavorite) : undefined}
       />
     ),
-    [isOffline, onPlayStory, onSelectStory, onUnavailableStoryTap, onOffloadStory, getCount]
+    [isOffline, onPlayStory, onSelectStory, onUnavailableStoryTap, onOffloadStory, getCount, onToggleFavorite]
   );
 
   const renderRow = useCallback(
@@ -206,4 +212,3 @@ export function StoryList({
     </TimelineLayout>
   );
 }
-

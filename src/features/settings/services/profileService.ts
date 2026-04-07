@@ -63,7 +63,7 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
-    .eq('user_id', userId)
+    .eq('id', userId)
     .single();
 
   if (error) {
@@ -71,8 +71,8 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
       // No profile found, return null
       return null;
     }
-    devLog.error('Failed to fetch profile:', error);
-    throw error;
+    devLog.error('[profileService] Failed to fetch profile:', error);
+    throw new Error('Unable to load your profile. Please check your connection and try again.');
   }
 
   return mapToProfile(data);
@@ -98,13 +98,13 @@ export async function updateProfile(userId: string, updates: ProfileUpdate): Pro
   const { data, error } = await supabase
     .from('profiles')
     .update(payload)
-    .eq('user_id', userId)
+    .eq('id', userId)
     .select()
     .single();
 
   if (error) {
-    devLog.error('Failed to update profile:', error);
-    throw error;
+    devLog.error('[profileService] Failed to update profile:', error);
+    throw new Error('Profile update failed. Please check your connection and try again.');
   }
 
   return mapToProfile(data);
@@ -125,8 +125,8 @@ export async function uploadAvatar(userId: string, imageUri: string): Promise<st
   });
 
   if (uploadError) {
-    devLog.error('Failed to upload avatar:', uploadError);
-    throw uploadError;
+    devLog.error('[profileService] Failed to upload avatar:', uploadError);
+    throw new Error('Failed to upload profile photo. Please try again.');
   }
 
   // Get public URL
@@ -149,6 +149,7 @@ export async function createProfile(
   const { data, error } = await supabase
     .from('profiles')
     .insert({
+      id: userId,
       user_id: userId,
       display_name: displayName,
       role: role,
@@ -157,8 +158,8 @@ export async function createProfile(
     .single();
 
   if (error) {
-    devLog.error('Failed to create profile:', error);
-    throw error;
+    devLog.error('[profileService] Failed to create profile:', error);
+    throw new Error('Failed to create your profile. Please try again.');
   }
 
   return mapToProfile(data);
@@ -167,8 +168,8 @@ export async function createProfile(
 // Helper to map DB response to UserProfile type
 function mapToProfile(data: DatabaseProfile): UserProfile {
   return {
-    id: data.id,
-    userId: data.user_id,
+    id: data.id || data.user_id,
+    userId: data.user_id || data.id,
     displayName: data.display_name,
     birthDate: data.birth_date ?? null,
     language: data.language ?? null,
