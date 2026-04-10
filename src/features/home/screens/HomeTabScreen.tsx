@@ -185,6 +185,10 @@ export default function HomeTabScreen(): JSX.Element {
           <HomeNotification
             onPress={() => {
               if (activities[0]?.storyId) {
+                if (activities[0].type === 'comment') {
+                  actions.navigateToStoryComments(activities[0].storyId);
+                  return;
+                }
                 actions.navigateToStory(activities[0].storyId);
               }
             }}

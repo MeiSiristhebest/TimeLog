@@ -15,15 +15,21 @@ import { usePlayerStore } from '@/features/story-gallery/store/usePlayerStore';
 import type { SyncStatus } from '@/types/entities';
 import { SyncStatusBadge } from '@/features/story-gallery/components/SyncStatusBadge';
 import { softDeleteStory, restoreStory } from '@/features/story-gallery/services/storyService';
+import { markCommentsAsRead } from '@/features/story-gallery/services/commentReadService';
 import { DeleteConfirmModal } from '@/features/story-gallery/components/DeleteConfirmModal';
 import { UndoToast } from '@/components/ui/UndoToast';
-import { showErrorToast } from '@/components/ui/feedback/toast';
+import { showErrorToast, showSuccessToast } from '@/components/ui/feedback/toast';
 import { getQuestionById } from '@/features/recorder/data/topicQuestions';
 import { CATEGORY_DATA, mapRawCategoryToFilter } from '@/features/story-gallery/data/mockGalleryData';
-import { toStoryEditRoute } from '@/features/app/navigation/routes';
+import {
+  toStoryCommentsRoute,
+  toStoryEditRoute,
+} from '@/features/app/navigation/routes';
 import { EN_COPY } from '@/features/app/copy/en';
 import { usePdfExport } from '@/features/story-gallery/hooks/usePdfExport';
-import { showSuccessToast } from '@/components/ui/feedback/toast';
+import { markActivitiesAsReadForStory } from '@/features/home/services/activityService';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { updateAppBadge } from '@/lib/notifications/badgeService';
 
 // Heritage
 import { useHeritageTheme } from '@/theme/heritage';
@@ -50,13 +56,26 @@ export default function StoryDetailScreen(): JSX.Element {
   const theme = useHeritageTheme();
   const isDeletedPreview = readOnlyDeletedPreview === '1';
   const resetPlayer = usePlayerStore((state) => state.reset);
+  const sessionUserId = useAuthStore((state) => state.sessionUserId);
 
   useFocusEffect(
     useCallback(() => {
+      void (async () => {
+        try {
+          await markCommentsAsRead(id);
+          await markActivitiesAsReadForStory(id, sessionUserId);
+          if (sessionUserId) {
+            await updateAppBadge(sessionUserId);
+          }
+        } catch {
+          showErrorToast('Failed to update story read status.');
+        }
+      })();
+
       return () => {
         resetPlayer();
       };
-    }, [resetPlayer])
+    }, [id, resetPlayer, sessionUserId])
   );
 
   // Story 3.3 State
@@ -86,7 +105,7 @@ export default function StoryDetailScreen(): JSX.Element {
       // Use AI polishing for a better memoir feel
       await exportPdf(exportData, true);
       showSuccessToast(EN_COPY.story.exportSuccess);
-    } catch (err) {
+    } catch {
       showErrorToast(EN_COPY.story.exportFailed);
     }
   };
@@ -352,6 +371,15 @@ export default function StoryDetailScreen(): JSX.Element {
             </View>
           ) : (
             <>
+              <View style={{ flex: 1 }}>
+                <HeritageButton
+                  title="Comments"
+                  onPress={() => router.push(toStoryCommentsRoute(id))}
+                  variant="secondary"
+                  icon="chatbubble-ellipses-outline"
+                  style={{ height: 56 }}
+                />
+              </View>
               {/* Edit - opens Full Story Edit Screen */}
               <View style={{ flex: 1 }}>
                 <HeritageButton

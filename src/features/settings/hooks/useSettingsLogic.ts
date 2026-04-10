@@ -15,20 +15,6 @@ import { useDisplaySettingsStore } from '../store/displaySettingsStore';
 import { useAccountSecurity } from './useAccountSecurity';
 import { useCloudSettings } from './useCloudSettings';
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
-import {
-  getCachedNotificationSettings,
-  refreshNotificationSettings,
-  updateNotificationSettings,
-  getDeviceTimeZone,
-} from '@/lib/notifications/notificationSettingsService';
-import {
-  canRequestNotificationPermission,
-  getNotificationPermissionStatus,
-  openNotificationSettings,
-  registerForPushNotifications,
-  requestNotificationPermission,
-  unregisterPushToken,
-} from '@/lib/notifications';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { devLog } from '@/lib/devLogger';
 import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
@@ -37,15 +23,7 @@ import { useCurrentUserId } from '@/features/auth/hooks/useCurrentUserId';
 import { APP_ROUTES, toUpgradeAccountRoute } from '@/features/app/navigation/routes';
 import { PERMISSION_CONTEXT } from '@/features/permissions/permissionPolicy';
 
-function getThemeModeLabel(themeMode: 'system' | 'dark' | 'light'): string {
-  if (themeMode === 'system') {
-    return 'System';
-  }
-  if (themeMode === 'dark') {
-    return 'Dark';
-  }
-  return 'Light';
-}
+
 
 // Hook for Settings Home
 export function useSettingsHome() {
@@ -56,8 +34,7 @@ export function useSettingsHome() {
   const [userRole, setUserRole] = useState<'storyteller' | 'listener'>('storyteller');
 
   // Access stores to generate summaries
-  const { themeMode, fontScaleIndex } = useDisplaySettingsStore();
-  const { state: navState } = useNotificationsLogic();
+  const { fontScaleIndex } = useDisplaySettingsStore();
 
   // Calculate Summaries
   const getSummary = useCallback(
@@ -65,13 +42,8 @@ export function useSettingsHome() {
       if (!summaryKey) return undefined;
 
       if (summaryKey === 'display') {
-        const modeLabel = getThemeModeLabel(themeMode);
         const sizeLabel = FONT_SCALE_LABELS[fontScaleIndex] || 'Standard';
-        return `${modeLabel} · ${sizeLabel}`;
-      }
-
-      if (summaryKey === 'notifications') {
-        return navState.enabled ? 'On' : 'Off';
+        return sizeLabel;
       }
 
       if (summaryKey === 'storage') {
@@ -80,7 +52,7 @@ export function useSettingsHome() {
 
       return undefined;
     },
-    [themeMode, fontScaleIndex, navState.enabled]
+    [fontScaleIndex]
   );
 
   useEffect(() => {
@@ -136,14 +108,11 @@ export function useDisplaySettingsLogic() {
 
   return {
     state: {
-      themeMode,
       fontScaleIndex,
       currentLabel,
       currentPreviewScale,
-      themeOptions: THEME_OPTIONS_DATA,
     },
     actions: {
-      setThemeMode,
       setFontScaleIndex,
       reset,
     },
@@ -204,240 +173,6 @@ export function useDataStorageLogic() {
 }
 
 // Removed Family Sharing Logic (Redundant)
-
-
-// Hook for Notifications
-export function useNotificationsLogic() {
-  const sessionUserId = useAuthStore((state) => state.sessionUserId);
-  const { currentUserId } = useCurrentUserId({ enabled: !sessionUserId });
-  const activeUserId = sessionUserId ?? currentUserId ?? null;
-  const [enabled, setEnabled] = useState(true);
-  const [gentleReminders, setGentleReminders] = useState(true);
-  const [quietStart, setQuietStart] = useState(new Date());
-  const [quietEnd, setQuietEnd] = useState(new Date());
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const scrollY = useSharedValue(0);
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
-    },
-  });
-
-  const loadSettings = useCallback(async () => {
-    const applyDefaults = () => {
-      const start = new Date();
-      start.setHours(21, 0, 0, 0);
-      setQuietStart(start);
-
-      const end = new Date();
-      end.setHours(9, 0, 0, 0);
-      setQuietEnd(end);
-    };
-
-    const applySettings = (
-      settings: {
-        notificationsEnabled: boolean;
-        gentleRemindersEnabled: boolean;
-        quietHoursStart: string | null;
-        quietHoursEnd: string | null;
-      } | null
-    ) => {
-      if (!settings) {
-        setEnabled(false);
-        setGentleReminders(true);
-        applyDefaults();
-        return;
-      }
-
-      setEnabled(settings.notificationsEnabled);
-      setGentleReminders(settings.gentleRemindersEnabled);
-
-      if (settings.quietHoursStart) {
-        const [hour, minute] = settings.quietHoursStart.split(':');
-        const start = new Date();
-        start.setHours(parseInt(hour, 10), parseInt(minute, 10), 0, 0);
-        setQuietStart(start);
-      } else {
-        applyDefaults();
-      }
-
-      if (settings.quietHoursEnd) {
-        const [hour, minute] = settings.quietHoursEnd.split(':');
-        const end = new Date();
-        end.setHours(parseInt(hour, 10), parseInt(minute, 10), 0, 0);
-        setQuietEnd(end);
-      } else {
-        const end = new Date();
-        end.setHours(9, 0, 0, 0);
-        setQuietEnd(end);
-      }
-    };
-
-    if (!activeUserId) {
-      applySettings(null);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    const cached = getCachedNotificationSettings(activeUserId);
-    if (cached) {
-      applySettings(cached);
-      setIsLoading(false);
-    } else {
-      applyDefaults();
-    }
-
-    try {
-      const settings = await refreshNotificationSettings(activeUserId);
-      if (settings) {
-        applySettings(settings);
-      }
-    } catch (error: unknown) {
-      devLog.error('[NotificationsScreen] Failed to load notification settings:', error);
-      if (!cached) {
-        HeritageAlert.show({
-          title: SETTINGS_STRINGS.notifications.save.errorTitle,
-          message: SETTINGS_STRINGS.notifications.save.loadError,
-          variant: 'error',
-        });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeUserId]);
-
-  useEffect(() => {
-    void loadSettings();
-  }, [loadSettings]);
-
-  const [showStartPicker, setShowStartPicker] = useState(false);
-  const [showEndPicker, setShowEndPicker] = useState(false);
-
-  const handleEnabledToggle = useCallback(
-    async (nextEnabled: boolean) => {
-      if (nextEnabled === enabled) {
-        return;
-      }
-
-      setEnabled(nextEnabled);
-
-      if (!nextEnabled) {
-        try {
-          await unregisterPushToken();
-        } catch (error) {
-          devLog.warn('[NotificationsScreen] Failed to unregister push token', error);
-        }
-        return;
-      }
-
-      try {
-        const currentStatus = await getNotificationPermissionStatus();
-        const status =
-          currentStatus === 'granted'
-            ? currentStatus
-            : await requestNotificationPermission(PERMISSION_CONTEXT.NOTIFICATION_SETTINGS);
-
-        if (status !== 'granted') {
-          setEnabled(false);
-          const canAskAgain = await canRequestNotificationPermission();
-          HeritageAlert.show({
-            title: 'Notifications Disabled',
-            message: canAskAgain
-              ? 'Notification permission is required to receive reminders.'
-              : 'Please enable notifications in system settings to receive reminders.',
-            variant: 'warning',
-            primaryAction: canAskAgain
-              ? undefined
-              : {
-                  label: 'Open Settings',
-                  onPress: () => {
-                    void openNotificationSettings();
-                  },
-                },
-          });
-          return;
-        }
-
-        await registerForPushNotifications();
-      } catch (error) {
-        setEnabled(false);
-        devLog.error('[NotificationsScreen] Failed to enable notifications', error);
-        HeritageAlert.show({
-          title: SETTINGS_STRINGS.notifications.save.errorTitle,
-          message: SETTINGS_STRINGS.notifications.save.errorMessage,
-          variant: 'error',
-        });
-      }
-    },
-    [enabled]
-  );
-
-  const formatTime = (date: Date) => {
-    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-  };
-
-  async function saveSettings() {
-    if (!activeUserId) return;
-
-    setIsSaving(true);
-    try {
-      const quietStartTime = `${quietStart.getHours().toString().padStart(2, '0')}:${quietStart.getMinutes().toString().padStart(2, '0')}`;
-      const quietEndTime = `${quietEnd.getHours().toString().padStart(2, '0')}:${quietEnd.getMinutes().toString().padStart(2, '0')}`;
-
-      await updateNotificationSettings({
-        userId: activeUserId,
-        notificationsEnabled: enabled,
-        gentleRemindersEnabled: gentleReminders,
-        quietHoursStart: quietStartTime,
-        quietHoursEnd: quietEndTime,
-        timeZone: getDeviceTimeZone(),
-      });
-
-      HeritageAlert.show({
-        title: SETTINGS_STRINGS.notifications.save.successTitle,
-        message: SETTINGS_STRINGS.notifications.save.successMessage,
-        variant: 'success',
-      });
-    } catch (error: unknown) {
-      devLog.error('[NotificationsScreen] Failed to save notification settings:', error);
-      HeritageAlert.show({
-        title: SETTINGS_STRINGS.notifications.save.errorTitle,
-        message: SETTINGS_STRINGS.notifications.save.errorMessage,
-        variant: 'error',
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  return {
-    state: {
-      enabled,
-      gentleReminders,
-      quietStart,
-      quietEnd,
-      isLoading,
-      isSaving,
-      scrollY,
-      showStartPicker,
-      showEndPicker,
-      formatTime, // helper
-    },
-    actions: {
-      setEnabled: handleEnabledToggle,
-      setGentleReminders,
-      setQuietStart,
-      setQuietEnd,
-      setShowStartPicker,
-      setShowEndPicker,
-      saveSettings,
-      scrollHandler,
-    },
-  };
-}
 
 // Hook for About/Help
 export function useAboutHelpLogic() {

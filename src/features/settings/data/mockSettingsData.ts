@@ -21,7 +21,6 @@ export const SETTINGS_STRINGS = {
     },
     preferences: {
       display: 'Display & Accessibility',
-      notifications: 'Notifications',
     },
     storage: {
       data: 'Data & Storage',
@@ -43,7 +42,6 @@ export const SETTINGS_STRINGS = {
     },
     items: {
       accountSecurity: 'Account & Security',
-      notifications: 'Notifications',
       display: 'Display & Accessibility',
       dataStorage: 'Data & Storage',
       help: 'Help & Feedback',
@@ -115,28 +113,6 @@ export const SETTINGS_STRINGS = {
       title: 'Storage',
       deletedItems: 'Deleted Items',
     },
-  },
-  notifications: {
-    title: 'Notifications',
-    general: {
-      title: 'General',
-      enableNotifications: 'Enable Notifications',
-      gentleReminders: 'Gentle Reminders',
-    },
-    quietHours: {
-      title: 'Quiet Hours',
-      startTime: 'Start Time',
-      endTime: 'End Time',
-    },
-    save: {
-      button: 'Save Settings',
-      successTitle: 'Saved!',
-      successMessage: 'Notification settings have been updated.',
-      errorTitle: 'Error',
-      errorMessage: 'Failed to save settings',
-      loadError: 'Failed to load settings',
-    },
-    loading: 'Loading...',
   },
   aboutHelp: {
     title: 'About & Help',
@@ -212,14 +188,6 @@ export const SETTINGS_STRUCTURE = [
         icon: 'text-outline' as const,
         colorKey: 'blueAccent',
         summaryKey: 'display',
-      },
-      {
-        id: 'pref_notifications',
-        label: SETTINGS_STRINGS.items.preferences.notifications,
-        route: '/(tabs)/settings/notifications',
-        icon: 'notifications-outline' as const,
-        colorKey: 'amberCustom',
-        summaryKey: 'notifications',
       },
     ] as SettingsLinkData[],
   },

@@ -80,8 +80,8 @@ export function SettingsHomeScreen(): JSX.Element {
               Upgrade to a permanent account
             </AppText>
             <AppText style={[styles.promptSubtext, { color: colors.textMuted }]}>
-              You can keep using TimeLog now, but upgrading protects your stories and unlocks family
-              sharing.
+              You can keep using TimeLog now, but upgrading protects your stories and allows you to
+              share them with family via our web companion.
             </AppText>
             <HeritageButton
               title="Upgrade Account"

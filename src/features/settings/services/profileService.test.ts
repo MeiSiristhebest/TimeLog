@@ -113,7 +113,7 @@ describe('profileService.uploadAvatar', () => {
         avatar_url: publicUrl,
       })
     );
-    expect(mockEq).toHaveBeenCalledWith('user_id', 'user-123');
+    expect(mockEq).toHaveBeenCalledWith('id', 'user-123');
   });
 
   it('throws when local avatar file fetch fails', async () => {
@@ -147,7 +147,9 @@ describe('profileService.uploadAvatar', () => {
     }));
     mockUpload.mockImplementation(async () => ({ error: new Error('upload failed') }));
 
-    await expect(uploadAvatar('user-123', 'file:///avatar.jpg')).rejects.toThrow('upload failed');
+    await expect(uploadAvatar('user-123', 'file:///avatar.jpg')).rejects.toThrow(
+      'Failed to upload profile photo. Please try again.'
+    );
     expect(mockGetPublicUrl).not.toHaveBeenCalled();
     expect(mockUpdatePayload).not.toHaveBeenCalled();
   });

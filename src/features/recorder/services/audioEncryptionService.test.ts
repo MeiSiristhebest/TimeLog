@@ -8,13 +8,20 @@ import {
 const mockMemoryFiles = new Map<string, string>();
 const mockDeletedPaths: string[] = [];
 
-jest.mock('expo-file-system/legacy', () => ({
+jest.mock('expo-file-system', () => ({
   documentDirectory: 'file:///doc/',
   cacheDirectory: 'file:///cache/',
   EncodingType: { Base64: 'base64', UTF8: 'utf8' },
   readAsStringAsync: jest.fn(async (path: string) => mockMemoryFiles.get(path) ?? ''),
   writeAsStringAsync: jest.fn(async (path: string, content: string) => {
     mockMemoryFiles.set(path, content);
+  }),
+  moveAsync: jest.fn(async ({ from, to }: { from: string; to: string }) => {
+    const content = mockMemoryFiles.get(from);
+    if (content !== undefined) {
+      mockMemoryFiles.set(to, content);
+      mockMemoryFiles.delete(from);
+    }
   }),
   deleteAsync: jest.fn(async (path: string) => {
     mockDeletedPaths.push(path);

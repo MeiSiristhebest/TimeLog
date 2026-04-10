@@ -7,10 +7,14 @@
 
 import { db } from '@/db/client';
 import { activityEvents, ActivityType, ActivityMetadata } from '@/db/schema';
-import { supabase } from '@/lib/supabase';
 import { eq, isNull, desc, and } from 'drizzle-orm';
 import { v7 as uuid } from 'uuid';
 import { devLog } from '@/lib/devLogger';
+import {
+  markRemoteActivitiesAsRead,
+  subscribeToInteractionFeedback,
+  syncInteractionFeedback,
+} from './interactionSyncService';
 
 export interface Activity {
   id: string;
@@ -29,6 +33,8 @@ export interface Activity {
  */
 export async function getUnreadActivities(userId: string): Promise<Activity[]> {
   try {
+    await syncInteractionFeedback(userId);
+
     // Query local database for cached activities
     const localActivities = await db
       .select()
@@ -39,17 +45,21 @@ export async function getUnreadActivities(userId: string): Promise<Activity[]> {
 
     // Map to Activity interface with placeholder names
     // Note: In production, join with profiles table for actor names
-    return localActivities.map((event) => ({
-      id: event.id,
-      type: event.type as ActivityType,
-      storyId: event.storyId,
-      storyTitle: 'Story', // Will be populated from story data
-      actorName: 'Family Member', // Will be populated from profiles
-      actorUserId: event.actorUserId,
-      metadata: event.metadata ? JSON.parse(event.metadata) : {},
-      createdAt: event.createdAt,
-      readAt: event.readAt,
-    }));
+    return localActivities.map((event) => {
+      const metadata = event.metadata ? (JSON.parse(event.metadata) as ActivityMetadata) : {};
+
+      return {
+        id: event.id,
+        type: event.type as ActivityType,
+        storyId: event.storyId,
+        storyTitle: metadata.storyTitle ?? 'Story',
+        actorName: metadata.actorName ?? 'Family Member',
+        actorUserId: event.actorUserId,
+        metadata,
+        createdAt: event.createdAt,
+        readAt: event.readAt,
+      };
+    });
   } catch (error) {
     devLog.error('[activityService] Error fetching unread activities:', error);
     return [];
@@ -64,8 +74,40 @@ export async function markActivityAsRead(activityId: string): Promise<void> {
 
   try {
     await db.update(activityEvents).set({ readAt: now }).where(eq(activityEvents.id, activityId));
+    const activity = await db.query.activityEvents.findFirst({
+      where: eq(activityEvents.id, activityId),
+    });
+    if (activity) {
+      await markRemoteActivitiesAsRead({
+        userId: activity.targetUserId,
+        activityId,
+      });
+    }
   } catch (error) {
     devLog.error('[activityService] Error marking activity as read:', error);
+    throw error;
+  }
+}
+
+export async function markActivitiesAsReadForStory(
+  storyId: string,
+  userId?: string | null
+): Promise<void> {
+  const now = Date.now();
+
+  try {
+    await db
+      .update(activityEvents)
+      .set({ readAt: now })
+      .where(and(eq(activityEvents.storyId, storyId), isNull(activityEvents.readAt)));
+    if (userId) {
+      await markRemoteActivitiesAsRead({
+        userId,
+        storyId,
+      });
+    }
+  } catch (error) {
+    devLog.error('[activityService] Error marking story activities as read:', error);
     throw error;
   }
 }
@@ -122,52 +164,15 @@ export function subscribeToActivities(
   userId: string,
   onNewActivity: (activity: Activity) => void
 ): () => void {
-  const channel = supabase
-    .channel('activity_events')
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'activity_events',
-        filter: `target_user_id=eq.${userId}`,
-      },
-      async (payload) => {
-        const newEvent = payload.new as {
-          id: string;
-          type: string;
-          story_id: string;
-          actor_user_id: string;
-          metadata: Record<string, unknown>;
-          created_at: string;
-        };
-
-        // Insert into local DB
-        await insertActivity(
-          newEvent.type as ActivityType,
-          newEvent.story_id,
-          newEvent.actor_user_id,
-          userId,
-          newEvent.metadata as ActivityMetadata
-        );
-
-        // Notify callback
-        onNewActivity({
-          id: newEvent.id,
-          type: newEvent.type as ActivityType,
-          storyId: newEvent.story_id,
-          storyTitle: 'Story',
-          actorName: 'Family Member',
-          actorUserId: newEvent.actor_user_id,
-          metadata: newEvent.metadata as ActivityMetadata,
-          createdAt: new Date(newEvent.created_at).getTime(),
-          readAt: null,
-        });
-      }
-    )
-    .subscribe();
-
-  return () => {
-    supabase.removeChannel(channel);
-  };
+  return subscribeToInteractionFeedback(userId, () => {
+    void getUnreadActivities(userId)
+      .then((activities) => {
+        if (activities[0]) {
+          onNewActivity(activities[0]);
+        }
+      })
+      .catch((error) => {
+        devLog.warn('[activityService] Failed to refresh interactions after realtime event', error);
+      });
+  });
 }
