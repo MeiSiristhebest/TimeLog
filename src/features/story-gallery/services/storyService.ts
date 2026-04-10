@@ -143,6 +143,14 @@ export async function offloadStory(id: string): Promise<boolean> {
         await FileSystem.deleteAsync(analysisPath, { idempotent: true });
         devLog.info(`[storyService] Deleted analysis cache: ${analysisPath}`);
       }
+
+      if (recording.uploadPath) {
+        const uploadInfo = await FileSystem.getInfoAsync(recording.uploadPath);
+        if (uploadInfo.exists) {
+          await FileSystem.deleteAsync(recording.uploadPath, { idempotent: true });
+          devLog.info(`[storyService] Deleted upload cache: ${recording.uploadPath}`);
+        }
+      }
     } catch (fsError) {
       devLog.error('[storyService] Failed to physically delete files during offload', fsError);
       // We still update the DB because the offload intent is clear, and we'll try again if needed,
@@ -181,6 +189,9 @@ export async function permanentlyDeleteStory(id: string): Promise<void> {
       try {
         await FileSystem.deleteAsync(recording.filePath, { idempotent: true });
         await FileSystem.deleteAsync(getAnalysisPath(recording.filePath), { idempotent: true });
+        if (recording.uploadPath) {
+          await FileSystem.deleteAsync(recording.uploadPath, { idempotent: true });
+        }
       } catch (e) {
         devLog.warn('[storyService] Failed to delete local file during permanent delete', e);
       }
