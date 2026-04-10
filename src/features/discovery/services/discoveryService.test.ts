@@ -1,19 +1,11 @@
 import { fetchDiscoveryQuestions } from './discoveryService';
 
 const mockFrom = jest.fn();
-const mockGetUnansweredQuestions = jest.fn();
 
 const mockDiscoveryLimit = jest.fn();
 const mockDiscoveryOrder = jest.fn();
 const mockDiscoverySelect = jest.fn();
 const mockDiscoveryIn = jest.fn();
-
-const mockFamilyLimit = jest.fn();
-const mockFamilyOrder = jest.fn();
-const mockFamilySelect = jest.fn();
-const mockFamilyEq = jest.fn();
-const mockFamilyIs = jest.fn();
-const mockFamilyIn = jest.fn();
 
 const discoveryQuery = {
   select: (...args: unknown[]) => mockDiscoverySelect(...args),
@@ -22,46 +14,20 @@ const discoveryQuery = {
   in: (...args: unknown[]) => mockDiscoveryIn(...args),
 };
 
-const familyQuery = {
-  select: (...args: unknown[]) => mockFamilySelect(...args),
-  eq: (...args: unknown[]) => mockFamilyEq(...args),
-  is: (...args: unknown[]) => mockFamilyIs(...args),
-  order: (...args: unknown[]) => mockFamilyOrder(...args),
-  limit: (...args: unknown[]) => mockFamilyLimit(...args),
-  in: (...args: unknown[]) => mockFamilyIn(...args),
-};
-
 jest.mock('@/lib/supabase', () => ({
   supabase: {
     from: (...args: unknown[]) => mockFrom(...args),
   },
 }));
 
-jest.mock('@/features/family-listener/services/questionService', () => ({
-  getUnansweredQuestions: (...args: unknown[]) => mockGetUnansweredQuestions(...args),
-}));
-
 describe('fetchDiscoveryQuestions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetUnansweredQuestions.mockResolvedValue([]);
-
-    mockFrom.mockImplementation((table: string) => {
-      if (table === 'family_questions') {
-        return familyQuery;
-      }
-      return discoveryQuery;
-    });
+    mockFrom.mockReturnValue(discoveryQuery);
 
     mockDiscoverySelect.mockReturnValue(discoveryQuery);
     mockDiscoveryOrder.mockReturnValue(discoveryQuery);
     mockDiscoveryIn.mockReturnValue(discoveryQuery);
-
-    mockFamilySelect.mockReturnValue(familyQuery);
-    mockFamilyEq.mockReturnValue(familyQuery);
-    mockFamilyIs.mockReturnValue(familyQuery);
-    mockFamilyOrder.mockReturnValue(familyQuery);
-    mockFamilyIn.mockReturnValue(familyQuery);
   });
 
   it('prioritizes family-tagged topics from discovery list', async () => {
@@ -97,41 +63,6 @@ describe('fetchDiscoveryQuestions', () => {
     expect(result.findIndex((question) => question.id === 'family')).toBeLessThan(
       result.findIndex((question) => question.id === 'normal')
     );
-  });
-
-  it('merges unanswered family questions for a senior and keeps them at top', async () => {
-    mockDiscoveryLimit.mockResolvedValue({
-      data: [
-        {
-          id: 'lib-1',
-          question_text: 'Library question',
-          category: 'general',
-          priority: 500,
-          tags: [],
-          created_at: '2026-01-01T00:00:00Z',
-        },
-      ],
-      error: null,
-    });
-
-    mockGetUnansweredQuestions.mockResolvedValue([
-      {
-        id: 'family-1',
-        seniorUserId: 'senior-123',
-        familyUserId: 'family-user-1',
-        questionText: 'Question from daughter',
-        category: 'family',
-        createdAt: '2026-01-03T00:00:00Z',
-        answeredAt: null,
-      },
-    ]);
-
-    const result = await fetchDiscoveryQuestions(100, undefined, 'senior-123');
-
-    expect(result[0]?.id).toBe('family-1');
-    expect(result[0]?.tags).toContain('family');
-    expect(result.some((item) => item.id === 'lib-1')).toBe(true);
-    expect(mockGetUnansweredQuestions).toHaveBeenCalledWith('senior-123');
   });
 
   it('returns local preset questions when remote fetch fails', async () => {

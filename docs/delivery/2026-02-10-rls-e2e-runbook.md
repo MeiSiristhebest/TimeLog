@@ -5,6 +5,15 @@ Generate reproducible, environment-backed RLS evidence for:
 - senior self-access
 - linked family access
 - unlinked user denial
+- senior activity feed access via `activity_events`
+
+## Authoritative Policy References
+- `drizzle/policies/supabase-audio-recordings-rls.sql`
+- `drizzle/policies/supabase-story-comments.sql`
+- `drizzle/policies/supabase-family-invites.sql`
+- `drizzle/policies/supabase-device-codes.sql`
+- `drizzle/policies/supabase-activity-events.sql`
+- `docs/delivery/2026-04-07-family-web-contract-checklist.md`
 
 ## Required Environment Variables
 - `EXPO_PUBLIC_SUPABASE_URL`
@@ -28,3 +37,9 @@ Generate reproducible, environment-backed RLS evidence for:
 - `RLS-02` PASS
 - `RLS-03` PASS
 - `RLS-04` PASS
+
+## Additional Cross-Platform Checks After RLS Run
+- Confirm `public.activity_events` is readable only by the target storyteller account
+- Confirm a linked family user can mutate `story_comments` / `story_reactions` but cannot query unrelated stories
+- Confirm the Web player only receives signed URLs through the protected route:
+  [route.ts](d:/developWorkPlaces/Senior%20Project/TimeLog-Web/src/app/api/stories/[id]/playback/route.ts)

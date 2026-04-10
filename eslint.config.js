@@ -17,6 +17,8 @@ module.exports = defineConfig([
       'agents/**',
       'android/**',
       'ios/**',
+      '.kilo/**',
+      'supabase/functions/**',
     ],
   },
   {

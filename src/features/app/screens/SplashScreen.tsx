@@ -58,8 +58,7 @@ export default function SplashScreen(): JSX.Element {
       // This prevents a jarring "flash" of the splash screen
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      const [role, seenWelcome, sessionResult] = await Promise.all([
-        getStoredRole(),
+      const [seenWelcome, sessionResult] = await Promise.all([
         hasSeenWelcome(),
         refetchSession(),
       ]);
@@ -67,32 +66,17 @@ export default function SplashScreen(): JSX.Element {
 
       if (!resolvedSession) {
         setUnauthenticated();
-        if (role === ROLE_STORYTELLER) {
-          router.replace(APP_ROUTES.DEVICE_CODE);
-          return;
-        }
-        if (role === ROLE_FAMILY) {
-          router.replace(APP_ROUTES.LOGIN);
-          return;
-        }
-        router.replace(seenWelcome ? APP_ROUTES.ROLE : APP_ROUTES.WELCOME);
+        router.replace(seenWelcome ? APP_ROUTES.DEVICE_CODE : APP_ROUTES.WELCOME);
         return;
       }
 
       const userId = resolvedSession.user.id;
       setAuthenticated(userId);
 
-      if (role === ROLE_STORYTELLER) {
-        router.replace(APP_ROUTES.DEVICE_CODE);
-        return;
-      }
-      if (role === ROLE_FAMILY) {
-        router.replace(APP_ROUTES.TABS);
-        return;
-      }
-
-      // Fallback: no role stored but session exists -> assume generic home or tabs
-      router.replace(APP_ROUTES.TABS);
+      // In the slimmed mobile app, all users land in the same recorder-centric experience.
+      // Already paired/authed users usually start at DEVICE_CODE to verify state 
+      // or TABS if fully functional.
+      router.replace(APP_ROUTES.DEVICE_CODE);
     };
 
     restore();

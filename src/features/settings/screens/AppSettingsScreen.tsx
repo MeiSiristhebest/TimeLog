@@ -55,9 +55,6 @@ export function AppSettingsScreen(): JSX.Element {
 
         {/* Group 2: General */}
         <SettingsSection title={STRINGS.sections.general}>
-          <Link href={APP_ROUTES.SETTINGS_NOTIFICATIONS} asChild>
-            <SettingsRow label={STRINGS.items.notifications} />
-          </Link>
           <Link href={APP_ROUTES.SETTINGS_DISPLAY_ACCESSIBILITY} asChild>
             <SettingsRow label={STRINGS.items.display} />
           </Link>

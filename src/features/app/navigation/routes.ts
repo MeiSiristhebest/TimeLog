@@ -8,7 +8,6 @@ export const APP_ROUTES = {
   SETTINGS: '/(tabs)/settings',
   SETTINGS_APP_SETTINGS: '/(tabs)/settings/app-settings',
   SETTINGS_ACCOUNT_SECURITY: '/(tabs)/settings/account-security',
-  SETTINGS_NOTIFICATIONS: '/(tabs)/settings/notifications',
   SETTINGS_DISPLAY_ACCESSIBILITY: '/(tabs)/settings/display-accessibility',
   SETTINGS_DATA_STORAGE: '/(tabs)/settings/data-storage',
   SETTINGS_ABOUT_HELP: '/(tabs)/settings/about-help',
@@ -17,7 +16,6 @@ export const APP_ROUTES = {
   SETTINGS_DELETED_ITEMS: '/(tabs)/settings/deleted-items',
   LOGIN: '/login',
   DEVICE_CODE: '/device-code',
-  ROLE: '/role',
   WELCOME: '/welcome',
   HELP: '/help',
   UPGRADE_ACCOUNT: '/upgrade-account',
@@ -29,6 +27,10 @@ export function toStoryRoute(storyId: string): Href {
 
 export function toStoryEditRoute(storyId: string): Href {
   return `/story/edit?id=${encodeURIComponent(storyId)}` as Href;
+}
+
+export function toStoryCommentsRoute(storyId: string): Href {
+  return `/story/comments?id=${encodeURIComponent(storyId)}` as Href;
 }
 
 export function toStoryReadOnlyDeletedRoute(storyId: string): Href {

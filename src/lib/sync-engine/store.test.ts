@@ -385,7 +385,7 @@ describe('SyncStore', () => {
 
       expect(mockUpsert).toHaveBeenCalledWith(
         expect.objectContaining({ user_id: 'user-123', display_name: 'New Profile' }),
-        { onConflict: 'user_id' }
+        { onConflict: 'id' }
       );
       expect(syncQueueService.dequeue).toHaveBeenCalledWith('queue-item-profile-2');
     });

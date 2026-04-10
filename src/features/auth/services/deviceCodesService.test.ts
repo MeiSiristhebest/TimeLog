@@ -1,10 +1,20 @@
 import { generateDeviceCode, listFamilyDevices, revokeDevice } from './deviceCodesService';
 import { supabase } from '@/lib/supabase';
+import { getStoredDeviceCode, setStoredDeviceCode } from './deviceCodeStorage';
+import {
+  checkDeviceCodeRateLimit,
+  recordDeviceCodeAttempt,
+} from './deviceCodeRateLimiter';
 
 jest.mock('@/lib/supabase', () => ({
   supabase: {
     rpc: jest.fn(),
   },
+}));
+
+jest.mock('./deviceCodeStorage', () => ({
+  getStoredDeviceCode: jest.fn(() => null),
+  setStoredDeviceCode: jest.fn(),
 }));
 
 jest.mock('./deviceCodeRateLimiter', () => ({
@@ -35,6 +45,12 @@ describe('deviceCodesService', () => {
         code: 'ABC123',
         expiresAt: '2026-01-17T00:00:00Z',
       });
+      expect(checkDeviceCodeRateLimit).toHaveBeenCalledWith('device-code-global');
+      expect(recordDeviceCodeAttempt).toHaveBeenCalledWith('device-code-global');
+      expect(setStoredDeviceCode).toHaveBeenCalledWith({
+        code: 'ABC123',
+        expiresAt: '2026-01-17T00:00:00Z',
+      });
     });
 
     it('should handle array response from RPC', async () => {
@@ -57,6 +73,22 @@ describe('deviceCodesService', () => {
       });
     });
 
+    it('should return stored code without calling rpc again', async () => {
+      (getStoredDeviceCode as jest.Mock).mockReturnValueOnce({
+        code: 'CACHED1',
+        expiresAt: '2026-01-19T00:00:00Z',
+      });
+
+      const result = await generateDeviceCode();
+
+      expect(result).toEqual({
+        code: 'CACHED1',
+        expiresAt: '2026-01-19T00:00:00Z',
+      });
+      expect(supabase.rpc).not.toHaveBeenCalled();
+      expect(checkDeviceCodeRateLimit).not.toHaveBeenCalled();
+    });
+
     it('should throw rate limit error when exceeded', async () => {
       (supabase.rpc as jest.Mock).mockResolvedValue({
         data: null,
@@ -64,7 +96,7 @@ describe('deviceCodesService', () => {
       });
 
       await expect(generateDeviceCode()).rejects.toThrow(
-        'You have reached the hourly limit. Please try again later.'
+        'You have reached the limit for generating codes. Please try again in an hour.'
       );
     });
 
@@ -74,7 +106,9 @@ describe('deviceCodesService', () => {
         error: { message: 'Database connection failed' },
       });
 
-      await expect(generateDeviceCode()).rejects.toThrow('Database connection failed');
+      await expect(generateDeviceCode()).rejects.toThrow(
+        'A connection error occurred while managing devices. Please try again.'
+      );
     });
 
     it('should throw error when response is missing code', async () => {
@@ -194,7 +228,9 @@ describe('deviceCodesService', () => {
         error: { message: 'Unauthorized access' },
       });
 
-      await expect(listFamilyDevices()).rejects.toThrow('Unauthorized access');
+      await expect(listFamilyDevices()).rejects.toThrow(
+        'A connection error occurred while managing devices. Please try again.'
+      );
     });
   });
 
@@ -220,7 +256,9 @@ describe('deviceCodesService', () => {
         error: { message: 'Device not found' },
       });
 
-      await expect(revokeDevice('invalid-device')).rejects.toThrow('Device not found');
+      await expect(revokeDevice('invalid-device')).rejects.toThrow(
+        'A connection error occurred while managing devices. Please try again.'
+      );
     });
 
     it('should succeed silently on success', async () => {

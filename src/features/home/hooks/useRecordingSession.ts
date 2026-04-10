@@ -63,6 +63,7 @@ export function useRecordingSession({
       return;
     }
 
+    isStartingRef.current = true;
     setIsStarting(true);
     try {
       const handle = await startRecordingStream({
@@ -93,6 +94,7 @@ export function useRecordingSession({
       }
       throw error;
     } finally {
+      isStartingRef.current = false;
       setIsStarting(false);
     }
   }, [userId, topicId, onSilence, onSilenceThreshold, updateAmplitude, onStart, recordingHandle]);
@@ -100,6 +102,7 @@ export function useRecordingSession({
   const stop = useCallback(async () => {
     if (!recordingHandle || isStoppingRef.current) return;
     
+    isStoppingRef.current = true;
     setIsStopping(true);
     try {
       const finalized = await recordingHandle.stop();
@@ -119,6 +122,7 @@ export function useRecordingSession({
       setPausedAtMs(null);
       setTotalPausedMs(0);
       setDurationSec(0);
+      isStoppingRef.current = false;
       setIsStopping(false);
       updateAmplitude(-160);
     }
@@ -127,6 +131,7 @@ export function useRecordingSession({
   const pause = useCallback(async () => {
     if (!recordingHandle || isTransitioningRef.current || isStoppingRef.current) return;
 
+    isTransitioningRef.current = true;
     setIsTransitioning(true);
     try {
       await recordingHandle.pause();
@@ -137,6 +142,7 @@ export function useRecordingSession({
       devLog.warn('[useRecordingSession] Failed to pause', error);
       showErrorToast('Unable to pause right now.');
     } finally {
+      isTransitioningRef.current = false;
       setIsTransitioning(false);
     }
   }, [recordingHandle, onPause]);
@@ -144,6 +150,7 @@ export function useRecordingSession({
   const resume = useCallback(async () => {
     if (!recordingHandle || isTransitioningRef.current || isStoppingRef.current) return;
 
+    isTransitioningRef.current = true;
     setIsTransitioning(true);
     try {
       await recordingHandle.resume();
@@ -157,6 +164,7 @@ export function useRecordingSession({
       devLog.warn('[useRecordingSession] Failed to resume', error);
       showErrorToast('Unable to resume right now.');
     } finally {
+      isTransitioningRef.current = false;
       setIsTransitioning(false);
     }
   }, [recordingHandle, pausedAtMs, onResume]);

@@ -4,121 +4,18 @@ import { Share } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
-import { getStoredRole, setStoredRole } from '@/features/auth/services/roleStorage';
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { showSuccessToast } from '@/components/ui/feedback/toast';
 import { AUTH_STRINGS, MOCK_CONSENT_ITEMS } from '../data/mockAuthData';
 import {
   DeviceCodeResult,
   generateDeviceCode,
-  listFamilyDevices,
-  revokeDevice,
-  DeviceSummary,
 } from '../services/deviceCodesService';
 import { generateRecoveryCode, getActiveRecoveryCode } from '../services/recoveryCodeService';
 import { useActiveSession } from './useActiveSession';
 import { devLog } from '@/lib/devLogger';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
 import { ensureStorytellerSession } from '../services/storytellerSessionService';
-
-// Hook for Role Screen Logic
-export function useRoleLogic() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const hasInitializedRef = useRef(false);
-  const { session, refetch: refetchSession } = useActiveSession();
-
-  // Constants to avoid magic strings re-use
-  const ROLE_STORYTELLER = 'storyteller';
-  const ROLE_FAMILY = 'family';
-  const ROLE_LISTENER_LEGACY = 'listener';
-
-  useEffect(() => {
-    if (hasInitializedRef.current) {
-      return;
-    }
-    hasInitializedRef.current = true;
-
-    async function checkAuthState() {
-      try {
-        const rolePromise = getStoredRole();
-        const sessionResult = await refetchSession();
-        const resolvedSession = sessionResult.data ?? session;
-        const role = await rolePromise;
-
-        const isStorytellerRole = role === ROLE_STORYTELLER;
-        const isFamilyRole = role === ROLE_FAMILY || role === ROLE_LISTENER_LEGACY;
-
-        if (resolvedSession) {
-          devLog.info('[useRoleLogic] Found existing session, redirecting to app');
-          if (isStorytellerRole) {
-            router.replace(APP_ROUTES.DEVICE_CODE);
-          } else {
-            router.replace(APP_ROUTES.LOGIN);
-          }
-          return;
-        }
-
-        // No session, check stored role for routing
-        if (isStorytellerRole) {
-          try {
-            await ensureStorytellerSession();
-            router.replace(APP_ROUTES.TABS);
-            return;
-          } catch (error) {
-            devLog.warn('[useRoleLogic] Failed to bootstrap storyteller session', error);
-          }
-          return;
-        }
-        if (isFamilyRole) {
-          router.replace(APP_ROUTES.LOGIN);
-          return;
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    void checkAuthState();
-  }, [router, refetchSession, session]);
-
-  const handleSelect = useCallback(async (role: string) => {
-    try {
-      await setStoredRole(role);
-
-      if (role === ROLE_STORYTELLER) {
-        const bootstrap = await ensureStorytellerSession();
-        devLog.info('[useRoleLogic] Storyteller session ready via', bootstrap.source);
-
-        router.replace(APP_ROUTES.TABS);
-      } else {
-        // Family users need to login
-        router.replace(APP_ROUTES.LOGIN);
-      }
-    } catch (error) {
-      devLog.error('[useRoleLogic] Failed to handle role selection:', error);
-      HeritageAlert.show({
-        title: 'Error',
-        message: 'Failed to continue. Please try again.',
-        variant: 'error',
-      });
-    }
-  }, [router]);
-
-  const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace(APP_ROUTES.ROOT);
-    }
-  };
-
-  return {
-    state: { loading },
-    actions: { handleSelect, handleBack },
-    constants: { ROLE_STORYTELLER, ROLE_FAMILY },
-  };
-}
 
 // Hook for Recovery Code Logic
 export function useRecoveryCodeLogic() {
@@ -242,11 +139,7 @@ export function useDeviceCodeLogic() {
   const router = useRouter();
 
   useEffect(() => {
-    getStoredRole().then((role) => {
-      if (role !== 'storyteller') {
-        router.replace(APP_ROUTES.ROLE);
-      }
-    });
+    // Mobile app is Storyteller-only. No role checks required at this level.
   }, [router]);
 
   const loadCode = useCallback(async () => {
@@ -280,13 +173,16 @@ export function useDeviceCodeLogic() {
         message,
         variant: 'error',
       });
-      router.replace(APP_ROUTES.ROLE);
+      router.replace(APP_ROUTES.WELCOME);
     }
   }, [router]);
 
   const handleBack = () => {
-    if (router.canGoBack()) router.back();
-    else router.replace(APP_ROUTES.ROLE);
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(APP_ROUTES.WELCOME);
+    }
   };
 
   const formattedCode = codeData
@@ -299,81 +195,6 @@ export function useDeviceCodeLogic() {
   return {
     state: { codeData, error, loading, formattedCode },
     actions: { loadCode, handleReady, handleBack },
-  };
-}
-
-// Hook for Device Management Logic (Family)
-export function useDeviceManagementLogic() {
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [code, setCode] = useState<string | null>(null);
-  const [expiresAt, setExpiresAt] = useState<string | null>(null);
-  const [devices, setDevices] = useState<DeviceSummary[]>([]);
-  const [error, setError] = useState<string>('');
-
-  const loadDevices = useCallback(async () => {
-    try {
-      const list = await listFamilyDevices();
-      setDevices(list);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : AUTH_STRINGS.deviceManagement.alerts.error.load;
-      setError(message);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadDevices();
-  }, [loadDevices]);
-
-  const handleGenerate = async () => {
-    setStatus('loading');
-    setError('');
-    try {
-      const result = await generateDeviceCode();
-      setCode(result.code);
-      setExpiresAt(result.expiresAt);
-      setStatus('success');
-      HeritageAlert.show({
-        title: AUTH_STRINGS.deviceManagement.alerts.codeReady.title,
-        message: AUTH_STRINGS.deviceManagement.alerts.codeReady.message
-          .replace('{code}', result.code)
-          .replace('{time}', new Date(result.expiresAt).toLocaleTimeString()),
-        variant: 'success',
-      });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : AUTH_STRINGS.deviceManagement.alerts.error.generate;
-      setStatus('error');
-      setError(message);
-    }
-  };
-
-  const handleRevoke = useCallback(
-    async (id: string) => {
-      try {
-        await revokeDevice(id);
-        await loadDevices();
-        HeritageAlert.show({
-          title: AUTH_STRINGS.deviceManagement.alerts.revoked.title,
-          message: AUTH_STRINGS.deviceManagement.alerts.revoked.message,
-          variant: 'success',
-        });
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : AUTH_STRINGS.deviceManagement.alerts.error.revoke;
-        HeritageAlert.show({
-          title: 'Error',
-          message: message,
-          variant: 'error',
-        });
-      }
-    },
-    [loadDevices]
-  );
-
-  return {
-    state: { status, code, expiresAt, devices, error },
-    actions: { handleGenerate, handleRevoke },
   };
 }
 

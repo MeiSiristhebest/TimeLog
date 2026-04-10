@@ -23,6 +23,7 @@
     "perf:benchmark": "node scripts/perf-benchmark.mjs",
     "perf:device:report": "node scripts/device-perf-report.mjs",
     "security:rls:e2e": "node scripts/rls-e2e-check.mjs",
+    "types:supabase": "powershell -ExecutionPolicy Bypass -File ./scripts/generate-supabase-types.ps1",
     "lint:format": "prettier -c \"**/*.{js,jsx,ts,tsx,json}\"",
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
     "web": "expo start --web",

@@ -4,12 +4,12 @@
  */
 
 import { TusTransport } from './transport';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import * as Crypto from 'expo-crypto';
 import { Upload } from 'tus-js-client';
 
 // Mock expo-file-system
-jest.mock('expo-file-system/legacy', () => ({
+jest.mock('expo-file-system', () => ({
   getInfoAsync: jest.fn(),
   readAsStringAsync: jest.fn(),
   documentDirectory: 'file:///mock/documents/',
@@ -23,6 +23,25 @@ jest.mock('expo-crypto', () => ({
   digest: jest.fn(),
   CryptoDigestAlgorithm: {
     MD5: 'md5',
+  },
+}));
+
+jest.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: {
+      getSession: jest.fn().mockResolvedValue({
+        data: {
+          session: {
+            access_token: 'test-access-token',
+          },
+        },
+      }),
+    },
+    storage: {
+      from: jest.fn(() => ({
+        remove: jest.fn().mockResolvedValue({ error: null }),
+      })),
+    },
   },
 }));
 

@@ -58,7 +58,7 @@ export default function WelcomeScreen(): JSX.Element {
     try {
       await setWelcomeSeen(true);
     } finally {
-      router.replace(APP_ROUTES.ROLE);
+      router.replace(APP_ROUTES.DEVICE_CODE);
     }
   };
 

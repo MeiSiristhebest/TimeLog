@@ -53,7 +53,7 @@ describe('recoveryCodeService', () => {
       data: {
         id: 'code-1',
         user_id: 'user-1',
-        code: 'RCV-111-222',
+        code: 'REC-111111',
         created_at: '2026-02-14T00:00:00Z',
         expires_at: '2026-03-14T00:00:00Z',
         is_active: true,
@@ -64,7 +64,7 @@ describe('recoveryCodeService', () => {
 
     const result = await getActiveRecoveryCode();
 
-    expect(result?.code).toBe('RCV-111-222');
+    expect(result?.code).toBe('REC-111111');
     expect(mockFrom).toHaveBeenCalledWith('recovery_codes');
   });
 
@@ -84,7 +84,7 @@ describe('recoveryCodeService', () => {
       data: {
         id: 'code-2',
         user_id: 'user-1',
-        code: 'RCV-333-444',
+        code: 'REC-333444',
         created_at: '2026-02-14T00:00:00Z',
         expires_at: '2026-03-14T00:00:00Z',
         is_active: true,
@@ -95,11 +95,11 @@ describe('recoveryCodeService', () => {
 
     const result = await generateRecoveryCode();
 
-    expect(result.code).toBe('RCV-333-444');
+    expect(result.code).toBe('REC-333444');
     expect(mockInsert).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: 'user-1',
-        code: expect.stringMatching(/^RCV-\d{3}-\d{3}$/),
+        code: expect.stringMatching(/^REC-\d{6}$/),
       })
     );
   });
@@ -124,7 +124,7 @@ describe('recoveryCodeService', () => {
       error: { message: 'rpc error' },
     });
 
-    const result = await validateRecoveryCode('RCV-000-000');
+    const result = await validateRecoveryCode('REC-000000');
 
     expect(result).toEqual({
       isValid: false,

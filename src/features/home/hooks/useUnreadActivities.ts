@@ -9,6 +9,7 @@ import type { UseQueryResult } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { getUnreadActivities, subscribeToActivities, Activity } from '../services/activityService';
+import { updateAppBadge } from '@/lib/notifications/badgeService';
 
 const QUERY_KEY = 'unread-activities';
 
@@ -48,13 +49,19 @@ export function useUnreadActivities(): UseUnreadActivitiesResult {
 
     const unsubscribe = subscribeToActivities(sessionUserId, (newActivity) => {
       queryClient.setQueryData<Activity[]>(queryKey, (old = []) => {
-        // Add new activity at the beginning
-        return [newActivity, ...old];
+        const deduped = old.filter((activity) => activity.id !== newActivity.id);
+        return [newActivity, ...deduped];
       });
     });
 
     return unsubscribe;
   }, [sessionUserId, queryClient, queryKey]);
+
+  useEffect(() => {
+    if (!sessionUserId) return;
+
+    void updateAppBadge(sessionUserId);
+  }, [activities.length, sessionUserId]);
 
   return {
     activities,

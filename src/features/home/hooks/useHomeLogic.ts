@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { AppState, AppStateStatus, DeviceEventEmitter } from 'react-native';
+import { AppState, DeviceEventEmitter } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 
 import { useTTS } from '@/features/recorder/hooks/useTTS';
 import { getQuestionById } from '@/features/recorder/data/topicQuestions';
@@ -23,11 +22,14 @@ import { useProfile } from '@/features/settings/hooks/useProfile';
 import { resolveUploadAsset, type UploadAsset } from '@/lib/sync-engine/transcode';
 import { secureRecordingAssetsAtRest } from '@/lib/audioEncryption';
 import { devLog } from '@/lib/devLogger';
-import { APP_ROUTES, toStoryRoute } from '@/features/app/navigation/routes';
+import {
+  APP_ROUTES,
+  toStoryCommentsRoute,
+  toStoryRoute,
+} from '@/features/app/navigation/routes';
 import { HOME_STRINGS } from '../data/mockHomeData';
 import { isCloudAiEnabledLocally } from '@/lib/cloudPolicy';
 import { markQuestionAsAnswered } from '@/features/recorder/services/topicService';
-import { prepareRecordingTarget } from '@/features/recorder/services/recorderService';
 import type { TopicQuestion } from '@/types/entities';
 
 import { useHomeDisplayData } from './useHomeDisplayData';
@@ -139,13 +141,31 @@ export function useHomeLogic() {
     userId: sessionUserId ?? undefined,
     topicId: tts.currentQuestion?.id,
     onSilence: () => {
+      if (recordingMode === 'ai' && !isAiAvailable) {
+        return;
+      }
       const ad = aiDialogRef.current;
-      if (recordingMode === 'ai' && ad?.isConnected && ad?.dialogMode === 'DIALOG') return;
+      if (
+        recordingMode === 'ai' &&
+        isAiAvailable &&
+        ad?.isConnected &&
+        ad?.dialogMode === 'DIALOG'
+      ) {
+        return;
+      }
       void tts.replay();
     },
     onSilenceThreshold: () => {
+      if (recordingMode === 'ai' && !isAiAvailable) {
+        return;
+      }
       const ad = aiDialogRef.current;
-      if (recordingMode === 'ai' && ad?.isConnected && ad?.dialogMode === 'DIALOG') {
+      if (
+        recordingMode === 'ai' &&
+        isAiAvailable &&
+        ad?.isConnected &&
+        ad?.dialogMode === 'DIALOG'
+      ) {
         ad.startWaitingForAiResponse();
         return;
       }
@@ -225,8 +245,7 @@ export function useHomeLogic() {
   useEffect(() => {
     const sub = AppState.addEventListener('change', (next) => {
       if (next === 'active' && sessionUserId) {
-        void updateAppBadge(sessionUserId);
-        refetch();
+        void refetch().then(() => updateAppBadge(sessionUserId));
       }
     });
     if (sessionUserId) void updateAppBadge(sessionUserId);
@@ -266,7 +285,10 @@ export function useHomeLogic() {
 
     if (mode === 'ai') {
       if (!hasCloudAiInfra) { showErrorToast('AI mode not configured.'); return; }
-      if (!effectiveCloudAiEnabled) { showErrorToast('Enable AI in Settings first.'); return; }
+      if (!effectiveCloudAiEnabled) {
+        showErrorToast('Enable Cloud AI Processing in Settings > Data & Storage first.');
+        return;
+      }
       if (!isSyncOnline) { showErrorToast('Network unavailable.'); return; }
     }
 
@@ -322,6 +344,7 @@ export function useHomeLogic() {
       navigateToSettings: () => router.push(APP_ROUTES.SETTINGS),
       navigateToListen: () => router.push(APP_ROUTES.GALLERY),
       navigateToStory: (id: string) => router.push(toStoryRoute(id)),
+      navigateToStoryComments: (id: string) => router.push(toStoryCommentsRoute(id)),
     },
   }), [
     recording, lastSavedId, tts, isCurrentTopicAnswered, formattedDate, greeting, 

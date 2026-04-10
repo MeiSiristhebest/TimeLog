@@ -42,6 +42,8 @@ export const activityEvents = sqliteTable(
  * Type for activity metadata JSON field
  */
 export interface ActivityMetadata {
+  actorName?: string;
+  storyTitle?: string;
   commentText?: string;
   reactionType?: 'heart';
   commentId?: string;

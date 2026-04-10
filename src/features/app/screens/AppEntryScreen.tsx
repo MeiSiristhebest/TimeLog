@@ -7,7 +7,6 @@ import { Animated } from '@/tw/animated';
 import { FadeIn, ZoomIn } from 'react-native-reanimated';
 
 import { Container } from '@/components/ui/Container';
-import { getStoredRole } from '@/features/auth/services/roleStorage';
 import { hasSeenWelcome } from '@/features/auth/services/onboardingStorage';
 import { useHeritageTheme } from '@/theme/heritage';
 import { devLog } from '@/lib/devLogger';
@@ -15,10 +14,6 @@ import { APP_ROUTES } from '@/features/app/navigation/routes';
 
 // Assets
 const BRAND_LOGO = require('../../../../assets/images/brand_logo.png');
-
-const ROLE_STORYTELLER = 'storyteller';
-const ROLE_FAMILY = 'family';
-const ROLE_LISTENER = 'listener';
 
 export default function AppEntryScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
@@ -28,26 +23,20 @@ export default function AppEntryScreen(): JSX.Element {
 
     const bootstrap = async () => {
       try {
-        const [storedRole, welcomeSeen] = await Promise.all([getStoredRole(), hasSeenWelcome()]);
+        const welcomeSeen = await hasSeenWelcome();
         if (isCancelled) return;
 
-        if (storedRole === ROLE_STORYTELLER) {
+        // In Slimmed Mobile app, we assume Storyteller role by default.
+        // New users go to Welcome; Returning users go to Device Code (pairing) or Main Tabs if authed.
+        if (welcomeSeen) {
           router.replace(APP_ROUTES.DEVICE_CODE);
-          return;
+        } else {
+          router.replace(APP_ROUTES.WELCOME);
         }
-        if (storedRole === ROLE_FAMILY) {
-          router.replace(APP_ROUTES.TABS);
-          return;
-        }
-        if (storedRole === ROLE_LISTENER) {
-          router.replace(APP_ROUTES.TABS);
-          return;
-        }
-        router.replace(welcomeSeen ? APP_ROUTES.ROLE : APP_ROUTES.WELCOME);
       } catch (error) {
-        devLog.error('[AppEntryScreen] Failed to resolve stored role:', error);
+        devLog.error('[AppEntryScreen] Failed to bootstrap app:', error);
         if (!isCancelled) {
-          router.replace(APP_ROUTES.ROLE);
+          router.replace(APP_ROUTES.WELCOME);
         }
       }
     };
