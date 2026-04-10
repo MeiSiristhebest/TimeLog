@@ -10,6 +10,10 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  getAcceptedFamilyRecipientIds,
+  type FamilyMemberContractRow,
+} from '../_shared/family-contract.ts';
 
 const DEFAULT_EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
@@ -38,6 +42,13 @@ interface RequestPayload {
   record: Record<string, unknown>;
   type: 'new_story' | 'new_comment';
   old_record?: Record<string, unknown>;
+}
+
+interface FamilyMemberRecipientRow {
+  id: string;
+  family_id: string;
+  user_id: string | null;
+  status: string;
 }
 
 serve(async (req: Request) => {
@@ -73,9 +84,9 @@ serve(async (req: Request) => {
 
       const { data: familyMembers, error: familyError } = await supabase
         .from('family_members')
-        .select('family_user_id')
-        .eq('senior_user_id', seniorUserId)
-        .eq('status', 'active');
+        .select('id, family_id, user_id, status')
+        .eq('family_id', seniorUserId)
+        .eq('status', 'accepted');
 
       if (familyError) {
         console.error('Error fetching family members:', familyError);
@@ -83,20 +94,25 @@ serve(async (req: Request) => {
       }
 
       if (familyMembers && familyMembers.length > 0) {
-        const userIds = familyMembers.map((fm) => fm.family_user_id);
+        const userIds = getAcceptedFamilyRecipientIds(
+          familyMembers as FamilyMemberRecipientRow[] as FamilyMemberContractRow[],
+          seniorUserId
+        );
 
-        // Get push tokens for family members
-        const { data: tokens, error: tokensError } = await supabase
-          .from('user_push_tokens')
-          .select('push_token')
-          .in('user_id', userIds);
+        if (userIds.length > 0) {
+          // Get push tokens for family members
+          const { data: tokens, error: tokensError } = await supabase
+            .from('user_push_tokens')
+            .select('push_token')
+            .in('user_id', userIds);
 
-        if (tokensError) {
-          console.error('Error fetching push tokens:', tokensError);
-          throw tokensError;
+          if (tokensError) {
+            console.error('Error fetching push tokens:', tokensError);
+            throw tokensError;
+          }
+
+          recipients = tokens?.map((t) => t.push_token) || [];
         }
-
-        recipients = tokens?.map((t) => t.push_token) || [];
       }
 
       // English notification content

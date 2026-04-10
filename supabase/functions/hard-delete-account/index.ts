@@ -1,5 +1,9 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  getFamilyMemberRowIdsForCleanup,
+  type FamilyMemberContractRow,
+} from '../_shared/family-contract.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +16,14 @@ const STORAGE_REMOVE_CHUNK_SIZE = 50;
 type RemoteRecordingRow = {
   id: string;
   file_path: string | null;
+};
+
+type FamilyMemberCleanupRow = {
+  id: string;
+  family_id: string;
+  user_id: string | null;
+  invited_by: string | null;
+  status: string;
 };
 
 type HardDeleteResponse = {
@@ -131,6 +143,41 @@ serve(async (req) => {
     }
 
     const deleteTasks: { label: string; run: () => Promise<void> }[] = [
+      {
+        label: 'family_members',
+        run: async () => {
+          const { data, error } = await adminClient
+            .from('family_members')
+            .select('id, family_id, user_id, invited_by, status')
+            .or(
+              `family_id.eq.${requestedUserId},user_id.eq.${requestedUserId},invited_by.eq.${requestedUserId}`
+            );
+
+          if (error) throw new Error(error.message);
+
+          const rowIds = getFamilyMemberRowIdsForCleanup(
+            ((data ?? []) as FamilyMemberCleanupRow[]).map((row) => ({
+              id: row.id,
+              family_id: row.family_id,
+              user_id: row.user_id,
+              invited_by: row.invited_by,
+              status: row.status,
+            })) as FamilyMemberContractRow[],
+            requestedUserId
+          );
+
+          if (rowIds.length === 0) {
+            return;
+          }
+
+          const { error: deleteError } = await adminClient
+            .from('family_members')
+            .delete()
+            .in('id', rowIds);
+
+          if (deleteError) throw new Error(deleteError.message);
+        },
+      },
       {
         label: 'story_comments',
         run: async () => {
