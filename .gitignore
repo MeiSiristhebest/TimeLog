@@ -80,3 +80,7 @@ timelog-sa-key.json
 *.tar.gz
 *.bak
 *.swp
+cesconfig.jsonc
+nativewind-env.d.ts
+screens.csv
+**/*.log
