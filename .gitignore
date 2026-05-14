@@ -37,6 +37,7 @@ scripts/*.log
 .claude/
 .codex/
 .mcp.json
+.kilo/
 .shared/
 .sisyphus/
 .skill/
