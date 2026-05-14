@@ -22,21 +22,25 @@ function sanitizeErrorMessage(input?: string | null): string | null {
 }
 
 export async function recordSyncEvent(input: SyncEventInput): Promise<void> {
-  const { error } = await supabase.from('sync_events').insert([
-    {
-      user_id: input.userId,
-      recording_id: input.recordingId ?? null,
-      queue_item_id: input.queueItemId ?? null,
-      event_type: input.eventType,
-      bucket: input.bucket,
-      storage_path: input.storagePath,
-      attempt: input.attempt,
-      error_message: sanitizeErrorMessage(input.errorMessage),
-    },
-  ]);
+  try {
+    const { error } = await supabase.from('sync_events').insert([
+      {
+        user_id: input.userId,
+        recording_id: input.recordingId ?? null,
+        queue_item_id: input.queueItemId ?? null,
+        event_type: input.eventType,
+        bucket: input.bucket,
+        storage_path: input.storagePath,
+        attempt: input.attempt,
+        error_message: sanitizeErrorMessage(input.errorMessage),
+      },
+    ]);
 
-  if (error) {
-    throw new Error(error.message);
+    if (error) {
+      // Just log and don't throw to avoid blocking the caller's main logic
+      console.warn('[metrics] Failed to record sync event:', error.message);
+    }
+  } catch (err) {
+    console.warn('[metrics] Unexpected error while recording sync event:', err);
   }
 }
-

@@ -13,7 +13,11 @@ import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
 import { supabase } from '@/lib/supabase';
 import { isCloudAiEnabledLocally } from '@/lib/cloudPolicy';
-import type { SyncEventType, TranscriptSegmentSyncPayload, ProfileSyncPayload } from '@/types/entities';
+import type {
+  SyncEventType,
+  TranscriptSegmentSyncPayload,
+  ProfileSyncPayload,
+} from '@/types/entities';
 import { syncQueueService } from '@/lib/sync-engine/queue';
 import { SyncTransport } from './transport';
 import { recordSyncEvent } from './metrics';
@@ -72,9 +76,16 @@ function toSupabaseAudioRecordingPatch(updates: Record<string, unknown>): Record
   const patch: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(updates)) {
-    const supabaseKey = audioRecordingFieldMap[key];
+    const supabaseKey =
+      audioRecordingFieldMap[key] ||
+      (Object.values(audioRecordingFieldMap).includes(key) ? key : null);
+
     if (supabaseKey) {
-      if ((key === 'startedAt' || key === 'endedAt') && typeof value === 'number') {
+      // Correctly identify all timestamp fields (local camelCase or remote snake_case)
+      const isTimestampField =
+        key.toLowerCase().includes('at') || supabaseKey.toLowerCase().includes('_at');
+
+      if (isTimestampField && typeof value === 'number') {
         patch[supabaseKey] = new Date(value).toISOString();
       } else {
         patch[supabaseKey] = value;
@@ -191,12 +202,15 @@ async function getLocalRecordingSnapshot(recordingId: string): Promise<AudioReco
   return rows[0] ?? null;
 }
 
+// Track columns that are known to be missing on the remote Supabase instance
+const knownMissingColumns = new Set<string>();
+
 function toRemoteInsertPayload(
   userId: string,
   recording: AudioRecordingRow,
   patch: Record<string, unknown>
 ): Record<string, unknown> {
-  return {
+  const payload: Record<string, any> = {
     id: recording.id,
     user_id: userId,
     file_path: recording.uploadPath ?? recording.filePath,
@@ -209,11 +223,18 @@ function toRemoteInsertPayload(
     topic_id: recording.topicId ?? null,
     device_id: recording.deviceId ?? null,
     title: recording.title ?? null,
-    deleted_at: recording.deletedAt ?? null,
+    deleted_at: recording.deletedAt ? new Date(recording.deletedAt).toISOString() : null,
     transcription: recording.transcription ?? null,
     cover_image_path: recording.coverImagePath ?? null,
     ...patch,
   };
+
+  // Filter out columns we already know are missing
+  knownMissingColumns.forEach((col) => {
+    delete payload[col];
+  });
+
+  return payload;
 }
 
 async function updateRemoteAudioRecording(
@@ -222,16 +243,33 @@ async function updateRemoteAudioRecording(
   options?: {
     userId?: string | null;
     allowUpsertFallback?: boolean;
+    _retryCount?: number;
   }
 ): Promise<void> {
+  // Prevent infinite recursion
+  const retryCount = options?._retryCount ?? 0;
+  if (retryCount > 15) {
+    throw new Error('Max retries reached while stripping missing columns');
+  }
+
   if (Object.keys(updates).length === 0) {
     return;
   }
 
-  const patch = {
-    ...updates,
-    updated_at: new Date().toISOString(),
+  // Filter out columns we already know are missing
+  const filteredUpdates: Record<string, any> = { ...updates };
+  knownMissingColumns.forEach((col) => {
+    delete filteredUpdates[col];
+  });
+
+  const patch: Record<string, any> = {
+    ...filteredUpdates,
   };
+
+  // Only add updated_at if it's not known to be missing
+  if (!knownMissingColumns.has('updated_at')) {
+    patch.updated_at = new Date().toISOString();
+  }
 
   const { data, error } = await supabase
     .from('audio_recordings')
@@ -241,6 +279,21 @@ async function updateRemoteAudioRecording(
     .maybeSingle();
 
   if (error) {
+    // If column is missing, add to knownMissingColumns and RETRY recursively
+    if (error.message.includes('Could not find') && error.message.includes('column')) {
+      const match = error.message.match(/column '(.+)'/i) || error.message.match(/'(.+)' column/i);
+      if (match && match[1]) {
+        const columnName = match[1];
+        devLog.warn(
+          `[sync-store] Detected missing remote column: ${columnName}. Stripping and retrying...`
+        );
+        knownMissingColumns.add(columnName);
+        return updateRemoteAudioRecording(recordingId, updates, {
+          ...options,
+          _retryCount: retryCount + 1,
+        });
+      }
+    }
     throw new Error(error.message);
   }
 
@@ -254,11 +307,28 @@ async function updateRemoteAudioRecording(
   }
 
   const insertPayload = toRemoteInsertPayload(options.userId, localRecording, patch);
+
   const { error: upsertError } = await supabase
     .from('audio_recordings')
     .upsert(insertPayload, { onConflict: 'id' });
 
   if (upsertError) {
+    // Recursive retry for upsert as well
+    if (upsertError.message.includes('Could not find') && upsertError.message.includes('column')) {
+      const match =
+        upsertError.message.match(/column '(.+)'/i) || upsertError.message.match(/'(.+)' column/i);
+      if (match && match[1]) {
+        const columnName = match[1];
+        devLog.warn(
+          `[sync-store] Detected missing remote column during upsert: ${columnName}. Stripping and retrying...`
+        );
+        knownMissingColumns.add(columnName);
+        return updateRemoteAudioRecording(recordingId, updates, {
+          ...options,
+          _retryCount: retryCount + 1,
+        });
+      }
+    }
     throw new Error(upsertError.message);
   }
 }
@@ -289,9 +359,11 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
         playOnlineSyncCue();
         // Auto-trigger queue when coming online AND app is active
         if (get().appState === 'active') {
-          void get().processQueue().catch((error) => {
-            devLog.warn('[sync-store] Failed to process queue after going online', error);
-          });
+          void get()
+            .processQueue()
+            .catch((error) => {
+              devLog.warn('[sync-store] Failed to process queue after going online', error);
+            });
         }
       } else if (!online && wasOnline) {
         // Going offline - F1.9 critical: reassure user
@@ -306,9 +378,11 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
 
       // Auto-trigger queue when coming to foreground AND online
       if (state === 'active' && wasBackground && get().isOnline) {
-        void get().processQueue().catch((error) => {
-          devLog.warn('[sync-store] Failed to process queue after app became active', error);
-        });
+        void get()
+          .processQueue()
+          .catch((error) => {
+            devLog.warn('[sync-store] Failed to process queue after app became active', error);
+          });
       }
     },
 
@@ -356,9 +430,11 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
 
       // Trigger immediate processing if online
       if (get().isOnline) {
-        void get().processQueue().catch((error) => {
-          devLog.warn('[sync-store] Failed to process queue after enqueue', error);
-        });
+        void get()
+          .processQueue()
+          .catch((error) => {
+            devLog.warn('[sync-store] Failed to process queue after enqueue', error);
+          });
       }
     },
 
@@ -367,9 +443,11 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
       await get().updateQueueLength();
 
       if (get().isOnline) {
-        void get().processQueue().catch((error) => {
-          devLog.warn('[sync-store] Failed to process queue after profile enqueue', error);
-        });
+        void get()
+          .processQueue()
+          .catch((error) => {
+            devLog.warn('[sync-store] Failed to process queue after profile enqueue', error);
+          });
       }
     },
 
@@ -378,21 +456,38 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
       const { isOnline, isProcessingQueue, appState } = get();
 
       // Don't process if offline, already processing, or app is in background
-      if (!isOnline || isProcessingQueue || appState !== 'active') return;
+      if (!isOnline || isProcessingQueue || appState !== 'active') {
+        devLog.info(
+          '[sync-store] Skip processQueue: isOnline=' +
+            isOnline +
+            ', isProcessingQueue=' +
+            isProcessingQueue +
+            ', appState=' +
+            appState
+        );
+        return;
+      }
 
       set({ isProcessingQueue: true });
+      devLog.info('[sync-store] Started processing sync queue');
 
       try {
         // Process queue items one by one
         while (true) {
           // Check if still in active state (pause if backgrounded)
           if (get().appState !== 'active') {
+            devLog.info('[sync-store] App backgrounded, pausing queue processing');
             break; // Pause processing, will resume when app becomes active
           }
 
           // Get next eligible item
           const item = await syncQueueService.peekNext();
-          if (!item) break; // Queue empty or no eligible items
+          if (!item) {
+            devLog.info('[sync-store] Queue empty, finishing processing');
+            break; // Queue empty or no eligible items
+          }
+
+          devLog.info('[sync-store] Processing queue item: ' + item.type + ' (' + item.id + ')');
 
           try {
             const needsCloudSession =
@@ -404,6 +499,9 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
             if (needsCloudSession) {
               const cloudEligibility = await resolveCloudSyncEligibility();
               if (!cloudEligibility.eligible) {
+                devLog.info(
+                  '[sync-store] Item requires cloud session but user is not eligible (anonymous or logged out)'
+                );
                 if (item.recordingId) {
                   await syncQueueService.markRecordingLocalOnly(item.recordingId);
                 }
@@ -439,21 +537,34 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
                 localChecksum = await transport.calculateMd5Checksum(readableUploadPath);
 
                 // Upload path/format is fixed at enqueue-time for deterministic retries.
-                await transport.uploadFile(readableUploadPath, AUDIO_STORAGE_BUCKET, storagePath);
+                try {
+                  await transport.uploadFile(readableUploadPath, AUDIO_STORAGE_BUCKET, storagePath);
+                } catch (uploadError: any) {
+                  const errorMsg = uploadError?.message || '';
+                  if (errorMsg.includes('409') || errorMsg.includes('exists')) {
+                    devLog.info('[sync-store] File already exists in storage, treating as success');
+                  } else {
+                    throw uploadError;
+                  }
+                }
               } finally {
                 await decryptedUpload.cleanup();
               }
 
               // Keep cloud row storage path aligned with synced file.
-              await updateRemoteAudioRecording(payload.recordingId, {
-                file_path: storagePath,
-                sync_status: 'synced',
-                checksum_md5: localChecksum,
-                ended_at: new Date().toISOString(),
-              }, {
-                userId: cloudEligibility.userId,
-                allowUpsertFallback: true,
-              });
+              await updateRemoteAudioRecording(
+                payload.recordingId,
+                {
+                  file_path: storagePath,
+                  sync_status: 'synced',
+                  checksum_md5: localChecksum,
+                  ended_at: new Date().toISOString(),
+                },
+                {
+                  userId: cloudEligibility.userId,
+                  allowUpsertFallback: true,
+                }
+              );
 
               // Verify upload integrity (trust TUS protocol)
               // TUS protocol ensures chunk integrity, so we trust the upload
@@ -472,17 +583,26 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
               });
 
               // Index for semantic search if transcription was updated
-              if (payload.updates.transcription && typeof payload.updates.transcription === 'string') {
+              if (
+                payload.updates.transcription &&
+                typeof payload.updates.transcription === 'string'
+              ) {
                 try {
-                  const { error: invokeError } = await supabase.functions.invoke('semantic-search', {
-                    body: {
-                      action: 'index',
-                      story_id: payload.recordingId,
-                      text: payload.updates.transcription,
+                  const { error: invokeError } = await supabase.functions.invoke(
+                    'semantic-search',
+                    {
+                      body: {
+                        action: 'index',
+                        story_id: payload.recordingId,
+                        text: payload.updates.transcription,
+                      },
                     }
-                  });
+                  );
                   if (invokeError) {
-                    devLog.warn('[sync-store] Failed to index story for semantic search', invokeError);
+                    devLog.warn(
+                      '[sync-store] Failed to index story for semantic search',
+                      invokeError
+                    );
                   }
                 } catch (err) {
                   devLog.warn('[sync-store] Failed to invoke semantic-search function', err);
@@ -490,6 +610,14 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
               }
             } else if (item.type === 'upload_transcript_segment') {
               const payload = JSON.parse(item.payload) as TranscriptSegmentSyncPayload;
+
+              // Defensive check: Skip segments with legacy 'seg_' IDs that cause Supabase UUID errors
+              if (payload.id.startsWith('seg_')) {
+                devLog.warn(`[sync-store] Discarding legacy transcript segment ID: ${payload.id}`);
+                await syncQueueService.dequeue(item.id);
+                continue;
+              }
+
               const row: Record<string, unknown> = {
                 id: payload.id,
                 story_id: payload.storyId,
@@ -521,14 +649,30 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
               const payload = JSON.parse(item.payload) as {
                 storagePath: string;
               };
-              await transport.deleteFile(AUDIO_STORAGE_BUCKET, payload.storagePath);
-              await recordDeleteFileMetric({
-                queueItemId: item.id,
-                recordingId: item.recordingId,
-                storagePath: payload.storagePath,
-                attempt: item.retryCount,
-                eventType: 'delete_file_success',
-              });
+              try {
+                await transport.deleteFile(AUDIO_STORAGE_BUCKET, payload.storagePath);
+                await recordDeleteFileMetric({
+                  queueItemId: item.id,
+                  recordingId: item.recordingId,
+                  storagePath: payload.storagePath,
+                  attempt: item.retryCount,
+                  eventType: 'delete_file_success',
+                });
+              } catch (delError: any) {
+                // If Supabase returns schema error on delete, it's likely a broken RLS policy
+                // We don't want to block the entire sync queue for a file deletion task.
+                if (
+                  delError?.message?.includes('schema') ||
+                  delError?.message?.includes('incompatible')
+                ) {
+                  devLog.warn(
+                    `[sync-store] Discarding delete_file task ${item.id} due to Supabase schema incompatibility. Check Storage RLS policies.`
+                  );
+                  await syncQueueService.discard(item.id);
+                  continue;
+                }
+                throw delError; // Other errors should retry
+              }
             } else if (item.type === 'create_profile') {
               const payload = JSON.parse(item.payload) as ProfileSyncPayload;
               const patch = toSupabaseProfilePatch(payload);
@@ -545,15 +689,13 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
               }
 
               if (!data) {
-                const { error: upsertError } = await supabase
-                  .from('profiles')
-                  .upsert(
-                    {
-                      user_id: payload.userId,
-                      ...patch,
-                    },
-                    { onConflict: 'id' }
-                  );
+                const { error: upsertError } = await supabase.from('profiles').upsert(
+                  {
+                    user_id: payload.userId,
+                    ...patch,
+                  },
+                  { onConflict: 'id' }
+                );
 
                 if (upsertError) {
                   throw new Error(upsertError.message);
@@ -570,6 +712,10 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
             // Failure: mark for retry with exponential backoff
             // Network as State pattern - don't throw, just log and retry later
             const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+            devLog.error(
+              '[sync-store] Sync failed for item ' + item.id + ' (' + item.type + '): ' + errorMsg
+            );
+
             if (item.type === 'delete_file') {
               try {
                 const payload = JSON.parse(item.payload) as { storagePath: string };
@@ -603,11 +749,45 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
       set({ queueLength: length });
     },
 
-    // Initialize network and app state listeners
     initializeListeners: () => {
+      devLog.info('[sync-store] Initializing sync store listeners');
+
+      // Reset stuck 'processing' tasks AND reset retry counts for failed tasks on startup
+      void (async () => {
+        try {
+          const { db: database } = await import('@/db/client');
+          const { syncQueue: queueTable, audioRecordings: recordingsTable } =
+            await import('@/db/schema');
+          const { eq: equalTo, or: orOp, gte: gteOp } = await import('drizzle-orm');
+
+          // 1. Reset stuck 'processing'
+          await database
+            .update(queueTable)
+            .set({ status: 'pending' })
+            .where(equalTo(queueTable.status, 'processing'));
+
+          // 2. Reset failed attempts to 0 so they can retry now that we've fixed the code/DB
+          await database
+            .update(queueTable)
+            .set({ retryCount: 0, nextRetryAt: Date.now() })
+            .where(gteOp(queueTable.retryCount, 1));
+
+          devLog.info('[sync-store] Reset stuck tasks and cleared retry counts');
+
+          // 3. Force re-enqueue anything that might have been missed
+          await syncQueueService.reEnqueueOfflineRecordings();
+
+          await get().updateQueueLength();
+          get().processQueue();
+        } catch (e) {
+          devLog.warn('[sync-store] Failed to recovery tasks on startup:', e);
+        }
+      })();
+
       // NetInfo listener - triggers sync when coming online
       netInfoUnsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
         const isConnected = state.isConnected ?? false;
+        devLog.info('[sync-store] Network state changed: isConnected=' + isConnected);
         get().setOnline(isConnected);
       });
 

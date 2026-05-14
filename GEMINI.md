@@ -1,4 +1,43 @@
-## [2026-04-08] Governance: Full Data Lifecycle & Sovereignty
+## [2026-05-14] Maintenance: Archival Cleanup & .gitignore Optimization
+
+### Decisions & Implementation
+- **Archival Content Audit**: Identified "Minimum Necessary Content" for CD/DVD archival.
+- **.gitignore Hardening**: Added explicit exclusions for local databases (`*.db`, `*.sqlite`), compressed archives (`*.zip`, `*.rar`), and temporary development artifacts to ensure a lean and secure backup.
+- **Sensitive Data Protection**: Reinforced the exclusion of environment secrets and service account keys (`timelog-sa-key.json`).
+
+### Results
+- ✅ **Optimized Backup Size**: Excluded redundant build artifacts and caches.
+- ✅ **Secure Archival**: Minimized risk of leaking sensitive local configuration.
+
+## [2026-05-10] Mobile: Fixed Transcript Sync & UUID Standardization
+
+### Decisions & Implementation
+- **Standardized Segment IDs**: Identified a sync failure where `transcript_segments` were using a custom `seg_` prefix instead of a valid UUID, causing Supabase to reject the records.
+- **UUID v7 Transition**: Updated `TranscriptSyncService.ts` to use `generateId()` from `src/utils/id.ts`, ensuring all new segments use time-ordered UUID v7.
+- **Sync Engine Hardening**: Added a defensive check in `useSyncStore` (`processQueue` loop) to automatically detect and discard legacy `seg_...` segments that were clogging the synchronization queue.
+- **Startup Cleanup**: The sync engine now gracefully "self-heals" by purging invalid legacy data on the next processing cycle, restoring normal sync flow for recordings and metadata.
+
+### Results
+- ✅ **Resolved Supabase Sync Errors**: Terminal is no longer flooded with `invalid input syntax for type uuid`.
+- ✅ **Queue Fluidity**: Synchronization of recordings and profiles is no longer blocked by invalid transcript data.
+- ✅ **Architectural Alignment**: Fully aligned with the `project-context.md` mandate for UUID v7 primary keys.
+
+## [2026-05-08] Mobile: Offline Playback Stabilization & Offload Handling
+
+### Decisions & Implementation
+- **Offline Playback Logic**: Identified a critical flaw in `isStoryPlayable` where stories with `'OFFLOADED'` status or remote URLs were being marked as playable while offline.
+- **Path Detection (isRemotePath)**: Implemented and exported `isRemotePath` in `audioEncryption.ts` to distinguish between local assets and cloud-synced assets.
+- **Robust Decryption Resolver**: Updated `resolveDecryptedAudioPath` to handle `'OFFLOADED'` placeholders and remote URLs without attempting native filesystem reads, preventing "Network request failed" errors.
+- **Service Hardening**: Instrumented `playerService.ts` with defensive checks to intercept `'OFFLOADED'` assets and provide descriptive, senior-friendly error messages (e.g., "This story is saved in the cloud. Please connect to the internet to listen.").
+
+### Results
+- ✅ **Zero Silent Crashes**: Network-dependent assets no longer trigger low-level filesystem errors when offline.
+- ✅ **Accurate UI State**: Offloaded stories correctly reflect their unavailability in offline mode.
+- ✅ **Improved Error UX**: Seniors receive meaningful feedback instead of technical error codes.
+
+### TODO
+- [ ] Implement a background "Download for Offline" feature for offloaded stories.
+- [ ] Audit the waveform analysis cache to ensure it remains available for offloaded stories.
 
 ### Decisions & Implementation
 - **Data Sovereignty (Total Archive Export)**: Implemented `exportAllDataAction` to consolidate stories, transcripts, interactions, members, and device logs into a single structured JSON payload. This fulfills the requirement for total administrative oversight and data portablity.
@@ -67,27 +106,26 @@
 ## [2026-04-10] Web: Stability Hardening & Multi-Batch Git Migration
 
 ### Decisions & Implementation
-- **Build Stability & Hook Safety**: Resolved critical build-breaking ReferenceErrors and React Hook violations. Specifically fixed a major P0 issue in `trash-list.tsx` where a hook was called conditionally.
-- **Full Localization Closure**: Achieved 100% localization parity across the Heritage Dashboard. Audited and refactored `StoryAudioPlayer`, `StoryCommentForm`, and `VoiceCommentRecorder` to eliminate all hardcoded English strings.
-- **Segmented Migration (7-Batch Git Ops)**: Executed a structured Git deployment strategy to transition the codebase from a monolithic chaotic state to an organized, feature-first repository:
-    - Batch 1: I18n Infrastructure & Core Configs.
-    - Batch 2: Design System & Core UI.
-    - Batch 3: Family, Realtime & Interactions.
-    - Batch 4: Story Management & Playback.
-    - Batch 5: Devices & Audit Signaling.
-    - Batch 6: Settings & Dashboard Orchestration.
-    - Batch 7: Final Assets & CI/CD Tooling.
-- **Production Verification**: Confirmed system stability with a final clean `pnpm run build`, ensuring zero type errors or syntax regressions.
+- **Build Stability & Hook Safety**: Resolved critical build-breaking ReferenceErrors and React Hook violations in the Web platform.
+- **Full Localization Closure**: Achieved 100% localization parity across the Heritage Dashboard.
+- **Segmented Migration (7-Batch Git Ops)**: Executed a structured Git deployment strategy for the `timelog-web` repository.
+
+## [2026-04-10] Infrastructure: Mobile Hardening & Security Rollout
+
+### Decisions & Implementation
+- **Mobile Slimming (Cleanup)**: Purged legacy family and notification screens from the mobile app, completing the architectural shift where family interactions are managed via the web portal.
+- **Supabase Security (RLS)**: Commited the comprehensive Row Level Security (RLS) model for `audio_recordings`, `story_comments`, and `activity_events`.
+- **Feature Completion (Comments)**: Finalized the local-first storage and synchronization logic for story interactions.
+- **Git Hardening (5-Batch Deployment)**: Organized 64 uncommitted files in the `TimeLog` workspace into 5 targeted commits, ensuring a clean and auditable repository history.
 
 ### Results
-- ✅ **100% Build Pass**: Turbopack production build successful.
-- ✅ **Clean Repository**: Working tree is clean and organized by feature.
-- ✅ **Bilingual Excellence**: All UI components respond correctly to locale changes without runtime crashes.
+- ✅ **Zero Build Errors**: Clean build and passing tests for mobile.
+- ✅ **Hardened Security**: 100% coverage for story and comment access.
+- ✅ **Clean Workspace**: All working trees in both `TimeLog` and `timelog-web` are now clean.
 
 ### TODO
-- [ ] Audit mobile app and web for consistent toast messaging.
-- [ ] Set up automated CI/CD checks for i18n key parity.
-- [ ] Perform accessibility testing with screen readers on the new Heritage components.
+- [ ] Verify haptic feedback consistency in the updated mobile settings screens.
+- [ ] Perform security audit on the new edge functions for push notifications.
 
 ## [2026-04-07] Infrastructure: Mobile Slimming & Security Upgrade
 

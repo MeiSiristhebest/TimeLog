@@ -70,6 +70,12 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
     windowMs: 10 * 60 * 1000, // 10 minutes
     cooldownMs: 10 * 60 * 1000, // 10 minutes
   },
+  /** Sign up attempts: 3 per hour */
+  signup: {
+    maxAttempts: 3,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    cooldownMs: 30 * 60 * 1000, // 30 minutes
+  },
 };
 
 /**

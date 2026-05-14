@@ -20,11 +20,11 @@ import { DeleteConfirmModal } from '@/features/story-gallery/components/DeleteCo
 import { UndoToast } from '@/components/ui/UndoToast';
 import { showErrorToast, showSuccessToast } from '@/components/ui/feedback/toast';
 import { getQuestionById } from '@/features/recorder/data/topicQuestions';
-import { CATEGORY_DATA, mapRawCategoryToFilter } from '@/features/story-gallery/data/mockGalleryData';
 import {
-  toStoryCommentsRoute,
-  toStoryEditRoute,
-} from '@/features/app/navigation/routes';
+  CATEGORY_DATA,
+  mapRawCategoryToFilter,
+} from '@/features/story-gallery/data/mockGalleryData';
+import { toStoryCommentsRoute, toStoryEditRoute } from '@/features/app/navigation/routes';
 import { EN_COPY } from '@/features/app/copy/en';
 import { usePdfExport } from '@/features/story-gallery/hooks/usePdfExport';
 import { markActivitiesAsReadForStory } from '@/features/home/services/activityService';
@@ -95,13 +95,15 @@ export default function StoryDetailScreen(): JSX.Element {
       showErrorToast(EN_COPY.story.transcriptUnavailable);
       return;
     }
-    
+
     try {
-      const exportData = [{
-        title: displayTitle,
-        transcript: entries.map(e => e.text).join('\n\n'),
-        date: formattedDate,
-      }];
+      const exportData = [
+        {
+          title: displayTitle,
+          transcript: entries.map((e) => e.text).join('\n\n'),
+          date: formattedDate,
+        },
+      ];
       // Use AI polishing for a better memoir feel
       await exportPdf(exportData, true);
       showSuccessToast(EN_COPY.story.exportSuccess);
@@ -227,7 +229,7 @@ export default function StoryDetailScreen(): JSX.Element {
         <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
           <HeaderHelperButton
             onPress={handleExportPdf}
-            icon={isExporting ? "hourglass-outline" : "share-outline"}
+            icon={isExporting ? 'hourglass-outline' : 'share-outline'}
             disabled={isExporting}
             color={isExporting ? theme.colors.textMuted : theme.colors.primaryDeep}
           />
@@ -324,7 +326,9 @@ export default function StoryDetailScreen(): JSX.Element {
               <DetailRow
                 label={EN_COPY.story.detailBackup}
                 value={
-                  syncStatus === 'synced' ? EN_COPY.story.backupCloudSaved : EN_COPY.story.backupLocalOnly
+                  syncStatus === 'synced'
+                    ? EN_COPY.story.backupCloudSaved
+                    : EN_COPY.story.backupLocalOnly
                 }
                 theme={theme}
               />
@@ -354,7 +358,7 @@ export default function StoryDetailScreen(): JSX.Element {
         }}>
         {/* Audio Player */}
         <View style={{ marginBottom: 24 }}>
-          <AudioPlayer uri={story.filePath} />
+          <AudioPlayer uri={story.filePath} recordingId={story.id} />
         </View>
 
         {/* Action Buttons */}
@@ -435,7 +439,10 @@ function DetailRow({
   );
 }
 
-function getSpeakerStyle(speaker: TranscriptSpeaker, theme: HeritageTheme): {
+function getSpeakerStyle(
+  speaker: TranscriptSpeaker,
+  theme: HeritageTheme
+): {
   label: string;
   labelColor: string;
   backgroundColor: string;
@@ -531,7 +538,9 @@ function HeaderHelperButton({
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      onPressIn={() => !disabled && (scale.value = withSpring(0.9, { damping: 10, stiffness: 300 }))}
+      onPressIn={() =>
+        !disabled && (scale.value = withSpring(0.9, { damping: 10, stiffness: 300 }))
+      }
       onPressOut={() => (scale.value = withSpring(1, { damping: 10, stiffness: 300 }))}
       style={{ flexDirection: 'row', alignItems: 'center', padding: 4 }}>
       <Animated.View style={[{ flexDirection: 'row', alignItems: 'center' }, animatedStyle]}>

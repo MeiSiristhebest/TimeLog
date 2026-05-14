@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { DeviceEventEmitter } from 'react-native';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
@@ -102,6 +102,9 @@ export async function updateStoryTitle(id: string, title: string): Promise<void>
 
     // 2. Enqueue cloud sync
     await syncQueueService.enqueueMetadataUpdate(id, { title });
+
+    DeviceEventEmitter.emit('story-collection-updated');
+    DeviceEventEmitter.emit(`story-updated-${id}`);
   } catch (error) {
     devLog.error('[storyService] updateStoryTitle failed:', error);
     throw new Error('Failed to update story title. Please try again.');
@@ -120,8 +123,15 @@ export async function offloadStory(id: string): Promise<boolean> {
 
     if (!recording) throw new Error('Recording not found');
 
-    if (recording.syncStatus !== 'synced') {
-      devLog.warn(`[storyService] Cannot offload unsynced story ${id}`);
+    // Check if the file is physically backed up.
+    // syncStatus === 'synced' means everything is up to date.
+    // isSynced === true means the file is up, even if syncStatus is 'queued' for metadata.
+    const isFileSynced = recording.syncStatus === 'synced' || recording.isSynced === true;
+
+    if (!isFileSynced) {
+      devLog.warn(
+        `[storyService] Cannot offload unsynced story ${id} (status: ${recording.syncStatus})`
+      );
       return false;
     }
 
@@ -136,7 +146,7 @@ export async function offloadStory(id: string): Promise<boolean> {
         await FileSystem.deleteAsync(recording.filePath);
         devLog.info(`[storyService] Deleted local recording file: ${recording.filePath}`);
       }
-      
+
       const analysisPath = getAnalysisPath(recording.filePath);
       const analysisInfo = await FileSystem.getInfoAsync(analysisPath);
       if (analysisInfo.exists) {
@@ -198,7 +208,12 @@ export async function permanentlyDeleteStory(id: string): Promise<void> {
     }
 
     // 2. Queue cloud deletion if synced or previously offloaded
-    if (recording.syncStatus === 'synced' || recording.filePath === 'OFFLOADED') {
+    const isSyncedAtAll =
+      recording.syncStatus === 'synced' ||
+      recording.isSynced === true ||
+      recording.filePath === 'OFFLOADED';
+
+    if (isSyncedAtAll) {
       const extension = recording.uploadFormat ?? 'wav';
       const storagePath =
         recording.uploadPath ??
@@ -262,10 +277,7 @@ export async function updateStoryMetadata(
 export async function toggleStoryFavorite(id: string, isFavorite: boolean): Promise<void> {
   try {
     // 1. Update local SQLite first (optimistic UI)
-    await db
-      .update(audioRecordings)
-      .set({ isFavorite })
-      .where(eq(audioRecordings.id, id));
+    await db.update(audioRecordings).set({ isFavorite }).where(eq(audioRecordings.id, id));
 
     // 2. Enqueue cloud sync
     await syncQueueService.enqueueMetadataUpdate(id, { isFavorite });
@@ -273,7 +285,7 @@ export async function toggleStoryFavorite(id: string, isFavorite: boolean): Prom
     // 3. Emit events to refresh UI
     DeviceEventEmitter.emit('story-collection-updated');
     DeviceEventEmitter.emit(`story-updated-${id}`);
-    
+
     devLog.info(`[storyService] Toggled favorite for ${id} to ${isFavorite}`);
   } catch (error) {
     devLog.error('[storyService] toggleStoryFavorite failed:', error);

@@ -4,7 +4,7 @@
  */
 
 import { TusTransport } from './transport';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Crypto from 'expo-crypto';
 import { Upload } from 'tus-js-client';
 

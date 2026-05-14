@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
 import { Linking } from 'react-native';
@@ -16,14 +16,15 @@ import { useAccountSecurity } from './useAccountSecurity';
 import { useCloudSettings } from './useCloudSettings';
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { devLog } from '@/lib/devLogger';
 import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useProfile } from './useProfile';
-import { useCurrentUserId } from '@/features/auth/hooks/useCurrentUserId';
 import { APP_ROUTES, toUpgradeAccountRoute } from '@/features/app/navigation/routes';
-import { PERMISSION_CONTEXT } from '@/features/permissions/permissionPolicy';
 
-
+function getThemeModeLabel(themeMode: 'system' | 'dark' | 'light'): string {
+  if (themeMode === 'system') return 'System';
+  if (themeMode === 'dark') return 'Dark';
+  return 'Light';
+}
 
 // Hook for Settings Home
 export function useSettingsHome() {
@@ -34,7 +35,7 @@ export function useSettingsHome() {
   const [userRole, setUserRole] = useState<'storyteller' | 'listener'>('storyteller');
 
   // Access stores to generate summaries
-  const { fontScaleIndex } = useDisplaySettingsStore();
+  const { themeMode, fontScaleIndex } = useDisplaySettingsStore();
 
   // Calculate Summaries
   const getSummary = useCallback(
@@ -42,8 +43,9 @@ export function useSettingsHome() {
       if (!summaryKey) return undefined;
 
       if (summaryKey === 'display') {
+        const modeLabel = getThemeModeLabel(themeMode);
         const sizeLabel = FONT_SCALE_LABELS[fontScaleIndex] || 'Standard';
-        return sizeLabel;
+        return `${modeLabel} · ${sizeLabel}`;
       }
 
       if (summaryKey === 'storage') {
@@ -52,7 +54,7 @@ export function useSettingsHome() {
 
       return undefined;
     },
-    [fontScaleIndex]
+    [themeMode, fontScaleIndex]
   );
 
   useEffect(() => {
@@ -108,11 +110,14 @@ export function useDisplaySettingsLogic() {
 
   return {
     state: {
+      themeMode,
       fontScaleIndex,
       currentLabel,
       currentPreviewScale,
+      themeOptions: THEME_OPTIONS_DATA,
     },
     actions: {
+      setThemeMode,
       setFontScaleIndex,
       reset,
     },
@@ -172,7 +177,101 @@ export function useDataStorageLogic() {
   };
 }
 
-// Removed Family Sharing Logic (Redundant)
+// Hook for Family Sharing
+export function useFamilySharingLogic() {
+  const router = useRouter();
+  const { profile } = useProfile();
+
+  const navigateWithUpgradeCheck = useCallback(
+    (route: string) => {
+      if (profile?.isAnonymous) {
+        HeritageAlert.show({
+          title: 'Complete Your Account',
+          message: 'To share or link family members, please set up a permanent account first.',
+          variant: 'warning',
+          primaryAction: {
+            label: 'Set Up Now',
+            onPress: () => {
+              router.push(toUpgradeAccountRoute(route));
+            },
+          },
+          secondaryAction: { label: 'Not now' },
+        });
+        return;
+      }
+
+      router.push(route as Href);
+    },
+    [profile?.isAnonymous, router]
+  );
+
+  return {
+    actions: {
+      navigateToFamilyMembers: () => navigateWithUpgradeCheck('/(tabs)/family'),
+      navigateToInvite: () => navigateWithUpgradeCheck('/invite'),
+      navigateToAcceptInvite: () => navigateWithUpgradeCheck('/accept-invite'),
+      navigateToAskQuestion: () => navigateWithUpgradeCheck('/family-ask-question'),
+    },
+  };
+}
+
+// Hook for Notifications
+export function useNotificationsLogic() {
+  const [enabled, setEnabled] = useState(true);
+  const [gentleReminders, setGentleReminders] = useState(true);
+  const [quietStart, setQuietStart] = useState(new Date());
+  const [quietEnd, setQuietEnd] = useState(new Date());
+  const [isLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const formatTime = (date: Date) => {
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+  };
+
+  const saveSettings = async () => {
+    setIsSaving(true);
+    setTimeout(() => {
+      setIsSaving(false);
+      HeritageAlert.show({
+        title: 'Settings Saved',
+        message: 'Your notification preferences have been updated.',
+        variant: 'success',
+      });
+    }, 1000);
+  };
+
+  return {
+    state: {
+      enabled,
+      gentleReminders,
+      quietStart,
+      quietEnd,
+      isLoading,
+      isSaving,
+      scrollY,
+      showStartPicker: false,
+      showEndPicker: false,
+      formatTime,
+    },
+    actions: {
+      setEnabled,
+      setGentleReminders,
+      setQuietStart,
+      setQuietEnd,
+      setShowStartPicker: () => {},
+      setShowEndPicker: () => {},
+      saveSettings,
+      scrollHandler,
+    },
+  };
+}
 
 // Hook for About/Help
 export function useAboutHelpLogic() {

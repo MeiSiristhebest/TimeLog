@@ -31,7 +31,18 @@ export function useRootAppLifecycle({
 
   useEffect(() => {
     registerSyncSoundCues({ playOnlineCue, playOfflineCue });
-    useSyncStore.getState().initializeListeners();
+    const store = useSyncStore.getState();
+    store.initializeListeners();
+
+    // Best-effort re-enqueue of offline recordings on start
+    void (async () => {
+      try {
+        await syncQueueService.reEnqueueOfflineRecordings();
+      } catch (error) {
+        devLog.warn('[RootLifecycle] Start-up re-enqueue failed', error);
+      }
+    })();
+
     return () => {
       registerSyncSoundCues(null);
       useSyncStore.getState().cleanupListeners();

@@ -2,6 +2,9 @@ import { supabase } from '@/lib/supabase';
 import { checkRateLimit, recordAttempt, clearRateLimit, RateLimitError } from '@/lib/rateLimiter';
 import type { User } from '@supabase/supabase-js';
 import { mapAuthError } from './anonymousAuthService';
+import { setCloudAiEnabled } from '@/lib/cloudPolicy';
+import { syncQueueService } from '@/lib/sync-engine/queue';
+import { devLog } from '@/lib/devLogger';
 
 // Re-export RateLimitError for consumers
 export { RateLimitError };
@@ -36,7 +39,60 @@ export async function signInWithEmailPassword(
   // Clear rate limit on successful login
   clearRateLimit('login', trimmedEmail);
 
+  try {
+    setCloudAiEnabled(true);
+    await syncQueueService.reEnqueueOfflineRecordings();
+    devLog.info('[authService] Cloud AI enabled and offline recordings enqueued on login');
+  } catch (syncError) {
+    devLog.warn('[authService] Failed to enqueue offline recordings on login:', syncError);
+  }
+
   return data.session?.user;
+}
+
+export async function signUpWithEmailPassword(
+  email: string,
+  password: string,
+  displayName: string
+): Promise<User | undefined> {
+  const trimmedEmail = email.trim();
+  if (!trimmedEmail || !password) {
+    throw new Error('Please enter both email and password.');
+  }
+
+  // Check rate limit BEFORE attempting sign up
+  await checkRateLimit('signup', trimmedEmail);
+
+  // Record the attempt
+  recordAttempt('signup', trimmedEmail);
+
+  const { data, error } = await supabase.auth.signUp({
+    email: trimmedEmail,
+    password,
+    options: {
+      data: {
+        display_name: displayName,
+      },
+    },
+  });
+
+  if (error) {
+    throw new Error(mapAuthError(error));
+  }
+
+  // Clear rate limit on successful sign up
+  clearRateLimit('signup', trimmedEmail);
+
+  try {
+    // Automatically enable Cloud AI and sync recordings on successful sign-up
+    setCloudAiEnabled(true);
+    await syncQueueService.reEnqueueOfflineRecordings();
+    devLog.info('[authService] Cloud AI enabled and offline recordings enqueued on signup');
+  } catch (syncError) {
+    devLog.warn('[authService] Failed to enqueue offline recordings on signup:', syncError);
+  }
+
+  return data.user ?? undefined;
 }
 
 export async function sendResetEmail(email: string): Promise<void> {

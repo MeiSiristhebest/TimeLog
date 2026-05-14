@@ -44,17 +44,20 @@ export function hasLocalFile(syncStatus: SyncStatus): boolean {
 export function isStoryPlayable(story: AudioRecording, isOnline: boolean): boolean {
   // In TimeLog's Local-First architecture:
   // - All recordings are saved locally first (Stream-to-Disk)
-  // - The filePath field always points to a local file
-  // - Therefore, all stories in the DB are locally playable
-
-  // Future consideration: If we add cloud-only imports,
-  // we would check if filePath exists and file is on disk
-  if (story.filePath) {
-    return true; // Local file exists, always playable
+  // - The filePath field usually points to a local encrypted file
+  
+  if (!story.filePath || story.filePath === 'OFFLOADED') {
+    // If offloaded, it's only playable if we can stream it from the cloud
+    return isOnline;
   }
 
-  // Fallback: cloud-only requires network
-  return isOnline;
+  // If it's a remote URL, we need network
+  if (story.filePath.startsWith('http')) {
+    return isOnline;
+  }
+
+  // Otherwise, it's a local file (file:// or absolute path), always playable
+  return true;
 }
 
 /**

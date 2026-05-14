@@ -10,7 +10,7 @@ interface PlayerState extends PlayerStatus {
   outputMode: PlayerOutputMode;
 
   // Actions
-  load: (uri: string) => Promise<void>;
+  load: (uri: string, options?: { recordingId?: string; storagePath?: string }) => Promise<void>;
   togglePlayback: () => Promise<void>;
   seek: (position: number) => Promise<void>;
   setRate: (rate: number) => Promise<void>;
@@ -36,7 +36,7 @@ export const usePlayerStore = create<PlayerState>(function usePlayerStoreState(s
     error: null,
     outputMode: 'speaker',
 
-    load: async (uri: string) => {
+    load: async (uri: string, options?: { recordingId?: string; storagePath?: string }) => {
       const currentUri = get().currentUri;
       if (currentUri === uri && playerService.isLoaded()) {
         return;
@@ -44,16 +44,24 @@ export const usePlayerStore = create<PlayerState>(function usePlayerStoreState(s
 
       set({ isLoading: true, error: null, currentUri: uri });
       try {
-        await playerService.loadAudio(uri, (status) => {
-          set({ ...status });
-          if (status.didJustFinish) {
-            playerService.seekTo(0);
-            playerService.pause();
-          }
-        });
+        await playerService.loadAudio(
+          uri,
+          (status) => {
+            set({ ...status });
+            if (status.didJustFinish) {
+              playerService.seekTo(0);
+              playerService.pause();
+            }
+          },
+          options
+        );
         set({ isLoading: false, isTogglingPlayback: false });
       } catch (error) {
-        set({ isLoading: false, isTogglingPlayback: false, error: 'Failed to load audio' });
+        set({
+          isLoading: false,
+          isTogglingPlayback: false,
+          error: error instanceof Error ? error.message : 'Failed to load audio',
+        });
         devLog.error(error);
       }
     },
@@ -110,7 +118,13 @@ export const usePlayerStore = create<PlayerState>(function usePlayerStoreState(s
     reset: () => {
       const { outputMode } = get();
       playerService.unload();
-      set({ ...initialState, currentUri: null, isTogglingPlayback: false, error: null, outputMode });
+      set({
+        ...initialState,
+        currentUri: null,
+        isTogglingPlayback: false,
+        error: null,
+        outputMode,
+      });
     },
   };
 });

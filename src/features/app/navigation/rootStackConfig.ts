@@ -41,6 +41,7 @@ export const ROOT_STACK_ROUTES: readonly RootStackRouteConfig[] = [
   { name: '(tabs)', options: { headerShown: false } },
   { name: 'details', options: { title: 'Details', animation: 'slide_from_bottom' } },
   { name: '(auth)/login', options: { title: 'Login' } },
+  { name: '(auth)/signup', options: { title: 'Sign Up' } },
   { name: '(auth)/device-code', options: { headerShown: false } },
   { name: '(auth)/help', options: { headerShown: false } },
   { name: '(auth)/consent-review', options: { headerShown: false } },

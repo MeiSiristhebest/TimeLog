@@ -22,9 +22,10 @@ VALUES ('audio-recordings',
         'audio-recordings',
         false, -- CRITICAL: Must be false for security
         104857600, -- 100MB max file size
-        ARRAY['audio/wav', 'audio/mpeg', 'audio/mp4']) ON CONFLICT (id) DO
+        ARRAY['audio/wav', 'audio/mpeg', 'audio/mp4', 'audio/opus', 'application/octet-stream']) ON CONFLICT (id) DO
 UPDATE SET
-    public = false;
+    public = false,
+    allowed_mime_types = EXCLUDED.allowed_mime_types;
 
 -- ============================================
 -- Step 2: RLS Policy for Storage Objects
@@ -62,10 +63,10 @@ SELECT
     OR
     -- Family can read linked senior's audio
     (storage.foldername(name))[1] IN (
-    SELECT senior_user_id::text
+    SELECT family_id::text
     FROM public.family_members
-    WHERE family_user_id = auth.uid()
-    AND status = 'active'
+    WHERE user_id = auth.uid()
+    AND status = 'accepted'
     )
     )
     );

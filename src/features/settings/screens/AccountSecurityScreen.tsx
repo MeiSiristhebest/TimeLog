@@ -7,6 +7,7 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { useAccountSecurityLogic } from '../hooks/useSettingsLogic';
 import { SETTINGS_STRINGS } from '../data/mockSettingsData';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
+import { APP_ROUTES } from '@/features/app/navigation/routes';
 
 // STRICT STITCH PROTOCOL: Pure View Component
 export function AccountSecurityScreen(): JSX.Element {
@@ -47,7 +48,7 @@ export function AccountSecurityScreen(): JSX.Element {
             value={roleLabel}
             iconName="id-card-outline"
             iconColor={colors.amberCustom}
-            onPress={() => actions.navigateTo('/(tabs)/settings/role')}
+            onPress={() => actions.navigateTo(APP_ROUTES.SETTINGS_ROLE)}
             isLast
           />
         </SettingsSection>
@@ -58,19 +59,21 @@ export function AccountSecurityScreen(): JSX.Element {
             label={STRINGS.sections.security.recoveryCode}
             iconName="key-outline"
             iconColor={colors.blueAccent}
-            onPress={() => actions.navigateTo('/recovery-code')}
+            onPress={() => actions.navigateTo(APP_ROUTES.SETTINGS_RECOVERY_CODE)}
           />
           <SettingsRow
             label={STRINGS.sections.security.deviceCode}
             iconName="qr-code-outline"
             iconColor={colors.textMuted}
-            onPress={() => actions.navigateTo('/(tabs)/settings/device-code')}
+            onPress={() =>
+              actions.navigateTo(APP_ROUTES.SETTINGS_DEVICE_CODE || '/(tabs)/settings/device-code')
+            }
           />
           <SettingsRow
             label={STRINGS.sections.security.deviceManagement}
             iconName="phone-portrait-outline"
             iconColor={colors.primary}
-            onPress={() => actions.navigateTo('/device-management')}
+            onPress={() => actions.navigateTo(APP_ROUTES.SETTINGS_DEVICE_MANAGEMENT)}
             isLast
           />
         </SettingsSection>

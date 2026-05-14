@@ -1,6 +1,7 @@
 import { createAudioPlayer, AudioPlayer, AudioStatus, setAudioModeAsync } from 'expo-audio';
 import { devLog } from '@/lib/devLogger';
 import { resolveDecryptedAudioPath, type DecryptedAudioHandle } from '@/lib/audioEncryption';
+import { supabase } from '@/lib/supabase';
 
 export type PlayerOutputMode = 'speaker' | 'earpiece';
 
@@ -31,7 +32,9 @@ class PlayerService {
   private hasConfiguredPlaybackMode = false;
   private outputMode: PlayerOutputMode = 'speaker';
 
-  private getPlaybackAudioModeConfig(outputMode: PlayerOutputMode): Parameters<typeof setAudioModeAsync>[0] {
+  private getPlaybackAudioModeConfig(
+    outputMode: PlayerOutputMode
+  ): Parameters<typeof setAudioModeAsync>[0] {
     return {
       playsInSilentMode: true,
       interruptionMode: 'duckOthers',
@@ -61,11 +64,40 @@ class PlayerService {
     this.hasConfiguredPlaybackMode = true;
   }
 
-  async loadAudio(uri: string, onStatusUpdate: (status: PlayerStatus) => void): Promise<void> {
+  async loadAudio(
+    uri: string,
+    onStatusUpdate: (status: PlayerStatus) => void,
+    options?: { recordingId?: string; storagePath?: string }
+  ): Promise<void> {
     try {
+      let playbackUri = uri;
+
+      if (uri === 'OFFLOADED') {
+        // Resolve remote URL if offloaded
+        if (!options?.storagePath) {
+          throw new Error(
+            'This story is saved in the cloud. Please connect to the internet to listen.'
+          );
+        }
+
+        devLog.info(
+          '[PlayerService] Resolving remote URL for offloaded story:',
+          options.storagePath
+        );
+        const { data, error } = await supabase.storage
+          .from('audio-recordings')
+          .createSignedUrl(options.storagePath, 3600); // 1 hour access
+
+        if (error || !data?.signedUrl) {
+          devLog.error('[PlayerService] Failed to create signed URL:', error);
+          throw new Error('Offline: This story is in the cloud. Connect to internet to play.');
+        }
+        playbackUri = data.signedUrl;
+      }
+
       await this.ensurePlaybackAudioMode();
 
-      if (this.player && this.player.isLoaded && this.currentUri === uri) {
+      if (this.player && this.player.isLoaded && this.currentUri === playbackUri) {
         this.onStatusUpdate = onStatusUpdate;
         return;
       }
@@ -83,24 +115,34 @@ class PlayerService {
 
       this.onStatusUpdate = onStatusUpdate;
 
-      devLog.info('[PlayerService] Creating new AudioPlayer for:', uri);
+      devLog.info(
+        '[PlayerService] Loading audio:',
+        playbackUri.startsWith('http') ? 'REMOTE' : playbackUri
+      );
 
-      // Create new player - strict mode off implies it might throw if native module missing
-      const decrypted = await resolveDecryptedAudioPath(uri);
-      this.decryptedHandle = decrypted.path === uri ? null : decrypted;
-      this.player = createAudioPlayer(decrypted.path);
-      this.currentUri = uri;
+      // Resolve encryption if local
+      let finalUri = playbackUri;
+      if (!playbackUri.startsWith('http')) {
+        const decrypted = await resolveDecryptedAudioPath(playbackUri);
+        this.decryptedHandle = decrypted.path === playbackUri ? null : decrypted;
+        finalUri = decrypted.path;
+      }
+
+      this.player = createAudioPlayer(finalUri);
+      this.currentUri = playbackUri;
 
       // Subscribe to status updates
       this.player.addListener('playbackStatusUpdate', (status: AudioStatus) => {
         this.handleStatusUpdate(status);
       });
-
-      // Initial status check (sometimes listener doesn't fire immediately on creation)
-      // We can also check player.isLoaded
-    } catch (error) {
+    } catch (error: any) {
       devLog.error('[PlayerService] Error loading audio:', error);
-      throw error;
+      const message = error?.message || 'Failed to load audio';
+      throw new Error(
+        message.includes('OFFLOADED') || message.includes('cloud') || message.includes('Offline')
+          ? message
+          : 'Could not play this recording. It might be corrupted or missing.'
+      );
     }
   }
 

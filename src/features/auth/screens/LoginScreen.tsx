@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@/components/ui/Icon';
 import { Animated } from '@/tw/animated';
 import { ZoomIn, FadeInDown } from 'react-native-reanimated';
@@ -8,10 +8,12 @@ import { HeritageInput } from '@/components/ui/heritage/HeritageInput';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useLoginLogic } from '@/features/auth/hooks/useLoginLogic';
 import { AppText } from '@/components/ui/AppText';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
+import { APP_ROUTES } from '@/features/app/navigation/routes';
 
 export default function LoginScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
+  const router = useRouter();
 
   // Logic Separation
   const { state, actions } = useLoginLogic();
@@ -32,12 +34,8 @@ export default function LoginScreen(): JSX.Element {
             ]}>
             <Ionicons name="book" size={40} color={colors.primary} />
           </Animated.View>
-          <AppText
-            style={[styles.title, { color: colors.onSurface }]}>
-            Welcome Back
-          </AppText>
-          <AppText
-            style={[styles.subtitle, { color: colors.textMuted }]}>
+          <AppText style={[styles.title, { color: colors.onSurface }]}>Welcome Back</AppText>
+          <AppText style={[styles.subtitle, { color: colors.textMuted }]}>
             Sign in to continue your story journey.
           </AppText>
         </View>
@@ -72,14 +70,10 @@ export default function LoginScreen(): JSX.Element {
           </View>
 
           {error ? (
-            <AppText style={[styles.statusText, { color: colors.error }]}>
-              {error}
-            </AppText>
+            <AppText style={[styles.statusText, { color: colors.error }]}>{error}</AppText>
           ) : null}
           {message ? (
-            <AppText style={[styles.statusText, { color: colors.success }]}>
-              {message}
-            </AppText>
+            <AppText style={[styles.statusText, { color: colors.success }]}>{message}</AppText>
           ) : null}
 
           <View style={styles.buttonSection}>
@@ -90,6 +84,17 @@ export default function LoginScreen(): JSX.Element {
               variant="primary"
             />
 
+            <View style={styles.signUpLinkSection}>
+              <AppText style={{ color: colors.textMuted, fontSize: 16 }}>
+                Don't have an account?{' '}
+              </AppText>
+              <Pressable onPress={() => router.push(APP_ROUTES.SIGNUP)}>
+                <AppText style={{ color: colors.primary, fontWeight: '700', fontSize: 16 }}>
+                  Sign Up
+                </AppText>
+              </Pressable>
+            </View>
+
             <HeritageButton
               title="Forgot Password?"
               onPress={actions.handleResetPassword}
@@ -99,7 +104,7 @@ export default function LoginScreen(): JSX.Element {
           </View>
         </Animated.View>
 
-        <Link href="/(tabs)" asChild>
+        <Link href={APP_ROUTES.TABS} asChild>
           <HeritageButton title="Back to Home" variant="secondary" onPress={() => {}} />
         </Link>
       </View>
@@ -155,5 +160,11 @@ const styles = StyleSheet.create({
   buttonSection: {
     gap: 16,
     paddingTop: 16,
+  },
+  signUpLinkSection: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 8,
   },
 });

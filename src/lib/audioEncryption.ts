@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
 import { DeviceEventEmitter } from 'react-native';
@@ -34,8 +34,8 @@ export type DecryptedAudioHandle = {
   cleanup: () => Promise<void>;
 };
 
-function isLocalPath(path: string): boolean {
-  return path.startsWith('file://') || path.includes(':/');
+export function isRemotePath(path: string): boolean {
+  return path.startsWith('http://') || path.startsWith('https://');
 }
 
 export function isEncryptedAudioPath(path: string): boolean {
@@ -222,6 +222,19 @@ function buildTempPath(encryptedPath: string): string {
 }
 
 export async function resolveDecryptedAudioPath(filePath: string): Promise<DecryptedAudioHandle> {
+  if (!filePath || filePath === 'OFFLOADED') {
+    throw new Error('Audio asset is not available locally');
+  }
+
+  if (isRemotePath(filePath)) {
+    // Remote URLs cannot be decrypted locally as they are not .enc files in this context
+    // They are usually synced, transcoded assets on the server
+    return {
+      path: filePath,
+      cleanup: async () => undefined,
+    };
+  }
+
   if (!isEncryptedAudioPath(filePath)) {
     return {
       path: filePath,

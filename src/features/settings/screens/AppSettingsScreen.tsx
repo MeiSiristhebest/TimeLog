@@ -5,38 +5,24 @@ import { AppText } from '@/components/ui/AppText';
 import { SettingsRow } from '../components/SettingsRow';
 import { SettingsSection } from '../components/SettingsSection';
 import { useHeritageTheme } from '@/theme/heritage';
-import { useAuthStore } from '@/features/auth/store/authStore';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
-import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { SETTINGS_STRINGS } from '../data/mockSettingsData';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
+import { getDefaultDailyGoalDurationMs } from '@/features/home/services/dailyGoalService';
+
+import { useAccountSecurity } from '../hooks/useAccountSecurity';
 
 export function AppSettingsScreen(): JSX.Element {
-  const router = useRouter();
   const { colors } = useHeritageTheme();
-  const setUnauthenticated = useAuthStore((s) => s.setUnauthenticated);
+  const { confirmSignOut } = useAccountSecurity();
 
-  const handleSignOut = async () => {
-    HeritageAlert.show({
-      title: 'Log Out',
-      message: 'Are you sure you want to log out?',
-      variant: 'warning',
-      primaryAction: {
-        label: 'Log Out',
-        destructive: true,
-        onPress: () => {
-          setUnauthenticated();
-          router.replace(APP_ROUTES.ROOT);
-        },
-      },
-      secondaryAction: {
-        label: 'Cancel',
-      },
-    });
+  const handleSignOut = () => {
+    confirmSignOut();
   };
 
   const STRINGS = SETTINGS_STRINGS.appSettings;
+  const dailyGoalMinutes = Math.floor(getDefaultDailyGoalDurationMs() / 60_000);
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.surfaceDim }}>
@@ -55,6 +41,9 @@ export function AppSettingsScreen(): JSX.Element {
 
         {/* Group 2: General */}
         <SettingsSection title={STRINGS.sections.general}>
+          <Link href={APP_ROUTES.SETTINGS_DAILY_GOAL} asChild>
+            <SettingsRow label="Daily goal" value={`${dailyGoalMinutes} min`} />
+          </Link>
           <Link href={APP_ROUTES.SETTINGS_DISPLAY_ACCESSIBILITY} asChild>
             <SettingsRow label={STRINGS.items.display} />
           </Link>
@@ -74,7 +63,7 @@ export function AppSettingsScreen(): JSX.Element {
         </SettingsSection>
 
         {/* Group 4: Actions */}
-        <View className="mt-6 mb-6 gap-3">
+        <View className="mb-6 mt-6 gap-3">
           <HeritageButton
             title={STRINGS.items.switchAccount}
             onPress={handleSignOut}
@@ -91,14 +80,10 @@ export function AppSettingsScreen(): JSX.Element {
         </View>
 
         {/* Footer Links */}
-        <View className="flex-row justify-center items-center mb-5">
-          <AppText className="text-xs font-medium text-[#576b95]">
-            {STRINGS.items.privacy}
-          </AppText>
+        <View className="mb-5 flex-row items-center justify-center">
+          <AppText className="text-xs font-medium text-[#576b95]">{STRINGS.items.privacy}</AppText>
           <AppText className="mx-2 text-xs text-[#D1D1D6]">|</AppText>
-          <AppText className="text-xs font-medium text-[#576b95]">
-            {STRINGS.items.terms}
-          </AppText>
+          <AppText className="text-xs font-medium text-[#576b95]">{STRINGS.items.terms}</AppText>
         </View>
       </ScrollView>
     </View>

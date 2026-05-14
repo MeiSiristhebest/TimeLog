@@ -10,12 +10,156 @@ import { AUTH_STRINGS, MOCK_CONSENT_ITEMS } from '../data/mockAuthData';
 import {
   DeviceCodeResult,
   generateDeviceCode,
+  listFamilyDevices,
+  revokeDevice,
+  DeviceSummary,
 } from '../services/deviceCodesService';
 import { generateRecoveryCode, getActiveRecoveryCode } from '../services/recoveryCodeService';
 import { useActiveSession } from './useActiveSession';
 import { devLog } from '@/lib/devLogger';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
 import { ensureStorytellerSession } from '../services/storytellerSessionService';
+import { getStoredRole, setStoredRole } from '@/features/auth/services/roleStorage';
+import { signInAnonymously } from '../services/anonymousAuthService';
+import { useAuthStore } from '../store/authStore';
+
+// Hook for Role Screen Logic
+export function useRoleLogic() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const hasInitializedRef = useRef(false);
+  const { session, refetch: refetchSession } = useActiveSession();
+  const setAuthenticated = useAuthStore((s) => s.setAuthenticated);
+
+  // Constants to avoid magic strings re-use
+  const ROLE_STORYTELLER = 'storyteller';
+  const ROLE_FAMILY = 'family';
+
+  useEffect(() => {
+    if (hasInitializedRef.current) {
+      return;
+    }
+    hasInitializedRef.current = true;
+
+    let mounted = true;
+
+    async function checkAuthState() {
+      try {
+        const rolePromise = getStoredRole();
+        const sessionResult = await refetchSession();
+        const resolvedSession = sessionResult.data ?? session;
+        const role = await rolePromise;
+
+        if (resolvedSession) {
+          devLog.info('[useRoleLogic] Found existing session, redirecting to app');
+
+          // CRITICAL: Ensure auth store is populated with current user ID
+          setAuthenticated(resolvedSession.user.id);
+
+          if (role === ROLE_STORYTELLER) {
+            // Check if it's an anonymous storyteller
+            if (resolvedSession.user.is_anonymous) {
+              router.replace(APP_ROUTES.TABS);
+            } else {
+              router.replace(APP_ROUTES.DEVICE_CODE);
+            }
+          } else {
+            router.replace(APP_ROUTES.TABS);
+          }
+          return;
+        }
+
+        // No session, check stored role for routing
+        if (role === ROLE_STORYTELLER) {
+          router.replace(APP_ROUTES.DEVICE_CODE);
+          return;
+        }
+        if (role === ROLE_FAMILY) {
+          router.replace(APP_ROUTES.TABS);
+          return;
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void checkAuthState();
+
+    return () => {
+      mounted = false;
+    };
+  }, [router, refetchSession, session]);
+
+  const handleSelect = useCallback(
+    async (role: string) => {
+      try {
+        await setStoredRole(role);
+
+        if (role === ROLE_STORYTELLER) {
+          // Re-fetch session to avoid stale reads during role switching.
+          const latestSessionResult = await refetchSession();
+          const resolvedSession = latestSessionResult.data ?? session;
+
+          if (!resolvedSession) {
+            // Auto sign in anonymously for storytellers (only if no session exists)
+            devLog.info('[useRoleLogic] Signing in storyteller anonymously');
+            const result = await signInAnonymously();
+
+            // Update auth store immediately so session is available
+            setAuthenticated(result.userId);
+
+            // Anonymous storytellers go straight to the app
+            router.replace(APP_ROUTES.TABS);
+          } else {
+            devLog.info('[useRoleLogic] Using existing session:', resolvedSession.user.id);
+            // If session exists but is anonymous, go to tabs.
+            // If it's a permanent account, they might want to see the device code for family linking.
+            if (resolvedSession.user.is_anonymous) {
+              router.replace(APP_ROUTES.TABS);
+            } else {
+              router.replace(APP_ROUTES.DEVICE_CODE);
+            }
+          }
+        } else {
+          // Family users need to login if not already authenticated
+          const latestSessionResult = await refetchSession();
+          const resolvedSession = latestSessionResult.data ?? session;
+
+          if (!resolvedSession || resolvedSession.user.is_anonymous) {
+            // If no session or only anonymous session, family member MUST sign in
+            router.replace(APP_ROUTES.LOGIN);
+          } else {
+            router.replace(APP_ROUTES.TABS);
+          }
+        }
+      } catch (error) {
+        devLog.error('[useRoleLogic] Failed to handle role selection:', error);
+        HeritageAlert.show({
+          title: 'Error',
+          message: 'Failed to continue. Please try again.',
+          variant: 'error',
+        });
+      }
+    },
+    [refetchSession, router, session]
+  );
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(APP_ROUTES.WELCOME);
+    }
+  };
+
+  return {
+    state: { loading },
+    actions: { handleSelect, handleBack },
+    constants: { ROLE_STORYTELLER, ROLE_FAMILY },
+  };
+}
 
 // Hook for Recovery Code Logic
 export function useRecoveryCodeLogic() {
@@ -139,7 +283,16 @@ export function useDeviceCodeLogic() {
   const router = useRouter();
 
   useEffect(() => {
-    // Mobile app is Storyteller-only. No role checks required at this level.
+    async function checkRedirection() {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user?.is_anonymous) {
+        devLog.info(
+          '[useDeviceCodeLogic] Anonymous user detected on device code screen, redirecting to tabs'
+        );
+        router.replace(APP_ROUTES.TABS);
+      }
+    }
+    checkRedirection();
   }, [router]);
 
   const loadCode = useCallback(async () => {
@@ -187,14 +340,89 @@ export function useDeviceCodeLogic() {
 
   const formattedCode = codeData
     ? {
-      part1: codeData.code.substring(0, 3),
-      part2: codeData.code.substring(3, 6),
-    }
+        part1: codeData.code.substring(0, 3),
+        part2: codeData.code.substring(3, 6),
+      }
     : { part1: '...', part2: '...' };
 
   return {
     state: { codeData, error, loading, formattedCode },
     actions: { loadCode, handleReady, handleBack },
+  };
+}
+
+// Hook for Device Management Logic (Family)
+export function useDeviceManagementLogic() {
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [code, setCode] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [devices, setDevices] = useState<DeviceSummary[]>([]);
+  const [error, setError] = useState<string>('');
+
+  const loadDevices = useCallback(async () => {
+    try {
+      const list = await listFamilyDevices();
+      setDevices(list);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : AUTH_STRINGS.deviceManagement.alerts.error.load;
+      setError(message);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDevices();
+  }, [loadDevices]);
+
+  const handleGenerate = async () => {
+    setStatus('loading');
+    setError('');
+    try {
+      const result = await generateDeviceCode();
+      setCode(result.code);
+      setExpiresAt(result.expiresAt);
+      setStatus('success');
+      HeritageAlert.show({
+        title: AUTH_STRINGS.deviceManagement.alerts.codeReady.title,
+        message: AUTH_STRINGS.deviceManagement.alerts.codeReady.message
+          .replace('{code}', result.code)
+          .replace('{time}', new Date(result.expiresAt).toLocaleTimeString()),
+        variant: 'success',
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : AUTH_STRINGS.deviceManagement.alerts.error.generate;
+      setStatus('error');
+      setError(message);
+    }
+  };
+
+  const handleRevoke = useCallback(
+    async (id: string) => {
+      try {
+        await revokeDevice(id);
+        await loadDevices();
+        HeritageAlert.show({
+          title: AUTH_STRINGS.deviceManagement.alerts.revoked.title,
+          message: AUTH_STRINGS.deviceManagement.alerts.revoked.message,
+          variant: 'success',
+        });
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : AUTH_STRINGS.deviceManagement.alerts.error.revoke;
+        HeritageAlert.show({
+          title: 'Error',
+          message: message,
+          variant: 'error',
+        });
+      }
+    },
+    [loadDevices]
+  );
+
+  return {
+    state: { status, code, expiresAt, devices, error },
+    actions: { handleGenerate, handleRevoke },
   };
 }
 

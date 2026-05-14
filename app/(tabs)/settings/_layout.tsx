@@ -60,6 +60,13 @@ export default function SettingsLayout(): JSX.Element {
         }}
       />
       <Stack.Screen
+        name="daily-goal"
+        options={{
+          headerShown: false,
+          title: 'Daily Goal',
+        }}
+      />
+      <Stack.Screen
         name="font-size"
         options={{
           headerShown: false,

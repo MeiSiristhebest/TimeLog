@@ -9,6 +9,7 @@ export const appSettings = sqliteTable('app_settings', {
 
 export * from './localProfiles';
 export * from './audioRecordings';
+export * from './dailyGoals';
 export * from './syncQueue';
 export * from './activityEvents';
 export * from './storyReactions';

@@ -5,6 +5,8 @@ import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { BreathingGlow } from '@/components/ui/heritage/BreathingGlow';
 import { HomeNotification } from '@/features/home/components/HomeNotification';
 import { HomeRecordButton } from '@/features/home/components/HomeRecordButton';
+import { DailyGoalChip } from '@/features/home/components/DailyGoalChip';
+import { DEFAULT_DAILY_GOAL_DURATION_MS } from '@/features/home/services/dailyGoalService';
 import { ActiveRecordingView } from '@/features/recorder/components/ActiveRecordingView';
 import { AiConnectingView } from '@/features/recorder/components/AiConnectingView';
 import { AiRecordingView } from '@/features/recorder/components/AiRecordingView';
@@ -39,6 +41,7 @@ export default function HomeTabScreen(): JSX.Element {
     isCurrentTopicAnswered,
     formattedDate,
     greeting,
+    dailyGoal,
     weather,
     weatherIcon,
     activities,
@@ -61,6 +64,12 @@ export default function HomeTabScreen(): JSX.Element {
     () => (words.length > 0 ? words : promptText.split(/\s+/).filter(Boolean)),
     [words, promptText]
   );
+  const visibleDailyGoal = dailyGoal ?? {
+    goalDurationMs: DEFAULT_DAILY_GOAL_DURATION_MS,
+    completedDurationMs: 0,
+    progressRatio: 0,
+    isCompleted: false,
+  };
 
   // -- Views --
 
@@ -155,10 +164,10 @@ export default function HomeTabScreen(): JSX.Element {
             <AppText style={[styles.dateText, { color: colors.textMuted }]}>
               {formattedDate}
             </AppText>
-            {!weather.isLoading && (
-              <>
-                <View style={[styles.dot, { backgroundColor: `${colors.textMuted}50` }]} />
-                <View style={styles.weatherContainer}>
+            <View style={[styles.dot, { backgroundColor: `${colors.textMuted}50` }]} />
+            <View style={styles.weatherContainer}>
+              {!weather.isLoading ? (
+                <>
                   <Ionicons
                     name={weatherIcon as keyof typeof Ionicons.glyphMap}
                     size={18}
@@ -169,9 +178,18 @@ export default function HomeTabScreen(): JSX.Element {
                     {weather.error ? '--' : weather.temperature}
                     {HOME_STRINGS.weather.unit}
                   </AppText>
-                </View>
-              </>
-            )}
+                </>
+              ) : (
+                <AppText style={[styles.weatherText, { color: colors.textMuted }]}>--</AppText>
+              )}
+            </View>
+            <DailyGoalChip
+              goalDurationMs={visibleDailyGoal.goalDurationMs}
+              completedDurationMs={visibleDailyGoal.completedDurationMs}
+              progressRatio={visibleDailyGoal.progressRatio}
+              isCompleted={visibleDailyGoal.isCompleted}
+              onPress={actions.navigateToDailyGoal}
+            />
           </View>
         </View>
       </Animated.View>
@@ -343,8 +361,9 @@ const styles = StyleSheet.create({
   dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     marginTop: 4,
-    gap: 12,
+    gap: 8,
   },
   dateText: {
     fontSize: 14,

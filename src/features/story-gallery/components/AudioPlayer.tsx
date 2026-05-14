@@ -1,6 +1,13 @@
 import { AppText } from '@/components/ui/AppText';
 import { useCallback, useEffect } from 'react';
-import { View, ActivityIndicator, Text, AppState, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  View,
+  ActivityIndicator,
+  Text,
+  AppState,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Ionicons } from '@/components/ui/Icon';
 import { usePlayerStore } from '../store/usePlayerStore';
@@ -8,6 +15,10 @@ import type { PlayerOutputMode } from '../services/playerService';
 import { useHeritageTheme } from '@/theme/heritage';
 import { PlaybackWaveform } from './PlaybackWaveform';
 import { useFocusEffect } from '@react-navigation/native';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { useStory } from '../hooks/useStory';
+import { devLog } from '@/lib/devLogger';
+import { supabase } from '@/lib/supabase';
 
 function formatTime(millis: number): string {
   const totalSeconds = millis / 1000;
@@ -18,10 +29,12 @@ function formatTime(millis: number): string {
 
 interface AudioPlayerProps {
   uri: string;
+  recordingId?: string;
 }
 
-export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
+export function AudioPlayer({ uri, recordingId }: AudioPlayerProps): JSX.Element {
   const theme = useHeritageTheme();
+  const sessionUserId = useAuthStore((s) => s.sessionUserId);
   const {
     load,
     togglePlayback,
@@ -37,13 +50,58 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
     error,
   } = usePlayerStore();
 
+  const { story } = useStory(recordingId || '');
+
   useFocusEffect(
     useCallback(() => {
-      void load(uri);
+      let isMounted = true;
+
+      // If uri is 'OFFLOADED', we need to pass recording context to fetch signed URL
+      const resolvePath = async () => {
+        let storagePath: string | undefined;
+
+        if (uri === 'OFFLOADED' && recordingId) {
+          // Preference 1: user ID from the story record itself
+          let uid = story?.userId;
+
+          // Preference 2: reactive session ID from store
+          if (!uid) {
+            uid = sessionUserId;
+          }
+
+          // Preference 3: Direct check from Supabase (Final fallback if store is stale)
+          if (!uid) {
+            const { data } = await supabase.auth.getUser();
+            uid = data.user?.id;
+          }
+
+          if (!uid) {
+            // Only wait if BOTH are missing (still loading)
+            devLog.info('[AudioPlayer] Waiting for UserID to resolve offloaded story path...');
+            return;
+          }
+
+          if (!isMounted) return;
+
+          // Determine extension (default to wav, but check story record)
+          const ext = story?.uploadFormat || 'wav';
+
+          devLog.info(`[AudioPlayer] Resolving offloaded path using UID: ${uid}, Ext: ${ext}`);
+          storagePath = `${uid}/${recordingId}.${ext}`;
+        }
+
+        if (isMounted) {
+          void load(uri, storagePath ? { recordingId, storagePath } : undefined);
+        }
+      };
+
+      resolvePath();
+
       return () => {
+        isMounted = false;
         reset();
       };
-    }, [uri, load, reset])
+    }, [uri, load, reset, recordingId, story?.userId, story, sessionUserId])
   );
 
   useEffect(() => {
@@ -78,8 +136,12 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
 
   if (error) {
     return (
-      <View className="p-4 rounded-2xl items-center" style={{ backgroundColor: `${theme.colors.error}15` }}>
-        <AppText className="text-sm font-medium" style={{ color: theme.colors.error }}>{error}</AppText>
+      <View
+        className="items-center rounded-2xl p-4"
+        style={{ backgroundColor: `${theme.colors.error}15` }}>
+        <AppText className="text-sm font-medium" style={{ color: theme.colors.error }}>
+          {error}
+        </AppText>
       </View>
     );
   }
@@ -102,11 +164,15 @@ export function AudioPlayer({ uri }: AudioPlayerProps): JSX.Element {
 
       {/* Scrubber */}
       <View className="mb-4">
-        <View className="flex-row justify-between px-1 -mb-2">
-          <AppText className="font-semibold text-sm tabular-nums" style={{ color: theme.colors.primary }}>
+        <View className="-mb-2 flex-row justify-between px-1">
+          <AppText
+            className="text-sm font-semibold tabular-nums"
+            style={{ color: theme.colors.primary }}>
             {formatTime(positionMillis)}
           </AppText>
-          <AppText className="font-semibold text-sm tabular-nums" style={{ color: theme.colors.textMuted }}>
+          <AppText
+            className="text-sm font-semibold tabular-nums"
+            style={{ color: theme.colors.textMuted }}>
             {formatTime(durationMillis)}
           </AppText>
         </View>

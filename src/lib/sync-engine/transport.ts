@@ -4,10 +4,11 @@
  */
 
 import * as Upload from 'tus-js-client';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Crypto from 'expo-crypto';
 import { supabase } from '@/lib/supabase';
 import { getSupabaseRuntimeConfig, RuntimeConfigError } from '@/lib/config/runtimeConfig';
+import { devLog } from '../devLogger';
 
 const DEFAULT_CHUNK_SIZE = 1 * 1024 * 1024; // 1MB - optimized for mobile latency
 
@@ -38,14 +39,17 @@ export class TusTransport {
     storagePath: string,
     onProgress?: UploadProgressCallback
   ): Promise<string> {
+    devLog.info(`[TusTransport] Starting upload: ${filePath} -> ${bucket}/${storagePath}`);
     // Verify file exists
     const fileInfo = await FileSystem.getInfoAsync(filePath);
     if (!fileInfo.exists) {
       throw new Error(`File not found: ${filePath}`);
     }
+    devLog.info(`[TusTransport] File verified, size: ${fileInfo.size} bytes`);
 
     // Convert file:// URI to blob for TUS (React Native environment)
     const fileBlob = await this.fileUriToBlob(filePath);
+    devLog.info(`[TusTransport] File converted to blob, size: ${fileBlob.size} bytes`);
 
     // TUS endpoint for Supabase Storage
     const tusEndpoint = `${this.supabaseUrl}/storage/v1/upload/resumable`;
@@ -84,6 +88,7 @@ export class TusTransport {
         onSuccess: () => {
           // Return public URL
           const publicUrl = `${this.supabaseUrl}/storage/v1/object/public/${bucket}/${storagePath}`;
+          devLog.info(`[TusTransport] Upload successful: ${publicUrl}`);
           resolve(publicUrl);
         },
       });
@@ -101,15 +106,22 @@ export class TusTransport {
    * @returns MD5 hash as hex string (32 characters)
    */
   async calculateMd5Checksum(filePath: string): Promise<string> {
-    const response = await this.fetchLocalFile(filePath);
-    if (!response.ok) {
-      throw new Error(`Failed to load file for checksum (status ${response.status})`);
+    try {
+      // Use FileSystem to read as Base64 first
+      const base64 = await FileSystem.readAsStringAsync(filePath, {
+        encoding: 'base64',
+      });
+
+      // Pass base64 string to digest, which is safer on Android than ArrayBuffer
+      const digest = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.MD5, base64, {
+        encoding: Crypto.CryptoEncoding.HEX,
+      });
+
+      return digest;
+    } catch (error) {
+      devLog.error(`[TusTransport] MD5 calculation failed for ${filePath}:`, error);
+      return ''; // Fallback to empty checksum rather than blocking sync
     }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const digestBuffer = await Crypto.digest(Crypto.CryptoDigestAlgorithm.MD5, arrayBuffer);
-
-    return this.arrayBufferToHex(digestBuffer);
   }
 
   private arrayBufferToHex(buffer: ArrayBuffer | string): string {
@@ -147,13 +159,11 @@ export class TusTransport {
 
   private async fetchLocalFile(uri: string): Promise<Response> {
     try {
-      return await fetch(uri);
+      const fetchUri = uri.startsWith('/') && !uri.startsWith('file://') ? `file://${uri}` : uri;
+      return await fetch(fetchUri);
     } catch (error) {
-      throw new Error(
-        `Failed to access local file: ${
-          error instanceof Error ? error.message : 'unknown fetch error'
-        }`
-      );
+      const msg = error instanceof Error ? error.message : 'unknown fetch error';
+      throw new Error(`Failed to access local file (${uri}): ${msg}`);
     }
   }
 

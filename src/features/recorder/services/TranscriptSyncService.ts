@@ -16,6 +16,7 @@ import { syncQueueService } from '@/lib/sync-engine/queue';
 import type { TranscriptionSegment as LiveKitSegment } from '@/lib/livekit/LiveKitClient';
 import { eq, asc } from 'drizzle-orm';
 import { supabase } from '@/lib/supabase';
+import { generateId } from '@/utils/id';
 
 export class TranscriptSyncService {
   /**
@@ -129,8 +130,7 @@ export class TranscriptSyncService {
    * Generate unique ID for segment (UUID v7 for time-ordered IDs)
    */
   private generateId(): string {
-    // Simple timestamp-based ID (replace with UUID v7 library in production)
-    return `seg_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+    return generateId();
   }
 
   /**

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { devLog } from '@/lib/devLogger';
+import { syncQueueService } from '@/lib/sync-engine/queue';
 import {
   CLOUD_SETTINGS_KEY,
   DEFAULT_CLOUD_SETTINGS,
@@ -62,6 +63,14 @@ export async function saveCloudSettings(
   };
 
   writeLocalSettings(settings);
+
+  if (cloudAIEnabled) {
+    try {
+      await syncQueueService.reEnqueueOfflineRecordings();
+    } catch (error) {
+      devLog.warn('[cloudSettingsService] Failed to enqueue offline recordings:', error);
+    }
+  }
 
   const client = getSupabaseClient(options?.client);
   if (!client) {

@@ -42,3 +42,12 @@ export function isCloudAiEnabledLocally(): boolean {
   const stored = readCloudSettingsFromStorage();
   return stored?.cloudAIEnabled ?? DEFAULT_CLOUD_SETTINGS.cloudAIEnabled;
 }
+
+export function setCloudAiEnabled(enabled: boolean): void {
+  const current = readCloudSettingsFromStorage() ?? DEFAULT_CLOUD_SETTINGS;
+  writeCloudSettingsToStorage({
+    ...current,
+    cloudAIEnabled: enabled,
+    lastUpdated: new Date().toISOString(),
+  });
+}

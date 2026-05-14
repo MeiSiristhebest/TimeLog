@@ -1,8 +1,9 @@
 import React from 'react';
-import { ImageBackground, View, StyleSheet } from 'react-native';
+import { ImageBackground, View, StyleSheet, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppText } from '@/components/ui/AppText';
 import { Animated } from '@/tw/animated';
 import {
   Easing,
@@ -58,8 +59,13 @@ export default function WelcomeScreen(): JSX.Element {
     try {
       await setWelcomeSeen(true);
     } finally {
-      router.replace(APP_ROUTES.DEVICE_CODE);
+      // Correct flow: Choose role first, don't jump to device code
+      router.replace(APP_ROUTES.ROLE || '/role');
     }
+  };
+
+  const handleSignIn = () => {
+    router.push(APP_ROUTES.LOGIN);
   };
 
   const animatedImageStyle = useAnimatedStyle(() => ({
@@ -89,84 +95,95 @@ export default function WelcomeScreen(): JSX.Element {
           }}
         />
         <SafeAreaView style={{ flex: 1 }}>
-        {/* Top Section: Logo & Image */}
-        <View style={styles.topSection}>
-          {/* Logo Mark */}
-          <Animated.View entering={FadeInDown.delay(200).duration(800)} style={styles.logoWrapper}>
-            <Image
-              source={require('../../../../assets/images/brand_logo.png')}
-              style={styles.logo}
-              contentFit="contain"
-            />
-          </Animated.View>
-
-          {/* Hero Image */}
-          <Animated.View
-            entering={FadeIn.delay(400).duration(1000)}
-            style={{
-              width: '100%',
-              maxWidth: 480,
-              paddingHorizontal: 24,
-              flex: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-            <Animated.View style={[{ width: '100%', height: '100%' }, animatedImageStyle]}>
+          {/* Top Section: Logo & Image */}
+          <View style={styles.topSection}>
+            {/* Logo Mark */}
+            <Animated.View
+              entering={FadeInDown.delay(200).duration(800)}
+              style={styles.logoWrapper}>
               <Image
-                source={HERO_IMAGE}
-                style={{ width: '100%', height: '100%' }}
+                source={require('../../../../assets/images/brand_logo.png')}
+                style={styles.logo}
                 contentFit="contain"
-                accessibilityLabel="Family gathering illustration showing multiple generations sharing stories together"
               />
             </Animated.View>
-          </Animated.View>
-        </View>
 
-        {/* Content Section */}
-        <View style={styles.contentSection}>
-          <View style={styles.innerContent}>
-            {/* Headline */}
-            <Animated.Text
-              allowFontScaling={false}
-              entering={FadeInDown.delay(600).duration(800)}
-              style={[
-                styles.headline,
-                {
-                  color: colors.onSurface,
-                  fontSize: Math.round(34 * scale),
-                  lineHeight: Math.round(40 * scale),
-                },
-              ]}>
-              Preserve your voice for your family.
-            </Animated.Text>
-
-            {/* Body Text */}
-            <Animated.Text
-              allowFontScaling={false}
-              entering={FadeInDown.delay(700).duration(800)}
-              style={[
-                styles.bodyText,
-                { color: colors.onSurface },
-              ]}>
-              Your stories are a legacy. Start recording them today in your own words.
-            </Animated.Text>
-
-            {/* Primary Button */}
+            {/* Hero Image */}
             <Animated.View
-              entering={FadeInDown.delay(900).duration(800)}
-              style={[styles.buttonWrapper, animatedButtonStyle]}>
-              <HeritageButton
-                title="Get Started"
-                onPress={handleGetStarted}
-                variant="primary"
-                size="large"
-                fullWidth
-                style={styles.ctaButton}
-                textStyle={styles.ctaButtonText}
-              />
+              entering={FadeIn.delay(400).duration(1000)}
+              style={{
+                width: '100%',
+                maxWidth: 480,
+                paddingHorizontal: 24,
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+              <Animated.View style={[{ width: '100%', height: '100%' }, animatedImageStyle]}>
+                <Image
+                  source={HERO_IMAGE}
+                  style={{ width: '100%', height: '100%' }}
+                  contentFit="contain"
+                  accessibilityLabel="Family gathering illustration showing multiple generations sharing stories together"
+                />
+              </Animated.View>
             </Animated.View>
           </View>
-        </View>
+
+          {/* Content Section */}
+          <View style={styles.contentSection}>
+            <View style={styles.innerContent}>
+              {/* Headline */}
+              <Animated.Text
+                allowFontScaling={false}
+                entering={FadeInDown.delay(600).duration(800)}
+                style={[
+                  styles.headline,
+                  {
+                    color: colors.onSurface,
+                    fontSize: Math.round(34 * scale),
+                    lineHeight: Math.round(40 * scale),
+                  },
+                ]}>
+                Preserve your voice for your family.
+              </Animated.Text>
+
+              {/* Body Text */}
+              <Animated.Text
+                allowFontScaling={false}
+                entering={FadeInDown.delay(700).duration(800)}
+                style={[styles.bodyText, { color: colors.onSurface }]}>
+                Your stories are a legacy. Start recording them today in your own words.
+              </Animated.Text>
+
+              {/* Primary Button */}
+              <Animated.View
+                entering={FadeInDown.delay(900).duration(800)}
+                style={[styles.buttonWrapper, animatedButtonStyle]}>
+                <HeritageButton
+                  title="Get Started"
+                  onPress={handleGetStarted}
+                  variant="primary"
+                  size="large"
+                  fullWidth
+                  style={styles.ctaButton}
+                  textStyle={styles.ctaButtonText}
+                />
+              </Animated.View>
+
+              {/* Secondary Action: Login */}
+              <Animated.View
+                entering={FadeInDown.delay(1100).duration(800)}
+                style={{ marginTop: 24 }}>
+                <Pressable onPress={handleSignIn} style={{ paddingVertical: 12 }}>
+                  <AppText style={{ color: colors.textMuted, fontSize: 16, fontWeight: '500' }}>
+                    Already have an account?{' '}
+                    <AppText style={{ color: colors.primary, fontWeight: '700' }}>Sign In</AppText>
+                  </AppText>
+                </Pressable>
+              </Animated.View>
+            </View>
+          </View>
         </SafeAreaView>
       </ImageBackground>
     </View>

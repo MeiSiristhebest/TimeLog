@@ -113,6 +113,13 @@
       "when": 1774372251477,
       "tag": "0015_yielding_genesis",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1778230076235,
+      "tag": "0016_heavy_exodus",
+      "breakpoints": true
     }
   ]
 }

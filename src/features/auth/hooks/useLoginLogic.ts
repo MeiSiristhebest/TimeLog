@@ -3,9 +3,11 @@ import { useRouter } from 'expo-router';
 import { signInWithEmailPassword, sendResetEmail } from '@/features/auth/services/authService';
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
+import { useAuthStore } from '../store/authStore';
 
 export function useLoginLogic() {
   const router = useRouter();
+  const setAuthenticated = useAuthStore((s) => s.setAuthenticated);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,7 +19,10 @@ export function useLoginLogic() {
     setError('');
     setMessage('');
     try {
-      await signInWithEmailPassword(email, password);
+      const user = await signInWithEmailPassword(email, password);
+      if (user) {
+        setAuthenticated(user.id);
+      }
       setMessage('Login successful.');
       router.replace(APP_ROUTES.TABS);
     } catch (err) {

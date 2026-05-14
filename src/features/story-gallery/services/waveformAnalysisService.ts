@@ -22,7 +22,12 @@ async function extractAudioAnalysis(fileUri: string): Promise<AudioAnalysis> {
   return module.extractAudioAnalysis({ fileUri });
 }
 
-export async function loadWaveformAnalysis(fileUri: string): Promise<AudioAnalysis> {
+export async function loadWaveformAnalysis(fileUri: string): Promise<AudioAnalysis | null> {
+  if (!fileUri || fileUri === 'OFFLOADED' || fileUri.startsWith('http')) {
+    // Cannot analyze offloaded or remote files without downloading them
+    return null;
+  }
+
   const analysisPath = getAnalysisPath(fileUri);
 
   try {
@@ -32,7 +37,10 @@ export async function loadWaveformAnalysis(fileUri: string): Promise<AudioAnalys
       return JSON.parse(cached) as AudioAnalysis;
     }
   } catch (cacheError) {
-    devLog.warn('[waveformAnalysisService] Cache read failed, falling back to extraction:', cacheError);
+    devLog.warn(
+      '[waveformAnalysisService] Cache read failed, falling back to extraction:',
+      cacheError
+    );
   }
 
   const decrypted = isEncryptedAudioPath(fileUri)

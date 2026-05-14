@@ -22,6 +22,7 @@ export function useAccountSecurity() {
     try {
       await signOut();
       await clearStoredRole();
+      router.replace(APP_ROUTES.WELCOME);
     } catch (error: unknown) {
       HeritageAlert.show({
         title: 'Sign Out Failed',
@@ -31,7 +32,7 @@ export function useAccountSecurity() {
     } finally {
       setIsSigningOut(false);
     }
-  }, []);
+  }, [router]);
 
   const confirmSignOut = useCallback(() => {
     HeritageAlert.show({
@@ -54,9 +55,7 @@ export function useAccountSecurity() {
     try {
       const result = await deleteAccountData();
       const warningSummary =
-        result.warnings.length > 0
-          ? `\n\nWarnings: ${result.warnings.join(' | ')}`
-          : '';
+        result.warnings.length > 0 ? `\n\nWarnings: ${result.warnings.join(' | ')}` : '';
 
       HeritageAlert.show({
         title: ACCOUNT_SECURITY_STRINGS.deleteAccountSection.successTitle,

@@ -30,9 +30,11 @@ import {
 import { HOME_STRINGS } from '../data/mockHomeData';
 import { isCloudAiEnabledLocally } from '@/lib/cloudPolicy';
 import { markQuestionAsAnswered } from '@/features/recorder/services/topicService';
+import { addRecordingToDailyGoal } from '@/features/home/services/dailyGoalService';
 import type { TopicQuestion } from '@/types/entities';
 
 import { useHomeDisplayData } from './useHomeDisplayData';
+import { useDailyGoalProgress } from './useDailyGoalProgress';
 import { useAiDialogSession } from './useAiDialogSession';
 import { useRecordingSession } from './useRecordingSession';
 
@@ -107,6 +109,7 @@ export function useHomeLogic() {
 
   // --- Display Data Housekeeping ---
   const { greeting, formattedDate, weather, weatherIconName } = useHomeDisplayData();
+  const dailyGoal = useDailyGoalProgress(sessionUserId);
 
   // --- TTS & Topic Selection ---
   const initialQuestion = useMemo(() => {
@@ -181,6 +184,13 @@ export function useHomeLogic() {
       // 1. Immediate UI Feedback
       setLastSavedId(finalized.id);
       void playSuccess();
+      void addRecordingToDailyGoal({
+        userId: sessionUserId,
+        durationMs: finalized.durationMs ?? 0,
+        recordedAt: finalized.endedAt ?? new Date(),
+      }).catch((error) => {
+        devLog.warn('[useHomeLogic] Daily goal update failed', error);
+      });
       
       // 2. Immediate non-blocking AI cleanup
       if (aiDialogRef.current?.isConnected) {
@@ -310,6 +320,7 @@ export function useHomeLogic() {
       isCurrentTopicAnswered,
       formattedDate,
       greeting,
+      dailyGoal,
       weather,
       weatherIcon: weatherIconName,
       storyCategoryTitle: getCategoryTitle(tts.currentQuestion?.category),
@@ -342,13 +353,14 @@ export function useHomeLogic() {
       newTopic: tts.newTopic,
       replayQuestion: tts.replay,
       navigateToSettings: () => router.push(APP_ROUTES.SETTINGS),
+      navigateToDailyGoal: () => router.push(APP_ROUTES.SETTINGS_DAILY_GOAL),
       navigateToListen: () => router.push(APP_ROUTES.GALLERY),
       navigateToStory: (id: string) => router.push(toStoryRoute(id)),
       navigateToStoryComments: (id: string) => router.push(toStoryCommentsRoute(id)),
     },
   }), [
     recording, lastSavedId, tts, isCurrentTopicAnswered, formattedDate, greeting, 
-    weather, weatherIconName, activities, hasUnread, isSyncOnline, recordingMode, 
+    dailyGoal, weather, weatherIconName, activities, hasUnread, isSyncOnline, recordingMode, 
     isAiAvailable, canEnableAiMode, cloudAIEnabled, aiDialog, appRole, 
     handleStartRecording, setRecordingModeAndPersist, router
   ]);

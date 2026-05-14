@@ -5,10 +5,15 @@
  */
 
 import { eq, and, lte, lt, gte } from 'drizzle-orm';
+import { DeviceEventEmitter } from 'react-native';
 import { db } from '@/db/client';
 import { syncQueue, audioRecordings } from '@/db/schema';
 import { generateId } from '@/utils/id';
-import type { SyncQueueItem, TranscriptSegmentSyncPayload, ProfileSyncPayload } from '@/types/entities';
+import type {
+  SyncQueueItem,
+  TranscriptSegmentSyncPayload,
+  ProfileSyncPayload,
+} from '@/types/entities';
 
 const MAX_RETRY_COUNT = 5;
 const BASE_BACKOFF_MS = 2000; // 2 seconds
@@ -48,6 +53,8 @@ class SyncQueueService {
         transcodeStatus: options?.transcodeStatus,
       })
       .where(eq(audioRecordings.id, recordingId));
+
+    DeviceEventEmitter.emit('story-collection-updated');
   }
 
   /**
@@ -100,6 +107,8 @@ class SyncQueueService {
         transcodeStatus,
       })
       .where(eq(audioRecordings.id, recordingId));
+
+    DeviceEventEmitter.emit('story-collection-updated');
   }
 
   /**
@@ -129,6 +138,8 @@ class SyncQueueService {
       .update(audioRecordings)
       .set({ syncStatus: 'queued' })
       .where(eq(audioRecordings.id, recordingId));
+
+    DeviceEventEmitter.emit('story-collection-updated');
   }
 
   async enqueueTranscriptSegment(record: TranscriptSegmentSyncPayload): Promise<void> {
@@ -190,22 +201,30 @@ class SyncQueueService {
    */
   async peekNext(): Promise<SyncQueueItem | null> {
     const now = Date.now();
+    // Logic:
+    // 1. Status is 'pending' OR (Status is 'processing' but it's been more than 5 minutes, assuming crash)
+    // 2. Not exceeded max retries
+    // 3. Retry time has passed
     const items = await db
       .select()
       .from(syncQueue)
-      .where(
-        and(
-          eq(syncQueue.status, 'pending'),
-          lte(syncQueue.nextRetryAt, now),
-          lt(syncQueue.retryCount, MAX_RETRY_COUNT)
-        )
-      )
-      .orderBy(syncQueue.createdAt)
-      .limit(1);
+      .where(and(lte(syncQueue.nextRetryAt, now), lt(syncQueue.retryCount, MAX_RETRY_COUNT)))
+      .orderBy(syncQueue.createdAt);
 
-    if (items.length === 0) return null;
+    // Filter in JS to handle the complex "processing but timed out" logic
+    const eligibleItem = items.find((item) => {
+      if (item.status === 'pending') return true;
+      if (item.status === 'processing') {
+        // If it's been stuck in 'processing' for > 5 mins, it's likely a crash survivor
+        const FIVE_MINUTES_MS = 5 * 60 * 1000;
+        return (item.nextRetryAt ?? 0) < now - FIVE_MINUTES_MS;
+      }
+      return false;
+    });
 
-    const item = items[0];
+    if (!eligibleItem) return null;
+
+    const item = eligibleItem;
     return {
       id: item.id,
       type: item.type as SyncQueueItem['type'],
@@ -240,6 +259,9 @@ class SyncQueueService {
         .update(audioRecordings)
         .set({ syncStatus: 'syncing' })
         .where(eq(audioRecordings.id, item.recordingId));
+
+      DeviceEventEmitter.emit('story-collection-updated');
+      DeviceEventEmitter.emit(`story-updated-${item.recordingId}`);
     }
   }
 
@@ -260,10 +282,17 @@ class SyncQueueService {
 
     // Update recording status
     if (item.recordingId) {
+      const isUpload = item.type === 'upload_recording';
       await db
         .update(audioRecordings)
-        .set({ syncStatus: 'synced' })
+        .set({
+          syncStatus: 'synced',
+          ...(isUpload ? { isSynced: true } : {}),
+        })
         .where(eq(audioRecordings.id, item.recordingId));
+
+      DeviceEventEmitter.emit('story-collection-updated');
+      DeviceEventEmitter.emit(`story-updated-${item.recordingId}`);
     }
   }
 
@@ -307,6 +336,9 @@ class SyncQueueService {
         .update(audioRecordings)
         .set({ syncStatus: 'failed' })
         .where(eq(audioRecordings.id, item.recordingId));
+
+      DeviceEventEmitter.emit('story-collection-updated');
+      DeviceEventEmitter.emit(`story-updated-${item.recordingId}`);
     }
   }
 
@@ -360,6 +392,32 @@ class SyncQueueService {
       .where(and(eq(syncQueue.status, 'pending'), gte(syncQueue.retryCount, MAX_RETRY_COUNT)));
     // Note: Drizzle doesn't return count for SQLite, return 0 as placeholder
     return 0;
+  }
+
+  /**
+   * Re-enqueue recordings that were marked as local_only or failed,
+   * making them eligible for cloud upload when cloud AI is enabled.
+   */
+  async reEnqueueOfflineRecordings(): Promise<void> {
+    const offlineRecordings = await db
+      .select()
+      .from(audioRecordings)
+      .where(eq(audioRecordings.recordingStatus, 'completed'));
+
+    const eligible = offlineRecordings.filter(
+      (r) => r.syncStatus === 'local_only' || r.syncStatus === 'failed'
+    );
+
+    for (const rec of eligible) {
+      const isQueued = await this.isRecordingQueued(rec.id);
+      if (!isQueued) {
+        await this.enqueueRecordingUpload(rec.id, rec.filePath, {
+          uploadPath: rec.uploadPath ?? undefined,
+          uploadExtension: rec.uploadFormat ?? undefined,
+          transcodeStatus: rec.transcodeStatus ?? undefined,
+        });
+      }
+    }
   }
 }
 

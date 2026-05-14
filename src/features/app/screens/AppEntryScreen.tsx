@@ -11,6 +11,8 @@ import { hasSeenWelcome } from '@/features/auth/services/onboardingStorage';
 import { useHeritageTheme } from '@/theme/heritage';
 import { devLog } from '@/lib/devLogger';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
+import { supabase } from '@/lib/supabase';
+import { getStoredRole } from '@/features/auth/services/roleStorage';
 
 // Assets
 const BRAND_LOGO = require('../../../../assets/images/brand_logo.png');
@@ -26,12 +28,35 @@ export default function AppEntryScreen(): JSX.Element {
         const welcomeSeen = await hasSeenWelcome();
         if (isCancelled) return;
 
-        // In Slimmed Mobile app, we assume Storyteller role by default.
-        // New users go to Welcome; Returning users go to Device Code (pairing) or Main Tabs if authed.
-        if (welcomeSeen) {
-          router.replace(APP_ROUTES.DEVICE_CODE);
-        } else {
+        if (!welcomeSeen) {
           router.replace(APP_ROUTES.WELCOME);
+          return;
+        }
+
+        // Logic fix: Check session and role instead of hardcoding DEVICE_CODE
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const role = await getStoredRole();
+
+        if (!session) {
+          // If role is storyteller, they should have an anonymous session.
+          // If they don't, send them to Welcome to start fresh.
+          router.replace(APP_ROUTES.WELCOME);
+          return;
+        }
+
+        if (session.user.is_anonymous) {
+          // Anonymous storytellers go straight to tabs
+          router.replace(APP_ROUTES.TABS);
+        } else {
+          // Permanent account storytellers go to device code for pairing,
+          // listeners go to tabs.
+          if (role === 'storyteller') {
+            router.replace(APP_ROUTES.DEVICE_CODE);
+          } else {
+            router.replace(APP_ROUTES.TABS);
+          }
         }
       } catch (error) {
         devLog.error('[AppEntryScreen] Failed to bootstrap app:', error);
