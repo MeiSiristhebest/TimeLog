@@ -24,7 +24,7 @@ import * as Haptics from 'expo-haptics';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { useHeritageTheme } from '@/theme/heritage';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { EN_COPY, getStorySavedCategoryLabel } from '@/features/app/copy/en';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 const ILL_CHILDHOOD = require('../../../../assets/images/illustration_childhood.png');
 const ILL_FAMILY = require('../../../../assets/images/illustration_family.png');
@@ -80,14 +80,17 @@ function getCategoryIllustration(category?: string): number {
 
 export function StorySavedView({
   onDismiss,
-  storyTitle = EN_COPY.storySaved.defaultStoryTitle,
+  storyTitle,
   category,
 }: StorySavedViewProps): JSX.Element {
+  const { t } = useTranslation();
   const { colors, isDark } = useHeritageTheme();
+
+  const finalStoryTitle = storyTitle || t('Recorder.saved.defaultTitle', { defaultValue: 'My Story' });
 
   // Get dynamic illustration
   const illustrationSource = getCategoryIllustration(category);
-  const captionLabel = getStorySavedCategoryLabel(category);
+  const captionLabel = category ? t(`Recorder.saved.categories.${category}`, { defaultValue: '' }) : t('Recorder.saved.defaultTitle', { defaultValue: 'My Story' });
 
   // Animations
   const rotate = useSharedValue(0);
@@ -140,10 +143,10 @@ export function StorySavedView({
             entering={FadeInDown.delay(200).duration(600)}
             className="items-center mb-8 gap-2">
             <AppText className="text-[32px] text-center" style={{ fontFamily: 'Fraunces_600SemiBold', color: colors.onSurface }}>
-              {EN_COPY.storySaved.successTitle}
+              {t('Recorder.saved.successTitle', { defaultValue: 'Story Kept Safe' })}
             </AppText>
             <AppText className="text-base text-center" style={{ color: colors.textMuted }}>
-              {EN_COPY.storySaved.successSubtitle}
+              {t('Recorder.saved.successSubtitle', { defaultValue: 'Your voice has been recorded and safely preserved.' })}
             </AppText>
           </Animated.View>
 
@@ -193,7 +196,7 @@ export function StorySavedView({
                   }}
                   ellipsizeMode="tail"
                   numberOfLines={1}>
-                  {captionLabel || storyTitle}
+                  {captionLabel || finalStoryTitle}
                 </AppText>
               </View>
             </View>
@@ -204,7 +207,7 @@ export function StorySavedView({
           <View className="w-full max-w-[400px]">
             <Animated.View entering={FadeInDown.delay(600).duration(500)} className="w-full">
               <HeritageButton
-                title={EN_COPY.common.done}
+                title={t('Recorder.saved.done', { defaultValue: 'Done' })}
                 onPress={onDismiss}
                 variant="primary"
                 size="large"

@@ -21,6 +21,7 @@ import { CATEGORY_COVERS } from '@/features/story-gallery/utils/storyImageUtils'
 import { getQuestionById, TOPIC_QUESTIONS } from '@/features/recorder/data/topicQuestions';
 import { CATEGORY_DATA, mapRawCategoryToFilter } from '@/features/story-gallery/data/mockGalleryData';
 import { Platform, View, ScrollView, TextInput, KeyboardAvoidingView, Pressable, Modal } from 'react-native';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 type SpringActionProps = {
   children: React.ReactNode;
@@ -67,19 +68,20 @@ const TOPIC_CATEGORIES: TopicCategory[] = Array.from(
   )
 );
 
-function toCategoryLabel(category?: TopicCategory): string {
-  if (!category) return 'General';
+function toCategoryLabel(category?: TopicCategory, t?: (key: string, params?: Record<string, unknown>) => string): string {
+  if (!category) return t ? t('Gallery.categories.general', { defaultValue: 'General' }) : 'General';
   const filterId = mapRawCategoryToFilter(category);
   return CATEGORY_DATA.find((item) => item.id === filterId)?.label ?? category;
 }
 
 function speakerMeta(
   speaker: TranscriptSpeaker,
-  colors: ReturnType<typeof useHeritageTheme>['colors']
+  colors: ReturnType<typeof useHeritageTheme>['colors'],
+  t: (key: string, params?: Record<string, unknown>) => string
 ): { label: string; tint: string; bg: string } {
   if (speaker === 'agent') {
     return {
-      label: 'AI',
+      label: t('Recorder.ai.assistant', { defaultValue: 'AI' }),
       tint: colors.tertiary,
       bg: `${colors.tertiary}14`,
     };
@@ -87,14 +89,14 @@ function speakerMeta(
 
   if (speaker === 'user') {
     return {
-      label: 'You',
+      label: t('Recorder.ai.you', { defaultValue: 'You' }),
       tint: colors.primaryDeep,
       bg: `${colors.primary}16`,
     };
   }
 
   return {
-    label: 'Transcript',
+    label: t('Gallery.edit.transcript', { defaultValue: 'Transcript' }),
     tint: colors.textMuted,
     bg: `${colors.textMuted}12`,
   };
@@ -154,6 +156,7 @@ function serializeTranscriptEntries(entries: EditableTranscriptEntry[]): string 
 }
 
 export default function StoryEditScreen(): JSX.Element {
+  const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { story, isLoading } = useStory(id);
@@ -177,19 +180,19 @@ export default function StoryEditScreen(): JSX.Element {
     if (!story) return;
     if (hydratedStoryId === story.id) return;
 
-    setTitle(story.title || 'Untitled Story');
+    setTitle(story.title || t('Gallery.untitled', { defaultValue: 'Untitled Story' }));
     const fallback = story.transcription?.trim() ? story.transcription : transcriptFallback;
     setEditableEntries(toEditableEntries(entries, fallback));
     setCoverUri(story.coverImagePath || null);
     setTopicId(story.topicId || '');
     setTopicQuery(
       story.topicId
-        ? toCategoryLabel(getQuestionById(story.topicId)?.category as TopicCategory | undefined)
+        ? toCategoryLabel(getQuestionById(story.topicId)?.category as TopicCategory | undefined, t)
         : ''
     );
     setStoryDate(new Date(story.startedAt));
     setHydratedStoryId(story.id);
-  }, [entries, hydratedStoryId, question?.text, story, transcriptFallback]);
+  }, [entries, hydratedStoryId, question?.text, story, t, transcriptFallback]);
 
   useEffect(() => {
     if (!story) return;
@@ -225,16 +228,16 @@ export default function StoryEditScreen(): JSX.Element {
     try {
       const serializedTranscript = serializeTranscriptEntries(editableEntries);
       await updateStoryMetadata(id, {
-        title: title.trim() || 'Untitled Story',
+        title: title.trim() || t('Gallery.untitled', { defaultValue: 'Untitled Story' }),
         transcription: serializedTranscript,
         coverImagePath: coverUri || undefined,
         topicId: topicId.trim() || undefined,
         startedAt: storyDate.getTime(),
       });
-      showSuccessToast('Story updated');
+      showSuccessToast(t('Gallery.edit.saveSuccess', { defaultValue: 'Story updated' }));
       router.back();
     } catch {
-      showErrorToast('Failed to save changes');
+      showErrorToast(t('Gallery.edit.saveFailed', { defaultValue: 'Failed to save changes' }));
     } finally {
       setIsSaving(false);
     }
@@ -247,14 +250,14 @@ export default function StoryEditScreen(): JSX.Element {
     if (!query) {
       return true;
     }
-    const label = toCategoryLabel(category).toLowerCase();
+    const label = toCategoryLabel(category, t).toLowerCase();
     return label.includes(query) || category.toLowerCase().includes(query);
   });
 
   const handleCategorySelect = (nextCategory: TopicCategory) => {
     const currentCategory = selectedCategory;
     if (currentCategory === nextCategory) {
-      setTopicQuery(toCategoryLabel(nextCategory));
+      setTopicQuery(toCategoryLabel(nextCategory, t));
       setTopicPickerVisible(false);
       return;
     }
@@ -263,7 +266,7 @@ export default function StoryEditScreen(): JSX.Element {
     if (nextTopic) {
       setTopicId(nextTopic.id);
     }
-    setTopicQuery(toCategoryLabel(nextCategory));
+    setTopicQuery(toCategoryLabel(nextCategory, t));
     setTopicPickerVisible(false);
   };
 
@@ -310,12 +313,14 @@ export default function StoryEditScreen(): JSX.Element {
             paddingBottom: 12,
           }}>
           <SpringAction onPress={() => router.back()}>
-            <AppText style={{ color: colors.primary, fontSize: 17 }}>Cancel</AppText>
+            <AppText style={{ color: colors.primary, fontSize: 17 }}>
+              {t('Gallery.edit.cancel', { defaultValue: 'Cancel' })}
+            </AppText>
           </SpringAction>
           <SpringAction onPress={handleSave} disabled={isSaving}>
             <AppText
               style={{ color: isSaving ? colors.textMuted : colors.primary, fontWeight: '600', fontSize: 17 }}>
-              {isSaving ? 'Saving' : 'Save'}
+              {isSaving ? t('Gallery.edit.saving', { defaultValue: 'Saving...' }) : t('Gallery.edit.save', { defaultValue: 'Save' })}
             </AppText>
           </SpringAction>
         </View>
@@ -363,7 +368,9 @@ export default function StoryEditScreen(): JSX.Element {
                   gap: 8,
                 }}>
                 <Icon name="camera" size={24} color="#FFF" />
-                <AppText style={{ color: '#FFF', fontWeight: '600', fontSize: 12 }}>Change Cover</AppText>
+                <AppText style={{ color: '#FFF', fontWeight: '600', fontSize: 12 }}>
+                  {t('Gallery.edit.changeCover', { defaultValue: 'Change Cover' })}
+                </AppText>
               </View>
             </SpringAction>
           </View>
@@ -377,7 +384,7 @@ export default function StoryEditScreen(): JSX.Element {
                 marginBottom: 8,
                 textTransform: 'uppercase',
               }}>
-              Title
+              {t('Gallery.edit.storyTitle', { defaultValue: 'Title' })}
             </AppText>
             <TextInput
               value={title}
@@ -390,7 +397,7 @@ export default function StoryEditScreen(): JSX.Element {
                 borderBottomColor: colors.border,
                 paddingVertical: 8,
               }}
-              placeholder="Story Title"
+              placeholder={t('Gallery.edit.titlePlaceholder', { defaultValue: 'Story Title' })}
               placeholderTextColor={colors.textMuted}
             />
           </View>
@@ -404,7 +411,7 @@ export default function StoryEditScreen(): JSX.Element {
                 marginBottom: 8,
                 textTransform: 'uppercase',
               }}>
-              Story Date
+              {t('Gallery.edit.storyDate', { defaultValue: 'Story Date' })}
             </AppText>
             <Pressable
               onPress={() => setShowDatePicker(true)}
@@ -431,7 +438,7 @@ export default function StoryEditScreen(): JSX.Element {
                 marginBottom: 8,
                 textTransform: 'uppercase',
               }}>
-              Topic
+              {t('Gallery.edit.topic', { defaultValue: 'Topic' })}
             </AppText>
             <Pressable
               onPress={() => setTopicPickerVisible(true)}
@@ -444,11 +451,11 @@ export default function StoryEditScreen(): JSX.Element {
                 backgroundColor: colors.surfaceCard,
               }}>
               <AppText style={{ color: selectedCategory ? colors.onSurface : colors.textMuted, fontSize: 16 }}>
-                {selectedCategory ? toCategoryLabel(selectedCategory) : 'Select a topic'}
+                {selectedCategory ? toCategoryLabel(selectedCategory, t) : t('Gallery.edit.selectTopic', { defaultValue: 'Select a topic' })}
               </AppText>
               {selectedTopic ? (
                 <AppText style={{ color: colors.textMuted, fontSize: 12, marginTop: 6 }}>
-                  {toCategoryLabel(selectedCategory)}
+                  {toCategoryLabel(selectedCategory, t)}
                 </AppText>
               ) : null}
             </Pressable>
@@ -463,11 +470,11 @@ export default function StoryEditScreen(): JSX.Element {
                 marginBottom: 8,
                 textTransform: 'uppercase',
               }}>
-              Transcript
+              {t('Gallery.edit.transcript', { defaultValue: 'Transcript' })}
             </AppText>
             <View style={{ gap: 10 }}>
               {editableEntries.map((entry, index) => {
-                const meta = speakerMeta(entry.speaker, colors);
+                const meta = speakerMeta(entry.speaker, colors, t);
                 return (
                   <View
                     key={entry.id}
@@ -498,7 +505,9 @@ export default function StoryEditScreen(): JSX.Element {
                       </AppText>
                       {editableEntries.length > 1 ? (
                         <Pressable onPress={() => removeTranscriptEntry(entry.id)} style={{ paddingHorizontal: 6 }}>
-                          <AppText style={{ color: colors.textMuted, fontSize: 12 }}>Remove</AppText>
+                          <AppText style={{ color: colors.textMuted, fontSize: 12 }}>
+                            {t('Gallery.edit.remove', { defaultValue: 'Remove' })}
+                          </AppText>
                         </Pressable>
                       ) : null}
                     </View>
@@ -514,7 +523,7 @@ export default function StoryEditScreen(): JSX.Element {
                         textAlignVertical: 'top',
                         minHeight: index === editableEntries.length - 1 ? 72 : 64,
                       }}
-                      placeholder={`${meta.label} transcript...`}
+                      placeholder={`${meta.label} ...`}
                       placeholderTextColor={colors.textMuted}
                     />
                   </View>
@@ -535,7 +544,7 @@ export default function StoryEditScreen(): JSX.Element {
                   backgroundColor: `${colors.primary}12`,
                 }}>
                 <AppText style={{ color: colors.primaryDeep, fontSize: 13, fontWeight: '700' }}>
-                  + Add You
+                  {t('Gallery.edit.addYou', { defaultValue: '+ Add You' })}
                 </AppText>
               </Pressable>
               <Pressable
@@ -550,13 +559,13 @@ export default function StoryEditScreen(): JSX.Element {
                   backgroundColor: `${colors.tertiary}12`,
                 }}>
                 <AppText style={{ color: colors.tertiary, fontSize: 13, fontWeight: '700' }}>
-                  + Add AI
+                  {t('Gallery.edit.addAi', { defaultValue: '+ Add AI' })}
                 </AppText>
               </Pressable>
             </View>
 
             <AppText style={{ marginTop: 8, color: colors.textMuted, fontSize: 12, textAlign: 'center' }}>
-              Keep one paragraph per line. The saved transcript will preserve speaker roles.
+              {t('Gallery.edit.transcriptTip', { defaultValue: 'Keep one paragraph per line. The saved transcript will preserve speaker roles.' })}
             </AppText>
           </View>
         </ScrollView>
@@ -586,16 +595,20 @@ export default function StoryEditScreen(): JSX.Element {
             }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <Pressable onPress={() => setTopicPickerVisible(false)} style={{ paddingVertical: 8, paddingHorizontal: 4 }}>
-                <AppText style={{ color: colors.textMuted }}>Cancel</AppText>
+                <AppText style={{ color: colors.textMuted }}>
+                  {t('Gallery.edit.cancel', { defaultValue: 'Cancel' })}
+                </AppText>
               </Pressable>
-              <AppText style={{ color: colors.onSurface, fontSize: 16, fontWeight: '700' }}>Select Topic</AppText>
+              <AppText style={{ color: colors.onSurface, fontSize: 16, fontWeight: '700' }}>
+                {t('Gallery.edit.selectTopicModalTitle', { defaultValue: 'Select Topic' })}
+              </AppText>
               <View style={{ width: 56 }} />
             </View>
 
             <TextInput
               value={topicQuery}
               onChangeText={setTopicQuery}
-              placeholder="Search topic category"
+              placeholder={t('Gallery.edit.searchTopic', { defaultValue: 'Search topic category' })}
               placeholderTextColor={colors.textMuted}
               style={{
                 borderWidth: 1,
@@ -626,10 +639,10 @@ export default function StoryEditScreen(): JSX.Element {
                       marginBottom: 8,
                     }}>
                     <AppText style={{ color: colors.onSurface, fontSize: 15, lineHeight: 22 }}>
-                      {toCategoryLabel(category)}
+                      {toCategoryLabel(category, t)}
                     </AppText>
                     <AppText style={{ color: colors.textMuted, fontSize: 12, marginTop: 4 }}>
-                      {category} · {promptCount} prompts
+                      {t('Gallery.edit.promptCount', { category, count: promptCount, defaultValue: '{category} · {count} prompts' })}
                     </AppText>
                   </Pressable>
                 );

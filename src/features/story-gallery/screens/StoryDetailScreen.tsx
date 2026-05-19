@@ -25,7 +25,7 @@ import {
   mapRawCategoryToFilter,
 } from '@/features/story-gallery/data/mockGalleryData';
 import { toStoryCommentsRoute, toStoryEditRoute } from '@/features/app/navigation/routes';
-import { EN_COPY } from '@/features/app/copy/en';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { usePdfExport } from '@/features/story-gallery/hooks/usePdfExport';
 import { markActivitiesAsReadForStory } from '@/features/home/services/activityService';
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -46,6 +46,7 @@ import {
 type HeritageTheme = ReturnType<typeof useHeritageTheme>;
 
 export default function StoryDetailScreen(): JSX.Element {
+  const { t } = useTranslation();
   const { id, readOnlyDeletedPreview } = useLocalSearchParams<{
     id: string;
     readOnlyDeletedPreview?: string;
@@ -92,7 +93,7 @@ export default function StoryDetailScreen(): JSX.Element {
 
   const handleExportPdf = async () => {
     if (!story || entries.length === 0) {
-      showErrorToast(EN_COPY.story.transcriptUnavailable);
+      showErrorToast(t('Gallery.transcriptUnavailable', { defaultValue: 'No transcript available for this story.' }));
       return;
     }
 
@@ -106,9 +107,9 @@ export default function StoryDetailScreen(): JSX.Element {
       ];
       // Use AI polishing for a better memoir feel
       await exportPdf(exportData, true);
-      showSuccessToast(EN_COPY.story.exportSuccess);
+      showSuccessToast(t('Gallery.exportSuccess', { defaultValue: 'Story exported successfully.' }));
     } catch {
-      showErrorToast(EN_COPY.story.exportFailed);
+      showErrorToast(t('Gallery.exportFailed', { defaultValue: 'Failed to export story.' }));
     }
   };
 
@@ -156,10 +157,10 @@ export default function StoryDetailScreen(): JSX.Element {
             textAlign: 'center',
             marginTop: 16,
           }}>
-          {EN_COPY.story.notFound}
+          {t('Gallery.notFound', { defaultValue: 'Story not found or unavailable.' })}
         </AppText>
         <HeritageButton
-          title={EN_COPY.story.goBack}
+          title={t('Gallery.goBack', { defaultValue: 'Return to Gallery' })}
           onPress={() => router.back()}
           variant="secondary"
           style={{ marginTop: 32 }}
@@ -180,7 +181,7 @@ export default function StoryDetailScreen(): JSX.Element {
     : undefined;
   const displayTitle =
     story.title?.trim() ||
-    (categoryLabel ? `${categoryLabel} ${EN_COPY.story.storyWord}` : EN_COPY.story.untitled);
+    (categoryLabel ? `${categoryLabel} ${t('Gallery.storyWord', { defaultValue: 'Story' })}` : t('Gallery.untitled', { defaultValue: 'Untitled Memory' }));
 
   // Story 3.3 Handlers
   const confirmDelete = async () => {
@@ -189,7 +190,7 @@ export default function StoryDetailScreen(): JSX.Element {
       setDeleteModalVisible(false);
       setUndoToastVisible(true);
     } catch {
-      showErrorToast(EN_COPY.story.deleteFailed);
+      showErrorToast(t('Gallery.deleteFailed', { defaultValue: 'Failed to delete story.' }));
     }
   };
 
@@ -198,7 +199,7 @@ export default function StoryDetailScreen(): JSX.Element {
       await restoreStory(id);
       setUndoToastVisible(false);
     } catch {
-      showErrorToast(EN_COPY.story.restoreFailed);
+      showErrorToast(t('Gallery.restoreFailed', { defaultValue: 'Failed to restore story.' }));
     }
   };
 
@@ -222,7 +223,7 @@ export default function StoryDetailScreen(): JSX.Element {
         <HeaderHelperButton
           onPress={() => router.back()}
           icon="chevron-back"
-          label="Back"
+          label={t('Gallery.detail.back', { defaultValue: 'Back' })}
           color={`${theme.colors.primary}CC`}
         />
 
@@ -277,7 +278,7 @@ export default function StoryDetailScreen(): JSX.Element {
             {entries.length > 0 ? (
               <View style={{ gap: 16 }}>
                 {entries.map((entry) => (
-                  <TranscriptBlock key={entry.id} entry={entry} theme={theme} />
+                  <TranscriptBlock key={entry.id} entry={entry} theme={theme} t={t} />
                 ))}
               </View>
             ) : (
@@ -288,7 +289,7 @@ export default function StoryDetailScreen(): JSX.Element {
                   lineHeight: 30,
                   color: theme.colors.textMuted,
                 }}>
-                {EN_COPY.story.transcriptUnavailable}
+                {t('Gallery.transcriptUnavailable', { defaultValue: 'No transcript available for this story.' })}
               </AppText>
             )}
           </View>
@@ -310,25 +311,25 @@ export default function StoryDetailScreen(): JSX.Element {
                 fontFamily: 'Fraunces_600SemiBold',
                 marginBottom: 12,
               }}>
-              {EN_COPY.story.detailsTitle}
+              {t('Gallery.detailsTitle', { defaultValue: 'Story Details' })}
             </AppText>
             <View style={{ gap: 8 }}>
               <DetailRow
-                label={EN_COPY.story.detailDuration}
-                value={`${Math.round(story.durationMs / 1000)} ${EN_COPY.story.unitSeconds}`}
+                label={t('Gallery.detailDuration', { defaultValue: 'Duration' })}
+                value={`${Math.round(story.durationMs / 1000)} ${t('Gallery.unitSeconds', { defaultValue: 'seconds' })}`}
                 theme={theme}
               />
               <DetailRow
-                label={EN_COPY.story.detailFileSize}
-                value={`${(story.sizeBytes / 1024).toFixed(1)} ${EN_COPY.story.unitKb}`}
+                label={t('Gallery.detailFileSize', { defaultValue: 'File Size' })}
+                value={`${(story.sizeBytes / 1024).toFixed(1)} ${t('Gallery.unitKb', { defaultValue: 'KB' })}`}
                 theme={theme}
               />
               <DetailRow
-                label={EN_COPY.story.detailBackup}
+                label={t('Gallery.detailBackup', { defaultValue: 'Backup Status' })}
                 value={
                   syncStatus === 'synced'
-                    ? EN_COPY.story.backupCloudSaved
-                    : EN_COPY.story.backupLocalOnly
+                    ? t('Gallery.backupCloudSaved', { defaultValue: 'Safely backed up to cloud' })
+                    : t('Gallery.backupLocalOnly', { defaultValue: 'Stored securely on device' })
                 }
                 theme={theme}
               />
@@ -366,7 +367,7 @@ export default function StoryDetailScreen(): JSX.Element {
           {isDeletedPreview ? (
             <View style={{ flex: 1 }}>
               <HeritageButton
-                title={EN_COPY.story.readOnlyPreview}
+                title={t('Gallery.readOnlyPreview', { defaultValue: 'Preview Mode (Deleted)' })}
                 onPress={() => undefined}
                 variant="secondary"
                 disabled
@@ -377,7 +378,7 @@ export default function StoryDetailScreen(): JSX.Element {
             <>
               <View style={{ flex: 1 }}>
                 <HeritageButton
-                  title="Comments"
+                  title={t('Gallery.detail.comments', { defaultValue: 'Comments' })}
                   onPress={() => router.push(toStoryCommentsRoute(id))}
                   variant="secondary"
                   icon="chatbubble-ellipses-outline"
@@ -387,7 +388,7 @@ export default function StoryDetailScreen(): JSX.Element {
               {/* Edit - opens Full Story Edit Screen */}
               <View style={{ flex: 1 }}>
                 <HeritageButton
-                  title={EN_COPY.story.editStory}
+                  title={t('Gallery.editStory', { defaultValue: 'Edit Story' })}
                   onPress={() => router.push(toStoryEditRoute(id))}
                   variant="primary"
                   icon="pencil"
@@ -441,7 +442,8 @@ function DetailRow({
 
 function getSpeakerStyle(
   speaker: TranscriptSpeaker,
-  theme: HeritageTheme
+  theme: HeritageTheme,
+  t: (key: string, params?: Record<string, unknown>) => string
 ): {
   label: string;
   labelColor: string;
@@ -450,7 +452,7 @@ function getSpeakerStyle(
 } {
   if (speaker === 'user') {
     return {
-      label: EN_COPY.story.speakerYou,
+      label: t('Recorder.ai.you', { defaultValue: 'YOU' }),
       labelColor: theme.colors.primaryDeep,
       backgroundColor: `${theme.colors.primary}12`,
       textColor: `${theme.colors.onSurface}F0`,
@@ -459,7 +461,7 @@ function getSpeakerStyle(
 
   if (speaker === 'agent') {
     return {
-      label: EN_COPY.story.speakerAi,
+      label: t('Recorder.ai.assistant', { defaultValue: 'AI ASSISTANT' }),
       labelColor: theme.colors.tertiary,
       backgroundColor: `${theme.colors.tertiary}12`,
       textColor: `${theme.colors.onSurface}F0`,
@@ -467,7 +469,7 @@ function getSpeakerStyle(
   }
 
   return {
-    label: EN_COPY.story.speakerTranscript,
+    label: t('Gallery.edit.transcript', { defaultValue: 'TRANSCRIPT' }),
     labelColor: theme.colors.textMuted,
     backgroundColor: `${theme.colors.textMuted}14`,
     textColor: `${theme.colors.onSurface}E6`,
@@ -477,11 +479,13 @@ function getSpeakerStyle(
 function TranscriptBlock({
   entry,
   theme,
+  t,
 }: {
   entry: TranscriptEntry;
   theme: HeritageTheme;
+  t: (key: string, params?: Record<string, unknown>) => string;
 }): JSX.Element {
-  const style = getSpeakerStyle(entry.speaker, theme);
+  const style = getSpeakerStyle(entry.speaker, theme, t);
 
   return (
     <View

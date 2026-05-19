@@ -4,10 +4,11 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { SettingsRow } from '../components/SettingsRow';
 import { SettingsSection } from '../components/SettingsSection';
 import { useDataStorageLogic } from '../hooks/useSettingsLogic';
-import { SETTINGS_STRINGS } from '../data/mockSettingsData';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export function DataStorageScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
+  const { t } = useTranslation();
 
   // Logic Separation
   const { state, actions } = useDataStorageLogic();
@@ -15,17 +16,17 @@ export function DataStorageScreen(): JSX.Element {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.surfaceDim }}>
-      <HeritageHeader title="Data & Storage" showBack />
+      <HeritageHeader title={t('Settings.items.dataStorage')} showBack />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: 16, paddingBottom: 48 }}>
         {/* Cloud Processing Group */}
         <SettingsSection
-          title={SETTINGS_STRINGS.dataStorage.cloudProcessing.title}
-          footer={SETTINGS_STRINGS.dataStorage.cloudProcessing.caption}>
+          title={t('Settings.dataStorage.cloudProcessing.title')}
+          footer={t('Settings.dataStorage.cloudProcessing.caption')}>
           <SettingsRow
-            label={SETTINGS_STRINGS.dataStorage.cloudProcessing.label}
+            label={t('Settings.dataStorage.cloudProcessing.label')}
             showChevron={false}
             iconName="cloud-upload-outline"
             iconColor={colors.blueAccent}
@@ -45,9 +46,9 @@ export function DataStorageScreen(): JSX.Element {
         </SettingsSection>
 
         {/* Storage Group */}
-        <SettingsSection title={SETTINGS_STRINGS.dataStorage.storage.title}>
+        <SettingsSection title={t('Settings.dataStorage.storage.title')}>
           <SettingsRow
-            label={SETTINGS_STRINGS.dataStorage.storage.deletedItems}
+            label={t('Settings.dataStorage.storage.deletedItems')}
             iconName="trash-outline"
             iconColor={colors.primary}
             onPress={actions.navigateToDeletedItems}

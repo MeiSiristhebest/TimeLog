@@ -1,60 +1,37 @@
-import React, { useState } from 'react';
-import { Switch, ScrollView, View, StyleSheet } from 'react-native';
+import React from 'react';
+import { ScrollView, View, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
 import { SettingsRow } from '../components/SettingsRow';
 import { useHeritageTheme } from '@/theme/heritage';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { useProfile } from '../hooks/useProfile';
 import { getLanguageLabel, getSystemLocale } from '../utils/languageOptions';
-import { AppText } from '@/components/ui/AppText';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 type HeritageColors = ReturnType<typeof useHeritageTheme>['colors'];
 
 export function DisplayAccessibilityScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
   const { profile } = useProfile();
-
-  // Local state for Landscape (mocked for now as per plan)
-  const [landscape, setLandscape] = useState(false);
+  const { t } = useTranslation();
 
   const systemLocale = getSystemLocale();
   const languageValue = getLanguageLabel(profile?.language ?? systemLocale, systemLocale);
 
   return (
     <View style={[styles.flex1, { backgroundColor: colors.surfaceDim }]}>
-      <HeritageHeader title="Interface & Display" showBack />
+      <HeritageHeader title={t('Settings.items.display')} showBack />
       <ScrollView
         style={[styles.flex1, { backgroundColor: colors.surfaceDim }]}
         contentContainerStyle={styles.scrollContent}>
-        
-        {/* 1. Interface Controls */}
-        <SettingsSectionContainer colors={colors}>
-          <SettingsRow
-            label="Landscape Mode"
-            isLast
-            rightElement={
-              <Switch
-                value={landscape}
-                onValueChange={setLandscape}
-                trackColor={{ false: colors.border, true: '#34C759' }}
-              />
-            }
-          />
-        </SettingsSectionContainer>
-
-        {/* 2. Display Group */}
+        {/* Display Group */}
         <SettingsSectionContainer colors={colors}>
           <Link href="/(tabs)/settings/font-size" asChild>
-            <SettingsRow label="Font Size" />
+            <SettingsRow label={t('Settings.displayAccessibility.fontSize')} />
           </Link>
           <Link href="/(tabs)/settings/language" asChild>
-            <SettingsRow label="Multi-language" value={languageValue} />
+            <SettingsRow label={t('Settings.language')} value={languageValue} isLast />
           </Link>
-          <SettingsRow
-            label="Translate"
-            onPress={NO_OP}
-            isLast
-          />
         </SettingsSectionContainer>
       </ScrollView>
     </View>
@@ -74,8 +51,6 @@ function SettingsSectionContainer({
     </View>
   );
 }
-
-function NO_OP(): void {}
 
 const styles = StyleSheet.create({
   flex1: {

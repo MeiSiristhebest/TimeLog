@@ -23,6 +23,7 @@ import { ConnectivityBadge } from './ConnectivityBadge';
 import { WaveformVisualizer } from './WaveformVisualizer';
 import { RecordingModeSwitcher } from './RecordingModeSwitcher';
 import { RecordingControls } from './RecordingControls';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface ActiveRecordingViewProps {
   questionText?: string;
@@ -66,6 +67,7 @@ export function ActiveRecordingView({
   canSwitchToAi = true,
   controlsDisabled = false,
 }: ActiveRecordingViewProps): JSX.Element {
+  const { t } = useTranslation();
   const { colors, isDark } = useHeritageTheme();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -145,7 +147,7 @@ export function ActiveRecordingView({
               style={[styles.questionWrap, { maxWidth: Math.min(width - 40, 380) }]}>
 
               <AppText style={[styles.dateLabel, { color: colors.tertiary }]}>
-                TODAY&apos;S TOPIC
+                {t('Recorder.active.todayTopic', { defaultValue: "TODAY'S TOPIC" })}
               </AppText>
 
               <AppText
@@ -153,7 +155,7 @@ export function ActiveRecordingView({
                   styles.questionText,
                   { fontFamily: 'Fraunces_600SemiBold', color: colors.onSurface },
                 ]}>
-                {questionText || 'What is your story today?'}
+                {questionText || t('Recorder.active.defaultQuestion', { defaultValue: 'What is your story today?' })}
               </AppText>
             </Animated.View>
 
@@ -209,7 +211,7 @@ export function ActiveRecordingView({
             />
             <AppText
               style={[styles.finishText, { color: colors.textMuted }]}>
-              Press and hold to end session
+              {t('Recorder.controls.pressAndHold', { defaultValue: 'Press and hold to end session' })}
             </AppText>
           </View>
         </View>

@@ -9,10 +9,12 @@ import { StoryList } from '@/features/story-gallery/components/StoryList';
 import { useStories } from '@/features/story-gallery/hooks/useStories';
 import { toggleStoryFavorite, offloadStory } from '@/features/story-gallery/services/storyService';
 import { showSuccessToast, showErrorToast } from '@/components/ui/feedback/toast';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export default function SettingsFavoritesScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
   const router = useRouter();
+  const { t } = useTranslation();
 
   // 1. Fetch only favorites
   const { stories, isLoading, error } = useStories({ onlyFavorites: true });
@@ -38,7 +40,11 @@ export default function SettingsFavoritesScreen(): JSX.Element {
   const handleToggleFavorite = async (id: string, isFavorite: boolean) => {
     try {
       await toggleStoryFavorite(id, isFavorite);
-      showSuccessToast(isFavorite ? 'Saved to favorites' : 'Removed from favorites');
+      showSuccessToast(
+        isFavorite
+          ? t('Favorites.saved', { defaultValue: 'Saved to favorites' })
+          : t('Favorites.removed', { defaultValue: 'Removed from favorites' })
+      );
     } catch {
       showErrorToast('Failed to update favorite status');
     }
@@ -66,16 +72,18 @@ export default function SettingsFavoritesScreen(): JSX.Element {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.surfaceWarm }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => router.back()} 
+        <TouchableOpacity
+          onPress={() => router.back()}
           style={styles.backButton}
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
           <Ionicons name="chevron-back" size={28} color={colors.primary} />
         </TouchableOpacity>
-        <AppText style={[styles.title, { color: colors.onSurface }]}>Favorites</AppText>
-        <View style={{ width: 44 }} /> 
+        <AppText style={[styles.title, { color: colors.onSurface }]}>
+          {t('Favorites.title', { defaultValue: 'Favorites' })}
+        </AppText>
+        <View style={{ width: 44 }} />
       </View>
 
       {/* Content */}
@@ -85,9 +93,13 @@ export default function SettingsFavoritesScreen(): JSX.Element {
             <View style={[styles.emptyIconCircle, { backgroundColor: colors.surfaceCard }]}>
               <Ionicons name="heart-outline" size={48} color={colors.primaryMuted} />
             </View>
-            <AppText style={[styles.emptyTitle, { color: colors.onSurface }]}>No Favorites Yet</AppText>
+            <AppText style={[styles.emptyTitle, { color: colors.onSurface }]}>
+              {t('Favorites.emptyTitle', { defaultValue: 'No Favorites Yet' })}
+            </AppText>
             <AppText style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-              Stories you heart will appear here so you can find them easily.
+              {t('Favorites.emptySubtitle', {
+                defaultValue: 'Stories you heart will appear here so you can find them easily.',
+              })}
             </AppText>
           </View>
         ) : (

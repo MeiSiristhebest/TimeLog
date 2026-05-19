@@ -4,6 +4,7 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { AppText } from '@/components/ui/AppText';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { HoldToStopButton } from './HoldToStopButton';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface RecordingControlsProps {
   isRecording: boolean;
@@ -30,6 +31,7 @@ export function RecordingControls({
   onResume,
   disabled = false,
 }: RecordingControlsProps): JSX.Element {
+  const { t } = useTranslation();
   const { colors, isDark } = useHeritageTheme();
 
   if (!isRecording) {
@@ -66,7 +68,7 @@ export function RecordingControls({
             { color: colors.primary, opacity: 0.9, marginTop: 16, fontSize: 15, fontWeight: '600' },
           ]}
         >
-          Tap to start
+          {t('Recorder.controls.tapToStart', { defaultValue: 'Tap to start' })}
         </AppText>
       </View>
     );
@@ -114,7 +116,7 @@ export function RecordingControls({
                 shadowOffset: { width: 0, height: 4 },
               },
             ]}
-            accessibilityLabel={isPaused ? 'Resume' : 'Pause'}
+            accessibilityLabel={isPaused ? t('Recorder.controls.resume', { defaultValue: 'Resume' }) : t('Recorder.controls.pause', { defaultValue: 'Pause' })}
             accessibilityRole="button">
             <Ionicons
               name={isPaused ? 'play' : 'pause'}
@@ -125,7 +127,7 @@ export function RecordingControls({
           </Pressable>
         </View>
         <AppText style={[styles.label, { color: colors.primaryDeep }]}>
-          {isPaused ? 'Resume' : 'Pause'}
+          {isPaused ? t('Recorder.controls.resume', { defaultValue: 'Resume' }) : t('Recorder.controls.pause', { defaultValue: 'Pause' })}
         </AppText>
       </View>
 
@@ -147,11 +149,11 @@ export function RecordingControls({
           ringPadding={ACTION_RING_PADDING}
           buttonBorderColor={colors.error}
           buttonBorderWidth={2}
-          accessibilityLabel="Hold to finish recording"
+          accessibilityLabel={t('Recorder.controls.pressAndHold', { defaultValue: 'Press and hold to end session' })}
           disabled={disabled}
         />
         <AppText style={[styles.label, { color: colors.error, fontWeight: '700' }]}>
-          Hold to End
+          {t('Recorder.controls.holdToEnd', { defaultValue: 'Hold to End' })}
         </AppText>
       </View>
     </View>

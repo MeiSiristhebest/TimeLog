@@ -1,0 +1,528 @@
+{
+  "Welcome": {
+    "headline": "Preserve your voice for your family.",
+    "body": "Your stories are a legacy. Start recording them today in your own words.",
+    "getStarted": "Get Started",
+    "alreadyHaveAccount": "Already have an account?",
+    "signIn": "Sign In"
+  },
+  "TabBar": {
+    "record": "Record",
+    "listen": "Listen",
+    "me": "Me"
+  },
+  "Gallery": {
+    "title": "My Stories",
+    "subtitleSuffix": " memories recorded",
+    "sortButton": "Sort",
+    "searchPlaceholder": "Search title, transcript, or topic",
+    "emptyMessage": "No stories found for this search",
+    "categories": {
+      "all": "All",
+      "travel": "Travel",
+      "education": "Education",
+      "wisdom": "Wisdom",
+      "celebration": "Celebration",
+      "hobbies": "Hobbies",
+      "food": "Food",
+      "friendship": "Friendship",
+      "history": "History",
+      "childhood": "Childhood",
+      "general": "General",
+      "family": "Family",
+      "career": "Career"
+    },
+    "sort": {
+      "modalTitle": "Sort Stories",
+      "newest": "Newest First",
+      "oldest": "Oldest First",
+      "longest": "Longest",
+      "shortest": "Shortest",
+      "cancel": "Cancel"
+    },
+    "detail": {
+      "comments": "Comments",
+      "back": "Back"
+    },
+    "edit": {
+      "title": "Edit Story",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving...",
+      "changeCover": "Change Cover",
+      "storyTitle": "Story Title",
+      "storyDate": "Story Date",
+      "topic": "Topic",
+      "transcript": "Transcript",
+      "addYou": "+ Add You",
+      "addAi": "+ Add AI",
+      "editParagraphTip": "Tap a paragraph to edit text or speaker.",
+      "noTranscript": "No transcript available for this story.",
+      "saveSuccess": "Story updated",
+      "saveFailed": "Failed to save changes",
+      "titlePlaceholder": "Story Title",
+      "selectTopic": "Select a topic",
+      "remove": "Remove",
+      "transcriptTip": "Keep one paragraph per line. The saved transcript will preserve speaker roles.",
+      "selectTopicModalTitle": "Select Topic",
+      "searchTopic": "Search topic category",
+      "promptCount": "{category} · {count} prompts"
+    },
+    "comments": {
+      "title": "Story comments",
+      "unavailable": "Comments are unavailable while offline. Please connect to the internet to view or add comments.",
+      "newCommentPlaceholder": "New comment",
+      "unreadCount": "{count} unread",
+      "empty": "No comments yet. Share with family to start the conversation!",
+      "subtitle": "Family feedback is now grouped here so unread comments and story activity stay in one place.",
+      "newBadge": "New comment",
+      "updateFailed": "Failed to update story comments."
+    },
+    "playback": "Playback",
+    "unknownDate": "Unknown date",
+    "storyWord": "Story",
+    "untitled": "Untitled Memory",
+    "transcriptUnavailable": "No transcript available for this story.",
+    "exportSuccess": "Story exported successfully.",
+    "exportFailed": "Failed to export story.",
+    "notFound": "Story not found or unavailable.",
+    "goBack": "Return to Gallery",
+    "deleteFailed": "Failed to delete story.",
+    "restoreFailed": "Failed to restore story.",
+    "detailsTitle": "Story Details",
+    "detailDuration": "Duration",
+    "unitSeconds": "seconds",
+    "detailFileSize": "File Size",
+    "unitKb": "KB",
+    "detailBackup": "Backup Status",
+    "backupCloudSaved": "Safely backed up to cloud",
+    "backupLocalOnly": "Stored securely on device",
+    "readOnlyPreview": "Preview Mode (Deleted)",
+    "editStory": "Edit Story"
+  },
+  "Favorites": {
+    "title": "Favorites",
+    "emptyTitle": "No Favorites Yet",
+    "emptySubtitle": "Stories you heart will appear here so you can find them easily.",
+    "saved": "Saved to favorites",
+    "removed": "Removed from favorites"
+  },
+  "Discovery": {
+    "title": "Topic Discovery",
+    "badge": "ASKED BY MICHAEL",
+    "helperText": "Share your thoughts with the grandkids. Did you enjoy it?",
+    "recordAnswer": "Record Answer",
+    "tryAnother": "Next",
+    "noTopics": "No topics found for selected categories"
+  },
+  "Home": {
+    "greetings": {
+      "morning": "Good Morning",
+      "afternoon": "Good Afternoon",
+      "evening": "Good Evening"
+    },
+    "weather": {
+      "unit": "°C",
+      "loading": "Loading weather...",
+      "fallback": "--"
+    },
+    "questionCard": {
+      "defaultQuestion": "What was your favorite toy?",
+      "answeredBadge": "Answered",
+      "newQuestionButton": "Next",
+      "playButton": "Play"
+    },
+    "recording": {
+      "tapToRecord": "Tap to Record",
+      "startError": "Failed to start recording. Please try again.",
+      "stopError": "Failed to stop recording. Please try again."
+    },
+    "notification": {
+      "liked": "liked",
+      "commented": "commented on"
+    },
+    "categories": {
+      "childhood": "My Childhood",
+      "family": "My Family",
+      "career": "My Career",
+      "memories": "My Memories",
+      "wisdom": "My Wisdom",
+      "default": "My Story"
+    }
+  },
+  "ConsentReview": {
+    "title": "Review Consent",
+    "header": "Your Privacy Choices",
+    "subheader": "These are the features you've consented to. You can change these settings anytime in Privacy & Sharing.",
+    "infoBox": "To withdraw consent, go to Settings → Privacy & Sharing and toggle off the relevant features.",
+    "consentedOn": "Consented on {date}",
+    "items": {
+      "cloud_ai": {
+        "title": "Cloud AI Processing",
+        "description": "Short audio clips are sent to our AI service to generate follow-up questions and transcripts. Full recordings remain local first."
+      },
+      "cloud_storage": {
+        "title": "Cloud Storage",
+        "description": "Your stories are backed up to secure cloud storage for safekeeping and family access."
+      },
+      "family_sharing": {
+        "title": "Family Sharing",
+        "description": "Connected family members can listen to your stories and leave comments."
+      }
+    }
+  },
+  "Nudge": {
+    "morning": {
+      "title": "Good morning!",
+      "body": "Do you have a story to share today?"
+    },
+    "afternoon": {
+      "title": "Hello!",
+      "body": "Your family would love to hear from you."
+    },
+    "evening": {
+      "title": "Good evening!",
+      "body": "Share a memory before bed?"
+    }
+  },
+  "Settings": {
+    "title": "Settings",
+    "home": {
+      "myStories": "My Stories",
+      "favorites": "Favorites",
+      "settings": "Settings",
+      "upgradeTitle": "Upgrade to a permanent account",
+      "upgradeSubtext": "You can keep using TimeLog now, but upgrading protects your stories and allows you to share them with family via our web companion.",
+      "upgradeButton": "Upgrade Account",
+      "profileTitle": "Complete your profile",
+      "profileSubtext": "Add your birthday, language, and preferred text size for a more comfortable experience.",
+      "profileButton": "Set Up Now",
+      "skipForNow": "Skip for now"
+    },
+    "language": "Language",
+    "searchLanguage": "Search language",
+    "systemDefault": "System default",
+    "sections": {
+      "account": "ACCOUNT",
+      "general": "GENERAL",
+      "about": "ABOUT"
+    },
+    "items": {
+      "accountSecurity": "Account & Security",
+      "notifications": "Notifications & Reminders",
+      "familySharing": "Family Sharing",
+      "dailyGoal": "Daily goal",
+      "display": "Display & Accessibility",
+      "dataStorage": "Data & Storage",
+      "help": "Help & Feedback",
+      "about": "About TimeLog",
+      "switchAccount": "Switch Account",
+      "logOut": "Log Out",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service"
+    },
+    "notifications": {
+      "title": "Notifications & Reminders",
+      "loading": "Loading notification preferences...",
+      "general": {
+        "title": "REMINDERS",
+        "enableNotifications": "Allow Notifications",
+        "gentleReminders": "Gentle Nudges (Daily 10 AM)"
+      },
+      "quietHours": {
+        "title": "QUIET HOURS (DO NOT DISTURB)",
+        "startTime": "Quiet Start",
+        "endTime": "Quiet End"
+      },
+      "save": {
+        "button": "Save Preferences",
+        "saving": "Saving...",
+        "successTitle": "Preferences Saved",
+        "successMessage": "Your notification preferences have been successfully updated."
+      }
+    },
+    "loading": "Loading...",
+    "accountSecurity": {
+      "sections": {
+        "profile": {
+          "title": "PROFILE",
+          "editProfile": "Edit Profile",
+          "role": "My Role"
+        },
+        "security": {
+          "title": "SECURITY",
+          "recoveryCode": "Recovery Code",
+          "deviceCode": "Device Code"
+        }
+      },
+      "deleteAccount": "Delete Account"
+    },
+    "aboutHelp": {
+      "support": {
+        "title": "SUPPORT",
+        "helpCenter": "Help Center",
+        "contactSupport": "Contact Support"
+      }
+    },
+    "dataStorage": {
+      "cloudProcessing": {
+        "title": "CLOUD PROCESSING",
+        "label": "Cloud AI Processing",
+        "caption": "Enable cloud processing for advanced AI features. Local-first recording still works offline."
+      },
+      "storage": {
+        "title": "STORAGE",
+        "deletedItems": "Deleted Items"
+      }
+    },
+    "displayAccessibility": {
+      "fontSize": "Font Size"
+    }
+  },
+  "Topics": {
+    "q-007": "What is the most important lesson your parents taught you?",
+    "q-008": "What do you want your descendants to remember about you?",
+    "q-014": "What was the biggest challenge you faced in life?",
+    "q-015": "What advice would you share with your children or grandchildren?",
+    "q-001": "What was your favorite game as a child?",
+    "q-002": "Do you remember your first day of school?",
+    "q-011": "What was your childhood home like?",
+    "q-024": "Did you have a favorite toy or treasured possession growing up?",
+    "q-006": "What was your most memorable trip?",
+    "q-016": "What is the most beautiful place you have ever visited?",
+    "q-017": "Tell me about a travel mishap that is funny now.",
+    "q-025": "What culture or country surprised you the most during your travels?",
+    "q-009": "What was your dream when you were young?",
+    "q-012": "What was your first job?",
+    "q-018": "Who was your favorite teacher and why?",
+    "q-026": "What is a skill you learned outside of school that has been most useful?",
+    "q-003": "Who was your best friend when you were young?",
+    "q-005": "What is your proudest achievement in life?",
+    "q-023": "What historical event made the biggest impact on you?",
+    "q-027": "What was the most significant change you’ve seen in the world during your lifetime?",
+    "q-004": "How did you meet your spouse?",
+    "q-010": "What is your favorite holiday and why?",
+    "q-020": "What is your favorite family tradition?",
+    "q-028": "How did you celebrate your most memorable birthday?",
+    "q-019": "How did you get into your favorite hobby?",
+    "q-029": "What brings you the most joy when doing your favorite hobby?",
+    "q-030": "Have you ever collected anything? Tell me about your collection.",
+    "q-031": "Is there a hobby or skill you always wanted to learn but haven’t yet?",
+    "q-013": "What is your favorite food? Any special story behind it?",
+    "q-021": "Is there a family recipe that is special to you?",
+    "q-032": "What was your favorite comfort food growing up?",
+    "q-033": "Do you prefer cooking at home or eating out, and why?",
+    "q-022": "Tell me about a friend who changed your life.",
+    "q-034": "What qualities do you value most in a good friend?",
+    "q-035": "Do you still keep in touch with any friends from your childhood?",
+    "q-036": "What is the funniest memory you have with a friend?"
+  },
+  "Recorder": {
+    "ai": {
+      "connecting": "Connecting to AI Assistant...",
+      "offlineFallback": "Recording locally (Offline)",
+      "listening": "Listening...",
+      "silentFallback": "AI silent. Recording locally.",
+      "waiting": "Waiting for connection...",
+      "connectionError": "Connection error. Recording locally.",
+      "assistant": "AI Assistant",
+      "you": "You",
+      "status": "Status",
+      "tellMeMore": "Tell me more about one meaningful memory today."
+    },
+    "controls": {
+      "holdToEnd": "Hold to End",
+      "pressAndHold": "Press and hold to end session",
+      "tapToStart": "Tap to start",
+      "pause": "Pause",
+      "resume": "Resume"
+    },
+    "card": {
+      "askedBy": "Asked by {name}",
+      "motivation": "Share your memories. Your family would love to hear this story.",
+      "recordAnswer": "Record Answer",
+      "next": "Next",
+      "playing": "Playing",
+      "replay": "Replay"
+    },
+    "resumePrompt": {
+      "title": "Continue your recording?",
+      "subtitle": "You have an unfinished recording. Would you like to continue?",
+      "discard": "Discard",
+      "resume": "Resume Recording"
+    },
+    "mode": {
+      "classic": "Classic",
+      "ai": "AI Mode"
+    },
+    "active": {
+      "todayTopic": "TODAY'S TOPIC",
+      "defaultQuestion": "What is your story today?"
+    },
+    "saved": {
+      "successTitle": "Story Kept Safe",
+      "successSubtitle": "Your voice has been recorded and safely preserved.",
+      "defaultTitle": "My Story",
+      "done": "Done",
+      "categories": {
+        "childhood": "My Childhood",
+        "family": "My Family",
+        "career": "My Career",
+        "education": "My Education",
+        "memories": "My Memories",
+        "history": "My History",
+        "wisdom": "My Wisdom",
+        "travel": "My Travel",
+        "celebrations": "My Celebration",
+        "hobbies": "My Hobbies",
+        "food": "My Food",
+        "friendship": "My Friends"
+      }
+    }
+  },
+  "Auth": {
+    "role": {
+      "loading": "Loading...",
+      "title": "Who is using\nthis phone?",
+      "storytellerTitle": "I am a Storyteller",
+      "storytellerSubtitle": "I want to record memories",
+      "listenerTitle": "I am a Listener",
+      "listenerSubtitle": "I want to hear stories",
+      "alreadyAccount": "Already have an account? ",
+      "signIn": "Sign In",
+      "backAccessibility": "Go back"
+    },
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to continue your story journey.",
+      "email": "Email Address",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "••••••••",
+      "signingIn": "Signing in...",
+      "signIn": "Sign in",
+      "noAccount": "Don't have an account? ",
+      "signUp": "Sign Up",
+      "forgotPassword": "Forgot Password?",
+      "backToHome": "Back to Home",
+      "emailAccessibilityHint": "Please enter your email address",
+      "passwordAccessibilityHint": "Please enter your password"
+    },
+    "signup": {
+      "title": "Create Account",
+      "subtitle": "Join TimeLog to preserve your family legacy.",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Your Name",
+      "email": "Email Address",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "••••••••",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "••••••••",
+      "creating": "Creating Account...",
+      "signUp": "Sign Up",
+      "alreadyAccount": "Already have an account? ",
+      "signIn": "Sign In",
+      "back": "Back"
+    },
+    "recoveryCode": {
+      "title": "Recovery Code",
+      "infoTitle": "Device Recovery",
+      "infoText": "This code can be used to restore access to the senior's TimeLog account if their device is lost, stolen, or replaced.",
+      "codeLabel": "RECOVERY CODE",
+      "loading": "Loading recovery code...",
+      "noCode": "No recovery code generated yet.",
+      "generateIdle": "Generate New Code",
+      "generating": "Generating...",
+      "copy": "Copy",
+      "share": "Share",
+      "warning": "Keep this code secure. Anyone with this code can potentially access the senior's account."
+    },
+    "deviceCode": {
+      "title": "Connect Device",
+      "headline": "Connect with\nFamily",
+      "codeLabel": "YOUR CODE",
+      "helperText": "Share this code with your family.",
+      "ready": "I'm Ready",
+      "readyButton": "I'm Ready",
+      "generating": "Generating...",
+      "regenerate": {
+        "idle": "Regenerate Code",
+        "loading": "Generating..."
+      },
+      "error": "Error generating code",
+      "defaultError": "Unable to generate code right now."
+    },
+    "deviceManagement": {
+      "title": "Device Management",
+      "headerTitle": "Device Management",
+      "headerSubtitle": "Generate a 6-digit code to link a senior device. Revocation applies on next heartbeat check.",
+      "generateTitle": "Generate device code",
+      "generating": "Generating...",
+      "generateIdle": "Generate code",
+      "expires": "Expires: {time}",
+      "linkedDevices": "Linked devices",
+      "empty": "No devices yet.",
+      "unnamed": "Unnamed device",
+      "active": "Active",
+      "revoked": "Revoked",
+      "created": "Created: {date}",
+      "lastSeen": "Last seen: {date}",
+      "revokeButton": "Revoke Access"
+    },
+    "help": {
+      "title": "Help & FAQ",
+      "faqTitle": "Frequently Asked Questions",
+      "contactTitle": "Need more help?",
+      "contactSubtitle": "Our family support team is here for you.",
+      "contactButton": "Contact Support",
+      "faq": {
+        "q_1": "How do I start recording a story?",
+        "a_1": "Go to the Home tab and tap the large red Record button. You can either choose a topic first or start recording right away. The app will guide you with questions.",
+        "q_2": "Can I record without internet?",
+        "a_2": "Yes! TimeLog works completely offline. Your recordings are saved locally and will sync to the cloud automatically when you have internet connection.",
+        "q_3": "How does my family listen to my stories?",
+        "a_3": "Your family members can link their devices using the Connection Code or QR code in your Settings. Once linked, they can listen to all your stories and leave comments.",
+        "q_4": "What happens if I delete a story?",
+        "a_4": "Deleted stories are moved to the \"Deleted Items\" folder where they stay for 30 days. You can restore them anytime during this period from Settings > Deleted Items.",
+        "q_5": "How do I turn off cloud features?",
+        "a_5": "Go to Settings > Privacy & Sharing and toggle off \"Cloud AI & Sharing\". Your local recordings will continue to work, but stories won't sync to the cloud.",
+        "q_6": "How can my family ask me questions?",
+        "a_6": "Family members can submit questions from their app. These questions will appear in your Topics tab with a \"From Family\" tag, so you can record answers directly."
+      }
+    },
+    "upgrade": {
+      "title": "Setup Account",
+      "header": "Complete Account Setup",
+      "description": "Set up an email and password to secure this account. This will allow logging in on other devices and prevent data loss.",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Enter name",
+      "email": "Email Address",
+      "emailPlaceholder": "elder@example.com",
+      "password": "Create Password",
+      "passwordPlaceholder": "Minimum 6 characters",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter password",
+      "warning": "Make sure to save these credentials securely. They will be needed to login on other devices.",
+      "creating": "Creating Account...",
+      "complete": "Complete Setup",
+      "lovedOne": "your loved one",
+      "alertEmailRequired": "Email Required",
+      "alertEmailRequiredMsg": "Please enter an email address",
+      "alertInvalidEmail": "Invalid Email",
+      "alertInvalidEmailMsg": "Please enter a valid email address (e.g., name@example.com)",
+      "alertPasswordRequired": "Password Required",
+      "alertPasswordRequiredMsg": "Please enter a password",
+      "alertPasswordMismatch": "Passwords Don't Match",
+      "alertPasswordMismatchMsg": "Please make sure both passwords are the same",
+      "alertPasswordTooShort": "Password Too Short",
+      "alertPasswordTooShortMsg": "Password must be at least 6 characters",
+      "alertCreatedTitle": "Account Created!",
+      "alertCreatedWithRecovery": "{name}'s account has been created!\n\nRecovery Code:\n{recoveryCode}\n\nIMPORTANT: Save this code in a safe place. You will need it if you forget your password.\n\nNext Step: We have sent a confirmation link to your email. Please check your inbox (and spam folder) and click the link to verify your account.",
+      "alertCreatedNoRecovery": "{name}'s account has been created!\n\nNext Step: We have sent a confirmation link to your email. Please check your inbox (and spam folder) and click the link to verify your account.",
+      "alertGotIt": "Got it, Continue",
+      "alertFailedTitle": "Upgrade Failed",
+      "alertFailedDefault": "Failed to upgrade account. Please try again."
+    }
+  }
+}

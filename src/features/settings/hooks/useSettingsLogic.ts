@@ -4,6 +4,15 @@ import type { Href } from 'expo-router';
 import { Linking } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getStoredRole } from '@/features/auth/services/roleStorage';
+import * as Notifications from 'expo-notifications';
+import { devLog } from '@/lib/devLogger';
+import {
+  getNotificationSettings,
+  updateNotificationSettings,
+  getDeviceTimeZone,
+  type NotificationSettings,
+} from '@/lib/notifications/notificationSettingsService';
+import { initializeNudgeSystem, cancelNudgeNotifications } from '@/lib/notifications/nudgeService';
 import { SETTINGS_STRUCTURE, THEME_OPTIONS_DATA, SETTINGS_STRINGS } from '../data/mockSettingsData';
 import {
   useHeritageTheme,
@@ -18,7 +27,7 @@ import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useProfile } from './useProfile';
-import { APP_ROUTES, toUpgradeAccountRoute } from '@/features/app/navigation/routes';
+import { APP_ROUTES } from '@/features/app/navigation/routes';
 
 function getThemeModeLabel(themeMode: 'system' | 'dark' | 'light'): string {
   if (themeMode === 'system') return 'System';
@@ -73,9 +82,9 @@ export function useSettingsHome() {
   );
 
   const navigateTo = useCallback(
-    (route: string) => {
+    (route: Href) => {
       // safe cast or validate
-      router.push(route as Href);
+      router.push(route);
     },
     [router]
   );
@@ -132,7 +141,27 @@ export function useAccountSecurityLogic() {
     ...hook,
     actions: {
       ...hook,
-      navigateTo: (route: string) => router.push(route as Href),
+      navigateTo: (route: Href) => router.push(route),
+    },
+  };
+}
+
+// Hook for Family Sharing (Stubbed/Redirect for Senior-first mobile app)
+export function useFamilySharingLogic() {
+  const router = useRouter();
+  const alertWebOnly = () => {
+    HeritageAlert.show({
+      title: 'Family Sharing',
+      message: 'Family management has been streamlined and moved to the TimeLog Web Portal. Connect your device using a Device Code.',
+      variant: 'info',
+    });
+  };
+  return {
+    actions: {
+      navigateToFamilyMembers: alertWebOnly,
+      navigateToInvite: () => router.push(APP_ROUTES.SETTINGS_DEVICE_CODE),
+      navigateToAcceptInvite: alertWebOnly,
+      navigateToAskQuestion: alertWebOnly,
     },
   };
 }
@@ -177,52 +206,27 @@ export function useDataStorageLogic() {
   };
 }
 
-// Hook for Family Sharing
-export function useFamilySharingLogic() {
-  const router = useRouter();
-  const { profile } = useProfile();
 
-  const navigateWithUpgradeCheck = useCallback(
-    (route: string) => {
-      if (profile?.isAnonymous) {
-        HeritageAlert.show({
-          title: 'Complete Your Account',
-          message: 'To share or link family members, please set up a permanent account first.',
-          variant: 'warning',
-          primaryAction: {
-            label: 'Set Up Now',
-            onPress: () => {
-              router.push(toUpgradeAccountRoute(route));
-            },
-          },
-          secondaryAction: { label: 'Not now' },
-        });
-        return;
-      }
-
-      router.push(route as Href);
-    },
-    [profile?.isAnonymous, router]
-  );
-
-  return {
-    actions: {
-      navigateToFamilyMembers: () => navigateWithUpgradeCheck('/(tabs)/family'),
-      navigateToInvite: () => navigateWithUpgradeCheck('/invite'),
-      navigateToAcceptInvite: () => navigateWithUpgradeCheck('/accept-invite'),
-      navigateToAskQuestion: () => navigateWithUpgradeCheck('/family-ask-question'),
-    },
-  };
-}
 
 // Hook for Notifications
 export function useNotificationsLogic() {
+  const sessionUserId = useAuthStore((state) => state.sessionUserId) ?? 'anonymous';
   const [enabled, setEnabled] = useState(true);
   const [gentleReminders, setGentleReminders] = useState(true);
-  const [quietStart, setQuietStart] = useState(new Date());
-  const [quietEnd, setQuietEnd] = useState(new Date());
-  const [isLoading] = useState(false);
+  const [quietStart, setQuietStart] = useState<Date>(() => {
+    const d = new Date();
+    d.setHours(21, 0, 0, 0);
+    return d;
+  });
+  const [quietEnd, setQuietEnd] = useState<Date>(() => {
+    const d = new Date();
+    d.setHours(9, 0, 0, 0);
+    return d;
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
 
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler({
@@ -231,21 +235,82 @@ export function useNotificationsLogic() {
     },
   });
 
-  const formatTime = (date: Date) => {
+  const formatTime = useCallback((date: Date) => {
     return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-  };
+  }, []);
 
-  const saveSettings = async () => {
+  useEffect(() => {
+    async function loadSettings() {
+      setIsLoading(true);
+      try {
+        const stored = await getNotificationSettings(sessionUserId);
+        if (stored) {
+          setEnabled(stored.notificationsEnabled);
+          setGentleReminders(stored.gentleRemindersEnabled);
+          if (stored.quietHoursStart) {
+            const [h, m] = stored.quietHoursStart.split(':').map(Number);
+            const d = new Date();
+            d.setHours(h ?? 21, m ?? 0, 0, 0);
+            setQuietStart(d);
+          }
+          if (stored.quietHoursEnd) {
+            const [h, m] = stored.quietHoursEnd.split(':').map(Number);
+            const d = new Date();
+            d.setHours(h ?? 9, m ?? 0, 0, 0);
+            setQuietEnd(d);
+          }
+        }
+      } catch (err) {
+        devLog.warn('[useNotificationsLogic] Load failed', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    void loadSettings();
+  }, [sessionUserId]);
+
+  const saveSettings = useCallback(async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      if (enabled) {
+        const status = await Notifications.requestPermissionsAsync();
+        if (status.status !== 'granted') {
+          devLog.warn('[useNotificationsLogic] Permission not granted');
+        }
+      }
+
+      const settingsPayload: NotificationSettings = {
+        userId: sessionUserId,
+        notificationsEnabled: enabled,
+        gentleRemindersEnabled: gentleReminders,
+        quietHoursStart: formatTime(quietStart),
+        quietHoursEnd: formatTime(quietEnd),
+        timeZone: getDeviceTimeZone(),
+      };
+
+      await updateNotificationSettings(settingsPayload);
+
+      if (enabled && gentleReminders) {
+        await initializeNudgeSystem(sessionUserId, gentleReminders);
+      } else {
+        await cancelNudgeNotifications();
+      }
+
       HeritageAlert.show({
-        title: 'Settings Saved',
-        message: 'Your notification preferences have been updated.',
+        title: 'Preferences Saved',
+        message: 'Your notification preferences have been successfully updated.',
         variant: 'success',
       });
-    }, 1000);
-  };
+    } catch (err) {
+      HeritageAlert.show({
+        title: 'Save Failed',
+        message: err instanceof Error ? err.message : 'Failed to save preferences.',
+        variant: 'error',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [enabled, gentleReminders, quietStart, quietEnd, sessionUserId, formatTime]);
 
   return {
     state: {
@@ -256,8 +321,8 @@ export function useNotificationsLogic() {
       isLoading,
       isSaving,
       scrollY,
-      showStartPicker: false,
-      showEndPicker: false,
+      showStartPicker,
+      showEndPicker,
       formatTime,
     },
     actions: {
@@ -265,8 +330,8 @@ export function useNotificationsLogic() {
       setGentleReminders,
       setQuietStart,
       setQuietEnd,
-      setShowStartPicker: () => {},
-      setShowEndPicker: () => {},
+      setShowStartPicker,
+      setShowEndPicker,
       saveSettings,
       scrollHandler,
     },

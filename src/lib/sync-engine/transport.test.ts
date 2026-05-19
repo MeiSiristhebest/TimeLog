@@ -8,22 +8,26 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Crypto from 'expo-crypto';
 import { Upload } from 'tus-js-client';
 
-// Mock expo-file-system
+// Mock expo-file-system and legacy
 jest.mock('expo-file-system', () => ({
   getInfoAsync: jest.fn(),
   readAsStringAsync: jest.fn(),
   documentDirectory: 'file:///mock/documents/',
-  EncodingType: {
-    Base64: 'base64',
-  },
+  EncodingType: { Base64: 'base64' },
+}));
+jest.mock('expo-file-system/legacy', () => ({
+  getInfoAsync: jest.fn(),
+  readAsStringAsync: jest.fn(),
+  documentDirectory: 'file:///mock/documents/',
+  EncodingType: { Base64: 'base64' },
 }));
 
 // Mock expo-crypto
 jest.mock('expo-crypto', () => ({
   digest: jest.fn(),
-  CryptoDigestAlgorithm: {
-    MD5: 'md5',
-  },
+  digestStringAsync: jest.fn(),
+  CryptoDigestAlgorithm: { MD5: 'md5' },
+  CryptoEncoding: { HEX: 'hex' },
 }));
 
 jest.mock('@/lib/supabase', () => ({
@@ -234,35 +238,27 @@ describe('TusTransport', () => {
   describe('calculateMd5Checksum', () => {
     it('should calculate MD5 checksum for a file', async () => {
       const filePath = 'file:///recordings/test.wav';
-
-      const mockDigestBuffer = new Uint8Array([
-        0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78,
-        0x90,
-      ]).buffer;
       const mockHexHash = 'abcdef1234567890abcdef1234567890';
-      (Crypto.digest as jest.Mock).mockResolvedValue(mockDigestBuffer);
+      (FileSystem.readAsStringAsync as jest.Mock).mockResolvedValueOnce('base64data');
+      (Crypto.digestStringAsync as jest.Mock).mockResolvedValueOnce(mockHexHash);
 
       const checksum = await transport.calculateMd5Checksum(filePath);
 
       expect(checksum).toBe(mockHexHash);
-      expect(global.fetch).toHaveBeenCalledWith(filePath);
-      expect(Crypto.digest).toHaveBeenCalledWith(
+      expect(FileSystem.readAsStringAsync).toHaveBeenCalledWith(filePath, { encoding: 'base64' });
+      expect(Crypto.digestStringAsync).toHaveBeenCalledWith(
         Crypto.CryptoDigestAlgorithm.MD5,
-        DEFAULT_ARRAY_BUFFER
+        'base64data',
+        { encoding: Crypto.CryptoEncoding.HEX }
       );
     });
 
-    it('should throw when checksum source file cannot be fetched', async () => {
+    it('should return empty string when checksum calculation fails', async () => {
       const filePath = 'file:///recordings/missing.wav';
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        arrayBuffer: () => Promise.resolve(DEFAULT_ARRAY_BUFFER),
-      });
+      (FileSystem.readAsStringAsync as jest.Mock).mockRejectedValueOnce(new Error('Read error'));
 
-      await expect(transport.calculateMd5Checksum(filePath)).rejects.toThrow(
-        'Failed to load file for checksum'
-      );
+      const checksum = await transport.calculateMd5Checksum(filePath);
+      expect(checksum).toBe('');
     });
   });
 });

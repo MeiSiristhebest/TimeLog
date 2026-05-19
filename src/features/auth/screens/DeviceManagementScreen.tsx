@@ -6,16 +6,16 @@ import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { useHeritageTheme } from '@/theme/heritage';
 import type { DeviceSummary } from '@/features/auth/services/deviceCodesService';
 import { useDeviceManagementLogic } from '@/features/auth/hooks/useAuthLogic';
-import { AUTH_STRINGS } from '@/features/auth/data/mockAuthData';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export default function DeviceManagementScreen(): JSX.Element {
   const theme = useHeritageTheme();
+  const { t } = useTranslation();
 
   // Logic Separation
   const { state, actions } = useDeviceManagementLogic();
   const { status, code, expiresAt, devices, error } = state;
   const { handleGenerate, handleRevoke } = actions;
-  const STRINGS = AUTH_STRINGS.deviceManagement;
 
   const renderDeviceItem = useCallback(
     ({ item }: { item: DeviceSummary }) => {
@@ -37,7 +37,7 @@ export default function DeviceManagementScreen(): JSX.Element {
               alignItems: 'center',
             }}>
             <AppText style={{ fontSize: 16, fontWeight: '600', color: theme.colors.onSurface }}>
-              {item.deviceName ?? 'Unnamed device'}
+              {item.deviceName ?? t('Auth.deviceManagement.unnamed', { defaultValue: 'Unnamed device' })}
             </AppText>
             <AppText
               style={{
@@ -46,22 +46,28 @@ export default function DeviceManagementScreen(): JSX.Element {
                 color: isRevoked ? theme.colors.textMuted : theme.colors.success,
                 textTransform: 'uppercase',
               }}>
-              {isRevoked ? 'Revoked' : 'Active'}
+              {isRevoked ? t('Auth.deviceManagement.revoked', { defaultValue: 'Revoked' }) : t('Auth.deviceManagement.active', { defaultValue: 'Active' })}
             </AppText>
           </View>
 
           <View>
             <AppText style={{ fontSize: 12, color: `${theme.colors.onSurface}70` }}>
-              Created: {new Date(item.createdAt).toLocaleDateString()}
+              {t('Auth.deviceManagement.created', {
+                date: new Date(item.createdAt).toLocaleDateString(),
+                defaultValue: `Created: ${new Date(item.createdAt).toLocaleDateString()}`
+              })}
             </AppText>
             <AppText style={{ fontSize: 12, color: `${theme.colors.onSurface}70` }}>
-              Last seen: {item.lastSeenAt ? new Date(item.lastSeenAt).toLocaleString() : '—'}
+              {t('Auth.deviceManagement.lastSeen', {
+                date: item.lastSeenAt ? new Date(item.lastSeenAt).toLocaleString() : '—',
+                defaultValue: `Last seen: ${item.lastSeenAt ? new Date(item.lastSeenAt).toLocaleString() : '—'}`
+              })}
             </AppText>
           </View>
 
           {!isRevoked && (
             <HeritageButton
-              title={STRINGS.revokeButton}
+              title={t('Auth.deviceManagement.revokeButton', { defaultValue: 'Revoke Access' })}
               onPress={() => handleRevoke(item.id)}
               variant="secondary"
               size="small"
@@ -71,12 +77,12 @@ export default function DeviceManagementScreen(): JSX.Element {
         </View>
       );
     },
-    [handleRevoke, theme.colors, STRINGS.revokeButton]
+    [handleRevoke, theme.colors, t]
   );
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
-      <HeritageHeader title={STRINGS.title} showBack />
+      <HeritageHeader title={t('Auth.deviceManagement.title', { defaultValue: 'Device Management' })} showBack />
 
       <FlatList
         data={devices}
@@ -93,11 +99,11 @@ export default function DeviceManagementScreen(): JSX.Element {
                   fontFamily: 'Fraunces_600SemiBold',
                   color: theme.colors.onSurface,
                 }}>
-                {STRINGS.header.title}
+                {t('Auth.deviceManagement.headerTitle', { defaultValue: 'Device Management' })}
               </AppText>
               <AppText
                 style={{ fontSize: 16, color: `${theme.colors.onSurface}80`, lineHeight: 24 }}>
-                {STRINGS.header.subtitle}
+                {t('Auth.deviceManagement.headerSubtitle', { defaultValue: 'Generate a 6-digit code to link a senior device. Revocation applies on next heartbeat check.' })}
               </AppText>
             </View>
 
@@ -122,7 +128,7 @@ export default function DeviceManagementScreen(): JSX.Element {
                   fontFamily: 'Fraunces_600SemiBold',
                   color: theme.colors.onSurface,
                 }}>
-                {STRINGS.generateBox.title}
+                {t('Auth.deviceManagement.generateTitle', { defaultValue: 'Generate device code' })}
               </AppText>
 
               {code ? (
@@ -138,10 +144,10 @@ export default function DeviceManagementScreen(): JSX.Element {
                     {code}
                   </AppText>
                   <AppText style={{ fontSize: 14, color: `${theme.colors.onSurface}60` }}>
-                    {STRINGS.generateBox.expires.replace(
-                      '{time}',
-                      expiresAt ? new Date(expiresAt).toLocaleTimeString() : '-'
-                    )}
+                    {t('Auth.deviceManagement.expires', {
+                      time: expiresAt ? new Date(expiresAt).toLocaleTimeString() : '-',
+                      defaultValue: `Expires: ${expiresAt ? new Date(expiresAt).toLocaleTimeString() : '-'}`
+                    })}
                   </AppText>
                 </View>
               ) : null}
@@ -153,8 +159,8 @@ export default function DeviceManagementScreen(): JSX.Element {
               <HeritageButton
                 title={
                   status === 'loading'
-                    ? STRINGS.generateBox.button.loading
-                    : STRINGS.generateBox.button.idle
+                    ? t('Auth.deviceManagement.generating', { defaultValue: 'Generating...' })
+                    : t('Auth.deviceManagement.generateIdle', { defaultValue: 'Generate code' })
                 }
                 onPress={handleGenerate}
                 disabled={status === 'loading'}
@@ -168,13 +174,13 @@ export default function DeviceManagementScreen(): JSX.Element {
                 fontFamily: 'Fraunces_600SemiBold',
                 color: theme.colors.onSurface,
               }}>
-              {STRINGS.linkedDevices}
+              {t('Auth.deviceManagement.linkedDevices', { defaultValue: 'Linked devices' })}
             </AppText>
           </View>
         }
         ListEmptyComponent={
           <AppText style={{ color: `${theme.colors.onSurface}60`, fontStyle: 'italic' }}>
-            {STRINGS.emptyList}
+            {t('Auth.deviceManagement.empty', { defaultValue: 'No devices yet.' })}
           </AppText>
         }
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}

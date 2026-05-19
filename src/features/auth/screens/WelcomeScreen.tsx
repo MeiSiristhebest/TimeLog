@@ -19,6 +19,7 @@ import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { useHeritageTheme } from '@/theme/heritage';
 import { setWelcomeSeen } from '@/features/auth/services/onboardingStorage';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 // Require assets ensures they are bundled
 const HERO_IMAGE = require('../../../../assets/images/welcome-hero.png');
@@ -27,6 +28,7 @@ const PAPER_TEXTURE = require('../../../../assets/images/paper-texture.png');
 export default function WelcomeScreen(): JSX.Element {
   const router = useRouter();
   const { typography, colors, isDark } = useHeritageTheme();
+  const { t } = useTranslation();
   const scale = typography.body / 24;
 
   // Animation values
@@ -145,7 +147,7 @@ export default function WelcomeScreen(): JSX.Element {
                     lineHeight: Math.round(40 * scale),
                   },
                 ]}>
-                Preserve your voice for your family.
+                {t('Welcome.headline')}
               </Animated.Text>
 
               {/* Body Text */}
@@ -153,7 +155,7 @@ export default function WelcomeScreen(): JSX.Element {
                 allowFontScaling={false}
                 entering={FadeInDown.delay(700).duration(800)}
                 style={[styles.bodyText, { color: colors.onSurface }]}>
-                Your stories are a legacy. Start recording them today in your own words.
+                {t('Welcome.body')}
               </Animated.Text>
 
               {/* Primary Button */}
@@ -161,7 +163,7 @@ export default function WelcomeScreen(): JSX.Element {
                 entering={FadeInDown.delay(900).duration(800)}
                 style={[styles.buttonWrapper, animatedButtonStyle]}>
                 <HeritageButton
-                  title="Get Started"
+                  title={t('Welcome.getStarted')}
                   onPress={handleGetStarted}
                   variant="primary"
                   size="large"
@@ -177,8 +179,8 @@ export default function WelcomeScreen(): JSX.Element {
                 style={{ marginTop: 24 }}>
                 <Pressable onPress={handleSignIn} style={{ paddingVertical: 12 }}>
                   <AppText style={{ color: colors.textMuted, fontSize: 16, fontWeight: '500' }}>
-                    Already have an account?{' '}
-                    <AppText style={{ color: colors.primary, fontWeight: '700' }}>Sign In</AppText>
+                    {t('Welcome.alreadyHaveAccount')}{' '}
+                    <AppText style={{ color: colors.primary, fontWeight: '700' }}>{t('Welcome.signIn')}</AppText>
                   </AppText>
                 </Pressable>
               </Animated.View>

@@ -10,8 +10,10 @@ import { AppText } from '@/components/ui/AppText';
 import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export default function SignUpScreen(): JSX.Element {
+  const { t } = useTranslation();
   const { colors } = useHeritageTheme();
   const router = useRouter();
 
@@ -39,45 +41,45 @@ export default function SignUpScreen(): JSX.Element {
           </Animated.View>
           <AppText
             style={[styles.title, { color: colors.onSurface }]}>
-            Create Account
+            {t('Auth.signup.title', { defaultValue: 'Create Account' })}
           </AppText>
           <AppText
             style={[styles.subtitle, { color: colors.textMuted }]}>
-            Join TimeLog to preserve your family legacy.
+            {t('Auth.signup.subtitle', { defaultValue: 'Join TimeLog to preserve your family legacy.' })}
           </AppText>
         </View>
 
         <Animated.View entering={FadeInDown.delay(400).duration(800)} style={styles.formSection}>
           <View style={styles.inputGap}>
             <HeritageInput
-              label="Display Name"
+              label={t('Auth.signup.displayName', { defaultValue: 'Display Name' })}
               value={displayName}
               onChangeText={actions.setDisplayName}
               autoCapitalize="words"
-              placeholder="Your Name"
+              placeholder={t('Auth.signup.displayNamePlaceholder', { defaultValue: 'Your Name' })}
               leftIcon="person-outline"
             />
           </View>
 
           <View style={styles.inputGap}>
             <HeritageInput
-              label="Email Address"
+              label={t('Auth.signup.email', { defaultValue: 'Email Address' })}
               value={email}
               onChangeText={actions.setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
-              placeholder="you@example.com"
+              placeholder={t('Auth.signup.emailPlaceholder', { defaultValue: 'you@example.com' })}
               leftIcon="mail-outline"
             />
           </View>
 
           <View style={styles.inputGap}>
             <HeritageInput
-              label="Password"
+              label={t('Auth.signup.password', { defaultValue: 'Password' })}
               value={password}
               onChangeText={actions.setPassword}
               secureTextEntry
-              placeholder="••••••••"
+              placeholder={t('Auth.signup.passwordPlaceholder', { defaultValue: '••••••••' })}
               leftIcon="lock-closed-outline"
               showPasswordToggle
             />
@@ -85,11 +87,11 @@ export default function SignUpScreen(): JSX.Element {
 
           <View style={styles.inputGap}>
             <HeritageInput
-              label="Confirm Password"
+              label={t('Auth.signup.confirmPassword', { defaultValue: 'Confirm Password' })}
               value={confirmPassword}
               onChangeText={actions.setConfirmPassword}
               secureTextEntry
-              placeholder="••••••••"
+              placeholder={t('Auth.signup.confirmPasswordPlaceholder', { defaultValue: '••••••••' })}
               leftIcon="shield-checkmark-outline"
               showPasswordToggle
             />
@@ -103,7 +105,7 @@ export default function SignUpScreen(): JSX.Element {
 
           <View style={styles.buttonSection}>
             <HeritageButton
-              title={loading ? 'Creating Account…' : 'Sign Up'}
+              title={loading ? t('Auth.signup.creating', { defaultValue: 'Creating Account...' }) : t('Auth.signup.signUp', { defaultValue: 'Sign Up' })}
               onPress={actions.handleSignUp}
               disabled={isSubmitDisabled}
               variant="primary"
@@ -111,11 +113,11 @@ export default function SignUpScreen(): JSX.Element {
 
             <View style={styles.loginLinkSection}>
               <AppText style={{ color: colors.textMuted, fontSize: 16 }}>
-                Already have an account?{' '}
+                {t('Auth.signup.alreadyAccount', { defaultValue: 'Already have an account? ' })}
               </AppText>
               <Pressable onPress={() => router.replace(APP_ROUTES.LOGIN)}>
                 <AppText style={{ color: colors.primary, fontWeight: '700', fontSize: 16 }}>
-                  Sign In
+                  {t('Auth.signup.signIn', { defaultValue: 'Sign In' })}
                 </AppText>
               </Pressable>
             </View>
@@ -123,7 +125,7 @@ export default function SignUpScreen(): JSX.Element {
         </Animated.View>
 
         <HeritageButton
-            title="Back"
+            title={t('Auth.signup.back', { defaultValue: 'Back' })}
             variant="ghost"
             onPress={() => router.back()}
             style={{ marginTop: 8 }}

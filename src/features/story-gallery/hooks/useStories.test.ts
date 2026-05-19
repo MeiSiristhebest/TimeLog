@@ -14,6 +14,10 @@ jest.mock('@/db/client', () => ({
   },
 }));
 
+jest.mock('@/features/auth/store/authStore', () => ({
+  useAuthStore: (fn: any) => fn({ sessionUserId: 'user-123' }),
+}));
+
 jest.mock('@/db/schema', () => ({
   audioRecordings: {
     id: 'id',
@@ -23,6 +27,8 @@ jest.mock('@/db/schema', () => ({
     title: 'title',
     transcription: 'transcription',
     topicId: 'topic_id',
+    userId: 'user_id',
+    isFavorite: 'is_favorite',
   },
 }));
 

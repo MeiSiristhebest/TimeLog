@@ -27,7 +27,7 @@ import {
   toStoryCommentsRoute,
   toStoryRoute,
 } from '@/features/app/navigation/routes';
-import { HOME_STRINGS } from '../data/mockHomeData';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { isCloudAiEnabledLocally } from '@/lib/cloudPolicy';
 import { markQuestionAsAnswered } from '@/features/recorder/services/topicService';
 import { addRecordingToDailyGoal } from '@/features/home/services/dailyGoalService';
@@ -60,14 +60,15 @@ async function resolveUploadAssetWithTimeout(filePath: string): Promise<UploadAs
   }
 }
 
-function getCategoryTitle(category?: string): string {
+function getCategoryTitle(category?: string, t?: (key: string) => string): string {
+  if (!t) return category ?? 'My Story';
   switch (category) {
-    case 'childhood': return HOME_STRINGS.categories.childhood;
-    case 'family': return HOME_STRINGS.categories.family;
-    case 'career': return HOME_STRINGS.categories.career;
-    case 'memories': return HOME_STRINGS.categories.memories;
-    case 'wisdom': return HOME_STRINGS.categories.wisdom;
-    default: return HOME_STRINGS.categories.default;
+    case 'childhood': return t('Home.categories.childhood');
+    case 'family': return t('Home.categories.family');
+    case 'career': return t('Home.categories.career');
+    case 'memories': return t('Home.categories.memories');
+    case 'wisdom': return t('Home.categories.wisdom');
+    default: return t('Home.categories.default');
   }
 }
 
@@ -83,6 +84,7 @@ function normalizeTopicCategory(raw?: string): TopicQuestion['category'] | undef
 }
 
 export function useHomeLogic() {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{
     topicId?: string;
@@ -240,7 +242,7 @@ export function useHomeLogic() {
   // --- AI Session Management ---
   const aiDialog = useAiDialogSession({
     storyId: recording.recordingHandle?.metadata.id,
-    topicText: tts.currentQuestion?.text ?? HOME_STRINGS.questionCard.defaultQuestion,
+    topicText: tts.currentQuestion?.text ?? t('Home.questionCard.defaultQuestion'),
     language: aiLanguage,
     isAiAvailable,
     isRecorderOnline: isSyncOnline,

@@ -15,8 +15,10 @@ import { markActivitiesAsReadForStory } from '@/features/home/services/activityS
 import { updateAppBadge } from '@/lib/notifications/badgeService';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { showErrorToast } from '@/components/ui/feedback/toast';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export default function StoryCommentsScreen(): JSX.Element {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const theme = useHeritageTheme();
@@ -40,20 +42,20 @@ export default function StoryCommentsScreen(): JSX.Element {
           }
           await refetch();
         } catch {
-          showErrorToast('Failed to update story comments.');
+          showErrorToast(t('Gallery.comments.updateFailed', { defaultValue: 'Failed to update story comments.' }));
         }
       })();
-    }, [id, refetch, sessionUserId])
+    }, [id, refetch, sessionUserId, t])
   );
 
-  const displayTitle = story?.title?.trim() || 'Story comments';
+  const displayTitle = story?.title?.trim() || t('Gallery.comments.title', { defaultValue: 'Story comments' });
   const formattedDate = story
     ? new Date(story.startedAt).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       })
-    : 'Unknown date';
+    : t('Gallery.unknownDate', { defaultValue: 'Unknown date' });
 
   if (isStoryLoading || isCommentsLoading) {
     return (
@@ -97,10 +99,10 @@ export default function StoryCommentsScreen(): JSX.Element {
             textAlign: 'center',
             fontFamily: 'Fraunces_600SemiBold',
           }}>
-          Comments are unavailable for this story.
+          {t('Gallery.comments.unavailable', { defaultValue: 'Comments are unavailable for this story.' })}
         </AppText>
         <HeritageButton
-          title="Go back"
+          title={t('Gallery.goBack', { defaultValue: 'Go back' })}
           onPress={() => router.back()}
           variant="secondary"
           style={{ marginTop: 28 }}
@@ -127,7 +129,7 @@ export default function StoryCommentsScreen(): JSX.Element {
           style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Ionicons name="chevron-back" size={28} color={theme.colors.primaryDeep} />
           <AppText style={{ fontSize: 18, color: theme.colors.primaryDeep, fontWeight: '600' }}>
-            Back
+            {t('Gallery.detail.back', { defaultValue: 'Back' })}
           </AppText>
         </Pressable>
         <View
@@ -138,7 +140,7 @@ export default function StoryCommentsScreen(): JSX.Element {
             backgroundColor: `${theme.colors.primary}12`,
           }}>
           <AppText style={{ color: theme.colors.primaryDeep, fontSize: 13, fontWeight: '700' }}>
-            {commentThread?.unreadCount ?? 0} unread
+            {t('Gallery.comments.unreadCount', { count: commentThread?.unreadCount ?? 0, defaultValue: '{count} unread' })}
           </AppText>
         </View>
       </View>
@@ -178,7 +180,7 @@ export default function StoryCommentsScreen(): JSX.Element {
               fontSize: 18,
               lineHeight: 28,
             }}>
-            Family feedback is now grouped here so unread comments and story activity stay in one place.
+            {t('Gallery.comments.subtitle', { defaultValue: 'Family feedback is now grouped here so unread comments and story activity stay in one place.' })}
           </AppText>
         </View>
 
@@ -197,7 +199,7 @@ export default function StoryCommentsScreen(): JSX.Element {
               color: theme.colors.onSurface,
               fontFamily: 'Fraunces_600SemiBold',
             }}>
-            Playback
+            {t('Gallery.playback', { defaultValue: 'Playback' })}
           </AppText>
           <AudioPlayer uri={story.filePath} />
         </View>
@@ -268,7 +270,7 @@ export default function StoryCommentsScreen(): JSX.Element {
                         color: theme.colors.warning,
                         fontWeight: '700',
                       }}>
-                      New comment
+                      {t('Gallery.comments.newBadge', { defaultValue: 'New comment' })}
                     </AppText>
                   </View>
                 ) : null}
@@ -284,7 +286,7 @@ export default function StoryCommentsScreen(): JSX.Element {
                 backgroundColor: theme.colors.surface,
               }}>
               <AppText style={{ fontSize: 18, lineHeight: 28, color: theme.colors.textMuted }}>
-                No family comments yet for this story.
+                {t('Gallery.comments.empty', { defaultValue: 'No family comments yet for this story.' })}
               </AppText>
             </View>
           )}

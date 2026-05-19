@@ -1,6 +1,7 @@
 import { AppText } from '@/components/ui/AppText';
 import { View, Switch } from 'react-native';
 import { Animated } from '@/tw/animated';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { HeritageTimePicker } from '@/components/ui/HeritageTimePicker';
@@ -9,10 +10,10 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { SettingsRow } from '../components/SettingsRow';
 import { SettingsSection } from '../components/SettingsSection';
 import { useNotificationsLogic } from '../hooks/useSettingsLogic';
-import { SETTINGS_STRINGS } from '../data/mockSettingsData';
 
 export function NotificationsScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
+  const { t } = useTranslation();
 
   // Logic Separation
   const { state, actions } = useNotificationsLogic();
@@ -40,7 +41,7 @@ export function NotificationsScreen(): JSX.Element {
         }}>
         <View style={{ width: '82%', alignItems: 'center', gap: 14 }}>
           <AppText style={{ color: colors.onSurface, fontSize: 18, fontWeight: '600' }}>
-            {SETTINGS_STRINGS.notifications.loading}
+            {t('Settings.notifications.loading')}
           </AppText>
           <HeritageSkeleton variant="title" width="60%" />
           <HeritageSkeleton variant="text" width="90%" />
@@ -53,7 +54,7 @@ export function NotificationsScreen(): JSX.Element {
   return (
     <View style={{ flex: 1, backgroundColor: colors.surfaceDim }}>
       <HeritageHeader
-        title={SETTINGS_STRINGS.notifications.title}
+        title={t('Settings.notifications.title')}
         showBack
         scrollY={scrollY}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }}
@@ -66,10 +67,10 @@ export function NotificationsScreen(): JSX.Element {
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}>
         {/* General Settings */}
-        <SettingsSection title={SETTINGS_STRINGS.notifications.general.title}>
+        <SettingsSection title={t('Settings.notifications.general.title')}>
           <View style={{ backgroundColor: colors.surfaceCard }}>
             <SettingsRow
-              label={SETTINGS_STRINGS.notifications.general.enableNotifications}
+              label={t('Settings.notifications.general.enableNotifications')}
               value=""
               onPress={() => {
                 void actions.setEnabled(!enabled);
@@ -94,7 +95,7 @@ export function NotificationsScreen(): JSX.Element {
               }}
             />
             <SettingsRow
-              label={SETTINGS_STRINGS.notifications.general.gentleReminders}
+              label={t('Settings.notifications.general.gentleReminders')}
               iconName="hand-left-outline"
               iconColor={colors.sageGreen}
               onPress={() => actions.setGentleReminders(!gentleReminders)}
@@ -108,10 +109,10 @@ export function NotificationsScreen(): JSX.Element {
         </SettingsSection>
 
         {/* Quiet Hours */}
-        <SettingsSection title={SETTINGS_STRINGS.notifications.quietHours.title}>
+        <SettingsSection title={t('Settings.notifications.quietHours.title')}>
           <View style={{ backgroundColor: colors.surfaceCard }}>
             <SettingsRow
-              label={SETTINGS_STRINGS.notifications.quietHours.startTime}
+              label={t('Settings.notifications.quietHours.startTime')}
               iconName="moon-outline"
               iconColor={colors.blueAccent}
               value={formatTime(quietStart)}
@@ -125,7 +126,7 @@ export function NotificationsScreen(): JSX.Element {
               }}
             />
             <SettingsRow
-              label={SETTINGS_STRINGS.notifications.quietHours.endTime}
+              label={t('Settings.notifications.quietHours.endTime')}
               iconName="sunny-outline"
               iconColor={colors.amberCustom}
               value={formatTime(quietEnd)}
@@ -137,7 +138,7 @@ export function NotificationsScreen(): JSX.Element {
 
         <View style={{ padding: 16 }}>
           <HeritageButton
-            title={isSaving ? 'Saving...' : SETTINGS_STRINGS.notifications.save.button}
+            title={isSaving ? t('Settings.notifications.save.saving') : t('Settings.notifications.save.button')}
             onPress={actions.saveSettings}
             fullWidth
             loading={isSaving}

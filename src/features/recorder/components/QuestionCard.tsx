@@ -4,8 +4,9 @@ import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { useHeritageTheme } from '@/theme/heritage';
 import type { TopicQuestion } from '@/types/entities';
 import { AppText } from '@/components/ui/AppText';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { Image } from 'expo-image';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 // Category to icon mapping
 const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -59,6 +60,7 @@ export function QuestionCard({
   disabled = false,
   variant = 'recorder',
 }: QuestionCardProps): JSX.Element {
+  const { t } = useTranslation();
   const isDiscovery = variant === 'discovery';
   const theme = useHeritageTheme();
   const { colors } = theme;
@@ -106,7 +108,7 @@ export function QuestionCard({
               />
             )}
             <AppText className="text-[13px] font-bold uppercase tracking-[0.5px]" style={{ color: colors.amberDeep }}>
-              Asked by {question.submittedBy}
+              {t('Recorder.card.askedBy', { name: question.submittedBy, defaultValue: `Asked by ${question.submittedBy}` })}
             </AppText>
           </View>
         </View>
@@ -132,7 +134,7 @@ export function QuestionCard({
       {/* 4. Motivation Hint (Discovery only) */}
       {isDiscovery && (
         <AppText className="text-lg leading-7 text-center mb-6 max-w-[280px] self-center" style={{ color: colors.textMuted }}>
-          Share your memories. Your family would love to hear this story.
+          {t('Recorder.card.motivation', { defaultValue: 'Share your memories. Your family would love to hear this story.' })}
         </AppText>
       )}
 
@@ -145,7 +147,7 @@ export function QuestionCard({
           <>
             {/* Primary: Record Answer (Full Width) */}
             <HeritageButton
-              title="Record Answer"
+              title={t('Recorder.card.recordAnswer', { defaultValue: 'Record Answer' })}
               icon="mic"
               onPress={onRecordThis || (() => { })}
               disabled={disabled}
@@ -157,7 +159,7 @@ export function QuestionCard({
 
             {/* Secondary: Try Another (Ghost) */}
             <HeritageButton
-              title="Next"
+              title={t('Recorder.card.next', { defaultValue: 'Next' })}
               onPress={onNext || (() => { })}
               disabled={disabled}
               variant="ghost"
@@ -170,7 +172,7 @@ export function QuestionCard({
           <>
             <View className="flex-1">
               <HeritageButton
-                title={isSpeaking ? 'Playing' : 'Replay'}
+                title={isSpeaking ? t('Recorder.card.playing', { defaultValue: 'Playing' }) : t('Recorder.card.replay', { defaultValue: 'Replay' })}
                 icon={isSpeaking ? 'volume-high' : 'volume-medium-outline'}
                 onPress={onReplay || (() => { })}
                 disabled={disabled}
@@ -179,7 +181,7 @@ export function QuestionCard({
             </View>
             <View className="flex-1">
               <HeritageButton
-                title="Next"
+                title={t('Recorder.card.next', { defaultValue: 'Next' })}
                 icon="arrow-forward-circle-outline" // Clearer directional icon
                 onPress={onNewTopic || (() => { })}
                 disabled={disabled}

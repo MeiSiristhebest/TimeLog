@@ -5,13 +5,14 @@ import { SettingsRow } from '../components/SettingsRow';
 import { SettingsSection } from '../components/SettingsSection';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useAccountSecurityLogic } from '../hooks/useSettingsLogic';
-import { SETTINGS_STRINGS } from '../data/mockSettingsData';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 // STRICT STITCH PROTOCOL: Pure View Component
 export function AccountSecurityScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
+  const { t } = useTranslation();
 
   // Logic Separation
   const {
@@ -25,26 +26,24 @@ export function AccountSecurityScreen(): JSX.Element {
     actions,
   } = useAccountSecurityLogic();
 
-  const STRINGS = SETTINGS_STRINGS.accountSecurity;
-
   return (
     <View style={{ flex: 1, backgroundColor: colors.surfaceDim }}>
-      <HeritageHeader title={STRINGS.title} showBack />
+      <HeritageHeader title={t('Settings.items.accountSecurity')} showBack />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: 16, paddingBottom: 48 }}>
         {/* Profile Group */}
-        <SettingsSection title="PROFILE">
+        <SettingsSection title={t('Settings.accountSecurity.sections.profile.title')}>
           <SettingsRow
-            label={STRINGS.sections.profile.editProfile}
+            label={t('Settings.accountSecurity.sections.profile.editProfile')}
             value={profileLabel}
             iconName="person-circle-outline"
             iconColor={colors.sageGreen}
-            onPress={() => actions.navigateTo('/(tabs)/settings/edit-profile')}
+            onPress={() => actions.navigateTo(APP_ROUTES.SETTINGS_EDIT_PROFILE)}
           />
           <SettingsRow
-            label={STRINGS.sections.profile.role}
+            label={t('Settings.accountSecurity.sections.profile.role')}
             value={roleLabel}
             iconName="id-card-outline"
             iconColor={colors.amberCustom}
@@ -54,26 +53,18 @@ export function AccountSecurityScreen(): JSX.Element {
         </SettingsSection>
 
         {/* Security Group */}
-        <SettingsSection title="SECURITY">
+        <SettingsSection title={t('Settings.accountSecurity.sections.security.title')}>
           <SettingsRow
-            label={STRINGS.sections.security.recoveryCode}
+            label={t('Settings.accountSecurity.sections.security.recoveryCode')}
             iconName="key-outline"
             iconColor={colors.blueAccent}
             onPress={() => actions.navigateTo(APP_ROUTES.SETTINGS_RECOVERY_CODE)}
           />
           <SettingsRow
-            label={STRINGS.sections.security.deviceCode}
+            label={t('Settings.accountSecurity.sections.security.deviceCode')}
             iconName="qr-code-outline"
             iconColor={colors.textMuted}
-            onPress={() =>
-              actions.navigateTo(APP_ROUTES.SETTINGS_DEVICE_CODE || '/(tabs)/settings/device-code')
-            }
-          />
-          <SettingsRow
-            label={STRINGS.sections.security.deviceManagement}
-            iconName="phone-portrait-outline"
-            iconColor={colors.primary}
-            onPress={() => actions.navigateTo(APP_ROUTES.SETTINGS_DEVICE_MANAGEMENT)}
+            onPress={() => actions.navigateTo(APP_ROUTES.SETTINGS_DEVICE_CODE)}
             isLast
           />
         </SettingsSection>
@@ -81,14 +72,14 @@ export function AccountSecurityScreen(): JSX.Element {
         {/* Sign Out Group (Action) */}
         <View style={{ marginTop: 24, gap: 12, paddingHorizontal: 16 }}>
           <HeritageButton
-            title={isSigningOut ? 'Signing Out...' : STRINGS.sections.signOut.label}
+            title={isSigningOut ? t('Settings.loading') : t('Settings.items.logOut')}
             onPress={confirmSignOut}
             variant="secondary"
             fullWidth
             disabled={isSigningOut}
           />
           <HeritageButton
-            title={isDeletingAccount ? 'Deleting Account...' : STRINGS.sections.deleteAccount.label}
+            title={isDeletingAccount ? t('Settings.loading') : t('Settings.accountSecurity.deleteAccount')}
             onPress={confirmDeleteAccount}
             variant="ghost"
             fullWidth
@@ -98,7 +89,7 @@ export function AccountSecurityScreen(): JSX.Element {
 
         {isLoading ? (
           <AppText variant="caption" style={{ color: colors.textMuted }}>
-            {STRINGS.loading}
+            {t('Settings.loading')}
           </AppText>
         ) : null}
       </ScrollView>

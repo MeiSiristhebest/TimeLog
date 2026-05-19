@@ -8,9 +8,10 @@ import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { useHeritageTheme, PALETTE } from '@/theme/heritage';
 import { useDeviceCodeLogic } from '@/features/auth/hooks/useAuthLogic';
-import { AUTH_STRINGS } from '@/features/auth/data/mockAuthData';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export default function DeviceCodeScreen(): JSX.Element {
+  const { t } = useTranslation();
   const { colors, typography } = useHeritageTheme();
   const scale = typography.body / 24;
 
@@ -18,11 +19,10 @@ export default function DeviceCodeScreen(): JSX.Element {
   const { state, actions } = useDeviceCodeLogic();
   const { error, loading, formattedCode } = state;
   const { loadCode, handleReady, handleBack } = actions;
-  const STRINGS = AUTH_STRINGS.deviceCode;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
-      <HeritageHeader title={STRINGS.title} showBack onBack={handleBack} />
+      <HeritageHeader title={t('Auth.deviceCode.title', { defaultValue: 'Connect Device' })} showBack onBack={handleBack} />
 
       {/* Main Content */}
       <View style={styles.main}>
@@ -42,7 +42,7 @@ export default function DeviceCodeScreen(): JSX.Element {
               lineHeight: Math.round(43.2 * scale),
             },
           ]}>
-          {STRINGS.headline}
+          {t('Auth.deviceCode.headline', { defaultValue: 'Connect with\nFamily' })}
         </Animated.Text>
 
         {/* Code Container */}
@@ -53,13 +53,15 @@ export default function DeviceCodeScreen(): JSX.Element {
             { backgroundColor: colors.surfaceDim, borderColor: colors.border },
           ]}>
           <AppText style={[styles.codeLabel, { color: colors.textMuted }]}>
-            {STRINGS.codeLabel}
+            {t('Auth.deviceCode.codeLabel', { defaultValue: 'YOUR CODE' })}
           </AppText>
 
           {loading ? (
             <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: 12 }} />
           ) : error ? (
-            <AppText style={{ color: colors.error, fontSize: 16 }}>{STRINGS.error}</AppText>
+            <AppText style={{ color: colors.error, fontSize: 16 }}>
+              {t('Auth.deviceCode.error', { defaultValue: 'Error generating code' })}
+            </AppText>
           ) : (
             <View style={styles.codeTextContainer}>
               <AppText style={[styles.codeDigit, { color: colors.onSurface }]}>
@@ -75,7 +77,7 @@ export default function DeviceCodeScreen(): JSX.Element {
 
         {/* Helper Text */}
         <AppText style={[styles.helperText, { color: `${colors.onSurface}CC` }]}>
-          {STRINGS.helperText}
+          {t('Auth.deviceCode.helperText', { defaultValue: 'Share this code with your family.' })}
         </AppText>
       </View>
 
@@ -83,7 +85,7 @@ export default function DeviceCodeScreen(): JSX.Element {
       <View style={styles.footer}>
         {/* Primary Action Button */}
         <HeritageButton
-          title={STRINGS.readyButton}
+          title={t('Auth.deviceCode.readyButton', { defaultValue: "I'm Ready" })}
           onPress={handleReady}
           variant="primary"
           size="large"
@@ -94,7 +96,9 @@ export default function DeviceCodeScreen(): JSX.Element {
 
         <TouchableOpacity style={styles.troubleLink} onPress={() => loadCode()}>
           <AppText style={[styles.troubleText, { color: colors.textMuted }]}>
-            {loading ? STRINGS.regenerate.loading : STRINGS.regenerate.idle}
+            {loading
+              ? t('Auth.deviceCode.regenerate.loading', { defaultValue: 'Generating...' })
+              : t('Auth.deviceCode.regenerate.idle', { defaultValue: 'Regenerate Code' })}
           </AppText>
         </TouchableOpacity>
       </View>

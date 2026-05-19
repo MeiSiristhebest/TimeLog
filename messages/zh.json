@@ -1,0 +1,528 @@
+{
+  "Welcome": {
+    "headline": "为家人留住您的声音。",
+    "body": "您的故事是珍贵的家族记忆。今天就开始用您自己的话语把它们记录下来吧。",
+    "getStarted": "开始使用",
+    "alreadyHaveAccount": "已经有账号了吗？",
+    "signIn": "登录"
+  },
+  "TabBar": {
+    "record": "倾听记录",
+    "listen": "时光故事",
+    "me": "我的"
+  },
+  "Gallery": {
+    "title": "我的故事集",
+    "subtitleSuffix": " 段岁月记忆",
+    "sortButton": "排序",
+    "searchPlaceholder": "搜索标题、内容或话题...",
+    "emptyMessage": "未找到符合条件的故事",
+    "categories": {
+      "all": "全部",
+      "travel": "游历旅行",
+      "education": "求学往事",
+      "wisdom": "人生感悟",
+      "celebration": "节庆团聚",
+      "hobbies": "兴趣爱好",
+      "food": "岁月味道",
+      "friendship": "挚友深交",
+      "history": "时代变迁",
+      "childhood": "童年记忆",
+      "general": "日常闲谈",
+      "family": "我的家庭",
+      "career": "事业往事"
+    },
+    "sort": {
+      "modalTitle": "故事排序",
+      "newest": "最新录制优先",
+      "oldest": "最早录制优先",
+      "longest": "时长最长",
+      "shortest": "时长最短",
+      "cancel": "取消"
+    },
+    "detail": {
+      "comments": "留言评论",
+      "back": "返回"
+    },
+    "edit": {
+      "title": "编辑故事",
+      "cancel": "取消",
+      "save": "保存",
+      "saving": "正在保存...",
+      "changeCover": "更换封面",
+      "storyTitle": "故事标题",
+      "storyDate": "记录日期",
+      "topic": "所属话题",
+      "transcript": "语音文本转写",
+      "addYou": "+ 添加讲述人段落",
+      "addAi": "+ 添加 AI 回应",
+      "editParagraphTip": "点击任意段落可修改文字内容或说话人角色。",
+      "noTranscript": "该故事暂无语音转写文本。",
+      "saveSuccess": "故事已更新",
+      "saveFailed": "保存修改失败",
+      "titlePlaceholder": "故事标题",
+      "selectTopic": "选择话题",
+      "remove": "删除",
+      "transcriptTip": "请保持每行一个段落。保存转写文本时会保留说话人角色。",
+      "selectTopicModalTitle": "选择话题",
+      "searchTopic": "搜索话题类别",
+      "promptCount": "{category} · {count} 个提示问题"
+    },
+    "comments": {
+      "title": "家人的互动留言",
+      "unavailable": "离线状态下无法查看或添加留言。请连接网络后参与互动。",
+      "newCommentPlaceholder": "写下给长者的问候...",
+      "unreadCount": "{count} 条未读留言",
+      "empty": "暂无留言。快分享给家人们开启第一条亲情互动吧！",
+      "subtitle": "家人的关怀反馈与故事动态汇聚于此，方便您随时查看。",
+      "newBadge": "新留言",
+      "updateFailed": "获取互动留言失败。"
+    },
+    "playback": "播放录音",
+    "unknownDate": "未知日期",
+    "storyWord": "回忆",
+    "untitled": "未命名回忆",
+    "transcriptUnavailable": "该故事暂无语音转写文本。",
+    "exportSuccess": "故事导出成功。",
+    "exportFailed": "故事导出失败。",
+    "notFound": "未找到该故事或已被删除。",
+    "goBack": "返回故事集",
+    "deleteFailed": "删除故事失败。",
+    "restoreFailed": "恢复故事失败。",
+    "detailsTitle": "故事详细信息",
+    "detailDuration": "录音时长",
+    "unitSeconds": "秒",
+    "detailFileSize": "文件大小",
+    "unitKb": "KB",
+    "detailBackup": "备份状态",
+    "backupCloudSaved": "已安全备份至云端",
+    "backupLocalOnly": "安全保存在本地设备",
+    "readOnlyPreview": "预览模式（已删除）",
+    "editStory": "编辑故事"
+  },
+  "Favorites": {
+    "title": "我的收藏",
+    "emptyTitle": "暂无收藏故事",
+    "emptySubtitle": "您点过爱心赞赏的故事会显示在这里，方便随时聆听回味。",
+    "saved": "已添加到收藏",
+    "removed": "已移出收藏"
+  },
+  "Discovery": {
+    "title": "探索话题",
+    "badge": "孙辈发来的提问",
+    "helperText": "跟孩子们讲讲您的想法和故事吧，这不仅是记录，更是亲情陪伴。",
+    "recordAnswer": "开始录音回答",
+    "tryAnother": "换一个",
+    "noTopics": "未找到所选分类的话题"
+  },
+  "Home": {
+    "greetings": {
+      "morning": "早上好",
+      "afternoon": "下午好",
+      "evening": "晚上好"
+    },
+    "weather": {
+      "unit": "°C",
+      "loading": "正在获取天气...",
+      "fallback": "--"
+    },
+    "questionCard": {
+      "defaultQuestion": "您小时候最喜欢的玩具是什么？",
+      "answeredBadge": "已回答",
+      "newQuestionButton": "换一个",
+      "playButton": "播放"
+    },
+    "recording": {
+      "tapToRecord": "轻触开始录音",
+      "startError": "录音启动失败，请重试。",
+      "stopError": "结束录音失败，请重试。"
+    },
+    "notification": {
+      "liked": "喜欢了",
+      "commented": "评论了"
+    },
+    "categories": {
+      "childhood": "我的童年",
+      "family": "我的家庭",
+      "career": "我的事业",
+      "memories": "往事回忆",
+      "wisdom": "人生感悟",
+      "default": "我的故事"
+    }
+  },
+  "ConsentReview": {
+    "title": "权限与隐私提示",
+    "header": "您的隐私选择",
+    "subheader": "以下是您已开启的功能授权。您可以随时在设置的“隐私与分享”中调整。",
+    "infoBox": "如需撤销授权，请前往 设置 → 隐私与分享 关闭相应的功能开关。",
+    "consentedOn": "授权时间：{date}",
+    "items": {
+      "cloud_ai": {
+        "title": "云端智能辅助",
+        "description": "短暂的音频片段将发送至 AI 智能助手，用于生成贴心后续提问与语音转文字。完整录音始终优先保存在您本地。"
+      },
+      "cloud_storage": {
+        "title": "云端安全备份",
+        "description": "您的故事将安全加密备份在云端，防止丢失，同时也方便家人收听。"
+      },
+      "family_sharing": {
+        "title": "家庭亲情分享",
+        "description": "已绑定的家庭成员可以聆听您的故事并给您留言点赞。"
+      }
+    }
+  },
+  "Nudge": {
+    "morning": {
+      "title": "早上好！",
+      "body": "今天有什么想跟孩子们分享的小故事吗？"
+    },
+    "afternoon": {
+      "title": "您好！",
+      "body": "家人们都很想听听您的近况和往昔岁月呢。"
+    },
+    "evening": {
+      "title": "晚上好！",
+      "body": "睡前要不要记录一段美好的回忆呢？"
+    }
+  },
+  "Settings": {
+    "title": "设置",
+    "home": {
+      "myStories": "我的故事",
+      "favorites": "我的收藏",
+      "settings": "系统设置",
+      "upgradeTitle": "升级为永久账号",
+      "upgradeSubtext": "您可以继续体验录音，但升级永久账号能更安全地妥善保存您的岁月录音，并支持与家人远程亲情共享。",
+      "upgradeButton": "立即升级账号",
+      "profileTitle": "完善您的长者档案",
+      "profileSubtext": "添加您的生日、语言偏好与舒适字体大小，为您定制最温暖贴心的记录体验。",
+      "profileButton": "去完善",
+      "skipForNow": "稍后再说"
+    },
+    "language": "语言 / Language",
+    "searchLanguage": "搜索语言",
+    "systemDefault": "系统默认",
+    "sections": {
+      "account": "账号管理",
+      "general": "通用设置",
+      "about": "关于与帮助"
+    },
+    "items": {
+      "accountSecurity": "账号与安全",
+      "notifications": "通知与提醒",
+      "familySharing": "家庭亲情圈",
+      "dailyGoal": "每日记录小目标",
+      "display": "显示与字体大小",
+      "dataStorage": "数据与存储空间",
+      "help": "帮助与反馈",
+      "about": "关于 TimeLog",
+      "switchAccount": "切换账号",
+      "logOut": "退出登录",
+      "privacy": "隐私政策",
+      "terms": "服务条款"
+    },
+    "notifications": {
+      "title": "通知与提醒",
+      "loading": "正在加载通知偏好设置...",
+      "general": {
+        "title": "日常提醒",
+        "enableNotifications": "允许通知提醒",
+        "gentleReminders": "温馨问候提醒（每天上午 10:00）"
+      },
+      "quietHours": {
+        "title": "勿扰时段",
+        "startTime": "勿扰开始时间",
+        "endTime": "勿扰结束时间"
+      },
+      "save": {
+        "button": "保存设置",
+        "saving": "正在保存...",
+        "successTitle": "设置已保存",
+        "successMessage": "您的通知偏好设置已成功更新。"
+      }
+    },
+    "loading": "正在加载...",
+    "accountSecurity": {
+      "sections": {
+        "profile": {
+          "title": "个人信息",
+          "editProfile": "编辑个人信息",
+          "role": "我的身份"
+        },
+        "security": {
+          "title": "安全管理",
+          "recoveryCode": "账号恢复凭据",
+          "deviceCode": "家庭绑定设备码"
+        }
+      },
+      "deleteAccount": "删除账号"
+    },
+    "aboutHelp": {
+      "support": {
+        "title": "支持服务",
+        "helpCenter": "帮助中心",
+        "contactSupport": "联系客服"
+      }
+    },
+    "dataStorage": {
+      "cloudProcessing": {
+        "title": "云端智能处理",
+        "label": "云端 AI 智能辅助",
+        "caption": "开启云端智能辅助以使用 AI 互动功能。离线时依然支持本地录音。"
+      },
+      "storage": {
+        "title": "存储空间管理",
+        "deletedItems": "已删除文件"
+      }
+    },
+    "displayAccessibility": {
+      "fontSize": "字体大小设置"
+    }
+  },
+  "Topics": {
+    "q-007": "父母教给您最重要的人生道理是什么？",
+    "q-008": "您最希望后辈子孙记住关于您的什么品格或往事？",
+    "q-014": "您一生中遇到过最大的困难和挑战是什么？",
+    "q-015": "您最想给子女儿孙们分享哪些人生建议？",
+    "q-001": "您小时候最喜欢的游戏是什么？",
+    "q-002": "您还记得第一天上学时的情景吗？",
+    "q-011": "您儿时住过的老屋是什么样子的？",
+    "q-024": "在您的童年里，有没有一件最珍爱的玩具或物件？",
+    "q-006": "您印象最深的一次出游或旅行是去哪里？",
+    "q-016": "您去过的最美的地方是哪里？有什么难忘风景？",
+    "q-017": "讲讲旅途中发生过的，现在回想起来十分有趣的小意外吧。",
+    "q-025": "在您的游历中，有没有哪个地方的风土人情最让您感到惊叹？",
+    "q-009": "年轻的时候，您曾有过什么梦想或志愿？",
+    "q-012": "您的第一份工作是做什么的？赚到的第一笔钱是怎么花的？",
+    "q-018": "求学时期，您最喜欢哪位老师？为什么？",
+    "q-026": "在学校之外，您学到的最受用的一项本领或手艺是什么？",
+    "q-003": "在您年轻时，谁是您最好的知心伙伴？",
+    "q-005": "回顾往昔，最让您感到骄傲和自豪的一件事是什么？",
+    "q-023": "在您的生命中，哪一段重要的岁月变迁对您影响最深？",
+    "q-027": "在您几十年的岁月里，见证过这个世界最不可思议的变化是什么？",
+    "q-004": "您和您的老伴最初是怎样相识相知的？",
+    "q-010": "您最喜欢哪个传统节日？为什么喜欢？",
+    "q-020": "家里有没有什么特别的过节习俗或传统？",
+    "q-028": "您印象最深刻、过得最开心的一次生日是怎样庆祝的？",
+    "q-019": "您平时最大的兴趣爱好是什么？是怎么爱上它的？",
+    "q-029": "在做自己喜欢的这项爱好时，带给您最大快乐的是什么？",
+    "q-030": "您曾经收藏过什么有趣的东西吗？跟孩子们讲讲您的藏品吧。",
+    "q-031": "有没有一门手艺或爱好，您一直想学但还没来得及尝试的？",
+    "q-013": "您最爱吃的一道菜是什么？背后有什么温暖动人的故事吗？",
+    "q-021": "家里有没有一道祖传或您最拿手的家常好菜？",
+    "q-032": "小的时候，吃什么东西最能让您感到满足和快乐？",
+    "q-033": "您平时更喜欢在家里做饭吃还是出门馆子？为什么呢？",
+    "q-022": "跟孩子们讲讲一位曾经改变了您人生轨迹的朋友吧。",
+    "q-034": "在结交朋友时，您最看重对方身上的什么好品质？",
+    "q-035": "您现在还和年少时相识的老朋友们保持联系吗？",
+    "q-036": "和朋友们在一起时，发生过最欢乐、最幽默的一件事是什么？"
+  },
+  "Recorder": {
+    "ai": {
+      "connecting": "正在连接智能助手...",
+      "offlineFallback": "正在进行本地录音（离线模式）",
+      "listening": "正在倾听...",
+      "silentFallback": "智能助手未回应，已自动切换为本地录音",
+      "waiting": "正在等待语音连接...",
+      "connectionError": "连接遇到问题，已切换为本地录音",
+      "assistant": "智能助手",
+      "you": "您",
+      "status": "状态",
+      "tellMeMore": "跟我讲讲今天一件难忘或温馨的小故事吧。"
+    },
+    "controls": {
+      "holdToEnd": "按住结束",
+      "pressAndHold": "长按按键即可结束录音",
+      "tapToStart": "点击开始",
+      "pause": "暂停",
+      "resume": "继续录制"
+    },
+    "card": {
+      "askedBy": "来自 {name} 的提问",
+      "motivation": "跟我们讲讲吧，家人们都很期待聆听您的往日岁月。",
+      "recordAnswer": "开始录制回答",
+      "next": "换一个",
+      "playing": "正在播放",
+      "replay": "再听一遍"
+    },
+    "resumePrompt": {
+      "title": "要继续录制吗？",
+      "subtitle": "您有一段尚未完成的录音，想要接着录制还是重新开始？",
+      "discard": "放弃重录",
+      "resume": "继续录制"
+    },
+    "mode": {
+      "classic": "传统录音",
+      "ai": "智能对话"
+    },
+    "active": {
+      "todayTopic": "今日话匣子",
+      "defaultQuestion": "今天有什么想分享的趣闻或记忆吗？"
+    },
+    "saved": {
+      "successTitle": "故事已妥善封存",
+      "successSubtitle": "您的声音已被加密记录并长久保存，随时可供回味。",
+      "defaultTitle": "我的岁月记忆",
+      "done": "完成",
+      "categories": {
+        "childhood": "我的童年",
+        "family": "我的家庭",
+        "career": "我的事业",
+        "education": "我的求学岁月",
+        "memories": "我的记忆",
+        "history": "我的历史",
+        "wisdom": "人生感悟",
+        "travel": "我的旅途",
+        "celebrations": "岁月庆典",
+        "hobbies": "我的兴趣",
+        "food": "舌尖美食",
+        "friendship": "我的挚友"
+      }
+    }
+  },
+  "Auth": {
+    "role": {
+      "loading": "正在加载...",
+      "title": "请问是哪位在\n使用这部手机？",
+      "storytellerTitle": "我是长者讲述人",
+      "storytellerSubtitle": "我想轻松录下我的岁月故事",
+      "listenerTitle": "我是家庭倾听者",
+      "listenerSubtitle": "我是家庭倾听者，我想聆听家人故事",
+      "alreadyAccount": "已有绑定的家庭账号？",
+      "signIn": "直接登录",
+      "backAccessibility": "返回"
+    },
+    "login": {
+      "title": "欢迎回来",
+      "subtitle": "登录家庭账号，继续您的时光留声之旅。",
+      "email": "电子邮箱地址",
+      "emailPlaceholder": "you@example.com",
+      "password": "安全密码",
+      "passwordPlaceholder": "••••••••",
+      "signingIn": "正在验证登录...",
+      "signIn": "登 录",
+      "noAccount": "还没有亲情账号？",
+      "signUp": "去注册",
+      "forgotPassword": "忘记密码？",
+      "backToHome": "返回主页",
+      "emailAccessibilityHint": "请输入您的电子邮箱地址",
+      "passwordAccessibilityHint": "请输入您的安全密码"
+    },
+    "signup": {
+      "title": "创建亲情账号",
+      "subtitle": "加入 TimeLog，与全家人共同守护长者的珍贵回忆。",
+      "displayName": "称呼或姓名",
+      "displayNamePlaceholder": "您的称呼",
+      "email": "电子邮箱地址",
+      "emailPlaceholder": "you@example.com",
+      "password": "设置密码",
+      "passwordPlaceholder": "••••••••",
+      "confirmPassword": "确认密码",
+      "confirmPasswordPlaceholder": "••••••••",
+      "creating": "正在创建账号...",
+      "signUp": "完成注册",
+      "alreadyAccount": "已有账号？",
+      "signIn": "去登录",
+      "back": "返回"
+    },
+    "recoveryCode": {
+      "title": "账号恢复凭据",
+      "infoTitle": "设备丢失及换机保护",
+      "infoText": "此凭据专为长者设计，若手机遗失或更换新机，使用此码即可快速恢复长者设备上的全部故事录音。",
+      "codeLabel": "恢复凭证码",
+      "loading": "正在生成凭据...",
+      "noCode": "尚未生成恢复凭据。",
+      "generateIdle": "生成新凭证",
+      "generating": "正在生成...",
+      "copy": "复制凭证",
+      "share": "发送给子女",
+      "warning": "请务必妥善保管此凭据。任何持有此码的人均可绑定并读取该长者档案。"
+    },
+    "deviceCode": {
+      "title": "连接长者设备",
+      "headline": "与家人的\n亲情相连",
+      "codeLabel": "设备连接码",
+      "helperText": "请将此数字凭证分享给家中的晚辈子女。",
+      "ready": "准备好了",
+      "readyButton": "准备好了",
+      "generating": "正在生成连接码...",
+      "regenerate": {
+        "idle": "重新生成连接码",
+        "loading": "正在生成连接码..."
+      },
+      "error": "生成遇到问题，请重试",
+      "defaultError": "暂时无法生成连接码，请稍后再试。"
+    },
+    "deviceManagement": {
+      "title": "已连接设备管理",
+      "headerTitle": "设备授权与管理",
+      "headerSubtitle": "生成 6 位亲情设备绑定码用于添加新的长者录音机。撤销访问权限将在设备下次在线同步时生效。",
+      "generateTitle": "生成亲情绑定码",
+      "generating": "正在生成...",
+      "generateIdle": "生成绑定码",
+      "expires": "有效期限：{time}",
+      "linkedDevices": "已绑定的设备",
+      "empty": "暂无已绑定的亲情设备。",
+      "unnamed": "未命名的设备",
+      "active": "在线使用中",
+      "revoked": "已撤销授权",
+      "created": "绑定日期：{date}",
+      "lastSeen": "最后使用：{date}",
+      "revokeButton": "撤销授权"
+    },
+    "help": {
+      "title": "帮助与常见问题",
+      "faqTitle": "常见疑问解答",
+      "contactTitle": "遇到其他使用难题？",
+      "contactSubtitle": "我们的长者支持服务团队竭诚为您解答。",
+      "contactButton": "联系长者关怀团队",
+      "faq": {
+        "q_1": "如何开始录制我的岁月故事？",
+        "a_1": "请点击底部的“录制”或“主页”选项卡，然后按下正中央那个显眼温暖的红色“开始录制”大按钮。您可以先挑选一个您感兴趣的问答话题，也可以直接开始畅谈，系统内建的 AI 语音小助手会在合适的时候轻声向您提问，引导您回忆往事。",
+        "q_2": "在没有网络的地方，还可以使用录音吗？",
+        "a_2": "完全可以！TimeLog 采用“本地优先”的设计理念，专为离线环境进行了深度的优化。在没有网络时，您的录音依然会安全地加密保存在当前手机上。一旦手机重新连接到网络，系统会自动在后台将故事同步备份到云端，确保数据永不丢失。",
+        "q_3": "晚辈子女如何能听到我录制的故事？",
+        "a_3": "子女在他们的手机上登录后，可以通过您手机“设置”页面里的“生成绑定码”或者“二维码”来安全地绑定您的设备。绑定成功后，他们就能即时听到您录制的所有故事，并可以为您留言、点赞和互动。",
+        "q_4": "万一不小心删除了某个故事，还能找回来吗？",
+        "a_4": "请不用担心。被删除的故事不会被立即抹除，而是会移动到类似于垃圾箱的“已删除项目”安全保留区，并在其中保存 30 天。在这 30 天内，您可以随时在“设置” > “已删除项目”中一键将故事恢复到您的画廊中。",
+        "q_5": "我该如何关闭云端同步或 AI 辅助录音功能？",
+        "a_5": "您可以前往“设置” > “隐私与共享”，将“云端 AI 与分享”的开关关闭。关闭后，您的本地录音依然能够正常工作，但是您的故事将不会同步到云端，子女也无法通过他们的设备收听您的故事。",
+        "q_6": "子女该如何向我提出他们感兴趣的往事问题？",
+        "a_6": "绑定的子女可以通过他们的客户端向您发送他们好奇的提问。这些提问会立刻出现在您手机的“话题发现”页面中，并且会带有温暖的“来自家人”标签，让您能够直接针对孩子感兴趣的事来录音回答。"
+      }
+    },
+    "upgrade": {
+      "title": "升级为永久账号",
+      "header": "完成账号设置",
+      "description": "设置专属的邮箱与安全密码，保护当前长者的所有本地岁月录音，防范数据丢失，同时支持在其他家庭设备上登录。",
+      "displayName": "长者称呼或姓名",
+      "displayNamePlaceholder": "请输入长者称呼",
+      "email": "电子邮箱地址",
+      "emailPlaceholder": "elder@example.com",
+      "password": "设置安全密码",
+      "passwordPlaceholder": "至少 6 位字符",
+      "confirmPassword": "确认密码",
+      "confirmPasswordPlaceholder": "请再次输入密码",
+      "warning": "请务必将此账号密码妥善记下，未来在子女或其他手机上登录时将需要使用。",
+      "creating": "正在安全升级中...",
+      "complete": "完成永久账号升级",
+      "lovedOne": "您挚爱的家人",
+      "alertEmailRequired": "电子邮箱必填",
+      "alertEmailRequiredMsg": "请输入您的电子邮箱地址",
+      "alertInvalidEmail": "邮箱格式不正确",
+      "alertInvalidEmailMsg": "请输入有效的电子邮箱（如 name@example.com）",
+      "alertPasswordRequired": "密码必填",
+      "alertPasswordRequiredMsg": "请输入您的安全密码",
+      "alertPasswordMismatch": "两次输入的密码不一致",
+      "alertPasswordMismatchMsg": "请确保两次输入的密码完全相同",
+      "alertPasswordTooShort": "密码太短",
+      "alertPasswordTooShortMsg": "密码长度必须至少为 6 个字符",
+      "alertCreatedTitle": "亲情账号创建成功！",
+      "alertCreatedWithRecovery": "{name} 的亲情账号已成功生成！\n\n账户恢复凭据：\n{recoveryCode}\n\n【极其重要】：请立即将此凭据抄写或保存在安全的地方。若未来遗忘密码，必须凭此凭据找回账号。\n\n下一步：我们已向您的邮箱发送了确认链接。请检查收件箱（以及垃圾邮件夹）并点击该链接以激活并验证您的账号。",
+      "alertCreatedNoRecovery": "{name} 的亲情账号已成功生成！\n\n下一步：我们已向您的邮箱发送了确认链接。请检查收件箱（以及垃圾邮件夹）并点击该链接以激活并验证您的账号。",
+      "alertGotIt": "记下了，继续使用",
+      "alertFailedTitle": "设置失败",
+      "alertFailedDefault": "亲情账号生成失败，请稍后重试。"
+    }
+  }
+}

@@ -4,6 +4,7 @@ import type { User } from '@supabase/supabase-js';
 import { mapAuthError } from './anonymousAuthService';
 import { setCloudAiEnabled } from '@/lib/cloudPolicy';
 import { syncQueueService } from '@/lib/sync-engine/queue';
+import { useAuthStore } from '../store/authStore';
 import { devLog } from '@/lib/devLogger';
 
 // Re-export RateLimitError for consumers
@@ -123,4 +124,5 @@ export async function signOut(): Promise<void> {
   if (error) {
     throw new Error(mapAuthError(error));
   }
+  useAuthStore.getState().setUnauthenticated();
 }

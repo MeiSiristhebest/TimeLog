@@ -14,6 +14,7 @@ import { StorySavedView } from '@/features/recorder/components/StorySavedView';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useHomeLogic } from '@/features/home/hooks/useHomeLogic';
 import { HOME_STRINGS } from '@/features/home/data/mockHomeData';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { AppText } from '@/components/ui/AppText';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Animated } from '@/tw/animated';
@@ -25,6 +26,7 @@ const BREATHING_GLOW_OFFSET = (RECORD_BUTTON_CONTAINER_SIZE - BREATHING_RING_SIZ
 
 export default function HomeTabScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
+  const { t } = useTranslation();
 
   // Logic Separation: All business logic in hook
   const { state, actions } = useHomeLogic();
@@ -59,7 +61,7 @@ export default function HomeTabScreen(): JSX.Element {
     isPauseTransitioning,
     isStartingRecording,
   } = state;
-  const promptText = currentQuestion?.text || HOME_STRINGS.questionCard.defaultQuestion;
+  const promptText = currentQuestion?.text || t('Home.questionCard.defaultQuestion');
   const renderedWords = useMemo(
     () => (words.length > 0 ? words : promptText.split(/\s+/).filter(Boolean)),
     [words, promptText]
@@ -147,7 +149,7 @@ export default function HomeTabScreen(): JSX.Element {
           actions.setLastSavedId(null);
           actions.navigateToListen();
         }}
-        storyTitle={currentQuestion?.text || HOME_STRINGS.questionCard.defaultQuestion}
+        storyTitle={currentQuestion?.text || t('Home.questionCard.defaultQuestion')}
         category={currentQuestion?.category}
       />
     );
@@ -176,7 +178,7 @@ export default function HomeTabScreen(): JSX.Element {
                   />
                   <AppText style={[styles.weatherText, { color: colors.textMuted }]}>
                     {weather.error ? '--' : weather.temperature}
-                    {HOME_STRINGS.weather.unit}
+                    {t('Home.weather.unit')}
                   </AppText>
                 </>
               ) : (
@@ -214,8 +216,8 @@ export default function HomeTabScreen(): JSX.Element {
             storyTitle={activities[0]?.storyTitle}
             actionText={
               activities[0]?.type === 'reaction'
-                ? HOME_STRINGS.notification.liked
-                : HOME_STRINGS.notification.commented
+                ? t('Home.notification.liked')
+                : t('Home.notification.commented')
             }
           />
         )}
@@ -274,7 +276,7 @@ export default function HomeTabScreen(): JSX.Element {
                   }}>
                   <Ionicons name="checkmark-circle" size={16} color={colors.success} />
                   <AppText style={{ fontSize: 13, color: colors.success, fontWeight: '600' }}>
-                    {HOME_STRINGS.questionCard.answeredBadge}
+                    {t('Home.questionCard.answeredBadge')}
                   </AppText>
                 </View>
               )}
@@ -291,7 +293,7 @@ export default function HomeTabScreen(): JSX.Element {
                 paddingHorizontal: 12,
               }}>
               <HeritageButton
-                title="Play"
+                title={t('Home.questionCard.playButton')}
                 onPress={actions.replayQuestion}
                 variant="secondary"
                 size="small"
@@ -301,7 +303,7 @@ export default function HomeTabScreen(): JSX.Element {
               />
 
               <HeritageButton
-                title={HOME_STRINGS.questionCard.newQuestionButton}
+                title={t('Home.questionCard.newQuestionButton')}
                 onPress={actions.newTopic}
                 variant="outline"
                 size="small"
@@ -332,7 +334,7 @@ export default function HomeTabScreen(): JSX.Element {
             />
           </View>
           <AppText style={[styles.tapToRecord, { color: colors.onSurface }]}>
-            {HOME_STRINGS.recording.tapToRecord}
+            {t('Home.recording.tapToRecord')}
           </AppText>
         </Animated.View>
       </ScrollView>

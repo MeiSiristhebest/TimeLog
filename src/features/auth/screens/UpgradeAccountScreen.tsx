@@ -19,6 +19,7 @@ import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { useHeritageTheme } from '@/theme/heritage';
 import { upgradeAnonymousAccount } from '@/features/auth/services/anonymousAuthService';
 import { devLog } from '@/lib/devLogger';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 /**
  * Validates email address format.
@@ -29,11 +30,12 @@ const isValidEmailCase = (email: string): boolean => {
 };
 
 export default function UpgradeAccountScreen(): JSX.Element {
+  const { t } = useTranslation();
   const theme = useHeritageTheme();
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  const storytellerName = typeof params.name === 'string' ? params.name : 'your loved one';
+  const storytellerName = typeof params.name === 'string' ? params.name : t('Auth.upgrade.lovedOne', { defaultValue: 'your loved one' });
   const nextParam = typeof params.next === 'string' ? params.next : null;
   const nextRoute = nextParam ? decodeURIComponent(nextParam) : '/(tabs)';
 
@@ -49,8 +51,8 @@ export default function UpgradeAccountScreen(): JSX.Element {
 
     if (!trimmedEmail) {
       HeritageAlert.show({
-        title: 'Email Required',
-        message: 'Please enter an email address',
+        title: t('Auth.upgrade.alertEmailRequired', { defaultValue: 'Email Required' }),
+        message: t('Auth.upgrade.alertEmailRequiredMsg', { defaultValue: 'Please enter an email address' }),
         variant: 'warning',
       });
       return;
@@ -58,8 +60,8 @@ export default function UpgradeAccountScreen(): JSX.Element {
 
     if (!isValidEmailCase(trimmedEmail)) {
       HeritageAlert.show({
-        title: 'Invalid Email',
-        message: 'Please enter a valid email address (e.g., name@example.com)',
+        title: t('Auth.upgrade.alertInvalidEmail', { defaultValue: 'Invalid Email' }),
+        message: t('Auth.upgrade.alertInvalidEmailMsg', { defaultValue: 'Please enter a valid email address (e.g., name@example.com)' }),
         variant: 'warning',
       });
       return;
@@ -67,8 +69,8 @@ export default function UpgradeAccountScreen(): JSX.Element {
 
     if (!trimmedPassword) {
       HeritageAlert.show({
-        title: 'Password Required',
-        message: 'Please enter a password',
+        title: t('Auth.upgrade.alertPasswordRequired', { defaultValue: 'Password Required' }),
+        message: t('Auth.upgrade.alertPasswordRequiredMsg', { defaultValue: 'Please enter a password' }),
         variant: 'warning',
       });
       return;
@@ -76,8 +78,8 @@ export default function UpgradeAccountScreen(): JSX.Element {
 
     if (password !== confirmPassword) {
       HeritageAlert.show({
-        title: "Passwords Don't Match",
-        message: 'Please make sure both passwords are the same',
+        title: t('Auth.upgrade.alertPasswordMismatch', { defaultValue: "Passwords Don't Match" }),
+        message: t('Auth.upgrade.alertPasswordMismatchMsg', { defaultValue: 'Please make sure both passwords are the same' }),
         variant: 'warning',
       });
       return;
@@ -85,8 +87,8 @@ export default function UpgradeAccountScreen(): JSX.Element {
 
     if (trimmedPassword.length < 6) {
       HeritageAlert.show({
-        title: 'Password Too Short',
-        message: 'Password must be at least 6 characters',
+        title: t('Auth.upgrade.alertPasswordTooShort', { defaultValue: 'Password Too Short' }),
+        message: t('Auth.upgrade.alertPasswordTooShortMsg', { defaultValue: 'Password must be at least 6 characters' }),
         variant: 'warning',
       });
       return;
@@ -103,19 +105,22 @@ export default function UpgradeAccountScreen(): JSX.Element {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       const message = recoveryCode
-        ? `${displayName}'s account has been created!\n\n` +
-          `Recovery Code:\n${recoveryCode}\n\n` +
-          'IMPORTANT: Save this code in a safe place. You will need it if you forget your password.\n\n' +
-          'Next Step: We have sent a confirmation link to your email. Please check your inbox (and spam folder) and click the link to verify your account.'
-        : `${displayName}'s account has been created!\n\n` +
-          'Next Step: We have sent a confirmation link to your email. Please check your inbox (and spam folder) and click the link to verify your account.';
+        ? t('Auth.upgrade.alertCreatedWithRecovery', {
+            name: displayName,
+            recoveryCode,
+            defaultValue: `${displayName}'s account has been created!\n\nRecovery Code:\n${recoveryCode}\n\nIMPORTANT: Save this code in a safe place. You will need it if you forget your password.\n\nNext Step: We have sent a confirmation link to your email. Please check your inbox (and spam folder) and click the link to verify your account.`
+          })
+        : t('Auth.upgrade.alertCreatedNoRecovery', {
+            name: displayName,
+            defaultValue: `${displayName}'s account has been created!\n\nNext Step: We have sent a confirmation link to your email. Please check your inbox (and spam folder) and click the link to verify your account.`
+          });
 
       HeritageAlert.show({
-        title: 'Account Created!',
+        title: t('Auth.upgrade.alertCreatedTitle', { defaultValue: 'Account Created!' }),
         message,
         variant: 'success',
         primaryAction: {
-          label: 'Got it, Continue',
+          label: t('Auth.upgrade.alertGotIt', { defaultValue: 'Got it, Continue' }),
           onPress: () => {
             router.replace(nextRoute as Href);
           },
@@ -124,19 +129,19 @@ export default function UpgradeAccountScreen(): JSX.Element {
     } catch (error) {
       devLog.error('[UpgradeAccountScreen] Upgrade failed:', error);
       HeritageAlert.show({
-        title: 'Upgrade Failed',
+        title: t('Auth.upgrade.alertFailedTitle', { defaultValue: 'Upgrade Failed' }),
         message:
-          error instanceof Error ? error.message : 'Failed to upgrade account. Please try again.',
+          error instanceof Error ? error.message : t('Auth.upgrade.alertFailedDefault', { defaultValue: 'Failed to upgrade account. Please try again.' }),
         variant: 'error',
       });
     } finally {
       setIsUpgrading(false);
     }
-  }, [confirmPassword, displayName, email, nextRoute, password, router]);
+  }, [confirmPassword, displayName, email, nextRoute, password, router, t]);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
-      <HeritageHeader title="Setup Account" showBack />
+      <HeritageHeader title={t('Auth.upgrade.title', { defaultValue: 'Setup Account' })} showBack />
 
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
@@ -146,18 +151,17 @@ export default function UpgradeAccountScreen(): JSX.Element {
         <View style={[styles.infoCard, { backgroundColor: `${theme.colors.primary}08` }]}>
           <Ionicons name="person-circle" size={48} color={theme.colors.primary} />
           <AppText style={[styles.infoTitle, { color: theme.colors.onSurface }]}>
-            Complete Account Setup
+            {t('Auth.upgrade.header', { defaultValue: 'Complete Account Setup' })}
           </AppText>
           <AppText style={[styles.infoText, { color: theme.colors.textMuted }]}>
-            Set up an email and password to secure this account. This will allow logging in on other
-            devices and prevent data loss.
+            {t('Auth.upgrade.description', { defaultValue: 'Set up an email and password to secure this account. This will allow logging in on other devices and prevent data loss.' })}
           </AppText>
         </View>
 
         <View style={styles.form}>
           <HeritageInput
-            label="Display Name"
-            placeholder="Enter name"
+            label={t('Auth.upgrade.displayName', { defaultValue: 'Display Name' })}
+            placeholder={t('Auth.upgrade.displayNamePlaceholder', { defaultValue: 'Enter name' })}
             value={displayName}
             onChangeText={setDisplayName}
             autoCapitalize="words"
@@ -165,8 +169,8 @@ export default function UpgradeAccountScreen(): JSX.Element {
           />
 
           <HeritageInput
-            label="Email Address"
-            placeholder="elder@example.com"
+            label={t('Auth.upgrade.email', { defaultValue: 'Email Address' })}
+            placeholder={t('Auth.upgrade.emailPlaceholder', { defaultValue: 'elder@example.com' })}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -176,8 +180,8 @@ export default function UpgradeAccountScreen(): JSX.Element {
           />
 
           <HeritageInput
-            label="Create Password"
-            placeholder="Minimum 6 characters"
+            label={t('Auth.upgrade.password', { defaultValue: 'Create Password' })}
+            placeholder={t('Auth.upgrade.passwordPlaceholder', { defaultValue: 'Minimum 6 characters' })}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -187,8 +191,8 @@ export default function UpgradeAccountScreen(): JSX.Element {
           />
 
           <HeritageInput
-            label="Confirm Password"
-            placeholder="Re-enter password"
+            label={t('Auth.upgrade.confirmPassword', { defaultValue: 'Confirm Password' })}
+            placeholder={t('Auth.upgrade.confirmPasswordPlaceholder', { defaultValue: 'Re-enter password' })}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
@@ -201,13 +205,12 @@ export default function UpgradeAccountScreen(): JSX.Element {
         <View style={[styles.warningBox, { backgroundColor: `${theme.colors.warning}15` }]}>
           <Ionicons name="information-circle" size={20} color={theme.colors.warning} />
           <AppText style={[styles.warningText, { color: theme.colors.warning }]}>
-            Make sure to save these credentials securely. They will be needed to login on other
-            devices.
+            {t('Auth.upgrade.warning', { defaultValue: 'Make sure to save these credentials securely. They will be needed to login on other devices.' })}
           </AppText>
         </View>
 
         <HeritageButton
-          title={isUpgrading ? 'Creating Account...' : 'Complete Setup'}
+          title={isUpgrading ? t('Auth.upgrade.creating', { defaultValue: 'Creating Account...' }) : t('Auth.upgrade.complete', { defaultValue: 'Complete Setup' })}
           icon="checkmark-circle"
           variant="primary"
           fullWidth

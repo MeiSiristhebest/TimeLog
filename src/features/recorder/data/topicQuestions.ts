@@ -1,10 +1,11 @@
 import type { TopicQuestion } from '@/types/entities';
+import { useI18nStore } from '@/lib/i18n/i18nStore';
 
 /**
  * Initial set of topic questions for elderly story recording.
  * Questions are designed to evoke meaningful memories and stories.
  */
-export const TOPIC_QUESTIONS: TopicQuestion[] = [
+const RAW_TOPIC_QUESTIONS: TopicQuestion[] = [
   {
     id: 'q-007',
     text: 'What is the most important lesson your parents taught you?',
@@ -202,6 +203,60 @@ export const TOPIC_QUESTIONS: TopicQuestion[] = [
     category: 'friendship',
   },
 ];
+
+export function getLocalizedTopicQuestion(q: TopicQuestion): TopicQuestion {
+  try {
+    const getTrans = useI18nStore.getState().getTranslation;
+    const key = `Topics.${q.id}`;
+    const translatedText = getTrans(key);
+    return {
+      ...q,
+      text: translatedText !== key && translatedText !== q.id ? translatedText : q.text,
+    };
+  } catch {
+    return q;
+  }
+}
+
+export const TOPIC_QUESTIONS: TopicQuestion[] = new Proxy(RAW_TOPIC_QUESTIONS, {
+  get(target, prop, receiver) {
+    if (prop === 'map') {
+      return (callback: any, thisArg?: any) => {
+        return target.map((item, idx, arr) => callback(getLocalizedTopicQuestion(item), idx, arr), thisArg);
+      };
+    }
+    if (prop === 'find') {
+      return (predicate: any, thisArg?: any) => {
+        const found = target.find((item, idx, arr) => predicate(getLocalizedTopicQuestion(item), idx, arr), thisArg);
+        return found ? getLocalizedTopicQuestion(found) : undefined;
+      };
+    }
+    if (prop === 'filter') {
+      return (predicate: any, thisArg?: any) => {
+        return target
+          .filter((item, idx, arr) => predicate(getLocalizedTopicQuestion(item), idx, arr), thisArg)
+          .map((item) => getLocalizedTopicQuestion(item));
+      };
+    }
+    if (prop === 'forEach') {
+      return (callback: any, thisArg?: any) => {
+        target.forEach((item, idx, arr) => callback(getLocalizedTopicQuestion(item), idx, arr), thisArg);
+      };
+    }
+    if (prop === 'slice') {
+      return (start?: number, end?: number) => {
+        return target.slice(start, end).map((item) => getLocalizedTopicQuestion(item));
+      };
+    }
+    if (typeof prop === 'string' && !isNaN(Number(prop))) {
+      const idx = Number(prop);
+      if (target[idx]) {
+        return getLocalizedTopicQuestion(target[idx]);
+      }
+    }
+    return Reflect.get(target, prop, receiver);
+  },
+});
 
 // Track the last shown question to avoid immediate repeats
 let lastQuestionId: string | null = null;

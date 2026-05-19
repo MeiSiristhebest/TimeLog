@@ -13,6 +13,7 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { AppText } from '@/components/ui/AppText';
 import React from 'react';
 import { View, Pressable, ScrollView } from 'react-native';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface FilterBarProps {
   selectedCategory: FilterCategory;
@@ -21,6 +22,7 @@ interface FilterBarProps {
 
 export function FilterBar({ selectedCategory, onSelectCategory }: FilterBarProps): JSX.Element {
   const { colors } = useHeritageTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={{ backgroundColor: colors.surfaceWarm }}>
@@ -87,7 +89,7 @@ export function FilterBar({ selectedCategory, onSelectCategory }: FilterBarProps
                   },
                   isSelected ? { color: colors.onPrimary } : { color: colors.onSurface },
                 ]}>
-                {cat.label}
+                {t(`Gallery.categories.${cat.id}`, { defaultValue: cat.label })}
               </AppText>
             </Pressable>
           );

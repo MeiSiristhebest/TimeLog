@@ -4,14 +4,15 @@ import { Ionicons } from '@/components/ui/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeritageTheme, PALETTE } from '@/theme/heritage';
 import { useRoleLogic } from '@/features/auth/hooks/useAuthLogic';
-import { AUTH_STRINGS } from '@/features/auth/data/mockAuthData';
 import { AppText } from '@/components/ui/AppText';
 import { HeritageSkeleton } from '@/components/ui/heritage/HeritageSkeleton';
 import { StyleSheet, View, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export default function RoleScreen(): JSX.Element {
+  const { t } = useTranslation();
   const { colors } = useHeritageTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -21,7 +22,24 @@ export default function RoleScreen(): JSX.Element {
   const { loading } = state;
   const { handleSelect, handleBack } = actions;
   const { ROLE_STORYTELLER, ROLE_FAMILY } = constants;
-  const STRINGS = AUTH_STRINGS.role;
+
+  const strings = {
+    loading: t('Auth.role.loading', { defaultValue: 'Loading…' }),
+    title: t('Auth.role.title', { defaultValue: 'Who is using\nthis phone?' }),
+    storyteller: {
+      title: t('Auth.role.storytellerTitle', { defaultValue: 'I am a Storyteller' }),
+      subtitle: t('Auth.role.storytellerSubtitle', { defaultValue: 'I want to record memories' }),
+      accessibilityLabel: t('Auth.role.storytellerTitle', { defaultValue: 'I am a Storyteller' }),
+    },
+    listener: {
+      title: t('Auth.role.listenerTitle', { defaultValue: 'I am a Listener' }),
+      subtitle: t('Auth.role.listenerSubtitle', { defaultValue: 'I want to hear stories' }),
+      accessibilityLabel: t('Auth.role.listenerTitle', { defaultValue: 'I am a Listener' }),
+    },
+    backAccessibility: t('Auth.role.backAccessibility', { defaultValue: 'Go back' }),
+    alreadyAccount: t('Auth.role.alreadyAccount', { defaultValue: 'Already have an account? ' }),
+    signIn: t('Auth.role.signIn', { defaultValue: 'Sign In' }),
+  };
 
   if (loading) {
     return (
@@ -41,7 +59,7 @@ export default function RoleScreen(): JSX.Element {
             <Ionicons name="hourglass-outline" size={28} color={colors.primary} />
           </View>
           <AppText style={{ fontSize: 18, color: colors.onSurface, fontWeight: '600' }}>
-            {STRINGS.loading}
+            {strings.loading}
           </AppText>
           <View style={styles.loadingSkeleton}>
             <HeritageSkeleton variant="text" width="100%" />
@@ -64,7 +82,7 @@ export default function RoleScreen(): JSX.Element {
           onPress={handleBack}
           style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
           accessibilityRole="button"
-          accessibilityLabel={STRINGS.backAccessibility}>
+          accessibilityLabel={strings.backAccessibility}>
           <Ionicons name="arrow-back" size={28} color={colors.onSurface} />
         </Pressable>
       </View>
@@ -75,7 +93,7 @@ export default function RoleScreen(): JSX.Element {
         contentContainerStyle={styles.scrollContent}>
         {/* Title Section */}
         <Animated.View entering={FadeInDown.duration(600)} style={styles.titleContainer}>
-          <AppText style={[styles.title, { color: colors.onSurface }]}>{STRINGS.title}</AppText>
+          <AppText style={[styles.title, { color: colors.onSurface }]}>{strings.title}</AppText>
         </Animated.View>
 
         {/* Role Cards */}
@@ -83,11 +101,11 @@ export default function RoleScreen(): JSX.Element {
           {/* Storyteller Card */}
           <Animated.View entering={FadeInDown.delay(200).duration(600)} style={{ width: '100%' }}>
             <RoleCard
-              title={STRINGS.storyteller.title}
-              subtitle={STRINGS.storyteller.subtitle}
+              title={strings.storyteller.title}
+              subtitle={strings.storyteller.subtitle}
               icon="mic"
               onPress={() => handleSelect(ROLE_STORYTELLER)}
-              accessibilityLabel={STRINGS.storyteller.accessibilityLabel}
+              accessibilityLabel={strings.storyteller.accessibilityLabel}
               baseDelay={200}
             />
           </Animated.View>
@@ -95,11 +113,11 @@ export default function RoleScreen(): JSX.Element {
           {/* Listener Card */}
           <Animated.View entering={FadeInDown.delay(400).duration(600)} style={{ width: '100%' }}>
             <RoleCard
-              title={STRINGS.listener.title}
-              subtitle={STRINGS.listener.subtitle}
+              title={strings.listener.title}
+              subtitle={strings.listener.subtitle}
               icon="headset"
               onPress={() => handleSelect(ROLE_FAMILY)}
-              accessibilityLabel={STRINGS.listener.accessibilityLabel}
+              accessibilityLabel={strings.listener.accessibilityLabel}
               baseDelay={400}
             />
           </Animated.View>
@@ -112,8 +130,8 @@ export default function RoleScreen(): JSX.Element {
               onPress={() => router.push(APP_ROUTES.LOGIN)}
               style={{ paddingVertical: 12 }}>
               <AppText style={{ color: colors.textMuted, fontSize: 16, fontWeight: '500' }}>
-                Already have an account?{' '}
-                <AppText style={{ color: colors.primary, fontWeight: '700' }}>Sign In</AppText>
+                {strings.alreadyAccount}
+                <AppText style={{ color: colors.primary, fontWeight: '700' }}>{strings.signIn}</AppText>
               </AppText>
             </Pressable>
           </Animated.View>

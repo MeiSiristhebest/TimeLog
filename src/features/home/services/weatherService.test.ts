@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { fetchWeatherData } from './weatherService';
 
 type FetchWithRetryMock = (
@@ -12,74 +12,40 @@ jest.mock('@/lib/api/client', () => ({
   fetchWithRetry: (...args: Parameters<FetchWithRetryMock>) => mockFetchWithRetry(...args),
 }));
 
-describe('weatherService.fetchWeatherData', () => {
-  const originalWeatherApiUrl = process.env.EXPO_PUBLIC_WEATHER_API_URL;
+jest.mock('./locationService', () => ({
+  getCurrentCoordinates: jest
+    .fn<() => Promise<{ latitude: number; longitude: number }>>()
+    .mockResolvedValue({ latitude: 13.75, longitude: 100.5 }),
+}));
 
+describe('weatherService.fetchWeatherData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env.EXPO_PUBLIC_WEATHER_API_URL = 'https://weather.example.test/api';
-  });
-
-  afterAll(() => {
-    if (originalWeatherApiUrl === undefined) {
-      delete process.env.EXPO_PUBLIC_WEATHER_API_URL;
-      return;
-    }
-
-    process.env.EXPO_PUBLIC_WEATHER_API_URL = originalWeatherApiUrl;
   });
 
   it('maps valid weather payload to app weather result', async () => {
     mockFetchWithRetry.mockResolvedValue({
-      current_condition: [{ temp_C: '22', weatherCode: '113' }],
+      current_weather: { temperature: 22.4, weathercode: 0 },
     });
 
     const result = await fetchWeatherData();
 
     expect(result).toEqual({ temperature: 22, condition: 'sunny' });
     expect(mockFetchWithRetry).toHaveBeenCalledWith(
-      expect.stringMatching(/^https?:\/\//),
+      expect.stringContaining('api.open-meteo.com'),
       expect.objectContaining({
         method: 'GET',
-        headers: { Accept: 'application/json' },
+        timeoutMs: 10000,
       })
     );
   });
 
-  it('throws INVALID_DATA when weather payload is missing current condition', async () => {
+  it('throws ApiError when weather payload is missing current_weather', async () => {
     mockFetchWithRetry.mockResolvedValue({});
 
     await expect(fetchWeatherData()).rejects.toEqual(
       expect.objectContaining({
         code: 'INVALID_DATA',
-      })
-    );
-  });
-
-  it('throws INVALID_DATA when temperature cannot be parsed', async () => {
-    mockFetchWithRetry.mockResolvedValue({
-      current_condition: [{ temp_C: 'NaN', weatherCode: '113' }],
-    });
-
-    await expect(fetchWeatherData()).rejects.toEqual(
-      expect.objectContaining({
-        code: 'INVALID_DATA',
-      })
-    );
-  });
-
-  it('falls back to wttr endpoint when weather API URL is missing', async () => {
-    delete process.env.EXPO_PUBLIC_WEATHER_API_URL;
-    mockFetchWithRetry.mockResolvedValue({
-      current_condition: [{ temp_C: '19', weatherCode: '116' }],
-    });
-
-    const result = await fetchWeatherData();
-    expect(result).toEqual({ temperature: 19, condition: 'partly-cloudy' });
-    expect(mockFetchWithRetry).toHaveBeenCalledWith(
-      'https://wttr.in/?format=j1',
-      expect.objectContaining({
-        method: 'GET',
       })
     );
   });

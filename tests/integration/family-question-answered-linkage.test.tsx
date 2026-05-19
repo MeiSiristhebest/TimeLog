@@ -129,6 +129,13 @@ jest.mock('@/features/recorder/services/topicService', () => ({
   markQuestionAsAnswered: jest.fn(),
 }));
 
+jest.mock('@/lib/audioEncryption', () => ({
+  secureRecordingAssetsAtRest: jest.fn(async (params) => ({
+    encryptedFilePath: `${params.filePath}.enc`,
+    encryptedUploadPath: `${params.uploadPath}.enc`,
+  })),
+}));
+
 jest.mock('@/lib/sync-engine/transcode', () => ({
   resolveUploadAsset: jest.fn(),
 }));

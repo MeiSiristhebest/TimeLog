@@ -48,7 +48,7 @@ jest.mock('@/theme/heritage', () => ({
 describe('AccountSecurityScreen', () => {
   it('renders sign out and delete-account rows', () => {
     const { getByText } = render(<AccountSecurityScreen />);
-    expect(getByText('Sign Out')).toBeTruthy();
+    expect(getByText('Log Out')).toBeTruthy();
     expect(getByText('Delete Account')).toBeTruthy();
   });
 });

@@ -13,12 +13,14 @@ import {
   DISCOVERY_STRINGS,
   MOCK_FAMILY_REQUEST,
 } from '@/features/discovery/data/mockDiscoveryData';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 // Paper texture asset - could typically be moved to a shared asset constant but acceptable here or via theme
 const PAPER_TEXTURE = require('../../../../assets/images/paper-texture.png');
 
 export default function TopicsDiscoveryScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
+  const { t } = useTranslation();
   const pressedOverlayColor = `${colors.onSurface}0D`;
   const goldBadgeBackground = `${colors.warning}14`;
   const goldBadgeBorder = `${colors.warning}33`;
@@ -52,7 +54,7 @@ export default function TopicsDiscoveryScreen(): JSX.Element {
           <Ionicons name="arrow-back" size={28} color={colors.textMuted} />
         </Pressable>
         <AppText style={[styles.headerTitle, { color: colors.onSurface }]}>
-          {DISCOVERY_STRINGS.header.title}
+          {t('Discovery.title', { defaultValue: DISCOVERY_STRINGS.header.title })}
         </AppText>
         <Pressable style={styles.iconButton}>
           <Ionicons name="settings-outline" size={28} color={colors.textMuted} />
@@ -121,26 +123,26 @@ export default function TopicsDiscoveryScreen(): JSX.Element {
                     </View>
                   )}
                   <AppText style={[styles.goldText, { color: goldBadgeText }]}>
-                    {DISCOVERY_STRINGS.card.badge}
+                    {t('Discovery.badge', { defaultValue: DISCOVERY_STRINGS.card.badge })}
                   </AppText>
                 </View>
               ) : null}
 
               {/* Question */}
               <AppText style={[styles.questionText, { color: colors.onSurface }]}>
-                {currentCard?.text ?? 'No topics found for selected categories'}
+                {currentCard?.text ?? t('Discovery.noTopics', { defaultValue: 'No topics found for selected categories' })}
               </AppText>
 
               {/* Helper Text */}
               <AppText style={[styles.helperText, { color: helperTextColor }]}>
-                {DISCOVERY_STRINGS.card.helperText}
+                {t('Discovery.helperText', { defaultValue: DISCOVERY_STRINGS.card.helperText })}
               </AppText>
 
               {isTopicAnswered ? (
                 <View style={[styles.answeredBadge, { backgroundColor: answeredBadgeBackground }]}>
                   <Ionicons name="checkmark-circle" size={18} color={colors.success} />
                   <AppText style={[styles.answeredText, { color: colors.success }]}>
-                    Answered
+                    {t('Home.questionCard.answeredBadge', { defaultValue: 'Answered' })}
                   </AppText>
                 </View>
               ) : null}
@@ -159,7 +161,7 @@ export default function TopicsDiscoveryScreen(): JSX.Element {
           onPress={actions.handleSelectTopic}
           variant="primary"
           icon="mic"
-          label={DISCOVERY_STRINGS.actions.recordAnswer}
+          label={t('Discovery.recordAnswer', { defaultValue: DISCOVERY_STRINGS.actions.recordAnswer })}
           disabled={!currentCard}
         />
 
@@ -167,7 +169,7 @@ export default function TopicsDiscoveryScreen(): JSX.Element {
         <DiscoveryButton
           onPress={actions.handleNextCard}
           variant="secondary"
-          label={DISCOVERY_STRINGS.actions.tryAnother}
+          label={t('Discovery.tryAnother', { defaultValue: DISCOVERY_STRINGS.actions.tryAnother })}
           disabled={!currentCard}
         />
       </View>

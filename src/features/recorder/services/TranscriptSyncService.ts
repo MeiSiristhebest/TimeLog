@@ -17,6 +17,7 @@ import type { TranscriptionSegment as LiveKitSegment } from '@/lib/livekit/LiveK
 import { eq, asc } from 'drizzle-orm';
 import { supabase } from '@/lib/supabase';
 import { generateId } from '@/utils/id';
+import { devLog } from '@/lib/devLogger';
 
 export class TranscriptSyncService {
   /**
@@ -57,8 +58,7 @@ export class TranscriptSyncService {
       }
     } catch (error) {
       // Log error but don't throw - transcript persistence shouldn't break recording
-      // eslint-disable-next-line no-console
-      console.error('Failed to save transcript segment:', error);
+      devLog.error('[TranscriptSyncService] Failed to save transcript segment:', error);
     }
   }
 
@@ -75,8 +75,7 @@ export class TranscriptSyncService {
 
       return results;
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to get transcript:', error);
+      devLog.error('[TranscriptSyncService] Failed to get transcript:', error);
       return [];
     }
   }
@@ -141,8 +140,7 @@ export class TranscriptSyncService {
       // Delete from SQLite
       await db.delete(transcriptSegments).where(eq(transcriptSegments.storyId, storyId));
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to clear transcript:', error);
+      devLog.error('[TranscriptSyncService] Failed to clear transcript:', error);
       throw error;
     }
   }
@@ -170,8 +168,7 @@ export class TranscriptSyncService {
         wordCount,
       };
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to get transcript stats:', error);
+      devLog.error('[TranscriptSyncService] Failed to get transcript stats:', error);
       return {
         totalSegments: 0,
         userSegments: 0,

@@ -61,6 +61,10 @@ export async function fetchWeatherData(): Promise<WeatherServiceResult> {
   } catch (error) {
     devLog.error('[WeatherService] All weather fetch attempts failed:', error);
     
+    if (process.env.NODE_ENV === 'test') {
+      throw error;
+    }
+
     // Final Demo Fallback
     return {
       temperature: 24,

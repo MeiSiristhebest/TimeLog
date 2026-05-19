@@ -79,10 +79,7 @@ jest.mock('../utils/languageOptions', () => ({
 describe('DisplayAccessibilityScreen', () => {
   it('renders display rows', () => {
     const { getByText } = render(<DisplayAccessibilityScreen />);
-    fireEvent.press(getByText('Landscape Mode'));
-    expect(getByText('Landscape Mode')).toBeTruthy();
     expect(getByText('Font Size')).toBeTruthy();
-    expect(getByText('Multi-language')).toBeTruthy();
-    expect(getByText('Translate')).toBeTruthy();
+    expect(getByText('Language')).toBeTruthy();
   });
 });

@@ -31,6 +31,29 @@ jest.mock('expo-file-system', () => ({
   getInfoAsync: jest.fn(async (path: string) => ({ exists: mockMemoryFiles.has(path) })),
 }));
 
+jest.mock('expo-file-system/legacy', () => ({
+  documentDirectory: 'file:///doc/',
+  cacheDirectory: 'file:///cache/',
+  EncodingType: { Base64: 'base64', UTF8: 'utf8' },
+  readAsStringAsync: jest.fn(async (path: string) => mockMemoryFiles.get(path) ?? ''),
+  writeAsStringAsync: jest.fn(async (path: string, content: string) => {
+    mockMemoryFiles.set(path, content);
+  }),
+  moveAsync: jest.fn(async ({ from, to }: { from: string; to: string }) => {
+    const content = mockMemoryFiles.get(from);
+    if (content !== undefined) {
+      mockMemoryFiles.set(to, content);
+      mockMemoryFiles.delete(from);
+    }
+  }),
+  deleteAsync: jest.fn(async (path: string) => {
+    mockDeletedPaths.push(path);
+    mockMemoryFiles.delete(path);
+  }),
+  makeDirectoryAsync: jest.fn(async () => undefined),
+  getInfoAsync: jest.fn(async (path: string) => ({ exists: mockMemoryFiles.has(path) })),
+}));
+
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(),
   setItemAsync: jest.fn(async () => undefined),

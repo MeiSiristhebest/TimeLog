@@ -5,6 +5,7 @@ import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reani
 import { AppText } from '@/components/ui/AppText';
 import { useHeritageTheme } from '@/theme/heritage';
 import { Icon } from '@/components/ui/Icon';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 const CONTAINER_MIN_WIDTH = 180;
 const CONTAINER_HEIGHT = 40;
@@ -21,6 +22,7 @@ export function RecordingModeSwitcher({
   onSwitch,
   disabled = false,
 }: Readonly<RecordingModeSwitcherProps>): JSX.Element {
+  const { t } = useTranslation();
   const { colors, isDark } = useHeritageTheme();
   const progress = useSharedValue(mode === 'basic' ? 0 : 1);
   const containerWidth = useSharedValue(CONTAINER_MIN_WIDTH);
@@ -86,7 +88,7 @@ export function RecordingModeSwitcher({
         style={styles.tabButton}
         accessibilityRole="radio"
         accessibilityState={{ checked: mode === 'basic' }}
-        accessibilityLabel="Classic Recording Mode"
+        accessibilityLabel={t('Recorder.mode.classic', { defaultValue: 'Classic' })}
       >
         <Icon
           name={mode === 'basic' ? "mic" : "mic-outline"}
@@ -103,7 +105,7 @@ export function RecordingModeSwitcher({
             { color: mode === 'basic' ? colors.primary : colors.textMuted },
           ]}
         >
-          Classic
+          {t('Recorder.mode.classic', { defaultValue: 'Classic' })}
         </AppText>
       </Pressable>
 
@@ -112,7 +114,7 @@ export function RecordingModeSwitcher({
         style={styles.tabButton}
         accessibilityRole="radio"
         accessibilityState={{ checked: mode === 'ai' }}
-        accessibilityLabel="AI Assistant Mode"
+        accessibilityLabel={t('Recorder.mode.ai', { defaultValue: 'AI Mode' })}
       >
         <Icon
           name={mode === 'ai' ? "sparkles" : "sparkles-outline"}
@@ -129,7 +131,7 @@ export function RecordingModeSwitcher({
             { color: mode === 'ai' ? colors.tertiary : colors.textMuted },
           ]}
         >
-          AI Mode
+          {t('Recorder.mode.ai', { defaultValue: 'AI Mode' })}
         </AppText>
       </Pressable>
     </View>

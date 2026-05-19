@@ -9,17 +9,26 @@ import { useMemo } from 'react';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
-import { isNotNull, isNull, and } from 'drizzle-orm';
+import { isNotNull, isNull, and, eq } from 'drizzle-orm';
+import { useAuthStore } from '@/features/auth/store/authStore';
 
 /**
  * Returns a Set of topicIds that have been answered (have at least one recording).
  */
 export function useAnsweredTopics(): Set<string> {
+  const sessionUserId = useAuthStore((state) => state.sessionUserId);
+
   const { data: recordings } = useLiveQuery(
     db
       .select({ topicId: audioRecordings.topicId })
       .from(audioRecordings)
-      .where(and(isNotNull(audioRecordings.topicId), isNull(audioRecordings.deletedAt)))
+      .where(
+        and(
+          isNotNull(audioRecordings.topicId),
+          isNull(audioRecordings.deletedAt),
+          sessionUserId ? eq(audioRecordings.userId, sessionUserId) : isNull(audioRecordings.userId)
+        )
+      )
   );
 
   const answeredTopicIds = useMemo(() => {

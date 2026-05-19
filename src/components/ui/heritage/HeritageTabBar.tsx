@@ -13,6 +13,7 @@ import { useAnimatedStyle, withTiming, FadeIn, FadeOut } from 'react-native-rean
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useHeritageTheme } from '@/theme/heritage';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 const ICON_SIZE = 28;
 
@@ -46,11 +47,13 @@ type TabItemProps = {
 
 function TabItem({ route, index, state, navigation }: TabItemProps): JSX.Element {
   const isFocused = state.index === index;
+  const { t } = useTranslation();
   const config = TAB_CONFIGS[route.name] || {
     icon: 'ellipse',
     iconActive: 'ellipse',
     label: route.name,
   };
+  const labelText = t(`TabBar.${route.name}`, { defaultValue: config.label });
   const theme = useHeritageTheme();
   const { colors, typography } = theme;
   const scale = typography.body / 24;
@@ -90,7 +93,7 @@ function TabItem({ route, index, state, navigation }: TabItemProps): JSX.Element
       onPress={handlePress}
       accessibilityRole="button"
       accessibilityState={{ selected: isFocused }}
-      accessibilityLabel={config.label}>
+      accessibilityLabel={labelText}>
       {isFocused && (
         <Animated.View
           entering={FadeIn.duration(300)}
@@ -133,7 +136,7 @@ function TabItem({ route, index, state, navigation }: TabItemProps): JSX.Element
           },
           labelStyle,
         ]}>
-        {config.label}
+        {labelText}
       </Animated.Text>
 
       {config.badge && config.badge > 0 && (

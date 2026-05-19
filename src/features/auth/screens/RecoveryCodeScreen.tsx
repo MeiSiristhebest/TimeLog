@@ -13,21 +13,21 @@ import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useRecoveryCodeLogic } from '@/features/auth/hooks/useAuthLogic';
-import { AUTH_STRINGS } from '@/features/auth/data/mockAuthData';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export default function RecoveryCodeScreen(): JSX.Element {
+  const { t } = useTranslation();
   const theme = useHeritageTheme();
 
   // Logic Separation
   const { state, actions } = useRecoveryCodeLogic();
   const { recoveryCode, isLoadingCode, isGenerating, scrollY } = state;
   const { handleGenerateCode, handleCopyCode, handleShareCode, scrollHandler } = actions;
-  const STRINGS = AUTH_STRINGS.recoveryCode;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
       <HeritageHeader
-        title={STRINGS.title}
+        title={t('Auth.recoveryCode.title', { defaultValue: 'Recovery Code' })}
         showBack
         scrollY={scrollY}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }}
@@ -43,10 +43,10 @@ export default function RecoveryCodeScreen(): JSX.Element {
         <View style={[styles.infoCard, { backgroundColor: `${theme.colors.primary}08` }]}>
           <Ionicons name="key" size={32} color={theme.colors.primary} />
           <AppText style={[styles.infoTitle, { color: theme.colors.onSurface }]}>
-            {STRINGS.infoTitle}
+            {t('Auth.recoveryCode.infoTitle', { defaultValue: 'Device Recovery' })}
           </AppText>
           <AppText style={[styles.infoText, { color: `${theme.colors.onSurface}80` }]}>
-            {STRINGS.infoText}
+            {t('Auth.recoveryCode.infoText', { defaultValue: "This code can be used to restore access to the senior's TimeLog account if their device is lost, stolen, or replaced." })}
           </AppText>
         </View>
 
@@ -58,7 +58,7 @@ export default function RecoveryCodeScreen(): JSX.Element {
             ]}>
             <ActivityIndicator size="small" color={theme.colors.primary} />
             <AppText style={[styles.noCodeText, { color: `${theme.colors.onSurface}60` }]}>
-              Loading recovery code...
+              {t('Auth.recoveryCode.loading', { defaultValue: 'Loading recovery code...' })}
             </AppText>
           </View>
         ) : recoveryCode ? (
@@ -68,21 +68,21 @@ export default function RecoveryCodeScreen(): JSX.Element {
               { borderColor: theme.colors.primary, backgroundColor: theme.colors.surfaceCard },
             ]}>
             <AppText style={[styles.codeLabel, { color: `${theme.colors.onSurface}60` }]}>
-              {STRINGS.codeLabel}
+              {t('Auth.recoveryCode.codeLabel', { defaultValue: 'RECOVERY CODE' })}
             </AppText>
             <AppText style={[styles.codeText, { color: theme.colors.primary }]}>
               {recoveryCode}
             </AppText>
             <View style={styles.codeActions}>
               <HeritageButton
-                title="Copy"
+                title={t('Auth.recoveryCode.copy', { defaultValue: 'Copy' })}
                 icon="copy"
                 variant="secondary"
                 onPress={handleCopyCode}
                 style={{ flex: 1 }}
               />
               <HeritageButton
-                title="Share"
+                title={t('Auth.recoveryCode.share', { defaultValue: 'Share' })}
                 icon="share"
                 variant="secondary"
                 onPress={handleShareCode}
@@ -98,13 +98,13 @@ export default function RecoveryCodeScreen(): JSX.Element {
             ]}>
             <Ionicons name="key" size={48} color={`${theme.colors.onSurface}30`} />
             <AppText style={[styles.noCodeText, { color: `${theme.colors.onSurface}60` }]}>
-              {STRINGS.noCode}
+              {t('Auth.recoveryCode.noCode', { defaultValue: 'No recovery code generated yet.' })}
             </AppText>
           </View>
         )}
 
         <HeritageButton
-          title={isGenerating ? STRINGS.generateButton.generating : STRINGS.generateButton.idle}
+          title={isGenerating ? t('Auth.recoveryCode.generating', { defaultValue: 'Generating...' }) : t('Auth.recoveryCode.generateIdle', { defaultValue: 'Generate New Code' })}
           icon="refresh"
           variant="primary"
           fullWidth
@@ -115,7 +115,9 @@ export default function RecoveryCodeScreen(): JSX.Element {
 
         <View style={[styles.warningBox, { backgroundColor: `${theme.colors.error}15` }]}>
           <Ionicons name="warning" size={20} color={theme.colors.error} />
-          <AppText style={[styles.warningText, { color: theme.colors.error }]}>{STRINGS.warning}</AppText>
+          <AppText style={[styles.warningText, { color: theme.colors.error }]}>
+            {t('Auth.recoveryCode.warning', { defaultValue: "Keep this code secure. Anyone with this code can potentially access the senior's account." })}
+          </AppText>
         </View>
 
         <View style={{ height: 40 }} />

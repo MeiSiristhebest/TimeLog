@@ -24,9 +24,11 @@ import { GALLERY_STRINGS } from '@/features/story-gallery/data/mockGalleryData';
 import { AppText } from '@/components/ui/AppText';
 import { Animated } from '@/tw/animated';
 import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export default function StoriesTabScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
+  const { t } = useTranslation();
 
   // Logic Separation: All logic in hook
   const {
@@ -78,7 +80,7 @@ export default function StoriesTabScreen(): JSX.Element {
       <View style={styles.header}>
         <View>
           <AppText style={[styles.title, { color: colors.onSurface }]}>
-            {GALLERY_STRINGS.header.title}
+            {t('Gallery.title', { defaultValue: GALLERY_STRINGS.header.title })}
           </AppText>
           <AppText style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</AppText>
         </View>
@@ -90,7 +92,7 @@ export default function StoriesTabScreen(): JSX.Element {
         <TextInput
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder={GALLERY_STRINGS.header.searchPlaceholder}
+          placeholder={t('Gallery.searchPlaceholder', { defaultValue: GALLERY_STRINGS.header.searchPlaceholder })}
           placeholderTextColor={`${colors.onSurface}55`}
           style={[
             styles.searchInput,
@@ -153,6 +155,7 @@ export default function StoriesTabScreen(): JSX.Element {
 // Interactive Sort Button
 function SortButton({ onPress }: { onPress: () => void }) {
   const { colors } = useHeritageTheme();
+  const { t } = useTranslation();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -171,7 +174,7 @@ function SortButton({ onPress }: { onPress: () => void }) {
     <Animated.Pressable onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut}>
       <Animated.View style={[styles.sortButton, animatedStyle]}>
         <AppText style={[styles.sortText, { color: colors.primary }]}>
-          {GALLERY_STRINGS.header.sortButton}
+          {t('Gallery.sortButton', { defaultValue: GALLERY_STRINGS.header.sortButton })}
         </AppText>
         <Ionicons name="filter" size={18} color={colors.primary} />
       </Animated.View>

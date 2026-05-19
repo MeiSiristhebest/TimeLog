@@ -7,6 +7,9 @@ import { devLog } from '@/lib/devLogger';
 // Mock the recorder service
 jest.mock('../services/recorderService');
 jest.mock('../store/recorderStore');
+jest.mock('@/features/auth/store/authStore', () => ({
+  useAuthStore: (fn: any) => fn({ sessionUserId: 'user-1' }),
+}));
 jest.mock('@/lib/devLogger');
 
 const mockGetPausedRecording = recorderService.getPausedRecording as jest.MockedFunction<

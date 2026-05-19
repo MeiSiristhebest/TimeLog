@@ -5,6 +5,8 @@ import { useDeepLinkHandler } from '@/features/auth/hooks/useDeepLinkHandler';
 import { playOfflineCue, playOnlineCue } from '@/features/recorder/services/soundCueService';
 import { useSyncStore } from '@/lib/sync-engine/store';
 import { registerSyncSoundCues } from '@/lib/sync-engine/soundCues';
+import { syncQueueService } from '@/lib/sync-engine/queue';
+import { devLog } from '@/lib/devLogger';
 
 interface UseRootAppLifecycleParams {
   readonly fontsLoaded: boolean;

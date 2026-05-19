@@ -11,6 +11,7 @@ import * as Notifications from 'expo-notifications';
 import { AppState, AppStateStatus } from 'react-native';
 import { devLog } from '@/lib/devLogger';
 import { supabase } from '@/lib/supabase';
+import { useI18nStore } from '@/lib/i18n/i18nStore';
 
 /**
  * Nudge notification type identifier
@@ -29,7 +30,7 @@ const NUDGE_HOUR = 10;
 const NUDGE_MINUTE = 0;
 
 /**
- * Nudge message variants based on time of day
+ * Nudge message fallback variants
  */
 const NUDGE_MESSAGES = {
   morning: {
@@ -154,18 +155,18 @@ export async function shouldScheduleNudge(userId: string): Promise<boolean> {
 }
 
 /**
- * Get appropriate nudge message based on current time of day
+ * Get appropriate nudge message based on current time of day and user locale
  */
 function getNudgeMessage(): { title: string; body: string } {
   const hour = new Date().getHours();
+  const getTrans = useI18nStore.getState().getTranslation;
+  const timeKey = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+  const defaultMsg = NUDGE_MESSAGES[timeKey];
 
-  if (hour < 12) {
-    return NUDGE_MESSAGES.morning;
-  } else if (hour < 17) {
-    return NUDGE_MESSAGES.afternoon;
-  } else {
-    return NUDGE_MESSAGES.evening;
-  }
+  return {
+    title: getTrans(`Nudge.${timeKey}.title`) ?? defaultMsg.title,
+    body: getTrans(`Nudge.${timeKey}.body`) ?? defaultMsg.body,
+  };
 }
 
 /**

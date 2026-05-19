@@ -12,10 +12,16 @@ import { Animated } from '@/tw/animated';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useConsentReviewLogic } from '@/features/auth/hooks/useAuthLogic';
-import { AUTH_STRINGS, ConsentItem } from '@/features/auth/data/mockAuthData';
+import { ConsentItem } from '@/features/auth/data/mockAuthData';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 function ConsentCard({ item }: { item: ConsentItem }): JSX.Element {
   const theme = useHeritageTheme();
+  const { t } = useTranslation();
+
+  const title = t(`ConsentReview.items.${item.id}.title`);
+  const description = t(`ConsentReview.items.${item.id}.description`);
+  const dateText = t('ConsentReview.consentedOn', { date: item.consentedAt });
 
   return (
     <View
@@ -28,15 +34,15 @@ function ConsentCard({ item }: { item: ConsentItem }): JSX.Element {
       </View>
       <View style={styles.cardContent}>
         <AppText style={[styles.cardTitle, { color: theme.colors.onSurface }]}>
-          {item.title}
+          {title}
         </AppText>
         <AppText style={[styles.cardDescription, { color: `${theme.colors.onSurface}80` }]}>
-          {item.description}
+          {description}
         </AppText>
         <View style={styles.consentInfo}>
           <Ionicons name="checkmark-circle" size={16} color={theme.colors.success} />
           <AppText style={[styles.consentDate, { color: theme.colors.success }]}>
-            Consented on {item.consentedAt}
+            {dateText}
           </AppText>
         </View>
       </View>
@@ -46,17 +52,17 @@ function ConsentCard({ item }: { item: ConsentItem }): JSX.Element {
 
 export default function ConsentReviewScreen(): JSX.Element {
   const theme = useHeritageTheme();
+  const { t } = useTranslation();
 
   // Logic Separation
   const { state, actions } = useConsentReviewLogic();
   const { scrollY, consentItems } = state;
   const { scrollHandler } = actions;
-  const STRINGS = AUTH_STRINGS.consentReview;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
       <HeritageHeader
-        title={STRINGS.title}
+        title={t('ConsentReview.title')}
         showBack
         scrollY={scrollY}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }}
@@ -70,10 +76,10 @@ export default function ConsentReviewScreen(): JSX.Element {
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}>
         <AppText style={[styles.headerText, { color: theme.colors.onSurface }]}>
-          {STRINGS.header}
+          {t('ConsentReview.header')}
         </AppText>
         <AppText style={[styles.subText, { color: `${theme.colors.onSurface}80` }]}>
-          {STRINGS.subheader}
+          {t('ConsentReview.subheader')}
         </AppText>
 
         {consentItems.map((item) => (
@@ -83,7 +89,7 @@ export default function ConsentReviewScreen(): JSX.Element {
         <View style={[styles.infoBox, { backgroundColor: `${theme.colors.primary}08` }]}>
           <Ionicons name="information-circle-outline" size={20} color={theme.colors.primary} />
           <AppText style={[styles.infoText, { color: theme.colors.onSurface }]}>
-            {STRINGS.infoBox}
+            {t('ConsentReview.infoBox')}
           </AppText>
         </View>
 

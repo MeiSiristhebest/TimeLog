@@ -9,9 +9,9 @@ import { devLog } from '@/lib/devLogger';
 /**
  * Utility to map device code RPC errors to user-friendly messages.
  */
-function mapDeviceCodeError(error: any): string {
-  if (!error) return 'An unknown error occurred.';
-  const message = error.message || '';
+function mapDeviceCodeError(error: unknown): string {
+  if (!error || typeof error !== 'object') return 'An unknown error occurred.';
+  const message = 'message' in error && typeof error.message === 'string' ? error.message : '';
 
   if (message.includes('rate_limit_exceeded')) {
     return 'You have reached the limit for generating codes. Please try again in an hour.';

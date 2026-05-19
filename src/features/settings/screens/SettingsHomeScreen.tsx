@@ -15,6 +15,7 @@ import {
   setProfilePromptDismissed,
 } from '../services/profileOnboardingService';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 const NO_OP = () => { };
 
@@ -22,6 +23,7 @@ export function SettingsHomeScreen(): JSX.Element {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useHeritageTheme();
+  const { t } = useTranslation();
 
   // Use existing logic for profile data
   const { userRole, profile, isProfileLoading, sessionUserId } = useSettingsHome();
@@ -32,7 +34,10 @@ export function SettingsHomeScreen(): JSX.Element {
   };
 
   const displayName =
-    profile?.displayName?.trim() || (isProfileLoading ? 'Storyteller' : 'Set up profile');
+    profile?.displayName?.trim() ||
+    (isProfileLoading
+      ? t('Gallery.categories.default', { defaultValue: 'Storyteller' })
+      : t('Settings.home.profileTitle', { defaultValue: 'Set up profile' }));
   const avatarUrl = profile?.avatarUrl?.trim() || profile?.avatarUri?.trim() || undefined;
 
   const profileIncomplete = useMemo(
@@ -77,21 +82,23 @@ export function SettingsHomeScreen(): JSX.Element {
           <View
             style={[styles.promptCard, { backgroundColor: colors.surfaceCard, borderColor: colors.border }]}>
             <AppText style={[styles.promptTitle, { color: colors.onSurface }]}>
-              Upgrade to a permanent account
+              {t('Settings.home.upgradeTitle', { defaultValue: 'Upgrade to a permanent account' })}
             </AppText>
             <AppText style={[styles.promptSubtext, { color: colors.textMuted }]}>
-              You can keep using TimeLog now, but upgrading protects your stories and allows you to
-              share them with family via our web companion.
+              {t('Settings.home.upgradeSubtext', {
+                defaultValue:
+                  'You can keep using TimeLog now, but upgrading protects your stories and allows you to share them with family via our web companion.',
+              })}
             </AppText>
             <HeritageButton
-              title="Upgrade Account"
+              title={t('Settings.home.upgradeButton', { defaultValue: 'Upgrade Account' })}
               onPress={() => router.push(APP_ROUTES.UPGRADE_ACCOUNT)}
               variant="primary"
               fullWidth
             />
             <Pressable onPress={handleDismissPrompt} style={styles.promptSkip}>
               <AppText style={[styles.skipText, { color: colors.textMuted }]}>
-                Skip for now
+                {t('Settings.home.skipForNow', { defaultValue: 'Skip for now' })}
               </AppText>
             </Pressable>
           </View>
@@ -101,21 +108,23 @@ export function SettingsHomeScreen(): JSX.Element {
           <View
             style={[styles.promptCard, { backgroundColor: colors.surfaceCard, borderColor: colors.border }]}>
             <AppText style={[styles.promptTitle, { color: colors.onSurface }]}>
-              Complete your profile
+              {t('Settings.home.profileTitle', { defaultValue: 'Complete your profile' })}
             </AppText>
             <AppText style={[styles.promptSubtext, { color: colors.textMuted }]}>
-              Add your birthday, language, and preferred text size for a more comfortable
-              experience.
+              {t('Settings.home.profileSubtext', {
+                defaultValue:
+                  'Add your birthday, language, and preferred text size for a more comfortable experience.',
+              })}
             </AppText>
             <HeritageButton
-              title="Set Up Now"
+              title={t('Settings.home.profileButton', { defaultValue: 'Set Up Now' })}
               onPress={handleProfilePress}
               variant="primary"
               fullWidth
             />
             <Pressable onPress={handleDismissPrompt} style={styles.promptSkip}>
               <AppText style={[styles.skipText, { color: colors.textMuted }]}>
-                Skip for now
+                {t('Settings.home.skipForNow', { defaultValue: 'Skip for now' })}
               </AppText>
             </Pressable>
           </View>
@@ -125,14 +134,14 @@ export function SettingsHomeScreen(): JSX.Element {
         <SettingsSection>
           <Link href={APP_ROUTES.GALLERY} asChild>
             <SettingsRow
-              label={SETTINGS_STRINGS.home.myStories}
+              label={t('Settings.home.myStories', { defaultValue: SETTINGS_STRINGS.home.myStories })}
               iconName="book-outline"
               iconColor={colors.iconBlue} // Blue
             />
           </Link>
           <Link href="/settings/favorites" asChild>
             <SettingsRow
-              label={SETTINGS_STRINGS.home.favorites}
+              label={t('Settings.home.favorites', { defaultValue: SETTINGS_STRINGS.home.favorites })}
               iconName="heart-outline"
               iconColor={colors.iconRed} // Red
               isLast
@@ -144,7 +153,7 @@ export function SettingsHomeScreen(): JSX.Element {
         <SettingsSection>
           <Link href={APP_ROUTES.SETTINGS_APP_SETTINGS} asChild>
             <SettingsRow
-              label="Settings"
+              label={t('Settings.home.settings', { defaultValue: 'Settings' })}
               iconName="settings-outline"
               iconColor={colors.iconBlue} // Blue/Gray
               isLast

@@ -4,6 +4,8 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|drizzle-orm|nativewind|react-native-css-interop)',
   ],
+  testPathIgnorePatterns: ['<rootDir>/.kilo/', '<rootDir>/node_modules/'],
+  modulePathIgnorePatterns: ['<rootDir>/.kilo/'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     'react-native-css-interop/jsx-runtime': '<rootDir>/test-utils/css-interop-mock.js',

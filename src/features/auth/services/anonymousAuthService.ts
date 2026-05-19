@@ -20,19 +20,20 @@ import {
 import { updateProfile } from '@/features/settings/services/profileService';
 import { setCloudAiEnabled } from '@/lib/cloudPolicy';
 import { syncQueueService } from '@/lib/sync-engine/queue';
+import type { Session } from '@supabase/supabase-js';
 
 export type AnonymousAuthResult = {
   userId: string;
   isAnonymous: boolean;
-  session: any;
+  session: Session | null;
 };
 
 /**
  * Utility to map Supabase Auth errors to user-friendly messages.
  */
-export function mapAuthError(error: any): string {
-  if (!error) return 'An unknown error occurred.';
-  const message = error.message || '';
+export function mapAuthError(error: unknown): string {
+  if (!error || typeof error !== 'object') return 'An unknown error occurred.';
+  const message = 'message' in error && typeof error.message === 'string' ? error.message : '';
 
   if (message.includes('New password should be different')) {
     return 'Your new password must be different from your temporary password.';

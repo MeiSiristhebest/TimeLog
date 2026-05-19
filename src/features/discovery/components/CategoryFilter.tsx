@@ -11,6 +11,7 @@ import { useHeritageTheme } from '@/theme/heritage';
 import type { QuestionCategory } from '@/db/schema/familyQuestions';
 import { QUESTION_CATEGORIES } from '@/db/schema/familyQuestions';
 import { View, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 // Category metadata for display
 export const CATEGORY_METADATA: Record<
@@ -32,6 +33,7 @@ export interface CategoryFilterProps {
 
 export function CategoryFilter({ selectedCategories, onCategoryToggle }: CategoryFilterProps) {
     const { colors } = useHeritageTheme();
+    const { t } = useTranslation();
 
     // If no categories selected, show all
     const isAllSelected = selectedCategories.length === 0;
@@ -60,7 +62,7 @@ export function CategoryFilter({ selectedCategories, onCategoryToggle }: Categor
                             key={category}
                             onPress={() => handleCategoryPress(category)}
                             accessibilityRole="button"
-                            accessibilityLabel={meta.label}
+                            accessibilityLabel={t(`Gallery.categories.${category}`, { defaultValue: meta.label })}
                             accessibilityState={{ selected: isSelected }}
                             style={({ pressed }) => [
                                 styles.pill,
@@ -88,7 +90,7 @@ export function CategoryFilter({ selectedCategories, onCategoryToggle }: Categor
                                     fontWeight: isSelected ? '700' : '600',
                                     marginLeft: 10,
                                 }}>
-                                {meta.label}
+                                {t(`Gallery.categories.${category}`, { defaultValue: meta.label })}
                             </AppText>
                         </Pressable>
                     );

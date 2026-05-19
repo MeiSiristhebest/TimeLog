@@ -7,6 +7,7 @@ import {
   type RecordingHandle,
 } from '../services/recorderService';
 import { useRecorderStore } from '../store/recorderStore';
+import { useAuthStore } from '@/features/auth/store/authStore';
 import { devLog } from '@/lib/devLogger';
 
 /**
@@ -24,12 +25,13 @@ export function useResumeRecording(): ResumeRecordingState {
   const [pausedRecording, setPausedRecording] = useState<RecordingMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { setCurrentRecording, setPausedRecordingId } = useRecorderStore();
+  const sessionUserId = useAuthStore((state) => state.sessionUserId);
 
   // Check for paused recordings on mount
   useEffect(() => {
     const checkForPausedRecording = async () => {
       try {
-        const paused = await getPausedRecording();
+        const paused = await getPausedRecording(sessionUserId);
         setPausedRecording(paused);
       } catch (error) {
         devLog.error('Failed to check for paused recording:', error);
@@ -39,7 +41,7 @@ export function useResumeRecording(): ResumeRecordingState {
     };
 
     checkForPausedRecording();
-  }, []);
+  }, [sessionUserId]);
 
   const resumeRecording = async () => {
     if (!pausedRecording) return;

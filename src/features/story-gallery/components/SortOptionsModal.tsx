@@ -9,6 +9,7 @@ import { useSharedValue,
   withTiming, } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useHeritageTheme } from '../../../theme/heritage';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export type SortOption = 'newest' | 'oldest' | 'longest' | 'shortest';
 
@@ -31,6 +32,7 @@ export function SortOptionsModal({
 }: SortOptionsModalProps) {
   const theme = useHeritageTheme();
   const { colors } = theme;
+  const { t } = useTranslation();
 
   // Animation Values
   const opacity = useSharedValue(0);
@@ -59,8 +61,6 @@ export function SortOptionsModal({
   const handleSelect = (sort: SortOption) => {
     Haptics.selectionAsync();
     onSelectSort(sort);
-    // Delay closing slightly for visual feedback? Or close immediately.
-    // Close immediately usually feels snappier for simple selects.
     onClose();
   };
 
@@ -164,15 +164,15 @@ export function SortOptionsModal({
               marginBottom: 24,
               marginTop: 8,
             }}>
-            Sort Stories
+            {t('Gallery.sort.modalTitle', { defaultValue: 'Sort Stories' })}
           </AppText>
 
           {/* Options */}
           <View>
-            {renderOption('Newest First', 'newest', 'calendar')}
-            {renderOption('Oldest First', 'oldest', 'time-outline')}
-            {renderOption('Longest', 'longest', 'timer-outline')}
-            {renderOption('Shortest', 'shortest', 'hourglass-outline')}
+            {renderOption(t('Gallery.sort.newest', { defaultValue: 'Newest First' }), 'newest', 'calendar')}
+            {renderOption(t('Gallery.sort.oldest', { defaultValue: 'Oldest First' }), 'oldest', 'time-outline')}
+            {renderOption(t('Gallery.sort.longest', { defaultValue: 'Longest' }), 'longest', 'timer-outline')}
+            {renderOption(t('Gallery.sort.shortest', { defaultValue: 'Shortest' }), 'shortest', 'hourglass-outline')}
           </View>
 
           {/* Cancel Button */}
@@ -184,7 +184,7 @@ export function SortOptionsModal({
               paddingVertical: 12,
             }}>
             <AppText style={{ fontSize: 16, color: colors.textMuted, fontWeight: '600' }}>
-              Cancel
+              {t('Gallery.sort.cancel', { defaultValue: 'Cancel' })}
             </AppText>
           </TouchableOpacity>
         </Animated.View>

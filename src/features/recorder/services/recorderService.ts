@@ -5,7 +5,7 @@ import {
   type AudioAnalysis,
 } from '@siteed/expo-audio-studio';
 import { LegacyEventEmitter, type EventSubscription } from 'expo-modules-core';
-import { eq } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { DeviceEventEmitter, PermissionsAndroid, Platform } from 'react-native';
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
@@ -667,13 +667,21 @@ export async function startRecordingStream(
  * Check if there's a paused recording session that can be resumed.
  * Implements AC: 5 (detect paused session on app return)
  *
+ * @param userId - Optional user ID to filter paused recordings by
  * @returns The paused recording metadata, or null if none exists
  */
-export async function getPausedRecording(): Promise<RecordingMetadata | null> {
+export async function getPausedRecording(userId?: string | null): Promise<RecordingMetadata | null> {
+  const conditions = [eq(audioRecordings.recordingStatus, 'paused')];
+  if (userId) {
+    conditions.push(eq(audioRecordings.userId, userId));
+  } else {
+    conditions.push(isNull(audioRecordings.userId));
+  }
+
   const pausedRecordings = await db
     .select()
     .from(audioRecordings)
-    .where(eq(audioRecordings.recordingStatus, 'paused'))
+    .where(and(...conditions))
     .limit(1);
 
   if (pausedRecordings.length === 0) {

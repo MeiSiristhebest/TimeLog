@@ -178,7 +178,7 @@ describe('recorder stop flow', () => {
       expect(startRecordingStream).toHaveBeenCalled();
     });
 
-    const stopButton = await waitFor(() => getByLabelText(/hold to finish recording/i));
+    const stopButton = await waitFor(() => getByLabelText(/hold to finish recording|press and hold to end session/i));
     fireEvent(stopButton, 'pressIn');
 
     await waitFor(() => {

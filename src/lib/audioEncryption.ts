@@ -38,6 +38,10 @@ export function isRemotePath(path: string): boolean {
   return path.startsWith('http://') || path.startsWith('https://');
 }
 
+export function isLocalPath(path: string): boolean {
+  return !isRemotePath(path);
+}
+
 export function isEncryptedAudioPath(path: string): boolean {
   return path.toLowerCase().endsWith('.enc');
 }

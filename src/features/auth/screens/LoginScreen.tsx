@@ -10,8 +10,10 @@ import { useLoginLogic } from '@/features/auth/hooks/useLoginLogic';
 import { AppText } from '@/components/ui/AppText';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export default function LoginScreen(): JSX.Element {
+  const { t } = useTranslation();
   const { colors } = useHeritageTheme();
   const router = useRouter();
 
@@ -34,36 +36,38 @@ export default function LoginScreen(): JSX.Element {
             ]}>
             <Ionicons name="book" size={40} color={colors.primary} />
           </Animated.View>
-          <AppText style={[styles.title, { color: colors.onSurface }]}>Welcome Back</AppText>
+          <AppText style={[styles.title, { color: colors.onSurface }]}>
+            {t('Auth.login.title', { defaultValue: 'Welcome Back' })}
+          </AppText>
           <AppText style={[styles.subtitle, { color: colors.textMuted }]}>
-            Sign in to continue your story journey.
+            {t('Auth.login.subtitle', { defaultValue: 'Sign in to continue your story journey.' })}
           </AppText>
         </View>
 
         <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.formSection}>
           <View style={styles.inputGap}>
             <HeritageInput
-              label="Email Address"
+              label={t('Auth.login.email', { defaultValue: 'Email Address' })}
               value={email}
               onChangeText={actions.setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
-              placeholder="you@example.com"
-              accessibilityLabel="Email Address"
-              accessibilityHint="Please enter your email address"
+              placeholder={t('Auth.login.emailPlaceholder', { defaultValue: 'you@example.com' })}
+              accessibilityLabel={t('Auth.login.email', { defaultValue: 'Email Address' })}
+              accessibilityHint={t('Auth.login.emailAccessibilityHint', { defaultValue: 'Please enter your email address' })}
               leftIcon="mail-outline"
             />
           </View>
 
           <View style={styles.inputGap}>
             <HeritageInput
-              label="Password"
+              label={t('Auth.login.password', { defaultValue: 'Password' })}
               value={password}
               onChangeText={actions.setPassword}
               secureTextEntry
-              placeholder="••••••••"
-              accessibilityLabel="Password"
-              accessibilityHint="Please enter your password"
+              placeholder={t('Auth.login.passwordPlaceholder', { defaultValue: '••••••••' })}
+              accessibilityLabel={t('Auth.login.password', { defaultValue: 'Password' })}
+              accessibilityHint={t('Auth.login.passwordAccessibilityHint', { defaultValue: 'Please enter your password' })}
               leftIcon="lock-closed-outline"
               showPasswordToggle
             />
@@ -78,7 +82,7 @@ export default function LoginScreen(): JSX.Element {
 
           <View style={styles.buttonSection}>
             <HeritageButton
-              title={loading ? 'Signing in…' : 'Sign in'}
+              title={loading ? t('Auth.login.signingIn', { defaultValue: 'Signing in...' }) : t('Auth.login.signIn', { defaultValue: 'Sign in' })}
               onPress={actions.handleSignIn}
               disabled={isSubmitDisabled}
               variant="primary"
@@ -86,17 +90,17 @@ export default function LoginScreen(): JSX.Element {
 
             <View style={styles.signUpLinkSection}>
               <AppText style={{ color: colors.textMuted, fontSize: 16 }}>
-                Don't have an account?{' '}
+                {t('Auth.login.noAccount', { defaultValue: "Don't have an account? " })}
               </AppText>
               <Pressable onPress={() => router.push(APP_ROUTES.SIGNUP)}>
                 <AppText style={{ color: colors.primary, fontWeight: '700', fontSize: 16 }}>
-                  Sign Up
+                  {t('Auth.login.signUp', { defaultValue: 'Sign Up' })}
                 </AppText>
               </Pressable>
             </View>
 
             <HeritageButton
-              title="Forgot Password?"
+              title={t('Auth.login.forgotPassword', { defaultValue: 'Forgot Password?' })}
               onPress={actions.handleResetPassword}
               disabled={isResetDisabled}
               variant="ghost"
@@ -105,7 +109,7 @@ export default function LoginScreen(): JSX.Element {
         </Animated.View>
 
         <Link href={APP_ROUTES.TABS} asChild>
-          <HeritageButton title="Back to Home" variant="secondary" onPress={() => {}} />
+          <HeritageButton title={t('Auth.login.backToHome', { defaultValue: 'Back to Home' })} variant="secondary" onPress={() => {}} />
         </Link>
       </View>
     </Container>

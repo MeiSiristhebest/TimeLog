@@ -14,10 +14,15 @@ import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useHelpLogic, useFAQAccordion } from '@/features/settings/hooks/useHelpLogic';
 import { HELP_STRINGS, FAQItem } from '@/features/settings/data/mockHelpData';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 function FAQAccordion({ item }: { item: FAQItem }): JSX.Element {
   const { isExpanded, toggle } = useFAQAccordion(item.id);
   const theme = useHeritageTheme();
+  const { t } = useTranslation();
+
+  const question = t(`Auth.help.faq.q_${item.id}`, { defaultValue: item.question });
+  const answer = t(`Auth.help.faq.a_${item.id}`, { defaultValue: item.answer });
 
   return (
     <Pressable
@@ -28,7 +33,7 @@ function FAQAccordion({ item }: { item: FAQItem }): JSX.Element {
       ]}>
       <View style={styles.faqHeader}>
         <AppText style={[styles.faqQuestion, { color: theme.colors.onSurface }]}>
-          {item.question}
+          {question}
         </AppText>
         <Ionicons
           name={isExpanded ? 'chevron-up' : 'chevron-down'}
@@ -42,7 +47,7 @@ function FAQAccordion({ item }: { item: FAQItem }): JSX.Element {
             styles.faqAnswer,
             { color: `${theme.colors.onSurface}CC`, borderTopColor: theme.colors.border },
           ]}>
-          {item.answer}
+          {answer}
         </AppText>
       )}
     </Pressable>
@@ -51,6 +56,7 @@ function FAQAccordion({ item }: { item: FAQItem }): JSX.Element {
 
 export default function HelpScreen(): JSX.Element {
   const theme = useHeritageTheme();
+  const { t } = useTranslation();
 
   // Logic Separation
   const { state, actions } = useHelpLogic();
@@ -61,7 +67,7 @@ export default function HelpScreen(): JSX.Element {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
       <HeritageHeader
-        title={STRINGS.headerTitle}
+        title={t('Auth.help.title', { defaultValue: STRINGS.headerTitle })}
         showBack
         scrollY={scrollY}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }}
@@ -75,7 +81,7 @@ export default function HelpScreen(): JSX.Element {
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}>
         <AppText style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
-          {STRINGS.faq.title}
+          {t('Auth.help.faqTitle', { defaultValue: STRINGS.faq.title })}
         </AppText>
 
         {faqItems.map((item) => (
@@ -84,13 +90,13 @@ export default function HelpScreen(): JSX.Element {
 
         <View style={[styles.contactSection, { backgroundColor: `${theme.colors.primary}14` }]}>
           <AppText style={[styles.contactTitle, { color: theme.colors.onSurface }]}>
-            {STRINGS.contact.title}
+            {t('Auth.help.contactTitle', { defaultValue: STRINGS.contact.title })}
           </AppText>
           <AppText style={[styles.contactText, { color: `${theme.colors.onSurface}80` }]}>
-            {STRINGS.contact.subtitle}
+            {t('Auth.help.contactSubtitle', { defaultValue: STRINGS.contact.subtitle })}
           </AppText>
           <HeritageButton
-            title={STRINGS.contact.button}
+            title={t('Auth.help.contactButton', { defaultValue: STRINGS.contact.button })}
             icon="mail"
             variant="primary"
             onPress={handleContactSupport}

@@ -4,6 +4,7 @@ import { DeviceEventEmitter } from 'react-native';
 import { desc, eq, isNull, isNotNull, and, or, like, inArray } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { audioRecordings } from '@/db/schema';
+import { useAuthStore } from '@/features/auth/store/authStore';
 
 type AudioRecordingRow = typeof audioRecordings.$inferSelect;
 
@@ -53,10 +54,11 @@ export function useStories(options: UseStoriesOptions = {}): UseStoriesResult {
     matchingStoryIds = [],
     onlyFavorites = false,
   } = options;
+  const sessionUserId = useAuthStore((state) => state.sessionUserId);
   const normalizedSearchQuery = (searchQuery ?? '').trim();
   const searchTopicKey = [...new Set(matchingTopicIds)].sort().join(',');
   const searchStoryKey = [...new Set(matchingStoryIds)].sort().join(',');
-  const cacheKey = `${includeDeleted ? '1' : '0'}:${onlyDeleted ? '1' : '0'}:${onlyFavorites ? '1' : '0'}:${normalizedSearchQuery.toLowerCase()}:${searchTopicKey}:${searchStoryKey}`;
+  const cacheKey = `${sessionUserId ?? 'guest'}:${includeDeleted ? '1' : '0'}:${onlyDeleted ? '1' : '0'}:${onlyFavorites ? '1' : '0'}:${normalizedSearchQuery.toLowerCase()}:${searchTopicKey}:${searchStoryKey}`;
   const shouldUseCache = process.env.NODE_ENV !== 'test';
   const cachedStories = shouldUseCache ? (storyQueryCache.get(cacheKey) ?? []) : [];
 
@@ -64,6 +66,13 @@ export function useStories(options: UseStoriesOptions = {}): UseStoriesResult {
     const conditions = [];
     // Always filter by completed recordings
     conditions.push(eq(audioRecordings.recordingStatus, 'completed'));
+
+    // Filter by current authenticated user
+    if (sessionUserId) {
+      conditions.push(eq(audioRecordings.userId, sessionUserId));
+    } else {
+      conditions.push(isNull(audioRecordings.userId));
+    }
 
     // Handle deleted item filtering
     if (onlyDeleted) {
@@ -98,7 +107,7 @@ export function useStories(options: UseStoriesOptions = {}): UseStoriesResult {
     }
 
     return conditions;
-  }, [includeDeleted, matchingStoryIds, matchingTopicIds, normalizedSearchQuery, onlyDeleted]);
+  }, [includeDeleted, matchingStoryIds, matchingTopicIds, normalizedSearchQuery, onlyDeleted, onlyFavorites, sessionUserId]);
 
   const [stories, setStories] = useState<AudioRecordingRow[]>(cachedStories);
   const [isLoading, setIsLoading] = useState(cachedStories.length === 0);

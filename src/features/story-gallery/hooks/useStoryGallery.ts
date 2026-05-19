@@ -16,6 +16,7 @@ import { db } from '@/db/client';
 import { transcriptSegments, type TranscriptSegment } from '@/db/schema';
 import { supabase } from '@/lib/supabase';
 import { devLog } from '@/lib/devLogger';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface SemanticSearchResult {
   id: string;
@@ -153,6 +154,7 @@ export function useStoryGallery() {
 
   // Focused Story State (for expansion interaction)
   const [focusedStoryId, setFocusedStoryId] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   // Reset focus when filter changes (impl in handler to avoid useEffect re-render)
   const handleSetFilter = useCallback((newFilter: FilterCategory) => {
@@ -161,7 +163,8 @@ export function useStoryGallery() {
   }, []);
 
   // Computed Strings
-  const subtitle = `${stories.filter((s) => !s.deletedAt).length}${GALLERY_STRINGS.header.subtitleSuffix}`;
+  const count = stories.filter((s) => !s.deletedAt).length;
+  const subtitle = `${count}${t('Gallery.subtitleSuffix', { defaultValue: GALLERY_STRINGS.header.subtitleSuffix })}`;
   const transcriptFallbackByStoryId = useMemo(() => {
     const fallback = new Map<string, string[]>();
     const finalOnly = new Map<string, string[]>();

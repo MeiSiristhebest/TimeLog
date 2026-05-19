@@ -22,6 +22,8 @@ import { ensureStorytellerSession } from '../services/storytellerSessionService'
 import { getStoredRole, setStoredRole } from '@/features/auth/services/roleStorage';
 import { signInAnonymously } from '../services/anonymousAuthService';
 import { useAuthStore } from '../store/authStore';
+import { useProfile } from '@/features/settings/hooks/useProfile';
+import { supabase } from '@/lib/supabase';
 
 // Hook for Role Screen Logic
 export function useRoleLogic() {
@@ -429,6 +431,7 @@ export function useDeviceManagementLogic() {
 // Hook for Consent Review Logic
 export function useConsentReviewLogic() {
   const scrollY = useSharedValue(0);
+  const { profile } = useProfile();
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -436,8 +439,17 @@ export function useConsentReviewLogic() {
     },
   });
 
+  const consentDate = profile?.createdAt
+    ? new Date(profile.createdAt).toLocaleDateString()
+    : new Date().toLocaleDateString();
+
+  const consentItems = MOCK_CONSENT_ITEMS.map((item) => ({
+    ...item,
+    consentedAt: consentDate,
+  }));
+
   return {
-    state: { scrollY, consentItems: MOCK_CONSENT_ITEMS },
+    state: { scrollY, consentItems },
     actions: { scrollHandler },
   };
 }

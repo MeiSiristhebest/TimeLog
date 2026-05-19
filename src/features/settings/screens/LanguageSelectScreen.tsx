@@ -9,12 +9,14 @@ import { FlatList, Pressable, TextInput, View } from 'react-native';
 import { Ionicons } from '@/components/ui/Icon';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { devLog } from '@/lib/devLogger';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export function LanguageSelectScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ current?: string; from?: string }>();
   const { profile, updateProfileData } = useProfile();
+  const { setLocale, t } = useTranslation();
   const systemLocale = getSystemLocale();
   const [search, setSearch] = useState('');
 
@@ -31,6 +33,7 @@ export function LanguageSelectScreen(): JSX.Element {
   const selected = params.current ?? profile?.language ?? systemLocale;
 
   const handleSelect = async (code: string) => {
+    setLocale(code);
     try {
       await updateProfileData({ language: code });
     } catch (error) {
@@ -53,7 +56,7 @@ export function LanguageSelectScreen(): JSX.Element {
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.surfaceDim }}>
-      <HeritageHeader title="Language" showBack />
+      <HeritageHeader title={t('Settings.language')} showBack />
       <View className="px-4 pt-4">
         <View
           className="flex-row items-center gap-2 rounded-xl border px-3 py-2"
@@ -62,7 +65,7 @@ export function LanguageSelectScreen(): JSX.Element {
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Search language"
+            placeholder={t('Settings.searchLanguage')}
             placeholderTextColor={colors.textMuted}
             className="flex-1 text-base"
             style={{ color: colors.onSurface }}
@@ -100,7 +103,7 @@ export function LanguageSelectScreen(): JSX.Element {
         ListHeaderComponent={
           <View className="mb-4">
             <AppText className="text-xs" style={{ color: colors.textMuted }}>
-              System default: {getLanguageLabel(systemLocale, systemLocale)}
+              {t('Settings.systemDefault')}: {getLanguageLabel(systemLocale, systemLocale)}
             </AppText>
           </View>
         }

@@ -39,7 +39,7 @@ if (typeof global.window.removeEventListener !== 'function') {
 
 // Mock react-native-mmkv
 jest.mock('react-native-mmkv', () => {
-  const store = new Map();
+  const store = new Map([['app.locale', 'en']]);
   const createStore = () => ({
     set: jest.fn((key, value) => store.set(key, value)),
     getString: jest.fn(key => store.get(key)),
@@ -181,10 +181,11 @@ jest.mock('react-native-safe-area-context', () => {
 
 // Mock drizzle-orm/expo-sqlite
 jest.mock('drizzle-orm/expo-sqlite', () => ({
+  useLiveQuery: jest.fn(() => ({ data: [] })),
   drizzle: jest.fn(() => ({
     insert: jest.fn(() => ({ values: jest.fn() })),
     update: jest.fn(() => ({ set: jest.fn(() => ({ where: jest.fn() })) })),
-    select: jest.fn(() => ({ from: jest.fn(() => ({ where: jest.fn() })) })),
+    select: jest.fn(() => ({ from: jest.fn(() => ({ where: jest.fn(() => ({ limit: jest.fn() })) })) })),
     delete: jest.fn(() => ({ where: jest.fn() })),
   })),
 }));
