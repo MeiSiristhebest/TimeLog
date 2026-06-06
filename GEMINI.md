@@ -1,3 +1,15 @@
+## [2026-06-06] Documentation: Complete README Overhaul for TimeLog Highlights
+
+### Decisions & Implementation
+- **Full README Overhaul**:
+  - Rewrote `README.md` to match the professional, highlight-oriented Chinese/English technical style of top-tier microservice templates.
+  - Articulated core architectural choices: Local-first Sync Engine (Network as State), AI Voice Agent (LiveKit + Deepgram Nova-3 + Silero VAD) & client-side three-mode orchestrator with a strict Prompt Engineering Harness (XML constraints, quality self-checks, and session context anchoring), Network Quality Probing (RTT/Jitter/Loss), Native Recording Safeguards & Elderly VAD Profiles, AI-polished PDF memoir generation, Proxy-based zero-invasive Localization Interceptor, Multi-Account Local SQLite Isolation, AAA accessibility & Buddhist Calendar formatting, OS-native reminders, AES-256-CTR Audio Encryption with Versioned Header compatibility, and Device Code Secure pairing bridge.
+  - Linked specific core source code files directly to improve developer onboarding and code navigation clarity.
+  - Embedded Mermaid sequence diagrams, state machines, and flowcharts explaining the sync engine state transitions, recording lifecycles, and client dialog mode transitions.
+
+### Results
+- ✅ **Premium Showcase**: The project entry-point README now provides a clear, high-impact architectural overview highlighting TimeLog's local-first mobile engineering achievements.
+
 ## [2026-05-19] Complete Mobile App Localization Coverage & Hardcoded Strings Pruning
 
 ### Decisions & Implementation
