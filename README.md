@@ -20,10 +20,10 @@ TimeLog 是一款基于 **React Native (Expo SDK 54)**、**Drizzle ORM**、**SQL
 ```mermaid
 sequenceDiagram
     actor User as 用户/设备
-    participant DB as 本地 SQLite (Drizzle ORM)
-    participant Queue as 同步队列服务 (syncQueueService)
-    participant Store as 状态引擎 (useSyncStore)
-    participant Cloud as Supabase 云端存储
+    participant DB as "本地 SQLite (Drizzle ORM)"
+    participant Queue as "同步队列服务 (syncQueueService)"
+    participant Store as "状态引擎 (useSyncStore)"
+    participant Cloud as "Supabase 云端存储"
 
     User->>DB: 录音完成 / 状态修改
     DB-->>Queue: 追加待同步任务 (pending)
@@ -112,7 +112,7 @@ graph TD
     E --> F{VAD 静音判定}
     F -- 未超时 --> E
     F -- 静音超过 3~5 秒 --> G[触发提示音 / 暂停录音]
-    G --> H[音频转码 (Opus) 并加密]
+    G --> H["音频转码 (Opus) 并加密"]
     H --> I[保存本地并加入同步队列]
 ```
 
