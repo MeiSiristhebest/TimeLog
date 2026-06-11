@@ -2,7 +2,6 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import * as Haptics from 'expo-haptics';
 import {
   startRecordingStream,
-  prepareRecordingTarget,
   type RecordingHandle,
   InsufficientStorageError,
 } from '@/features/recorder/services/recorderService';

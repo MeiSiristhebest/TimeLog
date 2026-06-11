@@ -364,6 +364,6 @@ export function useHomeLogic() {
     recording, lastSavedId, tts, isCurrentTopicAnswered, formattedDate, greeting, 
     dailyGoal, weather, weatherIconName, activities, hasUnread, isSyncOnline, recordingMode, 
     isAiAvailable, canEnableAiMode, cloudAIEnabled, aiDialog, appRole, 
-    handleStartRecording, setRecordingModeAndPersist, router
+    handleStartRecording, setRecordingModeAndPersist, router, t
   ]);
 }

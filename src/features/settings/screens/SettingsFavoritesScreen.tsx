@@ -17,7 +17,7 @@ export default function SettingsFavoritesScreen(): JSX.Element {
   const { t } = useTranslation();
 
   // 1. Fetch only favorites
-  const { stories, isLoading, error } = useStories({ onlyFavorites: true });
+  const { stories, isLoading } = useStories({ onlyFavorites: true });
 
   // 2. Map to StoryList requirements
   const recordings = useMemo(() => {

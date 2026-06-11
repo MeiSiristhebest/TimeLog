@@ -1,4 +1,4 @@
-import { fireEvent, render } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import { DisplayAccessibilityScreen } from './DisplayAccessibilityScreen';
 
 jest.mock('../components/SettingsRow', () => ({

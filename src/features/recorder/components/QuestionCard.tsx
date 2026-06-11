@@ -4,7 +4,7 @@ import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { useHeritageTheme } from '@/theme/heritage';
 import type { TopicQuestion } from '@/types/entities';
 import { AppText } from '@/components/ui/AppText';
-import { Platform, View } from 'react-native';
+import { View } from 'react-native';
 import { Image } from 'expo-image';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 

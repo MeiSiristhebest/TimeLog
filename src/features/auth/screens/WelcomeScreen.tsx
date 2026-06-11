@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ImageBackground, View, StyleSheet, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -20,7 +20,6 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { setWelcomeSeen } from '@/features/auth/services/onboardingStorage';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import { useState } from 'react';
 import { signInAnonymously } from '@/features/auth/services/anonymousAuthService';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { addRememberedAccount, saveSessionTokens } from '@/features/auth/services/rememberedAccountsService';

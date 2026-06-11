@@ -3,11 +3,9 @@ import {
   Room,
   RoomEvent,
   RemoteParticipant,
-  ParticipantEvent,
   TrackPublication,
   TranscriptionSegment as LiveKitTranscriptionSegment,
 } from 'livekit-client';
-import { devLog } from '../devLogger';
 
 export type LiveKitConnectionState = 'connected' | 'connecting' | 'disconnected' | 'reconnecting';
 

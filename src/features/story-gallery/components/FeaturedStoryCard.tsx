@@ -1,5 +1,5 @@
 import { AppText } from '@/components/ui/AppText';
-import { View, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@/components/ui/Icon';
 import { AudioRecording } from '@/types/entities';

@@ -71,7 +71,7 @@ export default function StoriesTabScreen(): JSX.Element {
         />
       );
     },
-    [actions.onPlayStory, actions.onSelectStory, actions.onToggleFavorite, focusedStoryId]
+    [actions, focusedStoryId]
   );
 
   return (

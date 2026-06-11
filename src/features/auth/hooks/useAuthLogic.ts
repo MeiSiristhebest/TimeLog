@@ -6,7 +6,6 @@ import * as Clipboard from 'expo-clipboard';
 import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { showSuccessToast } from '@/components/ui/feedback/toast';
-import { AUTH_STRINGS } from '../data/mockAuthData';
 import {
   DeviceCodeResult,
   generateDeviceCode,
@@ -91,7 +90,7 @@ export function useRoleLogic() {
     return () => {
       mounted = false;
     };
-  }, [router, refetchSession, session]);
+  }, [router, refetchSession, session, setAuthenticated]);
 
   const handleSelect = useCallback(
     async (role: string) => {
@@ -161,7 +160,7 @@ export function useRoleLogic() {
         });
       }
     },
-    [refetchSession, router, session, t]
+    [refetchSession, router, session, t, setAuthenticated]
   );
 
   const handleBack = () => {
@@ -193,7 +192,7 @@ export function useRecoveryCodeLogic() {
     },
   });
 
-  const toErrorMessage = (error: unknown): string => {
+  const toErrorMessage = useCallback((error: unknown): string => {
     if (error instanceof Error) {
       const normalizedMessage = error.message.toLowerCase();
       if (normalizedMessage.includes('logged in') || normalizedMessage.includes('authenticated')) {
@@ -202,7 +201,7 @@ export function useRecoveryCodeLogic() {
       return error.message;
     }
     return t('Auth.recoveryCode.errors.default', { defaultValue: 'Something went wrong while handling your recovery code. Please try again.' });
-  };
+  }, [t]);
 
   useEffect(() => {
     let mounted = true;
@@ -236,7 +235,7 @@ export function useRecoveryCodeLogic() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [t, toErrorMessage]);
 
   const handleGenerateCode = async () => {
     HeritageAlert.show({

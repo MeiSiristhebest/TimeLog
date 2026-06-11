@@ -18,32 +18,6 @@ export interface DiscoveryQuestion {
     createdAt?: string;
 }
 
-/**
- * Raw response from Supabase
- */
-interface DiscoveryQuestionRow {
-    id: string;
-    question_text: string;
-    category: string;
-    priority: number;
-    tags: string[];
-    created_at?: string;
-}
-
-/**
- * Transform raw DB row to DiscoveryQuestion
- */
-function transformQuestion(row: DiscoveryQuestionRow): DiscoveryQuestion {
-    return {
-        id: row.id,
-        text: row.question_text,
-        category: row.category,
-        priority: row.priority,
-        tags: row.tags || [],
-        createdAt: row.created_at,
-    };
-}
-
 
 
 function transformLocalPresetQuestion(

@@ -26,7 +26,7 @@ export async function persistAvatarAssetUri(uri: string): Promise<string> {
 
   try {
     await FileSystem.copyAsync({ from: uri, to: targetUri });
-  } catch (error) {
+  } catch {
     throw new Error('Could not save your profile photo locally. Please try again.');
   }
 

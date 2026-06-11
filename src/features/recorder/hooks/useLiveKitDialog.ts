@@ -105,6 +105,37 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
     });
   }, []);
 
+  const disconnect = useCallback(async () => {
+    try {
+      if (clientRef.current) {
+        await clientRef.current.disconnect();
+        clientRef.current.destroy();
+        clientRef.current = null;
+      }
+
+      if (orchestratorRef.current) {
+        orchestratorRef.current.destroy();
+        orchestratorRef.current = null;
+      }
+
+      if (networkServiceRef.current) {
+        networkServiceRef.current.destroy();
+        networkServiceRef.current = null;
+      }
+
+      await stopAudioSession();
+      setConnectionState('disconnected');
+      setDialogMode('DIALOG');
+      setNetworkQuality(null);
+      setNetworkMetrics(null);
+      setTranscripts([]);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to disconnect');
+      setError(error);
+      onError?.(error);
+    }
+  }, [onError]);
+
   const connect = useCallback(async (storyIdOverride?: string) => {
     const resolvedStoryId = storyIdOverride ?? storyId;
     devLog.info(`[useLiveKitDialog] Connecting session for StoryId: ${resolvedStoryId}`);
@@ -246,38 +277,8 @@ export function useLiveKitDialog(options: UseLiveKitDialogOptions): UseLiveKitDi
     onNetworkQualityChange,
     onError,
     waitForAgentPresence,
+    disconnect,
   ]);
-
-  const disconnect = useCallback(async () => {
-    try {
-      if (clientRef.current) {
-        await clientRef.current.disconnect();
-        clientRef.current.destroy();
-        clientRef.current = null;
-      }
-
-      if (orchestratorRef.current) {
-        orchestratorRef.current.destroy();
-        orchestratorRef.current = null;
-      }
-
-      if (networkServiceRef.current) {
-        networkServiceRef.current.destroy();
-        networkServiceRef.current = null;
-      }
-
-      await stopAudioSession();
-      setConnectionState('disconnected');
-      setDialogMode('DIALOG');
-      setNetworkQuality(null);
-      setNetworkMetrics(null);
-      setTranscripts([]);
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to disconnect');
-      setError(error);
-      onError?.(error);
-    }
-  }, [onError]);
 
   const skip = useCallback(() => {
     orchestratorRef.current?.handleSkip();

@@ -10,7 +10,7 @@ export function useTranslation() {
     (key: string, params?: Record<string, unknown>) => {
       return getTranslation(key, params);
     },
-    [locale, getTranslation]
+    [getTranslation]
   );
 
   return { t, locale, setLocale };

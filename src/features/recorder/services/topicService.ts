@@ -4,9 +4,7 @@
  * Story 5.5: Personalized Topic Recommendation (AC: 1, 2)
  */
 
-import { supabase } from '@/lib/supabase';
-import { TOPIC_QUESTIONS, getQuestionById } from '@/features/recorder/data/topicQuestions';
-import { devLog } from '@/lib/devLogger';
+import { TOPIC_QUESTIONS } from '@/features/recorder/data/topicQuestions';
 
 export interface Topic {
   id: string;

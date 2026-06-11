@@ -101,7 +101,7 @@ export function AudioPlayer({ uri, recordingId }: AudioPlayerProps): JSX.Element
         isMounted = false;
         reset();
       };
-    }, [uri, load, reset, recordingId, story?.userId, story, sessionUserId])
+    }, [uri, load, reset, recordingId, story, sessionUserId])
   );
 
   useEffect(() => {

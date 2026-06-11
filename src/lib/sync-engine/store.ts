@@ -823,9 +823,9 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
       void (async () => {
         try {
           const { db: database } = await import('@/db/client');
-          const { syncQueue: queueTable, audioRecordings: recordingsTable } =
+          const { syncQueue: queueTable } =
             await import('@/db/schema');
-          const { eq: equalTo, or: orOp, gte: gteOp } = await import('drizzle-orm');
+          const { eq: equalTo, gte: gteOp } = await import('drizzle-orm');
 
           // 1. Reset stuck 'processing'
           await database

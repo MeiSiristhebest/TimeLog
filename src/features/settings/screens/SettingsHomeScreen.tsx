@@ -17,8 +17,6 @@ import {
 import { APP_ROUTES } from '@/features/app/navigation/routes';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
-const NO_OP = () => { };
-
 export function SettingsHomeScreen(): JSX.Element {
   const router = useRouter();
   const insets = useSafeAreaInsets();

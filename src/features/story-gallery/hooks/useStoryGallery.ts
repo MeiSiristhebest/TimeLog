@@ -70,18 +70,15 @@ export function useStoryGallery() {
   );
 
   const [semanticStoryIds, setSemanticStoryIds] = useState<string[]>([]);
-  const [isSearchingSemantic, setIsSearchingSemantic] = useState(false);
 
   useEffect(() => {
     const normalizedQuery = debouncedSearchQuery.trim();
     if (!normalizedQuery) {
       setSemanticStoryIds([]);
-      setIsSearchingSemantic(false);
       return;
     }
 
     let isMounted = true;
-    setIsSearchingSemantic(true);
 
     const performSemanticSearch = async () => {
       try {
@@ -103,8 +100,6 @@ export function useStoryGallery() {
         }
       } catch (err) {
         devLog.warn('[useStoryGallery] Failed to invoke semantic-search:', err);
-      } finally {
-        if (isMounted) setIsSearchingSemantic(false);
       }
     };
 

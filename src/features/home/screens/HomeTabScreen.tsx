@@ -13,7 +13,6 @@ import { AiRecordingView } from '@/features/recorder/components/AiRecordingView'
 import { StorySavedView } from '@/features/recorder/components/StorySavedView';
 import { useHeritageTheme } from '@/theme/heritage';
 import { useHomeLogic } from '@/features/home/hooks/useHomeLogic';
-import { HOME_STRINGS } from '@/features/home/data/mockHomeData';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { AppText } from '@/components/ui/AppText';
 import { ScrollView, StyleSheet, View } from 'react-native';

@@ -1,7 +1,6 @@
 import { syncStoriesDown } from './storySyncDownService';
 import { db } from '@/db/client';
 import { audioRecordings, transcriptSegments } from '@/db/schema';
-import { supabase } from '@/lib/supabase';
 import { DeviceEventEmitter } from 'react-native';
 
 const mockFrom = jest.fn();

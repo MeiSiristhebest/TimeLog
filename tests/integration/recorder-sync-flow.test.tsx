@@ -1,6 +1,7 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 // Import type for safety
 import type { SyncQueueItem } from '@/types/entities';
+import { useSyncStore } from '@/lib/sync-engine/store';
 
 jest.mock('@/db/client', () => {
   const mockLimit = jest.fn(async () => [
@@ -37,8 +38,6 @@ jest.mock('@/db/client', () => {
     },
   };
 });
-
-import { useSyncStore } from '@/lib/sync-engine/store';
 
 const mockMaybeSingle = jest.fn(async () => ({ data: { id: 'rec-1' }, error: null }));
 const mockSelect = jest.fn(() => ({ maybeSingle: mockMaybeSingle }));
