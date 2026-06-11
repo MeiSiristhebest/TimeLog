@@ -15,7 +15,13 @@
     },
     "plugins": [
       "expo-router",
-      "@sentry/react-native/expo",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "cmu-53",
+          "project": "senior-project-time-log"
+        }
+      ],
       "expo-font",
       [
         "expo-notifications",

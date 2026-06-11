@@ -324,6 +324,45 @@ export async function ensureSufficientDisk(): Promise<number> {
   }
 }
 
+export async function runGarbageCollection(): Promise<void> {
+  try {
+    const recordingsDir = getRecordingsDir();
+    const info = await FS.getInfoAsync(recordingsDir);
+    if (!info.exists) return;
+
+    const files = await FS.readDirectoryAsync(recordingsDir);
+    if (files.length === 0) return;
+
+    const dbRecordings = await db.select().from(audioRecordings);
+    const validFileNames = new Set<string>();
+
+    dbRecordings.forEach((rec) => {
+      if (rec.filePath) {
+        const name = rec.filePath.split('/').pop();
+        if (name) validFileNames.add(name);
+      }
+      if (rec.uploadPath && rec.uploadPath.startsWith('file://')) {
+        const name = rec.uploadPath.split('/').pop();
+        if (name) validFileNames.add(name);
+      }
+    });
+
+    for (const file of files) {
+      if (file.startsWith('__disk_check_')) {
+        await FS.deleteAsync(`${recordingsDir}${file}`, { idempotent: true });
+        continue;
+      }
+
+      if (!validFileNames.has(file) && file !== '.DS_Store') {
+        devLog.info(`[RecorderService] GC: Deleting orphaned audio file: ${file}`);
+        await FS.deleteAsync(`${recordingsDir}${file}`, { idempotent: true });
+      }
+    }
+  } catch (error) {
+    devLog.warn('[RecorderService] Garbage collection failed:', error);
+  }
+}
+
 export async function prepareRecordingTarget(params?: {
   id?: string;
   topicId?: string;
