@@ -399,6 +399,7 @@ export default function StoryEditScreen(): JSX.Element {
               }}
               placeholder={t('Gallery.edit.titlePlaceholder', { defaultValue: 'Story Title' })}
               placeholderTextColor={colors.textMuted}
+              maxLength={100}
             />
           </View>
 
@@ -525,6 +526,7 @@ export default function StoryEditScreen(): JSX.Element {
                       }}
                       placeholder={`${meta.label} ...`}
                       placeholderTextColor={colors.textMuted}
+                      maxLength={2000}
                     />
                   </View>
                 );
@@ -619,6 +621,7 @@ export default function StoryEditScreen(): JSX.Element {
                 color: colors.onSurface,
                 marginBottom: 12,
               }}
+              maxLength={50}
             />
 
             <ScrollView showsVerticalScrollIndicator={false}>

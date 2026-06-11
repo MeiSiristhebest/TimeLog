@@ -2,6 +2,7 @@ import { AppText } from '@/components/ui/AppText';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { useHeritageTheme, FONT_SCALE_LABELS } from '@/theme/heritage';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { useProfile } from '../hooks/useProfile';
 import { useDisplaySettingsStore } from '../store/displaySettingsStore';
 import { getLanguageLabel, getSystemLocale } from '../utils/languageOptions';
@@ -48,6 +49,7 @@ function loadImagePicker(): Promise<typeof import('expo-image-picker') | null> {
 }
 
 export function EditProfileScreen(): JSX.Element {
+  const { t } = useTranslation();
   const { colors, typography } = useHeritageTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ language?: string }>();
@@ -89,8 +91,8 @@ export function EditProfileScreen(): JSX.Element {
       const imagePicker = await loadImagePicker();
       if (!imagePicker) {
         HeritageAlert.show({
-          title: 'Feature Not Available',
-          message: 'Avatar upload requires a development build.',
+          title: t('EditProfile.errors.featureNotAvailable', { defaultValue: 'Feature Not Available' }),
+          message: t('EditProfile.errors.avatarRequiresDevBuild', { defaultValue: 'Avatar upload requires a development build.' }),
           variant: 'warning',
         });
         return;
@@ -101,8 +103,8 @@ export function EditProfileScreen(): JSX.Element {
       );
       if (!granted) {
         HeritageAlert.show({
-          title: 'Permission Required',
-          message: 'Please allow photo library access to change your avatar.',
+          title: t('EditProfile.errors.permissionRequired', { defaultValue: 'Permission Required' }),
+          message: t('EditProfile.errors.allowPhotoAccess', { defaultValue: 'Please allow photo library access to change your avatar.' }),
           variant: 'warning',
         });
         return;
@@ -128,18 +130,27 @@ export function EditProfileScreen(): JSX.Element {
     } catch (pickErr) {
       devLog.error('[EditProfileScreen] Image pick failed', pickErr);
       HeritageAlert.show({
-        title: 'Photo Upload Failed',
-        message: 'Unable to open photo library. Please try again.',
+        title: t('EditProfile.errors.uploadFailed', { defaultValue: 'Photo Upload Failed' }),
+        message: t('EditProfile.errors.unableToOpenPhotos', { defaultValue: 'Unable to open photo library. Please try again.' }),
         variant: 'error',
       });
     }
-  }, [updateProfileData]);
+  }, [t, updateProfileData]);
 
   const handleSave = useCallback(async () => {
     if (!displayName.trim()) {
       HeritageAlert.show({
-        title: 'Name Required',
-        message: 'Please enter a display name.',
+        title: t('EditProfile.errors.nameRequired', { defaultValue: 'Name Required' }),
+        message: t('EditProfile.errors.enterName', { defaultValue: 'Please enter a display name.' }),
+        variant: 'warning',
+      });
+      return;
+    }
+
+    if (displayName.trim().length > 100) {
+      HeritageAlert.show({
+        title: t('EditProfile.errors.nameTooLong', { defaultValue: 'Name Too Long' }),
+        message: t('EditProfile.errors.nameLimit', { defaultValue: 'Display name must be 100 characters or less.' }),
         variant: 'warning',
       });
       return;
@@ -210,8 +221,8 @@ export function EditProfileScreen(): JSX.Element {
       }
 
       HeritageAlert.show({
-        title: 'Save Failed',
-        message: 'Could not save profile. Please try again.',
+        title: t('EditProfile.errors.saveFailed', { defaultValue: 'Save Failed' }),
+        message: t('EditProfile.errors.saveFailedMsg', { defaultValue: 'Could not save profile. Please try again.' }),
         variant: 'error',
       });
     } finally {
@@ -228,6 +239,7 @@ export function EditProfileScreen(): JSX.Element {
     profile?.id,
     refetch,
     router,
+    t,
     updateProfileData,
     uploadProfileAvatar,
   ]);
@@ -245,7 +257,7 @@ export function EditProfileScreen(): JSX.Element {
 
   const birthDateLabel = birthDate
     ? birthDate.toLocaleDateString()
-    : 'Select your birthday';
+    : t('EditProfile.birthdayPlaceholder', { defaultValue: 'Select your birthday' });
 
   const openDatePicker = () => {
     setShowDatePicker(true);
@@ -253,7 +265,7 @@ export function EditProfileScreen(): JSX.Element {
 
   return (
     <View style={styles.root}>
-      <HeritageHeader title="Edit Profile" showBack />
+      <HeritageHeader title={t('EditProfile.title', { defaultValue: 'Edit Profile' })} showBack />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}>
@@ -277,7 +289,7 @@ export function EditProfileScreen(): JSX.Element {
               </View>
             )}
             <AppText style={[styles.avatarHint, { color: colors.textMuted }]}>
-              Tap to change photo
+              {t('EditProfile.tapToChange', { defaultValue: 'Tap to change photo' })}
             </AppText>
           </Pressable>
 
@@ -286,7 +298,7 @@ export function EditProfileScreen(): JSX.Element {
             {/* Display Name */}
             <View style={styles.fieldContainer}>
               <AppText style={[styles.fieldLabel, { color: colors.onSurface }]}>
-                Display Name
+                {t('EditProfile.displayName', { defaultValue: 'Display Name' })}
               </AppText>
               <TextInput
                 style={[
@@ -299,17 +311,18 @@ export function EditProfileScreen(): JSX.Element {
                 ]}
                 value={displayName}
                 onChangeText={setDisplayName}
-                placeholder="Enter your name"
+                placeholder={t('EditProfile.displayNamePlaceholder', { defaultValue: 'Enter your name' })}
                 placeholderTextColor={`${colors.onSurface}40`}
                 autoCapitalize="words"
                 returnKeyType="done"
+                maxLength={100}
               />
             </View>
 
             {/* Birthday */}
             <View style={styles.fieldContainer}>
               <AppText style={[styles.fieldLabel, { color: colors.onSurface }]}>
-                Birthday
+                {t('EditProfile.birthday', { defaultValue: 'Birthday' })}
               </AppText>
               <Pressable
                 onPress={openDatePicker}
@@ -327,7 +340,7 @@ export function EditProfileScreen(): JSX.Element {
             {/* Language */}
             <View style={styles.fieldContainer}>
               <AppText style={[styles.fieldLabel, { color: colors.onSurface }]}>
-                Language
+                {t('EditProfile.language', { defaultValue: 'Language' })}
               </AppText>
               <Pressable
                 onPress={handleLanguagePress}
@@ -343,7 +356,7 @@ export function EditProfileScreen(): JSX.Element {
             {/* Font Size */}
             <View style={styles.fontSizeSection}>
               <AppText style={[styles.fieldLabel, { color: colors.onSurface }]}>
-                Font Size
+                {t('EditProfile.fontSize', { defaultValue: 'Font Size' })}
               </AppText>
               <View style={styles.chipGroup}>
                 {FONT_SCALE_LABELS.map((label, index) => (
@@ -363,7 +376,9 @@ export function EditProfileScreen(): JSX.Element {
                         fontSize: Math.round(14 * (typography.body / 24)),
                         fontWeight: index === fontScaleIndex ? '700' : '400',
                       }}>
-                      {label}
+                      {t(`Settings.displayAccessibility.fontSizeOptions.${label.toLowerCase().replace(' ', '')}`, {
+                        defaultValue: label,
+                      })}
                     </AppText>
                   </Pressable>
                 ))}
@@ -372,7 +387,7 @@ export function EditProfileScreen(): JSX.Element {
           </View>
 
           <HeritageButton
-            title={saving ? 'Saving...' : 'Save Changes'}
+            title={saving ? t('EditProfile.saving', { defaultValue: 'Saving...' }) : t('EditProfile.saveChanges', { defaultValue: 'Save Changes' })}
             onPress={handleSave}
             variant="primary"
             fullWidth
@@ -393,7 +408,7 @@ export function EditProfileScreen(): JSX.Element {
         value={birthDate}
         minimumDate={new Date(1920, 0, 1)}
         maximumDate={new Date()}
-        title="Select Birthday"
+        title={t('EditProfile.selectBirthday', { defaultValue: 'Select Birthday' })}
         onCancel={() => setShowDatePicker(false)}
         onConfirm={(nextDate) => {
           setBirthDate(nextDate);

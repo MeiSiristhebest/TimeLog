@@ -18,7 +18,6 @@ export function AccountSecurityScreen(): JSX.Element {
   const {
     isLoading,
     profileLabel,
-    roleLabel,
     isSigningOut,
     isDeletingAccount,
     confirmSignOut,
@@ -41,13 +40,6 @@ export function AccountSecurityScreen(): JSX.Element {
             iconName="person-circle-outline"
             iconColor={colors.sageGreen}
             onPress={() => actions.navigateTo(APP_ROUTES.SETTINGS_EDIT_PROFILE)}
-          />
-          <SettingsRow
-            label={t('Settings.accountSecurity.sections.profile.role')}
-            value={roleLabel}
-            iconName="id-card-outline"
-            iconColor={colors.amberCustom}
-            onPress={() => actions.navigateTo(APP_ROUTES.SETTINGS_ROLE)}
             isLast
           />
         </SettingsSection>

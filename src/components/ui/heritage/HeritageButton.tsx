@@ -273,8 +273,11 @@ export function HeritageButton({
             )}
             <AppText
               variant="label"
-              style={[sizeStyles.text, variantStyles.text, textStyle]}
-              className={styles.text}>
+              style={[{ flexShrink: 1 }, sizeStyles.text, variantStyles.text, textStyle]}
+              className={styles.text}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {title}
             </AppText>
             {iconRight && (

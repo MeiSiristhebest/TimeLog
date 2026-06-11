@@ -325,7 +325,7 @@ export function useHomeLogic() {
       dailyGoal,
       weather,
       weatherIcon: weatherIconName,
-      storyCategoryTitle: getCategoryTitle(tts.currentQuestion?.category),
+      storyCategoryTitle: getCategoryTitle(tts.currentQuestion?.category, t),
       activities,
       hasUnread,
       isOnline: isSyncOnline,

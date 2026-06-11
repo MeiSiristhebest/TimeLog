@@ -13,6 +13,11 @@ import {
   PERMISSION_KIND,
 } from '@/features/permissions/permissionPolicy';
 import { requestNotificationPermission } from '@/lib/notifications';
+import { useI18nStore } from '@/lib/i18n/i18nStore';
+
+const t = (key: string, defaultValue: string) => {
+  return useI18nStore.getState().getTranslation(key) || defaultValue;
+};
 
 /**
  * Request microphone permission with a rationale pre-dialog.
@@ -25,19 +30,21 @@ export async function requestMicrophoneWithRationale(): Promise<boolean> {
 
   return new Promise((resolve) => {
     HeritageAlert.show({
-      title: 'Microphone Access',
-      message:
-        'TimeLog needs microphone access to record your stories. Your recordings stay on your device until you choose to share them.',
+      title: t('Permissions.microphone.title', 'Microphone Access'),
+      message: t(
+        'Permissions.microphone.message',
+        'TimeLog needs microphone access to record your stories. Your recordings stay on your device until you choose to share them.'
+      ),
       variant: 'info',
       primaryAction: {
-        label: 'Allow Microphone',
+        label: t('Permissions.microphone.allow', 'Allow Microphone'),
         onPress: async () => {
           const { granted } = await requestRecordingPermissionsAsync();
           resolve(granted);
         },
       },
       secondaryAction: {
-        label: 'Not Now',
+        label: t('Permissions.microphone.deny', 'Not Now'),
         onPress: () => resolve(false),
       },
     });
@@ -94,18 +101,21 @@ export async function requestMediaLibraryWithRationale(
 
   return new Promise((resolve) => {
     HeritageAlert.show({
-      title: 'Photo Library Access',
-      message: 'TimeLog needs photo access to let you choose a profile picture.',
+      title: t('Permissions.photos.title', 'Photo Library Access'),
+      message: t(
+        'Permissions.photos.message',
+        'TimeLog needs photo access to let you choose a profile picture.'
+      ),
       variant: 'info',
       primaryAction: {
-        label: 'Allow Photos',
+        label: t('Permissions.photos.allow', 'Allow Photos'),
         onPress: async () => {
           const { granted } = await requestPermission();
           resolve(granted);
         },
       },
       secondaryAction: {
-        label: 'Not Now',
+        label: t('Permissions.photos.deny', 'Not Now'),
         onPress: () => resolve(false),
       },
     });

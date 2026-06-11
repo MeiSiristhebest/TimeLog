@@ -36,7 +36,7 @@ export function SettingsHomeScreen(): JSX.Element {
   const displayName =
     profile?.displayName?.trim() ||
     (isProfileLoading
-      ? t('Gallery.categories.default', { defaultValue: 'Storyteller' })
+      ? t('Common.storyteller', { defaultValue: 'Storyteller' })
       : t('Settings.home.profileTitle', { defaultValue: 'Set up profile' }));
   const avatarUrl = profile?.avatarUrl?.trim() || profile?.avatarUri?.trim() || undefined;
 

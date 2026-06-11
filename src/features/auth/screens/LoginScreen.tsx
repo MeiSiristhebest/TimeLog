@@ -56,6 +56,7 @@ export default function LoginScreen(): JSX.Element {
               accessibilityLabel={t('Auth.login.email', { defaultValue: 'Email Address' })}
               accessibilityHint={t('Auth.login.emailAccessibilityHint', { defaultValue: 'Please enter your email address' })}
               leftIcon="mail-outline"
+              maxLength={255}
             />
           </View>
 
@@ -70,6 +71,7 @@ export default function LoginScreen(): JSX.Element {
               accessibilityHint={t('Auth.login.passwordAccessibilityHint', { defaultValue: 'Please enter your password' })}
               leftIcon="lock-closed-outline"
               showPasswordToggle
+              maxLength={72}
             />
           </View>
 
@@ -98,6 +100,12 @@ export default function LoginScreen(): JSX.Element {
                 </AppText>
               </Pressable>
             </View>
+
+            <HeritageButton
+              title={t('Auth.loginRecovery.loginWithRecovery', { defaultValue: 'Login with Recovery Code' })}
+              onPress={() => router.push(APP_ROUTES.LOGIN_RECOVERY)}
+              variant="secondary"
+            />
 
             <HeritageButton
               title={t('Auth.login.forgotPassword', { defaultValue: 'Forgot Password?' })}

@@ -46,13 +46,6 @@ export default function SettingsLayout(): JSX.Element {
         }}
       />
       <Stack.Screen
-        name="family-sharing"
-        options={{
-          headerShown: false,
-          title: 'Family Sharing',
-        }}
-      />
-      <Stack.Screen
         name="display-accessibility"
         options={{
           headerShown: false,

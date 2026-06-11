@@ -1,4 +1,12 @@
 {
+  "Common": {
+    "error": "Error",
+    "failedToContinue": "Failed to continue. Please try again.",
+    "unableToContinue": "Unable to continue",
+    "ok": "OK",
+    "cancel": "Cancel",
+    "storyteller": "Storyteller"
+  },
   "Welcome": {
     "headline": "Preserve your voice for your family.",
     "body": "Your stories are a legacy. Start recording them today in your own words.",
@@ -7,9 +15,9 @@
     "signIn": "Sign In"
   },
   "TabBar": {
-    "record": "Record",
-    "listen": "Listen",
-    "me": "Me"
+    "index": "Record",
+    "gallery": "Listen",
+    "settings": "Me"
   },
   "Gallery": {
     "title": "My Stories",
@@ -30,7 +38,8 @@
       "childhood": "Childhood",
       "general": "General",
       "family": "Family",
-      "career": "Career"
+      "career": "Career",
+      "default": "My Story"
     },
     "sort": {
       "modalTitle": "Sort Stories",
@@ -42,8 +51,14 @@
     },
     "detail": {
       "comments": "Comments",
-      "back": "Back"
+      "back": "Back",
+      "dateAtTime": "{date} at {time}"
     },
+    "storyWithDate": "Story {date}",
+    "memories": "My Memories",
+    "timeCapsule": "Time Capsule",
+    "exportPdfTitle": "Export Memories PDF",
+    "exportDate": "Export Date: {date}",
     "edit": {
       "title": "Edit Story",
       "cancel": "Cancel",
@@ -255,7 +270,13 @@
           "deviceCode": "Device Code"
         }
       },
-      "deleteAccount": "Delete Account"
+      "deleteAccount": "Delete Account",
+      "signOutWarningTitle": "Warning: Temporary Account",
+      "signOutWarningMsg": "You are currently logged in as a temporary storyteller. If you switch accounts or log out, you will lose access to your local stories unless you have saved your Recovery Code or completed account setup.",
+      "signOutWarningUpgrade": "Complete Setup",
+      "signOutWarningSaveCode": "Save Recovery Code",
+      "signOutWarningConfirm": "Continue Anyway",
+      "signOutWarningCancel": "Cancel"
     },
     "aboutHelp": {
       "support": {
@@ -276,7 +297,41 @@
       }
     },
     "displayAccessibility": {
-      "fontSize": "Font Size"
+      "fontSize": "Font Size",
+      "done": "Done",
+      "previewSent": "Preview your font size",
+      "previewReceived1": "Drag the slider below to adjust text size.",
+      "previewReceived2": "This changes reading and chat text size across the app instantly.",
+      "helperText": "Changes apply immediately to reading and chat text.",
+      "fontSizeOptions": {
+        "small": "Small",
+        "standard": "Standard",
+        "large": "Large",
+        "extralarge": "Extra Large",
+        "huge": "Huge",
+        "massive": "Massive",
+        "maximum": "Maximum"
+      },
+      "themeOptions": {
+        "system": "System",
+        "light": "Light",
+        "dark": "Dark"
+      }
+    },
+    "aboutTimeLog": {
+      "appSection": "APP",
+      "appVersion": "App Version",
+      "description": "TimeLog helps seniors capture life stories with simple voice-first recording and family sharing."
+    },
+    "dailyGoal": {
+      "minutesValue": "{minutes} min",
+      "minutes": "{count} minutes",
+      "summaryLabel": "Target recording time per day",
+      "chooseGoal": "Choose a goal",
+      "optionLabel": "{minutes} minutes",
+      "footer": "The home screen shows today's progress beside the weather. Changing this target also updates today's goal.",
+      "gentleHabit": "Gentle daily habit",
+      "deeperStories": "More time for deeper stories"
     }
   },
   "Topics": {
@@ -327,8 +382,10 @@
       "connectionError": "Connection error. Recording locally.",
       "assistant": "AI Assistant",
       "you": "You",
+      "ai": "AI",
       "status": "Status",
-      "tellMeMore": "Tell me more about one meaningful memory today."
+      "tellMeMore": "Tell me more about one meaningful memory today.",
+      "waitingForConversation": "Waiting for conversation to begin..."
     },
     "controls": {
       "holdToEnd": "Hold to End",
@@ -406,7 +463,12 @@
       "forgotPassword": "Forgot Password?",
       "backToHome": "Back to Home",
       "emailAccessibilityHint": "Please enter your email address",
-      "passwordAccessibilityHint": "Please enter your password"
+      "passwordAccessibilityHint": "Please enter your password",
+      "success": "Login successful.",
+      "error": "Something went wrong. Please try again.",
+      "resetSuccess": "Check Your Email",
+      "resetSuccessMsg": "We've sent you a password reset link.",
+      "resetError": "Unable to send reset email right now."
     },
     "signup": {
       "title": "Create Account",
@@ -423,7 +485,11 @@
       "signUp": "Sign Up",
       "alreadyAccount": "Already have an account? ",
       "signIn": "Sign In",
-      "back": "Back"
+      "back": "Back",
+      "displayNameRequired": "Display name is required.",
+      "displayNameTooLong": "Display name must be 100 characters or less.",
+      "successTitle": "Registration Successful",
+      "successMsg": "Please check your email to verify your account."
     },
     "recoveryCode": {
       "title": "Recovery Code",
@@ -436,7 +502,26 @@
       "generating": "Generating...",
       "copy": "Copy",
       "share": "Share",
-      "warning": "Keep this code secure. Anyone with this code can potentially access the senior's account."
+      "warning": "Keep this code secure. Anyone with this code can potentially access the senior's account.",
+      "alerts": {
+        "generate": {
+          "title": "Generate New Code?",
+          "message": "This will invalidate the previous recovery code.",
+          "confirm": "Generate",
+          "cancel": "Cancel"
+        },
+        "share": {
+          "message": "TimeLog Recovery Code: {code}\n\nUse this code to restore access to the senior's device if it's lost or replaced."
+        },
+        "failedGenerate": "Failed to generate code",
+        "failedLoadTitle": "Unable to load code"
+      },
+      "errors": {
+        "signInRequired": "Please sign in to manage your recovery code.",
+        "default": "Something went wrong while handling your recovery code. Please try again."
+      },
+      "toastUpdated": "Recovery code updated",
+      "toastCopied": "Code copied to clipboard"
     },
     "deviceCode": {
       "title": "Connect Device",
@@ -523,6 +608,96 @@
       "alertGotIt": "Got it, Continue",
       "alertFailedTitle": "Upgrade Failed",
       "alertFailedDefault": "Failed to upgrade account. Please try again."
+    },
+    "switchAccount": {
+      "title": "Switch Account",
+      "subtitle": "Choose an account to switch to on this device",
+      "addAccount": "Log In with Another Account",
+      "createNew": "Create New Storyteller",
+      "tempAccount": "Temporary Account",
+      "rememberedTitle": "Remembered on this Device",
+      "removeConfirmTitle": "Forget Account?",
+      "removeConfirmMsg": "Are you sure you want to remove {name} from the list of remembered accounts on this device?",
+      "removeConfirmAction": "Forget",
+      "removeConfirmCancel": "Cancel"
+    },
+    "loginRecovery": {
+      "title": "Account Recovery",
+      "subtitle": "Restore access to an existing storyteller using a recovery code",
+      "codeLabel": "Enter Recovery Code",
+      "codePlaceholder": "REC-XXXXXX",
+      "emailLabel": "New Email Address",
+      "emailPlaceholder": "elder@example.com",
+      "passwordLabel": "Set Password",
+      "passwordPlaceholder": "Minimum 6 characters",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter password",
+      "buttonLabel": "Recover Account",
+      "warning": "Using a recovery code will upgrade the temporary account to a permanent email/password account so you don't lose access again.",
+      "successTitle": "Account Recovered",
+      "successMsg": "The account has been successfully recovered and secured! Please check your email to confirm the address.",
+      "errorInvalid": "The recovery code entered is invalid or expired.",
+      "loginWithRecovery": "Login with Recovery Code"
+    },
+    "errors": {
+      "unknown": "An unknown error occurred.",
+      "passwordSame": "Your new password must be different from your temporary password.",
+      "invalidEmail": "The email address format is not valid. Please check and try again.",
+      "userExists": "This email address is already registered to another account.",
+      "passwordTooShort": "Password must be at least 6 characters long.",
+      "emailNotAllowed": "This email domain is not allowed for registration.",
+      "rateLimit": "You have reached the limit for generating codes. Please try again in an hour.",
+      "rpcMissing": "Device sign-in is temporarily unavailable. Please try again later.",
+      "permissionDenied": "You do not have permission to manage family devices.",
+      "invalidUuid": "Invalid device identifier provided.",
+      "connectionError": "A connection error occurred while managing devices. Please try again."
+    }
+  },
+  "EditProfile": {
+    "title": "Edit Profile",
+    "tapToChange": "Tap to change photo",
+    "displayName": "Display Name",
+    "displayNamePlaceholder": "Enter your name",
+    "birthday": "Birthday",
+    "birthdayPlaceholder": "Select your birthday",
+    "language": "Language",
+    "fontSize": "Font Size",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "selectBirthday": "Select Birthday",
+    "errors": {
+      "featureNotAvailable": "Feature Not Available",
+      "avatarRequiresDevBuild": "Avatar upload requires a development build.",
+      "permissionRequired": "Permission Required",
+      "allowPhotoAccess": "Please allow photo library access to change your avatar.",
+      "uploadFailed": "Photo Upload Failed",
+      "unableToOpenPhotos": "Unable to open photo library. Please try again.",
+      "nameRequired": "Name Required",
+      "enterName": "Please enter a display name.",
+      "nameTooLong": "Name Too Long",
+      "nameLimit": "Display name must be 100 characters or less.",
+      "saveFailed": "Save Failed",
+      "saveFailedMsg": "Could not save profile. Please try again."
+    }
+  },
+  "Permissions": {
+    "microphone": {
+      "title": "Microphone Access",
+      "message": "TimeLog needs microphone access to record your stories. Your recordings stay on your device until you choose to share them.",
+      "allow": "Allow Microphone",
+      "deny": "Not Now"
+    },
+    "notifications": {
+      "title": "Stay Connected",
+      "message": "Get notified when family members listen to your stories or leave comments.",
+      "allow": "Enable Notifications",
+      "deny": "Maybe Later"
+    },
+    "photos": {
+      "title": "Photo Library Access",
+      "message": "TimeLog needs photo access to let you choose a profile picture.",
+      "allow": "Allow Photos",
+      "deny": "Not Now"
     }
   }
 }

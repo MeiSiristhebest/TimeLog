@@ -6,6 +6,9 @@ import { setCloudAiEnabled } from '@/lib/cloudPolicy';
 import { syncQueueService } from '@/lib/sync-engine/queue';
 import { useAuthStore } from '../store/authStore';
 import { devLog } from '@/lib/devLogger';
+import { syncStoriesDown, backfillLegacyMetadata } from '@/features/story-gallery/services/storySyncDownService';
+
+import { clearStoredDeviceCode } from './deviceCodeStorage';
 
 // Re-export RateLimitError for consumers
 export { RateLimitError };
@@ -44,6 +47,17 @@ export async function signInWithEmailPassword(
     setCloudAiEnabled(true);
     await syncQueueService.reEnqueueOfflineRecordings();
     devLog.info('[authService] Cloud AI enabled and offline recordings enqueued on login');
+    if (data.session?.user?.id) {
+      const uid = data.session.user.id;
+      void syncStoriesDown(uid);
+      // After sync-down, backfill any legacy recordings missing remote file_path/transcription
+      void backfillLegacyMetadata(uid).then(() => {
+        // Kick the sync queue to immediately process the backfill patch items
+        import('@/lib/sync-engine/store').then(({ useSyncStore }) => {
+          useSyncStore.getState().processQueue().catch(() => {});
+        });
+      });
+    }
   } catch (syncError) {
     devLog.warn('[authService] Failed to enqueue offline recordings on login:', syncError);
   }
@@ -89,6 +103,9 @@ export async function signUpWithEmailPassword(
     setCloudAiEnabled(true);
     await syncQueueService.reEnqueueOfflineRecordings();
     devLog.info('[authService] Cloud AI enabled and offline recordings enqueued on signup');
+    if (data.user?.id) {
+      void syncStoriesDown(data.user.id);
+    }
   } catch (syncError) {
     devLog.warn('[authService] Failed to enqueue offline recordings on signup:', syncError);
   }
@@ -124,5 +141,6 @@ export async function signOut(): Promise<void> {
   if (error) {
     throw new Error(mapAuthError(error));
   }
+  clearStoredDeviceCode();
   useAuthStore.getState().setUnauthenticated();
 }

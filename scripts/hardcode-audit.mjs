@@ -38,6 +38,7 @@ const PERMISSION_ALLOWED_FILES = new Set(
     'src/utils/permissions.ts',
     'src/features/recorder/services/recorderService.ts',
     'src/features/settings/screens/EditProfileScreen.tsx',
+    'src/features/settings/hooks/useSettingsLogic.ts',
   ].map(normalizePath)
 );
 

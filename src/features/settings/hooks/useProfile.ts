@@ -100,21 +100,24 @@ export function useProfile(): UseProfileResult {
 
     try {
       let local = await getLocalProfile(userId);
+      const isAnon = await isAnonymousUser();
       if (!local) {
         local = await ensureLocalProfile(userId, {
           displayName: 'Storyteller',
           role: 'storyteller',
-          isAnonymous: true,
+          isAnonymous: isAnon,
           language: systemLocale,
           fontScaleIndex: DEFAULT_FONT_SCALE_INDEX,
         });
       } else {
         const needsLanguage = !local.language;
         const needsFontScale = local.fontScaleIndex === null || local.fontScaleIndex === undefined;
-        if (needsLanguage || needsFontScale) {
+        const needsAnonUpdate = local.isAnonymous !== isAnon;
+        if (needsLanguage || needsFontScale || needsAnonUpdate) {
           local = await updateLocalProfile(userId, {
             language: needsLanguage ? systemLocale : local.language,
             fontScaleIndex: needsFontScale ? DEFAULT_FONT_SCALE_INDEX : local.fontScaleIndex,
+            isAnonymous: isAnon,
           });
         }
       }
@@ -175,10 +178,11 @@ export function useProfile(): UseProfileResult {
       try {
         const existing = await getLocalProfile(userId);
         if (!existing) {
+          const isAnon = await isAnonymousUser();
           await ensureLocalProfile(userId, {
             displayName: updates.displayName ?? 'Storyteller',
             role: updates.role ?? 'storyteller',
-            isAnonymous: currentIsAnonymous,
+            isAnonymous: isAnon,
             language: updates.language ?? systemLocale,
             fontScaleIndex: updates.fontScaleIndex ?? DEFAULT_FONT_SCALE_INDEX,
           });
@@ -265,10 +269,11 @@ export function useProfile(): UseProfileResult {
       try {
         const existing = await getLocalProfile(userId);
         if (!existing) {
+          const isAnon = await isAnonymousUser();
           await ensureLocalProfile(userId, {
             displayName: 'Storyteller',
             role: 'storyteller',
-            isAnonymous: currentIsAnonymous,
+            isAnonymous: isAnon,
             language: systemLocale,
             fontScaleIndex: DEFAULT_FONT_SCALE_INDEX,
           });

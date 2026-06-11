@@ -69,6 +69,7 @@ export function LanguageSelectScreen(): JSX.Element {
             placeholderTextColor={colors.textMuted}
             className="flex-1 text-base"
             style={{ color: colors.onSurface }}
+            maxLength={50}
           />
         </View>
       </View>

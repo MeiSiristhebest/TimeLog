@@ -23,6 +23,7 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { STORY_ACCESSIBILITY } from '../constants';
 import { AppText } from '@/components/ui/AppText';
 import { View, TouchableOpacity } from 'react-native';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 type StoryCardProps = {
   id: string;
@@ -74,9 +75,15 @@ export function StoryCard({
   onToggleFavorite,
 }: StoryCardProps): JSX.Element {
   const { colors } = useHeritageTheme();
-  const formattedDate = formatDate(date);
+  const { t, locale } = useTranslation();
+  const formattedDate = formatDate(date, locale);
   const formattedDuration = formatDuration(durationMs);
-  const displayTitle = title || `Story ${date.toLocaleDateString('en-US')}`;
+  const displayTitle =
+    title ||
+    t('Gallery.storyWithDate', {
+      date: date.toLocaleDateString(locale),
+      defaultValue: `Story ${date.toLocaleDateString(locale)}`,
+    });
 
   const isUnavailable = isOffline && !isPlayable;
 

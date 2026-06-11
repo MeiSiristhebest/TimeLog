@@ -11,16 +11,24 @@ describe('date-utils', () => {
   });
 
   describe('formatDate', () => {
-    it('formats date to English absolute date format', () => {
+    it('formats date to English absolute date format by default', () => {
       const date = new Date('2026-01-15T15:00:00');
       const formatted = formatDate(date);
 
       expect(formatted).toContain('2026');
       expect(formatted).toContain('15');
-      // For en-US locale, year should be preceded/followed by month/day like January 15, 2026
       expect(formatted).toMatch(/2026/);
       expect(formatted).toMatch(/January/);
       expect(formatted).toMatch(/15/);
+    });
+
+    it('formats date to Chinese absolute date format when locale is zh-CN', () => {
+      const date = new Date('2026-01-15T15:00:00');
+      const formatted = formatDate(date, 'zh-CN');
+
+      expect(formatted).toContain('2026');
+      expect(formatted).toContain('15');
+      expect(formatted).toMatch(/1月/);
     });
   });
 });

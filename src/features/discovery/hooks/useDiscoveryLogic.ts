@@ -14,6 +14,7 @@ import { devLog } from '@/lib/devLogger';
 import type { QuestionCategory } from '@/db/schema/familyQuestions';
 import { QUESTION_CATEGORIES } from '@/db/schema/familyQuestions';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export function getRandomNextIndex(currentIndex: number, deckSize: number): number {
   if (deckSize <= 1 || currentIndex < 0) {
@@ -31,6 +32,7 @@ export function useDiscoveryLogic() {
   const router = useRouter();
   const theme = useHeritageTheme();
   const sessionUserId = useAuthStore((state) => state.sessionUserId);
+  const { locale } = useTranslation();
 
   // State
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -41,7 +43,7 @@ export function useDiscoveryLogic() {
   // F3.2: Category filter state
   const [selectedCategories, setSelectedCategories] = useState<QuestionCategory[]>([]);
 
-  // Load questions from Supabase on mount and when categories change
+  // Load questions from Supabase on mount and when categories or locale changes
   useEffect(() => {
     async function loadQuestions() {
       setIsLoading(true);
@@ -68,7 +70,7 @@ export function useDiscoveryLogic() {
       }
     }
     loadQuestions();
-  }, [selectedCategories, sessionUserId]); // Re-load when categories or user changes
+  }, [selectedCategories, sessionUserId, locale]); // Re-load when categories, user or language changes
 
   const currentCard = deck[currentIndex];
 

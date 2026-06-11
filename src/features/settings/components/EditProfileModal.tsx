@@ -251,6 +251,7 @@ export function EditProfileModal({
               placeholderTextColor={`${theme.colors.onSurface}40`}
               autoCapitalize="words"
               returnKeyType="done"
+              maxLength={100}
             />
           </View>
 

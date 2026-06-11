@@ -1,7 +1,44 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { useSyncStore } from '@/lib/sync-engine/store';
 // Import type for safety
 import type { SyncQueueItem } from '@/types/entities';
+
+jest.mock('@/db/client', () => {
+  const mockLimit = jest.fn(async () => [
+    {
+      id: 'rec-1',
+      title: 'Test Local Story',
+      durationMs: 5000,
+      startedAt: Date.now(),
+      endedAt: Date.now(),
+      syncStatus: 'queued',
+      transcription: null,
+    },
+  ]);
+  const mockOrderBy = jest.fn(async () => []);
+  const mockWhere = jest.fn(() => ({
+    limit: mockLimit,
+    orderBy: mockOrderBy,
+  }));
+  const mockFrom = jest.fn(() => ({
+    where: mockWhere,
+  }));
+  const mockSelect = jest.fn(() => ({
+    from: mockFrom,
+  }));
+
+  return {
+    db: {
+      select: mockSelect,
+      update: jest.fn(() => ({
+        set: jest.fn(() => ({
+          where: jest.fn(async () => undefined),
+        })),
+      })),
+    },
+  };
+});
+
+import { useSyncStore } from '@/lib/sync-engine/store';
 
 const mockMaybeSingle = jest.fn(async () => ({ data: { id: 'rec-1' }, error: null }));
 const mockSelect = jest.fn(() => ({ maybeSingle: mockMaybeSingle }));

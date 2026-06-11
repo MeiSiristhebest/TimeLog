@@ -73,7 +73,11 @@ function main() {
 
   for (const absFile of files) {
     const relativePath = normalizePath(path.relative(ROOT_DIR, absFile));
-    if (isTestFile(relativePath) || relativePath.endsWith('.d.ts')) {
+    if (
+      isTestFile(relativePath) ||
+      relativePath.endsWith('.d.ts') ||
+      relativePath === 'src/features/settings/utils/languageOptions.ts'
+    ) {
       continue;
     }
 

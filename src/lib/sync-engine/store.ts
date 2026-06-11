@@ -8,9 +8,9 @@ import { create } from 'zustand';
 import { AppState, AppStateStatus, NativeEventSubscription } from 'react-native';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { onlineManager } from '@tanstack/react-query';
-import { eq } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { audioRecordings } from '@/db/schema';
+import { audioRecordings, transcriptSegments } from '@/db/schema';
 import { supabase } from '@/lib/supabase';
 import { isCloudAiEnabledLocally } from '@/lib/cloudPolicy';
 import type {
@@ -63,13 +63,23 @@ const transport = new SyncTransport();
 const AUDIO_STORAGE_BUCKET = 'audio-recordings';
 
 const audioRecordingFieldMap: Record<string, string> = {
+  // Core metadata
   title: 'title',
   topicId: 'topic_id',
   transcription: 'transcription',
   coverImagePath: 'cover_image_path',
+  isFavorite: 'is_favorite',
+  // Timestamps
   deletedAt: 'deleted_at',
   startedAt: 'started_at',
   endedAt: 'ended_at',
+  // File & sync fields (used by backfill)
+  filePath: 'file_path',
+  syncStatus: 'sync_status',
+  durationMs: 'duration_ms',
+  sizeBytes: 'size_bytes',
+  checksumMd5: 'checksum_md5',
+  deviceId: 'device_id',
 };
 
 function toSupabaseAudioRecordingPatch(updates: Record<string, unknown>): Record<string, unknown> {
@@ -81,12 +91,18 @@ function toSupabaseAudioRecordingPatch(updates: Record<string, unknown>): Record
       (Object.values(audioRecordingFieldMap).includes(key) ? key : null);
 
     if (supabaseKey) {
-      // Correctly identify all timestamp fields (local camelCase or remote snake_case)
+      // Identify all timestamp fields (camelCase ending in 'At' / 'at', or containing '_at')
       const isTimestampField =
-        key.toLowerCase().includes('at') || supabaseKey.toLowerCase().includes('_at');
+        key.toLowerCase().endsWith('at') ||
+        key.toLowerCase().includes('_at') ||
+        supabaseKey.toLowerCase().includes('_at');
 
       if (isTimestampField && typeof value === 'number') {
+        // Epoch ms → ISO string
         patch[supabaseKey] = new Date(value).toISOString();
+      } else if (isTimestampField && typeof value === 'string' && value.includes('T')) {
+        // Already an ISO string – pass through as-is
+        patch[supabaseKey] = value;
       } else {
         patch[supabaseKey] = value;
       }
@@ -193,13 +209,18 @@ async function recordDeleteFileMetric(params: {
 type AudioRecordingRow = typeof audioRecordings.$inferSelect;
 
 async function getLocalRecordingSnapshot(recordingId: string): Promise<AudioRecordingRow | null> {
-  const rows = await db
-    .select()
-    .from(audioRecordings)
-    .where(eq(audioRecordings.id, recordingId))
-    .limit(1);
+  try {
+    const rows = await db
+      .select()
+      .from(audioRecordings)
+      .where(eq(audioRecordings.id, recordingId))
+      .limit(1);
 
-  return rows[0] ?? null;
+    return rows?.[0] ?? null;
+  } catch (error) {
+    devLog.warn('[sync-store] Failed to get local recording snapshot', error);
+    return null;
+  }
 }
 
 // Track columns that are known to be missing on the remote Supabase instance
@@ -551,15 +572,61 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
                 await decryptedUpload.cleanup();
               }
 
-              // Keep cloud row storage path aligned with synced file.
+              // Fetch local recording and compile transcription from segments if not already set
+              const localRecording = await getLocalRecordingSnapshot(payload.recordingId);
+              let compiledTranscription = localRecording?.transcription;
+
+              if (localRecording && !compiledTranscription) {
+                try {
+                  const segments = await db
+                    .select()
+                    .from(transcriptSegments)
+                    .where(eq(transcriptSegments.storyId, payload.recordingId))
+                    .orderBy(asc(transcriptSegments.segmentIndex));
+
+                  if (segments.length > 0) {
+                    const finalSegments = segments.filter((segment) => segment.isFinal && segment.text.trim().length > 0);
+                    const source =
+                      finalSegments.length > 0
+                        ? finalSegments
+                        : segments.filter((segment) => segment.text.trim().length > 0);
+
+                    compiledTranscription = source.map((segment) => segment.text.trim()).join('\n\n').trim();
+
+                    if (compiledTranscription) {
+                      await db
+                        .update(audioRecordings)
+                        .set({ transcription: compiledTranscription })
+                        .where(eq(audioRecordings.id, payload.recordingId));
+                      devLog.info(`[sync-store] Auto-compiled and saved local transcription for ${payload.recordingId}`);
+                    }
+                  }
+                } catch (transcribeError) {
+                  devLog.warn('[sync-store] Failed to compile local transcription:', transcribeError);
+                }
+              }
+
+              // Build the full remote updates object to push to remote
+              const remoteUpdates: Record<string, any> = {
+                file_path: storagePath,
+                sync_status: 'synced',
+                checksum_md5: localChecksum,
+                ended_at: localRecording?.endedAt ? new Date(localRecording.endedAt).toISOString() : new Date().toISOString(),
+                duration_ms: localRecording?.durationMs ?? 0,
+                size_bytes: localRecording?.sizeBytes ?? 0,
+                started_at: localRecording?.startedAt ? new Date(localRecording.startedAt).toISOString() : new Date().toISOString(),
+                title: localRecording?.title ?? null,
+                topic_id: localRecording?.topicId ?? null,
+                device_id: localRecording?.deviceId ?? null,
+                transcription: compiledTranscription ?? null,
+                cover_image_path: localRecording?.coverImagePath ?? null,
+                is_favorite: localRecording?.isFavorite ?? false,
+              };
+
+              // Keep cloud row storage path and full metadata aligned with synced file.
               await updateRemoteAudioRecording(
                 payload.recordingId,
-                {
-                  file_path: storagePath,
-                  sync_status: 'synced',
-                  checksum_md5: localChecksum,
-                  ended_at: new Date().toISOString(),
-                },
+                remoteUpdates,
                 {
                   userId: cloudEligibility.userId,
                   allowUpsertFallback: true,
@@ -779,6 +846,21 @@ export const useSyncStore = create<SyncStore>(function useSyncStoreState(set, ge
 
           await get().updateQueueLength();
           get().processQueue();
+
+          // 4. Trigger sync-down and metadata backfill on startup if logged-in user is online
+          const initialNet = await NetInfo.fetch();
+          if (initialNet.isConnected) {
+            const eligibility = await resolveCloudSyncEligibility();
+            if (eligibility.eligible && eligibility.userId) {
+              const { syncStoriesDown, backfillLegacyMetadata } = await import(
+                '@/features/story-gallery/services/storySyncDownService'
+              );
+              void syncStoriesDown(eligibility.userId);
+              void backfillLegacyMetadata(eligibility.userId).then(() => {
+                get().processQueue().catch(() => {});
+              });
+            }
+          }
         } catch (e) {
           devLog.warn('[sync-store] Failed to recovery tasks on startup:', e);
         }

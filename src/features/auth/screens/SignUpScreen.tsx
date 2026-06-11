@@ -58,6 +58,7 @@ export default function SignUpScreen(): JSX.Element {
               autoCapitalize="words"
               placeholder={t('Auth.signup.displayNamePlaceholder', { defaultValue: 'Your Name' })}
               leftIcon="person-outline"
+              maxLength={100}
             />
           </View>
 
@@ -70,6 +71,7 @@ export default function SignUpScreen(): JSX.Element {
               keyboardType="email-address"
               placeholder={t('Auth.signup.emailPlaceholder', { defaultValue: 'you@example.com' })}
               leftIcon="mail-outline"
+              maxLength={255}
             />
           </View>
 
@@ -82,6 +84,7 @@ export default function SignUpScreen(): JSX.Element {
               placeholder={t('Auth.signup.passwordPlaceholder', { defaultValue: '••••••••' })}
               leftIcon="lock-closed-outline"
               showPasswordToggle
+              maxLength={72}
             />
           </View>
 
@@ -94,6 +97,7 @@ export default function SignUpScreen(): JSX.Element {
               placeholder={t('Auth.signup.confirmPasswordPlaceholder', { defaultValue: '••••••••' })}
               leftIcon="shield-checkmark-outline"
               showPasswordToggle
+              maxLength={72}
             />
           </View>
 

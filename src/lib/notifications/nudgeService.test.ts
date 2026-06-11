@@ -49,9 +49,29 @@ jest.mock('@/lib/devLogger', () => ({
   },
 }));
 
+// Mock Drizzle db
+jest.mock('@/db/client', () => ({
+  db: {
+    select: jest.fn(() => ({
+      from: jest.fn(() => ({
+        where: jest.fn(() => Promise.resolve([])),
+      })),
+    })),
+  },
+}));
+
+// Mock notificationSettingsService
+const mockGetNotificationSettings = jest.fn();
+jest.mock('@/lib/notifications/notificationSettingsService', () => ({
+  getNotificationSettings: (...args: any[]) => mockGetNotificationSettings(...args),
+  getDeviceTimeZone: () => 'Asia/Bangkok',
+}));
+
 describe('nudgeService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetNotificationSettings.mockReset();
+    mockGetNotificationSettings.mockResolvedValue(null);
   });
 
   describe('scheduleNudgeNotification', () => {
@@ -79,6 +99,67 @@ describe('nudgeService', () => {
           content: expect.objectContaining({
             title: expect.any(String),
             body: expect.any(String),
+          }),
+        })
+      );
+    });
+  });
+
+  describe('intelligent scheduling', () => {
+    it('should adjust nudge hour when it conflicts with quiet hours', async () => {
+      // Quiet hours: 09:00 to 18:00. Default 10:00 AM falls inside quiet hours.
+      mockGetNotificationSettings.mockResolvedValueOnce({
+        userId: 'user-123',
+        notificationsEnabled: true,
+        gentleRemindersEnabled: true,
+        quietHoursStart: '09:00',
+        quietHoursEnd: '18:00',
+      });
+
+      // No history, default optimalHour is 10:00. It conflicts with 09:00-18:00.
+      // Search: 10 -> 11 -> ... -> 18 (outside). So it should schedule at 18:00.
+      await scheduleNudgeNotification('user-123');
+
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          trigger: expect.objectContaining({
+            hour: 18,
+          }),
+        })
+      );
+    });
+
+    it('should schedule nudge at user habit hour when it does not conflict with quiet hours', async () => {
+      // Quiet hours: 21:00 to 09:00.
+      mockGetNotificationSettings.mockResolvedValueOnce({
+        userId: 'user-123',
+        notificationsEnabled: true,
+        gentleRemindersEnabled: true,
+        quietHoursStart: '21:00',
+        quietHoursEnd: '09:00',
+      });
+
+      // Mock recordings history: mostly around 19:00 (7 PM)
+      // 19:00 is outside 21:00-09:00 quiet hours.
+      const mockRecordings = [
+        { startedAt: new Date('2026-06-07T19:15:00').getTime() },
+        { startedAt: new Date('2026-06-06T19:30:00').getTime() },
+        { startedAt: new Date('2026-06-05T10:00:00').getTime() }, // one morning recording
+      ];
+
+      const { db } = require('@/db/client');
+      (db.select as jest.Mock).mockReturnValueOnce({
+        from: jest.fn().mockReturnValueOnce({
+          where: jest.fn().mockResolvedValueOnce(mockRecordings),
+        }),
+      });
+
+      await scheduleNudgeNotification('user-123');
+
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          trigger: expect.objectContaining({
+            hour: 19,
           }),
         })
       );

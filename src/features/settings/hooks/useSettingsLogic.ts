@@ -28,12 +28,9 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useProfile } from './useProfile';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
-function getThemeModeLabel(themeMode: 'system' | 'dark' | 'light'): string {
-  if (themeMode === 'system') return 'System';
-  if (themeMode === 'dark') return 'Dark';
-  return 'Light';
-}
+
 
 // Hook for Settings Home
 export function useSettingsHome() {
@@ -42,6 +39,7 @@ export function useSettingsHome() {
   const sessionUserId = useAuthStore((state) => state.sessionUserId);
   const { profile, isLoading: isProfileLoading, refetch: refetchProfile } = useProfile();
   const [userRole, setUserRole] = useState<'storyteller' | 'listener'>('storyteller');
+  const { t } = useTranslation();
 
   // Access stores to generate summaries
   const { themeMode, fontScaleIndex } = useDisplaySettingsStore();
@@ -52,8 +50,14 @@ export function useSettingsHome() {
       if (!summaryKey) return undefined;
 
       if (summaryKey === 'display') {
-        const modeLabel = getThemeModeLabel(themeMode);
-        const sizeLabel = FONT_SCALE_LABELS[fontScaleIndex] || 'Standard';
+        const modeLabel = t(`Settings.displayAccessibility.themeOptions.${themeMode}`, {
+          defaultValue: themeMode === 'system' ? 'System' : themeMode === 'dark' ? 'Dark' : 'Light',
+        });
+        const rawLabel = FONT_SCALE_LABELS[fontScaleIndex] || 'Standard';
+        const sizeKey = rawLabel.toLowerCase().replace(' ', '');
+        const sizeLabel = t(`Settings.displayAccessibility.fontSizeOptions.${sizeKey}`, {
+          defaultValue: rawLabel,
+        });
         return `${modeLabel} · ${sizeLabel}`;
       }
 
@@ -63,7 +67,7 @@ export function useSettingsHome() {
 
       return undefined;
     },
-    [themeMode, fontScaleIndex]
+    [themeMode, fontScaleIndex, t]
   );
 
   useEffect(() => {
@@ -142,26 +146,6 @@ export function useAccountSecurityLogic() {
     actions: {
       ...hook,
       navigateTo: (route: Href) => router.push(route),
-    },
-  };
-}
-
-// Hook for Family Sharing (Stubbed/Redirect for Senior-first mobile app)
-export function useFamilySharingLogic() {
-  const router = useRouter();
-  const alertWebOnly = () => {
-    HeritageAlert.show({
-      title: 'Family Sharing',
-      message: 'Family management has been streamlined and moved to the TimeLog Web Portal. Connect your device using a Device Code.',
-      variant: 'info',
-    });
-  };
-  return {
-    actions: {
-      navigateToFamilyMembers: alertWebOnly,
-      navigateToInvite: () => router.push(APP_ROUTES.SETTINGS_DEVICE_CODE),
-      navigateToAcceptInvite: alertWebOnly,
-      navigateToAskQuestion: alertWebOnly,
     },
   };
 }

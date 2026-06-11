@@ -5,22 +5,24 @@ import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { SettingsRow } from '../components/SettingsRow';
 import { SettingsSection } from '../components/SettingsSection';
 import { useHeritageTheme } from '@/theme/heritage';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export function AboutTimeLogScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
+  const { t } = useTranslation();
   const appVersion = Constants.expoConfig?.version ?? '1.0.0';
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.surfaceDim }}>
-      <HeritageHeader title="About TimeLog" showBack />
+      <HeritageHeader title={t('Settings.items.about')} showBack />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: 16, paddingBottom: 48, gap: 8 }}>
-        <SettingsSection title="APP">
+        <SettingsSection title={t('Settings.aboutTimeLog.appSection', { defaultValue: 'APP' })}>
           <View style={{ backgroundColor: colors.surfaceCard }}>
             <SettingsRow
-              label="App Version"
+              label={t('Settings.aboutTimeLog.appVersion', { defaultValue: 'App Version' })}
               value={appVersion}
               iconName="information-circle-outline"
               iconColor={colors.textMuted}
@@ -32,8 +34,10 @@ export function AboutTimeLogScreen(): JSX.Element {
 
         <View style={{ paddingHorizontal: 20 }}>
           <AppText style={{ color: colors.textMuted, fontSize: 14, lineHeight: 22 }}>
-            TimeLog helps seniors capture life stories with simple voice-first recording and
-            family sharing.
+            {t('Settings.aboutTimeLog.description', {
+              defaultValue:
+                'TimeLog helps seniors capture life stories with simple voice-first recording and family sharing.',
+            })}
           </AppText>
         </View>
       </ScrollView>

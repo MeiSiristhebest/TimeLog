@@ -14,6 +14,7 @@ import React, { useEffect, useRef } from 'react';
 import { useHeritageTheme } from '@/theme/heritage';
 import type { TranscriptionSegment } from '@/lib/livekit/LiveKitClient';
 import { View, Text, ScrollView } from 'react-native';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export interface LiveTranscriptPanelProps {
   segments: TranscriptionSegment[];
@@ -24,6 +25,7 @@ export function LiveTranscriptPanel({ segments, maxHeight = 300 }: LiveTranscrip
   const theme = useHeritageTheme();
   const { colors } = theme;
   const scrollViewRef = useRef<ScrollView>(null);
+  const { t } = useTranslation();
 
   // Auto-scroll to latest segment
   useEffect(() => {
@@ -46,7 +48,7 @@ export function LiveTranscriptPanel({ segments, maxHeight = 300 }: LiveTranscrip
           style={{ color: colors.textMuted }}
           maxFontSizeMultiplier={1.5}
         >
-          Waiting for conversation to begin...
+          {t('Recorder.ai.waitingForConversation', { defaultValue: 'Waiting for conversation to begin...' })}
         </Text>
       </View>
     );
@@ -63,7 +65,7 @@ export function LiveTranscriptPanel({ segments, maxHeight = 300 }: LiveTranscrip
       contentContainerStyle={{ gap: 12 }}
       showsVerticalScrollIndicator
       accessible
-      accessibilityLabel="Live transcript"
+      accessibilityLabel={t('Recorder.ai.liveTranscriptAccessibilityLabel', { defaultValue: 'Live transcript' })}
       accessibilityRole="scrollbar"
     >
       {segments.map((segment, index) => (
@@ -83,6 +85,7 @@ interface TranscriptBubbleProps {
 const TranscriptBubble = React.memo(function TranscriptBubble({ segment }: TranscriptBubbleProps) {
   const theme = useHeritageTheme();
   const { colors } = theme;
+  const { t, locale } = useTranslation();
 
   const isUser = segment.speaker === 'user';
 
@@ -93,7 +96,7 @@ const TranscriptBubble = React.memo(function TranscriptBubble({ segment }: Trans
         backgroundColor: isUser ? colors.surfaceCard : colors.primary,
       }}
       accessible
-      accessibilityLabel={`${isUser ? 'You said' : 'AI responded'}: ${segment.text}`}
+      accessibilityLabel={`${isUser ? t('Recorder.ai.you', { defaultValue: 'You' }) : t('Recorder.ai.ai', { defaultValue: 'AI' })} ${t('Recorder.ai.saidLabel', { defaultValue: 'said' })}: ${segment.text}`}
       accessibilityRole="text"
     >
       {/* Speaker label */}
@@ -105,7 +108,7 @@ const TranscriptBubble = React.memo(function TranscriptBubble({ segment }: Trans
         }}
         maxFontSizeMultiplier={1.3}
       >
-        {isUser ? 'You' : 'AI'}
+        {isUser ? t('Recorder.ai.you', { defaultValue: 'You' }) : t('Recorder.ai.ai', { defaultValue: 'AI' })}
       </Text>
 
       {/* Transcript text */}
@@ -131,7 +134,7 @@ const TranscriptBubble = React.memo(function TranscriptBubble({ segment }: Trans
         }}
         maxFontSizeMultiplier={1.2}
       >
-        {new Date(segment.timestamp).toLocaleTimeString('en-US', {
+        {new Date(segment.timestamp).toLocaleTimeString(locale, {
           hour: '2-digit',
           minute: '2-digit',
         })}

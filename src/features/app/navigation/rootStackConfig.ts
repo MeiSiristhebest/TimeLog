@@ -44,11 +44,12 @@ export const ROOT_STACK_ROUTES: readonly RootStackRouteConfig[] = [
   { name: '(auth)/signup', options: { title: 'Sign Up' } },
   { name: '(auth)/device-code', options: { headerShown: false } },
   { name: '(auth)/help', options: { headerShown: false } },
-  { name: '(auth)/consent-review', options: { headerShown: false } },
   { name: '(auth)/recovery-code', options: { headerShown: false } },
   { name: 'story/[id]' },
   { name: 'story/comments' },
   { name: 'upgrade-account' },
   { name: 'splash', options: { headerShown: false, animation: 'fade' } },
   { name: '(auth)/welcome', options: { headerShown: false, animation: 'fade' } },
+  { name: '(auth)/switch-account', options: { headerShown: false } },
+  { name: '(auth)/login-recovery', options: { title: 'Recovery' } },
 ] as const;

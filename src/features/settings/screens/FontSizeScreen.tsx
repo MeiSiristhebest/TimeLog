@@ -12,6 +12,7 @@ import {
 } from '@/theme/heritage';
 import { useDisplaySettingsLogic } from '../hooks/useSettingsLogic';
 import { useProfile } from '../hooks/useProfile';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export function FontSizeScreen(): JSX.Element {
   const router = useRouter();
@@ -21,6 +22,7 @@ export function FontSizeScreen(): JSX.Element {
   const { updateProfileData } = useProfile();
   const { fontScaleIndex } = state;
   const [previewIndex, setPreviewIndex] = React.useState(fontScaleIndex);
+  const { t } = useTranslation();
 
   React.useEffect(() => {
     setPreviewIndex(fontScaleIndex);
@@ -44,12 +46,24 @@ export function FontSizeScreen(): JSX.Element {
   } as const;
 
   const messages = [
-    { id: 1, type: 'sent' as const, text: 'Preview your font size' },
-    { id: 2, type: 'received' as const, text: 'Drag the slider below to adjust text size.' },
+    {
+      id: 1,
+      type: 'sent' as const,
+      text: t('Settings.displayAccessibility.previewSent', { defaultValue: 'Preview your font size' }),
+    },
+    {
+      id: 2,
+      type: 'received' as const,
+      text: t('Settings.displayAccessibility.previewReceived1', {
+        defaultValue: 'Drag the slider below to adjust text size.',
+      }),
+    },
     {
       id: 3,
       type: 'received' as const,
-      text: 'This changes reading and chat text size across the app instantly.',
+      text: t('Settings.displayAccessibility.previewReceived2', {
+        defaultValue: 'This changes reading and chat text size across the app instantly.',
+      }),
     },
   ];
 
@@ -58,8 +72,10 @@ export function FontSizeScreen(): JSX.Element {
     return Math.max(0, Math.min(maxIndex, Math.round(index)));
   };
 
-  const currentLabel =
-    FONT_SCALE_LABELS[previewIndex] ?? FONT_SCALE_LABELS[DEFAULT_FONT_SCALE_INDEX];
+  const rawLabel = FONT_SCALE_LABELS[previewIndex] ?? FONT_SCALE_LABELS[DEFAULT_FONT_SCALE_INDEX];
+  const sizeKey = rawLabel.toLowerCase().replace(' ', '');
+  const currentLabel = t(`Settings.displayAccessibility.fontSizeOptions.${sizeKey}`, { defaultValue: rawLabel });
+
   const currentPreviewScale =
     FONT_SCALE_STEPS[previewIndex] ?? FONT_SCALE_STEPS[DEFAULT_FONT_SCALE_INDEX];
   const previewBodySize = Math.round(16 * currentPreviewScale);
@@ -92,7 +108,7 @@ export function FontSizeScreen(): JSX.Element {
         </Pressable>
 
         <Text style={{ color: palette.textPrimary, fontSize: headerTitleSize, fontWeight: '500' }}>
-          Font Size
+          {t('Settings.displayAccessibility.fontSize')}
         </Text>
 
         <Pressable
@@ -100,7 +116,7 @@ export function FontSizeScreen(): JSX.Element {
           className="px-4 h-8 rounded items-center justify-center"
           style={{ backgroundColor: palette.accent }}>
           <Text style={{ fontSize: headerButtonSize, color: palette.buttonText, fontWeight: '500' }}>
-            Done
+            {t('Settings.displayAccessibility.done', { defaultValue: 'Done' })}
           </Text>
         </Pressable>
       </View>
@@ -252,7 +268,9 @@ export function FontSizeScreen(): JSX.Element {
 
         <Text
           style={{ color: palette.textSecondary, fontSize: helperSize, textAlign: 'center', marginTop: 12 }}>
-          Changes apply immediately to reading and chat text.
+          {t('Settings.displayAccessibility.helperText', {
+            defaultValue: 'Changes apply immediately to reading and chat text.',
+          })}
         </Text>
       </View>
     </View>

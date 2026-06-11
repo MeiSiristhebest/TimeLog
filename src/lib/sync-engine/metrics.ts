@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { SyncEventInput } from '@/types/entities';
+import { devLog } from '@/lib/devLogger';
 
 const MAX_ERROR_MESSAGE_LENGTH = 200;
 
@@ -38,9 +39,9 @@ export async function recordSyncEvent(input: SyncEventInput): Promise<void> {
 
     if (error) {
       // Just log and don't throw to avoid blocking the caller's main logic
-      console.warn('[metrics] Failed to record sync event:', error.message);
+      devLog.warn('[metrics] Failed to record sync event:', error.message);
     }
   } catch (err) {
-    console.warn('[metrics] Unexpected error while recording sync event:', err);
+    devLog.warn('[metrics] Unexpected error while recording sync event:', err);
   }
 }

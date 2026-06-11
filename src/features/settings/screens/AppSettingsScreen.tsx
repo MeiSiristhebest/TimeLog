@@ -1,13 +1,12 @@
 import React from 'react';
 import { ScrollView, View } from 'react-native';
-import { useRouter, Link } from 'expo-router';
+import { Link } from 'expo-router';
 import { AppText } from '@/components/ui/AppText';
 import { SettingsRow } from '../components/SettingsRow';
 import { SettingsSection } from '../components/SettingsSection';
 import { useHeritageTheme } from '@/theme/heritage';
 import { HeritageHeader } from '@/components/ui/heritage/HeritageHeader';
 import { HeritageButton } from '@/components/ui/heritage/HeritageButton';
-import { SETTINGS_STRINGS } from '../data/mockSettingsData';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
 import { getDefaultDailyGoalDurationMs } from '@/features/home/services/dailyGoalService';
 
@@ -16,14 +15,17 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export function AppSettingsScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
-  const { confirmSignOut } = useAccountSecurity();
+  const { confirmSignOut, confirmSwitchAccount } = useAccountSecurity();
   const { t, locale } = useTranslation();
 
   const handleSignOut = () => {
     confirmSignOut();
   };
 
-  const STRINGS = SETTINGS_STRINGS.appSettings;
+  const handleSwitchAccount = () => {
+    confirmSwitchAccount();
+  };
+
   const dailyGoalMinutes = Math.floor(getDefaultDailyGoalDurationMs() / 60_000);
 
   return (
@@ -74,7 +76,7 @@ export function AppSettingsScreen(): JSX.Element {
         <View className="mb-6 mt-6 gap-3">
           <HeritageButton
             title={t('Settings.items.switchAccount')}
-            onPress={handleSignOut}
+            onPress={handleSwitchAccount}
             variant="secondary"
             fullWidth
           />

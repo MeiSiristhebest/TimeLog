@@ -1,4 +1,12 @@
 {
+  "Common": {
+    "error": "错误",
+    "failedToContinue": "继续操作失败，请重试。",
+    "unableToContinue": "无法继续操作",
+    "ok": "确定",
+    "cancel": "取消",
+    "storyteller": "讲述人"
+  },
   "Welcome": {
     "headline": "为家人留住您的声音。",
     "body": "您的故事是珍贵的家族记忆。今天就开始用您自己的话语把它们记录下来吧。",
@@ -7,9 +15,9 @@
     "signIn": "登录"
   },
   "TabBar": {
-    "record": "倾听记录",
-    "listen": "时光故事",
-    "me": "我的"
+    "index": "倾听记录",
+    "gallery": "时光故事",
+    "settings": "我的"
   },
   "Gallery": {
     "title": "我的故事集",
@@ -30,7 +38,8 @@
       "childhood": "童年记忆",
       "general": "日常闲谈",
       "family": "我的家庭",
-      "career": "事业往事"
+      "career": "事业往事",
+      "default": "我的故事"
     },
     "sort": {
       "modalTitle": "故事排序",
@@ -42,8 +51,14 @@
     },
     "detail": {
       "comments": "留言评论",
-      "back": "返回"
+      "back": "返回",
+      "dateAtTime": "{date} {time}"
     },
+    "storyWithDate": "{date} 的故事",
+    "memories": "我的回忆录",
+    "timeCapsule": "回忆时间胶囊",
+    "exportPdfTitle": "导出 PDF 回忆录",
+    "exportDate": "导出日期：{date}",
     "edit": {
       "title": "编辑故事",
       "cancel": "取消",
@@ -255,7 +270,13 @@
           "deviceCode": "家庭绑定设备码"
         }
       },
-      "deleteAccount": "删除账号"
+      "deleteAccount": "删除账号",
+      "signOutWarningTitle": "提示：临时讲述人账号",
+      "signOutWarningMsg": "您当前使用的是临时讲述人账号。如果直接退出登录或切换账号，您在本地录制的珍贵故事有可能会丢失！\n建议您先保存恢复凭据，或者绑定邮箱/密码完成账号设置。",
+      "signOutWarningUpgrade": "去绑定安全账号",
+      "signOutWarningSaveCode": "保存恢复凭证",
+      "signOutWarningConfirm": "执意退出",
+      "signOutWarningCancel": "取消"
     },
     "aboutHelp": {
       "support": {
@@ -276,7 +297,41 @@
       }
     },
     "displayAccessibility": {
-      "fontSize": "字体大小设置"
+      "fontSize": "字体大小设置",
+      "done": "完成",
+      "previewSent": "预览您的字体大小",
+      "previewReceived1": "拖动下方的滑块可以调整文字大小。",
+      "previewReceived2": "这会立即使应用中的阅读和聊天文字大小生效。",
+      "helperText": "修改将立即使阅读和聊天文本生效。",
+      "fontSizeOptions": {
+        "small": "小号",
+        "standard": "标准",
+        "large": "大号",
+        "extralarge": "超大号",
+        "huge": "巨大",
+        "massive": "极度大",
+        "maximum": "最大"
+      },
+      "themeOptions": {
+        "system": "跟随系统",
+        "light": "浅色模式",
+        "dark": "深色模式"
+      }
+    },
+    "aboutTimeLog": {
+      "appSection": "应用信息",
+      "appVersion": "应用版本",
+      "description": "TimeLog 帮助长辈通过简单的语音优先记录和家庭分享功能，轻松捕捉生命中的珍贵回忆与故事。"
+    },
+    "dailyGoal": {
+      "minutesValue": "{minutes} 分钟",
+      "minutes": "{count} 分钟",
+      "summaryLabel": "每日目标录音时间",
+      "chooseGoal": "选择每日目标",
+      "optionLabel": "{minutes} 分钟",
+      "footer": "主页的天气旁会显示今日进度。更改此目标也会同步更新今日的小目标。",
+      "gentleHabit": "温和的每日习惯",
+      "deeperStories": "更多时间记录深度故事"
     }
   },
   "Topics": {
@@ -327,8 +382,10 @@
       "connectionError": "连接遇到问题，已切换为本地录音",
       "assistant": "智能助手",
       "you": "您",
+      "ai": "智能助手",
       "status": "状态",
-      "tellMeMore": "跟我讲讲今天一件难忘或温馨的小故事吧。"
+      "tellMeMore": "跟我讲讲今天一件难忘或温馨的小故事吧。",
+      "waitingForConversation": "正在等待对话开始..."
     },
     "controls": {
       "holdToEnd": "按住结束",
@@ -406,7 +463,12 @@
       "forgotPassword": "忘记密码？",
       "backToHome": "返回主页",
       "emailAccessibilityHint": "请输入您的电子邮箱地址",
-      "passwordAccessibilityHint": "请输入您的安全密码"
+      "passwordAccessibilityHint": "请输入您的安全密码",
+      "success": "登录成功。",
+      "error": "登录出错，请重试。",
+      "resetSuccess": "检查您的邮箱",
+      "resetSuccessMsg": "我们已向您发送了密码重置链接。",
+      "resetError": "暂时无法发送重置邮件。"
     },
     "signup": {
       "title": "创建亲情账号",
@@ -423,7 +485,11 @@
       "signUp": "完成注册",
       "alreadyAccount": "已有账号？",
       "signIn": "去登录",
-      "back": "返回"
+      "back": "返回",
+      "displayNameRequired": "称呼/姓名必填。",
+      "displayNameTooLong": "称呼/姓名长度不能超过 100 个字符。",
+      "successTitle": "注册成功",
+      "successMsg": "我们已向您的邮箱发送了确认邮件，请检查您的收件箱并验证账号。"
     },
     "recoveryCode": {
       "title": "账号恢复凭据",
@@ -436,7 +502,26 @@
       "generating": "正在生成...",
       "copy": "复制凭证",
       "share": "发送给子女",
-      "warning": "请务必妥善保管此凭据。任何持有此码的人均可绑定并读取该长者档案。"
+      "warning": "请务必妥善保管此凭据。任何持有此码的人均可绑定并读取该长者档案。",
+      "alerts": {
+        "generate": {
+          "title": "生成新恢复凭证？",
+          "message": "这将使之前的恢复凭证失效。",
+          "confirm": "确认生成",
+          "cancel": "取消"
+        },
+        "share": {
+          "message": "TimeLog 账户恢复凭证：{code}\n\n当手机遗失或更换新机时，使用此凭据即可快速恢复全部录音故事。"
+        },
+        "failedGenerate": "生成恢复凭据失败",
+        "failedLoadTitle": "无法加载恢复凭据"
+      },
+      "errors": {
+        "signInRequired": "请先登录以管理您的恢复凭据。",
+        "default": "操作恢复凭据时出错，请重试。"
+      },
+      "toastUpdated": "恢复凭证已更新",
+      "toastCopied": "凭证已复制到剪贴板"
     },
     "deviceCode": {
       "title": "连接长者设备",
@@ -523,6 +608,96 @@
       "alertGotIt": "记下了，继续使用",
       "alertFailedTitle": "设置失败",
       "alertFailedDefault": "亲情账号生成失败，请稍后重试。"
+    },
+    "switchAccount": {
+      "title": "切换账号",
+      "subtitle": "选择要在本设备上使用的账号",
+      "addAccount": "登录其他亲情账号",
+      "createNew": "创建新讲述人",
+      "tempAccount": "临时讲述人",
+      "rememberedTitle": "本设备上记住的账号",
+      "removeConfirmTitle": "清除此账号的记住状态？",
+      "removeConfirmMsg": "您确定要在此设备上清除 {name} 的记住状态吗？",
+      "removeConfirmAction": "清除",
+      "removeConfirmCancel": "取消"
+    },
+    "loginRecovery": {
+      "title": "讲述人账号找回",
+      "subtitle": "使用恢复凭证码找回原有的讲述人账号",
+      "codeLabel": "输入恢复凭证码",
+      "codePlaceholder": "REC-XXXXXX",
+      "emailLabel": "新电子邮箱地址",
+      "emailPlaceholder": "elder@example.com",
+      "passwordLabel": "设置新安全密码",
+      "passwordPlaceholder": "至少 6 位字符",
+      "confirmPasswordLabel": "再次输入密码",
+      "confirmPasswordPlaceholder": "请再次输入密码",
+      "buttonLabel": "验证并找回账号",
+      "warning": "通过验证后，该临时讲述人账号将被安全升级为永久邮箱账号，您将可以使用新密码登录，从此数据不再丢失。",
+      "successTitle": "账号找回成功",
+      "successMsg": "您的讲述人账号已成功找回并绑定！已向您的邮箱发送了确认邮件，请点击其中的链接进行验证。",
+      "errorInvalid": "输入的恢复凭证码无效或已过期。",
+      "loginWithRecovery": "使用恢复凭证找回账号"
+    },
+    "errors": {
+      "unknown": "发生未知错误，请稍后重试。",
+      "passwordSame": "您的新密码必须与临时密码不同。",
+      "invalidEmail": "电子邮箱格式不正确，请检查并重试。",
+      "userExists": "此电子邮箱已被其他账号注册。",
+      "passwordTooShort": "密码长度必须至少为 6 个字符。",
+      "emailNotAllowed": "此邮箱域名不允许注册。",
+      "rateLimit": "您已达到生成连接码的上限，请在一小时后重试。",
+      "rpcMissing": "设备登录功能暂时不可用，请稍后再试。",
+      "permissionDenied": "您没有管理家庭设备的权限。",
+      "invalidUuid": "提供了无效的设备标识符。",
+      "connectionError": "管理设备时发生连接错误，请重试。"
+    }
+  },
+  "EditProfile": {
+    "title": "编辑个人信息",
+    "tapToChange": "点击更换照片",
+    "displayName": "称呼/姓名",
+    "displayNamePlaceholder": "请输入您的称呼",
+    "birthday": "生日",
+    "birthdayPlaceholder": "选择您的生日",
+    "language": "语言",
+    "fontSize": "字体大小",
+    "saveChanges": "保存修改",
+    "saving": "正在保存...",
+    "selectBirthday": "选择生日",
+    "errors": {
+      "featureNotAvailable": "功能暂不可用",
+      "avatarRequiresDevBuild": "头像上传功能需要开发版本支持。",
+      "permissionRequired": "需要权限限制",
+      "allowPhotoAccess": "请允许访问相册以更换您的照片。",
+      "uploadFailed": "照片上传失败",
+      "unableToOpenPhotos": "无法打开相册。请稍后再试。",
+      "nameRequired": "名字必填",
+      "enterName": "请输入您的称呼/姓名。",
+      "nameTooLong": "姓名超长",
+      "nameLimit": "称呼/姓名长度不能超过 100 个字符。",
+      "saveFailed": "保存失败",
+      "saveFailedMsg": "无法保存您的个人档案，请重试。"
+    }
+  },
+  "Permissions": {
+    "microphone": {
+      "title": "麦克风访问权限",
+      "message": "TimeLog 需要麦克风权限来录制您的故事。您的录音将保存在您的设备上，直到您选择分享它们。",
+      "allow": "允许访问麦克风",
+      "deny": "暂不允许"
+    },
+    "notifications": {
+      "title": "保持联系",
+      "message": "当家庭成员收听您的故事或留下评论时，您将收到通知。",
+      "allow": "启用通知",
+      "deny": "以后再说"
+    },
+    "photos": {
+      "title": "相册访问权限",
+      "message": "TimeLog 需要相册权限以便您选择个人头像。",
+      "allow": "允许访问相册",
+      "deny": "暂不允许"
     }
   }
 }

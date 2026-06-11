@@ -33,6 +33,9 @@ export const Button = forwardRef<View, ButtonProps>(function Button(
       className={`rounded-button flex-row items-center justify-center ${getVariantStyle(variant)} ${getSizeStyle(size)} ${className ?? ''} `}>
       {icon && <View className="mr-2">{icon}</View>}
       <AppText
+        numberOfLines={1}
+        ellipsizeMode="tail"
+        style={{ flexShrink: 1 }}
         className={`${getTextStyle(variant, size)} text-center font-semibold ${textClassName ?? ''}`}>
         {title}
       </AppText>

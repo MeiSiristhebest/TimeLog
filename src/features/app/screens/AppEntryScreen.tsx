@@ -12,7 +12,11 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { devLog } from '@/lib/devLogger';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
 import { supabase } from '@/lib/supabase';
-import { getStoredRole } from '@/features/auth/services/roleStorage';
+
+import { getRememberedAccounts } from '@/features/auth/services/rememberedAccountsService';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { useSyncStore } from '@/lib/sync-engine/store';
+import { syncStoriesDown, backfillLegacyMetadata } from '@/features/story-gallery/services/storySyncDownService';
 
 // Assets
 const BRAND_LOGO = require('../../../../assets/images/brand_logo.png');
@@ -33,31 +37,33 @@ export default function AppEntryScreen(): JSX.Element {
           return;
         }
 
-        // Logic fix: Check session and role instead of hardcoding DEVICE_CODE
+        // Logic fix: Check session and route directly to TABS if authenticated
         const {
           data: { session },
         } = await supabase.auth.getSession();
-        const role = await getStoredRole();
 
         if (!session) {
-          // If role is storyteller, they should have an anonymous session.
-          // If they don't, send them to Welcome to start fresh.
-          router.replace(APP_ROUTES.WELCOME);
+          const remembered = getRememberedAccounts();
+          if (remembered.length > 0) {
+            router.replace(APP_ROUTES.SWITCH_ACCOUNT);
+          } else {
+            router.replace(APP_ROUTES.WELCOME);
+          }
           return;
         }
 
-        if (session.user.is_anonymous) {
-          // Anonymous storytellers go straight to tabs
-          router.replace(APP_ROUTES.TABS);
-        } else {
-          // Permanent account storytellers go to device code for pairing,
-          // listeners go to tabs.
-          if (role === 'storyteller') {
-            router.replace(APP_ROUTES.DEVICE_CODE);
-          } else {
-            router.replace(APP_ROUTES.TABS);
-          }
-        }
+        // Set authenticated user state so hooks like useStories show the correct records
+        const userId = session.user.id;
+        useAuthStore.getState().setAuthenticated(userId);
+
+        // Sync and backfill legacy metadata in the background
+        void syncStoriesDown(userId);
+        void backfillLegacyMetadata(userId).then(() => {
+          useSyncStore.getState().processQueue().catch(() => {});
+        });
+
+        // All authenticated users go straight to tabs
+        router.replace(APP_ROUTES.TABS);
       } catch (error) {
         devLog.error('[AppEntryScreen] Failed to bootstrap app:', error);
         if (!isCancelled) {

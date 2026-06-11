@@ -3,7 +3,7 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { supabase } from '@/lib/supabase';
 import { devLog } from '@/lib/devLogger';
-import { EN_COPY } from '@/features/app/copy/en';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export interface ExportStory {
   title: string;
@@ -13,6 +13,7 @@ export interface ExportStory {
 
 export function usePdfExport() {
   const [isExporting, setIsExporting] = useState(false);
+  const { t, locale } = useTranslation();
 
   const generateHtml = (stories: ExportStory[]) => {
     const storyHtmlItems = stories.map((story) => `
@@ -27,11 +28,11 @@ export function usePdfExport() {
 
     return `
       <!DOCTYPE html>
-      <html lang="en">
+      <html lang="${locale}">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${EN_COPY.timeCapsule.memories}</title>
+        <title>${t('Gallery.memories', { defaultValue: 'My Memories' })}</title>
         <style>
           body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -48,9 +49,12 @@ export function usePdfExport() {
       </head>
       <body>
         <div>
-          <h1>${EN_COPY.timeCapsule.label}</h1>
+          <h1>${t('Gallery.timeCapsule', { defaultValue: 'Time Capsule' })}</h1>
           <p style="text-align: center; color: #64748b; margin-bottom: 80px;">
-            Export Date: ${new Date().toLocaleDateString('en-US')}
+            ${t('Gallery.exportDate', {
+              date: new Date().toLocaleDateString(locale),
+              defaultValue: `Export Date: ${new Date().toLocaleDateString(locale)}`,
+            })}
           </p>
         </div>
         ${storyHtmlItems}
@@ -99,7 +103,7 @@ export function usePdfExport() {
       if (canShare) {
         await Sharing.shareAsync(uri, {
           mimeType: 'application/pdf',
-          dialogTitle: EN_COPY.timeCapsule.exportTitle,
+          dialogTitle: t('Gallery.exportPdfTitle', { defaultValue: 'Export Memories PDF' }),
           UTI: 'com.adobe.pdf' // iOS Uniform Type Identifier
         });
       } else {

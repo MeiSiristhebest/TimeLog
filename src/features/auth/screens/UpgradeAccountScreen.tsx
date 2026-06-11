@@ -20,6 +20,8 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { upgradeAnonymousAccount } from '@/features/auth/services/anonymousAuthService';
 import { devLog } from '@/lib/devLogger';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { supabase } from '@/lib/supabase';
+import { addRememberedAccount, saveSessionTokens } from '../services/rememberedAccountsService';
 
 /**
  * Validates email address format.
@@ -46,8 +48,27 @@ export default function UpgradeAccountScreen(): JSX.Element {
   const [isUpgrading, setIsUpgrading] = useState(false);
 
   const handleUpgrade = useCallback(async () => {
+    const trimmedDisplayName = displayName.trim();
     const trimmedEmail = email.trim();
     const trimmedPassword = password.trim();
+
+    if (!trimmedDisplayName) {
+      HeritageAlert.show({
+        title: t('Auth.signup.displayNameRequired', { defaultValue: 'Name Required' }),
+        message: t('Auth.upgrade.displayNamePlaceholder', { defaultValue: 'Please enter a name' }),
+        variant: 'warning',
+      });
+      return;
+    }
+
+    if (trimmedDisplayName.length > 100) {
+      HeritageAlert.show({
+        title: t('Auth.signup.displayNameTooLong', { defaultValue: 'Name Too Long' }),
+        message: t('Auth.signup.displayNameTooLong', { defaultValue: 'Display name must be 100 characters or less.' }),
+        variant: 'warning',
+      });
+      return;
+    }
 
     if (!trimmedEmail) {
       HeritageAlert.show({
@@ -94,25 +115,51 @@ export default function UpgradeAccountScreen(): JSX.Element {
       return;
     }
 
+    if (trimmedPassword.length > 72) {
+      HeritageAlert.show({
+        title: t('Auth.upgrade.alertPasswordTooLong', { defaultValue: 'Password Too Long' }),
+        message: t('Auth.upgrade.alertPasswordTooLongMsg', { defaultValue: 'Password must be 72 characters or less' }),
+        variant: 'warning',
+      });
+      return;
+    }
+
     setIsUpgrading(true);
 
     try {
       const { recoveryCode } = await upgradeAnonymousAccount(
         trimmedEmail,
         trimmedPassword,
-        displayName
+        trimmedDisplayName
       );
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
+      // Cache the upgraded account details for Switch Account
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData.session;
+      if (session) {
+        addRememberedAccount({
+          userId: session.user.id,
+          email: trimmedEmail,
+          displayName: trimmedDisplayName,
+          role: 'storyteller',
+          isAnonymous: false,
+        });
+        await saveSessionTokens(session.user.id, {
+          accessToken: session.access_token,
+          refreshToken: session.refresh_token,
+        });
+      }
+
       const message = recoveryCode
         ? t('Auth.upgrade.alertCreatedWithRecovery', {
-            name: displayName,
+            name: trimmedDisplayName,
             recoveryCode,
-            defaultValue: `${displayName}'s account has been created!\n\nRecovery Code:\n${recoveryCode}\n\nIMPORTANT: Save this code in a safe place. You will need it if you forget your password.\n\nNext Step: We have sent a confirmation link to your email. Please check your inbox (and spam folder) and click the link to verify your account.`
+            defaultValue: `${trimmedDisplayName}'s account has been created!\n\nRecovery Code:\n${recoveryCode}\n\nIMPORTANT: Save this code in a safe place. You will need it if you forget your password.\n\nNext Step: We have sent a confirmation link to your email. Please check your inbox (and spam folder) and click the link to verify your account.`
           })
         : t('Auth.upgrade.alertCreatedNoRecovery', {
-            name: displayName,
-            defaultValue: `${displayName}'s account has been created!\n\nNext Step: We have sent a confirmation link to your email. Please check your inbox (and spam folder) and click the link to verify your account.`
+            name: trimmedDisplayName,
+            defaultValue: `${trimmedDisplayName}'s account has been created!\n\nNext Step: We have sent a confirmation link to your email. Please check your inbox (and spam folder) and click the link to verify your account.`
           });
 
       HeritageAlert.show({
@@ -166,6 +213,7 @@ export default function UpgradeAccountScreen(): JSX.Element {
             onChangeText={setDisplayName}
             autoCapitalize="words"
             leftIcon="person-outline"
+            maxLength={100}
           />
 
           <HeritageInput
@@ -177,6 +225,7 @@ export default function UpgradeAccountScreen(): JSX.Element {
             autoCapitalize="none"
             autoComplete="email"
             leftIcon="mail-outline"
+            maxLength={255}
           />
 
           <HeritageInput
@@ -188,6 +237,7 @@ export default function UpgradeAccountScreen(): JSX.Element {
             autoComplete="password-new"
             leftIcon="lock-closed-outline"
             showPasswordToggle
+            maxLength={72}
           />
 
           <HeritageInput
@@ -199,6 +249,7 @@ export default function UpgradeAccountScreen(): JSX.Element {
             autoComplete="password-new"
             leftIcon="shield-checkmark-outline"
             showPasswordToggle
+            maxLength={72}
           />
         </View>
 

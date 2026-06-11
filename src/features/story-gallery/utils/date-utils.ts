@@ -9,18 +9,13 @@ export function formatDuration(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-/**
- * Format date to English absolute date format.
- * e.g., "January 14, 2026 at 3:00 PM"
- */
-const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-  hour: 'numeric',
-  minute: 'numeric',
-});
-
-export function formatDate(date: Date): string {
-  return DATE_FORMATTER.format(date);
+export function formatDate(date: Date, locale: string = 'en-US'): string {
+  const formatter = new Intl.DateTimeFormat(locale, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+  });
+  return formatter.format(date);
 }

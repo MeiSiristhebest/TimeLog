@@ -12,6 +12,10 @@ import { AppState, AppStateStatus } from 'react-native';
 import { devLog } from '@/lib/devLogger';
 import { supabase } from '@/lib/supabase';
 import { useI18nStore } from '@/lib/i18n/i18nStore';
+import { db } from '@/db/client';
+import { audioRecordings } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { getNotificationSettings } from '@/lib/notifications/notificationSettingsService';
 
 /**
  * Nudge notification type identifier
@@ -48,6 +52,28 @@ const NUDGE_MESSAGES = {
 };
 
 /**
+ * Helper to check if a specific hour falls inside the quiet hours window.
+ */
+function isHourInQuietHours(hour: number, startStr?: string, endStr?: string): boolean {
+  if (!startStr || !endStr) return false;
+  try {
+    const [startHour] = startStr.split(':').map(Number);
+    const [endHour] = endStr.split(':').map(Number);
+    if (startHour === undefined || endHour === undefined) return false;
+
+    if (startHour < endHour) {
+      // e.g. 09:00 to 17:00
+      return hour >= startHour && hour < endHour;
+    } else {
+      // e.g. 21:00 to 09:00 (spans midnight)
+      return hour >= startHour || hour < endHour;
+    }
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Update user's last_used_at timestamp in their profile
  * Call this when app comes to foreground
  */
@@ -68,18 +94,80 @@ export async function updateLastUsedAt(userId: string): Promise<void> {
  * Schedule a gentle nudge notification for 10:00 AM
  * Only schedules if user hasn't used app in 3+ days
  */
-export async function scheduleNudgeNotification(): Promise<string | null> {
+export async function scheduleNudgeNotification(userId?: string): Promise<string | null> {
   try {
     // Cancel any existing nudge notifications first
     await cancelNudgeNotifications();
 
+    // Determine optimal hour based on user habits and quiet hours
+    let optimalHour = NUDGE_HOUR;
+    let quietStart = '21:00';
+    let quietEnd = '09:00';
+
+    if (userId) {
+      // 1. Fetch user notification preferences for quiet hours
+      try {
+        const settings = await getNotificationSettings(userId);
+        if (settings) {
+          quietStart = settings.quietHoursStart || quietStart;
+          quietEnd = settings.quietHoursEnd || quietEnd;
+        }
+      } catch (err) {
+        devLog.warn('[nudgeService] Failed to load notification settings', err);
+      }
+
+      // 2. Fetch recording history to find the most common hour
+      try {
+        const recordings = await db
+          .select({ startedAt: audioRecordings.startedAt })
+          .from(audioRecordings)
+          .where(eq(audioRecordings.userId, userId));
+
+        const safeRecordings = Array.isArray(recordings) ? recordings : [];
+        if (safeRecordings.length > 0) {
+          const hourCounts: Record<number, number> = {};
+          for (const rec of safeRecordings) {
+            if (rec.startedAt) {
+              const hour = new Date(rec.startedAt).getHours();
+              hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+            }
+          }
+
+          let maxCount = 0;
+          let habitHour = optimalHour;
+          for (const [hourStr, count] of Object.entries(hourCounts)) {
+            const hour = Number(hourStr);
+            if (count > maxCount) {
+              maxCount = count;
+              habitHour = hour;
+            }
+          }
+          if (maxCount > 0) {
+            optimalHour = habitHour;
+          }
+        }
+      } catch (err) {
+        devLog.warn('[nudgeService] Failed to query local recording history', err);
+      }
+    }
+
+    // 3. Resolve conflicts with quiet hours using backoff search
+    let attempts = 0;
+    while (isHourInQuietHours(optimalHour, quietStart, quietEnd) && attempts < 24) {
+      optimalHour = (optimalHour + 1) % 24;
+      attempts++;
+    }
+    if (attempts >= 24) {
+      optimalHour = NUDGE_HOUR; // Fallback to default
+    }
+
     // Get time-appropriate message
     const message = getNudgeMessage();
 
-    // Schedule for next 10:00 AM
+    // Schedule for next computed hour
     const trigger: Notifications.CalendarTriggerInput = {
       type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
-      hour: NUDGE_HOUR,
+      hour: optimalHour,
       minute: NUDGE_MINUTE,
       repeats: true,
     };
@@ -97,7 +185,7 @@ export async function scheduleNudgeNotification(): Promise<string | null> {
       trigger,
     });
 
-    devLog.info('[nudgeService] Scheduled nudge notification:', notificationId);
+    devLog.info(`[nudgeService] Scheduled nudge notification (Hour: ${optimalHour}):`, notificationId);
     return notificationId;
   } catch (err) {
     devLog.error('[nudgeService] Failed to schedule nudge:', err);
@@ -207,7 +295,7 @@ export async function initializeNudgeSystem(
   const shouldNudge = await shouldScheduleNudge(userId);
 
   if (shouldNudge) {
-    await scheduleNudgeNotification();
+    await scheduleNudgeNotification(userId);
   } else {
     devLog.info('[nudgeService] User recently active, no nudge needed');
   }

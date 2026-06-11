@@ -12,11 +12,13 @@ import {
   setDailyGoalDurationForDate,
 } from '@/features/home/services/dailyGoalService';
 import { devLog } from '@/lib/devLogger';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 const GOAL_OPTIONS_MINUTES = [1, 3, 5, 10, 15] as const;
 
 export function DailyGoalSettingsScreen(): JSX.Element {
   const { colors } = useHeritageTheme();
+  const { t } = useTranslation();
   const userId = useAuthStore((state) => state.sessionUserId);
   const [selectedMinutes, setSelectedMinutes] = useState(
     Math.floor(getDefaultDailyGoalDurationMs() / 60_000)
@@ -33,35 +35,40 @@ export function DailyGoalSettingsScreen(): JSX.Element {
   };
 
   const getGoalDescription = (minutes: number) => {
-    return minutes <= 3 ? 'Gentle daily habit' : 'More time for deeper stories';
+    return minutes <= 3
+      ? t('Settings.dailyGoal.gentleHabit', { defaultValue: 'Gentle daily habit' })
+      : t('Settings.dailyGoal.deeperStories', { defaultValue: 'More time for deeper stories' });
   };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surfaceDim }]}>
-      <HeritageHeader title="Daily goal" showBack />
+      <HeritageHeader title={t('Settings.items.dailyGoal')} showBack />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         style={{ backgroundColor: colors.surfaceDim }}>
         <View style={styles.summary}>
           <AppText style={[styles.summaryValue, { color: colors.onSurface }]}>
-            {selectedMinutes} min
+            {t('Settings.dailyGoal.minutesValue', { minutes: selectedMinutes, defaultValue: `${selectedMinutes} min` })}
           </AppText>
           <AppText style={[styles.summaryLabel, { color: colors.textMuted }]}>
-            Target recording time per day
+            {t('Settings.dailyGoal.summaryLabel', { defaultValue: 'Target recording time per day' })}
           </AppText>
         </View>
 
         <SettingsSection
-          title="Choose a goal"
-          footer="The home screen shows today's progress beside the weather. Changing this target also updates today's goal.">
+          title={t('Settings.dailyGoal.chooseGoal', { defaultValue: 'Choose a goal' })}
+          footer={t('Settings.dailyGoal.footer', {
+            defaultValue:
+              "The home screen shows today's progress beside the weather. Changing this target also updates today's goal.",
+          })}>
           {GOAL_OPTIONS_MINUTES.map((minutes, index) => {
             const isSelected = minutes === selectedMinutes;
 
             return (
               <SettingsRow
                 key={minutes}
-                label={`${minutes} minutes`}
+                label={t('Settings.dailyGoal.optionLabel', { minutes, defaultValue: `${minutes} minutes` })}
                 value={getGoalDescription(minutes)}
                 onPress={() => handleSelect(minutes)}
                 showChevron={false}

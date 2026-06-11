@@ -11,6 +11,7 @@ import { useMemo } from 'react';
 import { AudioRecording } from '@/types/entities';
 import { FeaturedStoryCard } from './FeaturedStoryCard';
 import { CompactStoryCard } from './CompactStoryCard';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export interface TimelineStoryCardProps {
   story: AudioRecording;
@@ -43,17 +44,19 @@ export function TimelineStoryCard({
   isFavorite = false,
   onToggleFavorite,
 }: TimelineStoryCardProps): JSX.Element {
+  const { t, locale } = useTranslation();
+
   // Logic Extraction: Date Data
   // In a larger app, this `useMemo` block could be its own hook `useStoryDisplayData(story)`
   const { dateObj, fullDateStr, durationStr } = useMemo(() => {
     const createdAt = new Date(story.startedAt);
     // Use standard locale formatting
-    const dateStr = createdAt.toLocaleDateString('en-US', {
+    const dateStr = createdAt.toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
-    const timeStr = createdAt.toLocaleTimeString('en-US', {
+    const timeStr = createdAt.toLocaleTimeString(locale, {
       hour: 'numeric',
       minute: '2-digit',
     });
@@ -64,10 +67,10 @@ export function TimelineStoryCard({
 
     return {
       dateObj: createdAt,
-      fullDateStr: `${dateStr} at ${timeStr}`,
+      fullDateStr: t('Gallery.detail.dateAtTime', { date: dateStr, time: timeStr, defaultValue: `${dateStr} at ${timeStr}` }),
       durationStr: `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`,
     };
-  }, [story.durationMs, story.startedAt]);
+  }, [story.durationMs, story.startedAt, locale, t]);
 
   // Render Variant
   if (variant === 'featured') {

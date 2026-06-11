@@ -6,6 +6,7 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { AppText } from '@/components/ui/AppText';
 import React, { useState, useEffect } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Modal , View, TextInput, Pressable, ScrollView } from 'react-native';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 
 interface EditStorySheetProps {
@@ -29,11 +30,12 @@ export function EditStorySheet({
     initialTopicId,
     onSuccess,
 }: EditStorySheetProps) {
+    const { t } = useTranslation();
     const { colors } = useHeritageTheme();
 
     const [title, setTitle] = useState(initialTitle);
     const [topicId, setTopicId] = useState(initialTopicId);
-    const [transcript, setTranscript] = useState('Transcript is not available yet.');
+    const [transcript, setTranscript] = useState(t('Gallery.edit.noTranscript', { defaultValue: 'Transcript is not available yet.' }));
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -56,14 +58,19 @@ export function EditStorySheet({
         const trimmedTitle = title.trim();
 
         if (!trimmedTitle) {
-            setError('Title cannot be empty');
+            setError(t('Gallery.edit.titleRequired', { defaultValue: 'Title cannot be empty' }));
+            return;
+        }
+
+        if (trimmedTitle.length > 100) {
+            setError(t('EditProfile.errors.nameLimit', { defaultValue: 'Title must be 100 characters or less' }));
             return;
         }
 
         try {
             setIsSaving(true);
             setError(null);
-
+ 
             await updateStoryMetadata(storyId, {
                 title: trimmedTitle,
                 topicId: topicId
@@ -75,7 +82,7 @@ export function EditStorySheet({
             onClose();
         } catch (err) {
             devLog.error('Failed to save story details:', err);
-            setError('Failed to save changes. Please try again.');
+            setError(t('Gallery.edit.saveFailed', { defaultValue: 'Failed to save changes. Please try again.' }));
         } finally {
             setIsSaving(false);
         }
@@ -101,7 +108,7 @@ export function EditStorySheet({
                         <AppText
                             className="text-xl"
                             style={{ fontFamily: 'Fraunces_600SemiBold', color: colors.onSurface }}>
-                            Edit Story
+                            {t('Gallery.edit.title', { defaultValue: 'Edit Story' })}
                         </AppText>
                         <Pressable onPress={onClose} hitSlop={12}>
                             <Ionicons name="close" size={24} color={colors.textMuted} />
@@ -114,7 +121,7 @@ export function EditStorySheet({
                             <AppText
                                 className="text-sm font-semibold mb-1"
                                 style={{ color: colors.textMuted }}>
-                                Title
+                                {t('Gallery.edit.storyTitle', { defaultValue: 'Title' })}
                             </AppText>
                             <TextInput
                                 className="border rounded-xl p-4 text-base"
@@ -125,8 +132,9 @@ export function EditStorySheet({
                                 }}
                                 value={title}
                                 onChangeText={setTitle}
-                                placeholder="Story Title"
+                                placeholder={t('Gallery.edit.titlePlaceholder', { defaultValue: 'Story Title' })}
                                 placeholderTextColor={colors.disabledText}
+                                maxLength={100}
                             />
                         </View>
 
@@ -135,7 +143,7 @@ export function EditStorySheet({
                             <AppText
                                 className="text-sm font-semibold mb-1"
                                 style={{ color: colors.textMuted }}>
-                                Topic Category (Changes Cover)
+                                {t('Gallery.edit.topicCategoryCover', { defaultValue: 'Topic Category (Changes Cover)' })}
                             </AppText>
                             <View className="flex-row flex-wrap gap-2">
                                 {categories.map(cat => {
@@ -156,7 +164,7 @@ export function EditStorySheet({
                                             <AppText
                                                 className="text-sm font-medium"
                                                 style={{ color: isSelected ? colors.onPrimary : colors.textMuted }}>
-                                                {cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : 'Other'}
+                                                {cat ? t('Gallery.categories.' + cat, { defaultValue: cat.charAt(0).toUpperCase() + cat.slice(1) }) : t('Gallery.categories.all', { defaultValue: 'Other' })}
                                             </AppText>
                                         </Pressable>
                                     );
@@ -169,7 +177,7 @@ export function EditStorySheet({
                             <AppText
                                 className="text-sm font-semibold mb-1"
                                 style={{ color: colors.textMuted }}>
-                                Transcript
+                                {t('Gallery.edit.transcript', { defaultValue: 'Transcript' })}
                             </AppText>
                             <TextInput
                                 className="border rounded-xl p-4 text-base h-[120px] align-top"
@@ -183,12 +191,12 @@ export function EditStorySheet({
                                 onChangeText={setTranscript}
                                 multiline
                                 editable={false}
-                                placeholder="Transcript..."
+                                placeholder={t('Gallery.edit.transcript', { defaultValue: 'Transcript...' })}
                             />
                             <AppText
                                 className="text-xs italic"
                                 style={{ color: colors.disabledText }}>
-                                Transcript editing coming soon.
+                                {t('Gallery.edit.editParagraphTip', { defaultValue: 'Transcript editing coming soon.' })}
                             </AppText>
                         </View>
 
@@ -214,7 +222,7 @@ export function EditStorySheet({
                                 <AppText
                                     className="text-[17px] font-semibold"
                                     style={{ color: colors.onPrimary }}>
-                                    Save Changes
+                                    {t('EditProfile.saveChanges', { defaultValue: 'Save Changes' })}
                                 </AppText>
                             )}
                         </Pressable>

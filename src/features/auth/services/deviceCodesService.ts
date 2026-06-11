@@ -5,28 +5,35 @@ import {
   setStoredDeviceCode,
 } from './deviceCodeStorage';
 import { devLog } from '@/lib/devLogger';
+import { useI18nStore } from '@/lib/i18n/i18nStore';
 
 /**
  * Utility to map device code RPC errors to user-friendly messages.
  */
 function mapDeviceCodeError(error: unknown): string {
-  if (!error || typeof error !== 'object') return 'An unknown error occurred.';
+  const t = (key: string, defaultValue: string) => {
+    return useI18nStore.getState().getTranslation(key) || defaultValue;
+  };
+
+  if (!error || typeof error !== 'object') {
+    return t('Auth.errors.unknown', 'An unknown error occurred.');
+  }
   const message = 'message' in error && typeof error.message === 'string' ? error.message : '';
 
   if (message.includes('rate_limit_exceeded')) {
-    return 'You have reached the limit for generating codes. Please try again in an hour.';
+    return t('Auth.errors.rateLimit', 'You have reached the limit for generating codes. Please try again in an hour.');
   }
   if (message.includes('function generate_device_code() does not exist')) {
-    return 'Device sign-in is temporarily unavailable. Please try again later.';
+    return t('Auth.errors.rpcMissing', 'Device sign-in is temporarily unavailable. Please try again later.');
   }
   if (message.includes('Policy check failed') || message.includes('permission denied')) {
-    return 'You do not have permission to manage family devices.';
+    return t('Auth.errors.permissionDenied', 'You do not have permission to manage family devices.');
   }
   if (message.includes('invalid input syntax for type uuid')) {
-    return 'Invalid device identifier provided.';
+    return t('Auth.errors.invalidUuid', 'Invalid device identifier provided.');
   }
 
-  return 'A connection error occurred while managing devices. Please try again.';
+  return t('Auth.errors.connectionError', 'A connection error occurred while managing devices. Please try again.');
 }
 
 export type DeviceCodeResult = {

@@ -13,6 +13,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { devLog } from '@/lib/devLogger';
+import { useI18nStore } from '@/lib/i18n/i18nStore';
 import {
   getLocalProfile,
   updateLocalProfile,
@@ -32,23 +33,29 @@ export type AnonymousAuthResult = {
  * Utility to map Supabase Auth errors to user-friendly messages.
  */
 export function mapAuthError(error: unknown): string {
-  if (!error || typeof error !== 'object') return 'An unknown error occurred.';
+  const t = (key: string, defaultValue: string) => {
+    return useI18nStore.getState().getTranslation(key) || defaultValue;
+  };
+
+  if (!error || typeof error !== 'object') {
+    return t('Auth.errors.unknown', 'An unknown error occurred.');
+  }
   const message = 'message' in error && typeof error.message === 'string' ? error.message : '';
 
   if (message.includes('New password should be different')) {
-    return 'Your new password must be different from your temporary password.';
+    return t('Auth.errors.passwordSame', 'Your new password must be different from your temporary password.');
   }
   if (message.includes('Unable to validate email address: invalid format')) {
-    return 'The email address format is not valid. Please check and try again.';
+    return t('Auth.errors.invalidEmail', 'The email address format is not valid. Please check and try again.');
   }
   if (message.includes('User already exists')) {
-    return 'This email address is already registered to another account.';
+    return t('Auth.errors.userExists', 'This email address is already registered to another account.');
   }
   if (message.includes('Password should be at least 6 characters')) {
-    return 'Password must be at least 6 characters long.';
+    return t('Auth.errors.passwordTooShort', 'Password must be at least 6 characters long.');
   }
   if (message.includes('Email address not allowed')) {
-    return 'This email domain is not allowed for registration.';
+    return t('Auth.errors.emailNotAllowed', 'This email domain is not allowed for registration.');
   }
 
   return message;
@@ -283,8 +290,12 @@ async function generateRecoveryCodeInternal(userId: string): Promise<{ code: str
  */
 export async function isAnonymousUser(): Promise<boolean> {
   const { data: authData } = await supabase.auth.getUser();
+  const user = authData?.user;
+  if (!user) return true;
 
-  return authData?.user?.is_anonymous || false;
+  if (user.email) return false;
+
+  return user.is_anonymous || false;
 }
 
 /**

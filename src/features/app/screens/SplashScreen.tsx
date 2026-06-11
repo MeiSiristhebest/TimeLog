@@ -12,15 +12,14 @@ import {
 } from 'react-native-reanimated';
 import { Container } from '@/components/ui/Container';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { getStoredRole } from '@/features/auth/services/roleStorage';
 import { hasSeenWelcome } from '@/features/auth/services/onboardingStorage';
 import { useActiveSession } from '@/features/auth/hooks/useActiveSession';
 import { useHeritageTheme } from '@/theme/heritage';
 import { AppText } from '@/components/ui/AppText';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
 
-const ROLE_STORYTELLER = 'storyteller';
-const ROLE_FAMILY = 'family';
+import { getRememberedAccounts } from '@/features/auth/services/rememberedAccountsService';
+import { syncStoriesDown, backfillLegacyMetadata } from '@/features/story-gallery/services/storySyncDownService';
 
 export default function SplashScreen(): JSX.Element {
   const router = useRouter();
@@ -58,7 +57,7 @@ export default function SplashScreen(): JSX.Element {
       // This prevents a jarring "flash" of the splash screen
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      const [seenWelcome, sessionResult] = await Promise.all([
+      const [, sessionResult] = await Promise.all([
         hasSeenWelcome(),
         refetchSession(),
       ]);
@@ -66,17 +65,31 @@ export default function SplashScreen(): JSX.Element {
 
       if (!resolvedSession) {
         setUnauthenticated();
-        router.replace(seenWelcome ? APP_ROUTES.DEVICE_CODE : APP_ROUTES.WELCOME);
+        
+        // Check for remembered accounts on this device
+        const remembered = getRememberedAccounts();
+        if (remembered.length > 0) {
+          router.replace(APP_ROUTES.SWITCH_ACCOUNT);
+        } else {
+          router.replace(APP_ROUTES.WELCOME);
+        }
         return;
       }
 
       const userId = resolvedSession.user.id;
       setAuthenticated(userId);
 
+      // Sync and backfill legacy metadata in the background on successful restore
+      void syncStoriesDown(userId);
+      void backfillLegacyMetadata(userId).then(() => {
+        import('@/lib/sync-engine/store').then(({ useSyncStore }) => {
+          useSyncStore.getState().processQueue().catch(() => {});
+        });
+      });
+
       // In the slimmed mobile app, all users land in the same recorder-centric experience.
-      // Already paired/authed users usually start at DEVICE_CODE to verify state 
-      // or TABS if fully functional.
-      router.replace(APP_ROUTES.DEVICE_CODE);
+      // Already paired/authed users start at TABS.
+      router.replace(APP_ROUTES.TABS);
     };
 
     restore();

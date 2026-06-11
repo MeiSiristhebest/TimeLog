@@ -18,7 +18,7 @@ import { showErrorToast } from '@/components/ui/feedback/toast';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export default function StoryCommentsScreen(): JSX.Element {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const theme = useHeritageTheme();
@@ -50,7 +50,7 @@ export default function StoryCommentsScreen(): JSX.Element {
 
   const displayTitle = story?.title?.trim() || t('Gallery.comments.title', { defaultValue: 'Story comments' });
   const formattedDate = story
-    ? new Date(story.startedAt).toLocaleDateString('en-US', {
+    ? new Date(story.startedAt).toLocaleDateString(locale, {
         year: 'numeric',
         month: 'long',
         day: 'numeric',

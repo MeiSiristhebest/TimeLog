@@ -6,13 +6,10 @@ import * as Clipboard from 'expo-clipboard';
 import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { HeritageAlert } from '@/components/ui/HeritageAlert';
 import { showSuccessToast } from '@/components/ui/feedback/toast';
-import { AUTH_STRINGS, MOCK_CONSENT_ITEMS } from '../data/mockAuthData';
+import { AUTH_STRINGS } from '../data/mockAuthData';
 import {
   DeviceCodeResult,
   generateDeviceCode,
-  listFamilyDevices,
-  revokeDevice,
-  DeviceSummary,
 } from '../services/deviceCodesService';
 import { generateRecoveryCode, getActiveRecoveryCode } from '../services/recoveryCodeService';
 import { useActiveSession } from './useActiveSession';
@@ -22,12 +19,14 @@ import { ensureStorytellerSession } from '../services/storytellerSessionService'
 import { getStoredRole, setStoredRole } from '@/features/auth/services/roleStorage';
 import { signInAnonymously } from '../services/anonymousAuthService';
 import { useAuthStore } from '../store/authStore';
-import { useProfile } from '@/features/settings/hooks/useProfile';
 import { supabase } from '@/lib/supabase';
+import { addRememberedAccount, saveSessionTokens } from '../services/rememberedAccountsService';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 // Hook for Role Screen Logic
 export function useRoleLogic() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const hasInitializedRef = useRef(false);
   const { session, refetch: refetchSession } = useActiveSession();
@@ -112,6 +111,23 @@ export function useRoleLogic() {
             // Update auth store immediately so session is available
             setAuthenticated(result.userId);
 
+            // Save anonymous storyteller to remembered list
+            const { data: sessionData } = await supabase.auth.getSession();
+            const session = sessionData.session;
+            if (session) {
+              addRememberedAccount({
+                userId: result.userId,
+                email: undefined,
+                displayName: undefined,
+                role: 'storyteller',
+                isAnonymous: true,
+              });
+              await saveSessionTokens(result.userId, {
+                accessToken: session.access_token,
+                refreshToken: session.refresh_token,
+              });
+            }
+
             // Anonymous storytellers go straight to the app
             router.replace(APP_ROUTES.TABS);
           } else {
@@ -139,13 +155,13 @@ export function useRoleLogic() {
       } catch (error) {
         devLog.error('[useRoleLogic] Failed to handle role selection:', error);
         HeritageAlert.show({
-          title: 'Error',
-          message: 'Failed to continue. Please try again.',
+          title: t('Common.error', { defaultValue: 'Error' }),
+          message: t('Common.failedToContinue', { defaultValue: 'Failed to continue. Please try again.' }),
           variant: 'error',
         });
       }
     },
-    [refetchSession, router, session]
+    [refetchSession, router, session, t]
   );
 
   const handleBack = () => {
@@ -165,6 +181,7 @@ export function useRoleLogic() {
 
 // Hook for Recovery Code Logic
 export function useRecoveryCodeLogic() {
+  const { t } = useTranslation();
   const scrollY = useSharedValue(0);
   const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
   const [isLoadingCode, setIsLoadingCode] = useState(true);
@@ -180,11 +197,11 @@ export function useRecoveryCodeLogic() {
     if (error instanceof Error) {
       const normalizedMessage = error.message.toLowerCase();
       if (normalizedMessage.includes('logged in') || normalizedMessage.includes('authenticated')) {
-        return 'Please sign in to manage your recovery code.';
+        return t('Auth.recoveryCode.errors.signInRequired', { defaultValue: 'Please sign in to manage your recovery code.' });
       }
       return error.message;
     }
-    return 'Something went wrong while handling your recovery code. Please try again.';
+    return t('Auth.recoveryCode.errors.default', { defaultValue: 'Something went wrong while handling your recovery code. Please try again.' });
   };
 
   useEffect(() => {
@@ -202,7 +219,7 @@ export function useRecoveryCodeLogic() {
         devLog.error('[useRecoveryCodeLogic] Failed to load active recovery code:', error);
         if (mounted) {
           HeritageAlert.show({
-            title: 'Unable to load code',
+            title: t('Auth.recoveryCode.alerts.failedLoadTitle', { defaultValue: 'Unable to load code' }),
             message: toErrorMessage(error),
             variant: 'error',
           });
@@ -223,22 +240,22 @@ export function useRecoveryCodeLogic() {
 
   const handleGenerateCode = async () => {
     HeritageAlert.show({
-      title: AUTH_STRINGS.recoveryCode.alerts.generate.title,
-      message: AUTH_STRINGS.recoveryCode.alerts.generate.message,
+      title: t('Auth.recoveryCode.alerts.generate.title', { defaultValue: 'Generate New Code?' }),
+      message: t('Auth.recoveryCode.alerts.generate.message', { defaultValue: 'This will invalidate the previous recovery code.' }),
       variant: 'warning',
       primaryAction: {
-        label: AUTH_STRINGS.recoveryCode.alerts.generate.confirm,
+        label: t('Auth.recoveryCode.alerts.generate.confirm', { defaultValue: 'Generate' }),
         onPress: async () => {
           setIsGenerating(true);
           try {
             const nextCode = await generateRecoveryCode();
             setRecoveryCode(nextCode.code);
-            showSuccessToast('Recovery code updated');
+            showSuccessToast(t('Auth.recoveryCode.toastUpdated', { defaultValue: 'Recovery code updated' }));
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           } catch (error) {
             devLog.error('[useRecoveryCodeLogic] Failed to generate recovery code:', error);
             HeritageAlert.show({
-              title: 'Failed to generate code',
+              title: t('Auth.recoveryCode.alerts.failedGenerate', { defaultValue: 'Failed to generate code' }),
               message: toErrorMessage(error),
               variant: 'error',
             });
@@ -247,14 +264,14 @@ export function useRecoveryCodeLogic() {
           }
         },
       },
-      secondaryAction: { label: AUTH_STRINGS.recoveryCode.alerts.generate.cancel },
+      secondaryAction: { label: t('Auth.switchAccount.removeConfirmCancel', { defaultValue: 'Cancel' }) },
     });
   };
 
   const handleCopyCode = async () => {
     if (recoveryCode) {
       await Clipboard.setStringAsync(recoveryCode);
-      showSuccessToast(AUTH_STRINGS.recoveryCode.toast);
+      showSuccessToast(t('Auth.recoveryCode.toastCopied', { defaultValue: 'Code copied to clipboard' }));
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
@@ -263,7 +280,7 @@ export function useRecoveryCodeLogic() {
     if (recoveryCode) {
       try {
         await Share.share({
-          message: AUTH_STRINGS.recoveryCode.alerts.share.message.replace('{code}', recoveryCode),
+          message: t('Auth.recoveryCode.alerts.share.message', { defaultValue: "TimeLog Recovery Code: {code}\n\nUse this code to restore access to the senior's device if it's lost or replaced." }).replace('{code}', recoveryCode),
         });
       } catch (error) {
         devLog.error('[RecoveryCodeScreen] Share failed:', error);
@@ -279,6 +296,7 @@ export function useRecoveryCodeLogic() {
 
 // Hook for Device Code Logic (Storyteller)
 export function useDeviceCodeLogic() {
+  const { t } = useTranslation();
   const [codeData, setCodeData] = useState<DeviceCodeResult | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -304,13 +322,13 @@ export function useDeviceCodeLogic() {
       const result = await generateDeviceCode();
       setCodeData(result);
     } catch (err) {
-      const message = err instanceof Error ? err.message : AUTH_STRINGS.deviceCode.defaultError;
+      const message = err instanceof Error ? err.message : t('Auth.deviceCode.defaultError', { defaultValue: 'Unable to generate code right now.' });
       setError(message);
-      HeritageAlert.show({ title: 'Error', message, variant: 'error' });
+      HeritageAlert.show({ title: t('Common.error', { defaultValue: 'Error' }), message, variant: 'error' });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadCode();
@@ -322,15 +340,15 @@ export function useDeviceCodeLogic() {
       router.replace(APP_ROUTES.TABS);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Authentication is required to continue.';
+        err instanceof Error ? err.message : t('Auth.deviceCode.authRequired', { defaultValue: 'Authentication is required to continue.' });
       HeritageAlert.show({
-        title: 'Unable to continue',
+        title: t('Common.unableToContinue', { defaultValue: 'Unable to continue' }),
         message,
         variant: 'error',
       });
       router.replace(APP_ROUTES.WELCOME);
     }
-  }, [router]);
+  }, [router, t]);
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -353,103 +371,3 @@ export function useDeviceCodeLogic() {
   };
 }
 
-// Hook for Device Management Logic (Family)
-export function useDeviceManagementLogic() {
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [code, setCode] = useState<string | null>(null);
-  const [expiresAt, setExpiresAt] = useState<string | null>(null);
-  const [devices, setDevices] = useState<DeviceSummary[]>([]);
-  const [error, setError] = useState<string>('');
-
-  const loadDevices = useCallback(async () => {
-    try {
-      const list = await listFamilyDevices();
-      setDevices(list);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : AUTH_STRINGS.deviceManagement.alerts.error.load;
-      setError(message);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadDevices();
-  }, [loadDevices]);
-
-  const handleGenerate = async () => {
-    setStatus('loading');
-    setError('');
-    try {
-      const result = await generateDeviceCode();
-      setCode(result.code);
-      setExpiresAt(result.expiresAt);
-      setStatus('success');
-      HeritageAlert.show({
-        title: AUTH_STRINGS.deviceManagement.alerts.codeReady.title,
-        message: AUTH_STRINGS.deviceManagement.alerts.codeReady.message
-          .replace('{code}', result.code)
-          .replace('{time}', new Date(result.expiresAt).toLocaleTimeString()),
-        variant: 'success',
-      });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : AUTH_STRINGS.deviceManagement.alerts.error.generate;
-      setStatus('error');
-      setError(message);
-    }
-  };
-
-  const handleRevoke = useCallback(
-    async (id: string) => {
-      try {
-        await revokeDevice(id);
-        await loadDevices();
-        HeritageAlert.show({
-          title: AUTH_STRINGS.deviceManagement.alerts.revoked.title,
-          message: AUTH_STRINGS.deviceManagement.alerts.revoked.message,
-          variant: 'success',
-        });
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : AUTH_STRINGS.deviceManagement.alerts.error.revoke;
-        HeritageAlert.show({
-          title: 'Error',
-          message: message,
-          variant: 'error',
-        });
-      }
-    },
-    [loadDevices]
-  );
-
-  return {
-    state: { status, code, expiresAt, devices, error },
-    actions: { handleGenerate, handleRevoke },
-  };
-}
-
-// Hook for Consent Review Logic
-export function useConsentReviewLogic() {
-  const scrollY = useSharedValue(0);
-  const { profile } = useProfile();
-
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
-    },
-  });
-
-  const consentDate = profile?.createdAt
-    ? new Date(profile.createdAt).toLocaleDateString()
-    : new Date().toLocaleDateString();
-
-  const consentItems = MOCK_CONSENT_ITEMS.map((item) => ({
-    ...item,
-    consentedAt: consentDate,
-  }));
-
-  return {
-    state: { scrollY, consentItems },
-    actions: { scrollHandler },
-  };
-}

@@ -46,7 +46,7 @@ import {
 type HeritageTheme = ReturnType<typeof useHeritageTheme>;
 
 export default function StoryDetailScreen(): JSX.Element {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { id, readOnlyDeletedPreview } = useLocalSearchParams<{
     id: string;
     readOnlyDeletedPreview?: string;
@@ -169,7 +169,7 @@ export default function StoryDetailScreen(): JSX.Element {
     );
   }
 
-  const formattedDate = new Date(story.startedAt).toLocaleDateString('en-US', {
+  const formattedDate = new Date(story.startedAt).toLocaleDateString(locale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

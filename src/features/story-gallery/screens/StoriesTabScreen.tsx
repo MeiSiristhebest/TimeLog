@@ -105,6 +105,7 @@ export default function StoriesTabScreen(): JSX.Element {
           autoCapitalize="none"
           autoCorrect={false}
           clearButtonMode="while-editing"
+          maxLength={100}
         />
       </View>
 

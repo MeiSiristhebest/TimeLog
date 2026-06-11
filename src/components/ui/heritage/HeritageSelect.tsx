@@ -284,6 +284,7 @@ export function HeritageSelect({
                   onChangeText={setSearchQuery}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  maxLength={50}
                 />
                 {searchQuery.length > 0 && (
                   <Pressable onPress={() => setSearchQuery('')}>

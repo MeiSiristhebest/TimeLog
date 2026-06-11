@@ -20,6 +20,13 @@ import { useHeritageTheme } from '@/theme/heritage';
 import { setWelcomeSeen } from '@/features/auth/services/onboardingStorage';
 import { APP_ROUTES } from '@/features/app/navigation/routes';
 import { useTranslation } from '@/lib/i18n/useTranslation';
+import { useState } from 'react';
+import { signInAnonymously } from '@/features/auth/services/anonymousAuthService';
+import { useAuthStore } from '@/features/auth/store/authStore';
+import { addRememberedAccount, saveSessionTokens } from '@/features/auth/services/rememberedAccountsService';
+import { supabase } from '@/lib/supabase';
+import { devLog } from '@/lib/devLogger';
+import { HeritageAlert } from '@/components/ui/HeritageAlert';
 
 // Require assets ensures they are bundled
 const HERO_IMAGE = require('../../../../assets/images/welcome-hero.png');
@@ -30,6 +37,8 @@ export default function WelcomeScreen(): JSX.Element {
   const { typography, colors, isDark } = useHeritageTheme();
   const { t } = useTranslation();
   const scale = typography.body / 24;
+  const setAuthenticated = useAuthStore((s) => s.setAuthenticated);
+  const [loading, setLoading] = useState(false);
 
   // Animation values
   const imageScale = useSharedValue(1);
@@ -58,11 +67,45 @@ export default function WelcomeScreen(): JSX.Element {
   }, [imageScale, buttonPulse]);
 
   const handleGetStarted = async () => {
+    if (loading) return;
+    setLoading(true);
     try {
       await setWelcomeSeen(true);
+      
+      // Auto-provision anonymous storyteller account
+      devLog.info('[WelcomeScreen] Provisioning storyteller anonymously...');
+      const result = await signInAnonymously();
+
+      // Update auth store immediately so session is available
+      setAuthenticated(result.userId);
+
+      // Save anonymous storyteller to remembered list
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData.session;
+      if (session) {
+        addRememberedAccount({
+          userId: result.userId,
+          email: undefined,
+          displayName: undefined,
+          role: 'storyteller',
+          isAnonymous: true,
+        });
+        await saveSessionTokens(result.userId, {
+          accessToken: session.access_token,
+          refreshToken: session.refresh_token,
+        });
+      }
+
+      router.replace(APP_ROUTES.TABS);
+    } catch (error) {
+      devLog.error('[WelcomeScreen] Failed to start anonymous storyteller session:', error);
+      HeritageAlert.show({
+        title: t('Common.error', { defaultValue: 'Error' }),
+        message: t('Common.failedToContinue', { defaultValue: 'Failed to continue. Please try again.' }),
+        variant: 'error',
+      });
     } finally {
-      // Correct flow: Choose role first, don't jump to device code
-      router.replace(APP_ROUTES.ROLE || '/role');
+      setLoading(false);
     }
   };
 
@@ -163,11 +206,12 @@ export default function WelcomeScreen(): JSX.Element {
                 entering={FadeInDown.delay(900).duration(800)}
                 style={[styles.buttonWrapper, animatedButtonStyle]}>
                 <HeritageButton
-                  title={t('Welcome.getStarted')}
+                  title={loading ? t('Auth.role.loading', { defaultValue: 'Loading...' }) : t('Welcome.getStarted')}
                   onPress={handleGetStarted}
                   variant="primary"
                   size="large"
                   fullWidth
+                  disabled={loading}
                   style={styles.ctaButton}
                   textStyle={styles.ctaButtonText}
                 />
