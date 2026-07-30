@@ -1,5 +1,11 @@
 # TimeLog
 
+[🇨🇳 中文](#-中文) | [🇺🇸 English Summary](#-english-summary)
+
+---
+
+## 🇨🇳 中文
+
 TimeLog 是一款基于 **React Native (Expo SDK 54)**、**Drizzle ORM**、**SQLite** 以及 **Supabase** 开发的本地优先 (Local-First) 语音故事记录应用。项目主要解决老年人群体在无障碍交互、弱网或无网环境下的数据安全与可用性问题，包含本地离线同步、智能语音对话协调、弱网主动探测、音频预检与加密等功能。
 
 ---
@@ -262,4 +268,13 @@ npx expo start --dev-client
 
 ---
 
-*Made with ❤️ for the Senior Project. Fulfilling WCAG 2.2 AAA Accessibility Standard for Elders.*
+## 🇺🇸 English Summary
+
+**TimeLog** is a local-first voice diary mobile application designed for elderly users, built with **React Native (Expo SDK 54)**, **Drizzle ORM**, **SQLite**, and **Supabase**.
+
+### Key Architectural Pillars
+- **Local-First Sync Engine**: Offline queueing with exponential backoff & NetInfo listeners.
+- **Voice Agent & Dialog Orchestrator**: LiveKit Agents with Deepgram Nova-3 STT/TTS and Silero VAD, featuring a 3-state machine (`DIALOG`, `DEGRADED`, `SILENT`).
+- **Active Quality Probing**: Active network latency (RTT) & loss probing every 650ms.
+- **Audio Encryption & Storage**: AES-256-CTR chunked audio encryption with versioned headers.
+- **Accessibility**: WCAG 2.2 AAA standard compliance with localized Buddhist calendar support.
