@@ -1,16 +1,40 @@
 # TimeLog
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
-[![React Native](https://img.shields.io/badge/React_Native-Expo_SDK_54-61DAFB.svg?style=for-the-badge)](README_EN.md)
-[![SQLite](https://img.shields.io/badge/Database-SQLite_%7C_Drizzle_ORM-003B57.svg?style=for-the-badge)](README_EN.md)
+[![React Native](https://img.shields.io/badge/React_Native-Expo_SDK_54-61DAFB.svg?style=for-the-badge)](https://expo.dev/)
+[![SQLite](https://img.shields.io/badge/Database-SQLite_%7C_Drizzle_ORM-003B57.svg?style=for-the-badge)](https://orm.drizzle.team/)
 
 [🇨🇳 中文](README.md) | [🇺🇸 English](README_EN.md)
 
 ---
 
+## 📑 Table of Contents
+
+- [📖 Introduction](#-introduction)
+- [🛠️ Core Architecture & Engineering Design](#️-core-architecture--engineering-design)
+  - [1. Local-First Sync Engine & Offline State Management](#1-local-first-sync-engine--offline-state-management-)
+  - [2. Voice Agent & Three-Mode Dialog Orchestrator](#2-voice-agent--three-mode-dialog-orchestrator-)
+  - [3. Active Network Quality Probing Service](#3-active-network-quality-probing-service-)
+  - [4. Native Audio Recording & Senior VAD Optimization](#4-native-audio-recording--senior-vad-optimization-)
+  - [5. AI Text Polish & Local PDF Export](#5-ai-text-polish--local-pdf-export-)
+  - [6. Proxy-Based Multi-Language Data Proxy](#6-proxy-based-multi-language-data-proxy-)
+  - [7. Accessibility Design & Localized Calendars](#7-accessibility-design--localized-calendars-)
+  - [8. Activity-Aware Gentle Nudge & Native Notifications](#8-activity-aware-gentle-nudge--native-notifications-)
+  - [9. Multi-Account Local SQLite Isolation](#9-multi-account-local-sqlite-isolation-)
+  - [10. AES-256-CTR Local Audio Encryption & Versioning](#10-aes-256-ctr-local-audio-encryption--versioning-)
+  - [11. Passwordless Device Code Pairing & Labeling](#11-passwordless-device-code-pairing--labeling-)
+- [📂 Project Structure](#-project-structure)
+- [📊 Technology Stack Matrix](#-technology-stack-matrix)
+- [📦 Testing & Verification](#-testing--verification)
+- [🤝 Contributing](#-contributing)
+- [🔒 Security](#-security)
+- [📜 License](#-license)
+
+---
+
 ## 📖 Introduction
 
-**TimeLog** is a local-first voice diary mobile application designed for elderly users, built with **React Native (Expo SDK 54)**, **Drizzle ORM**, **SQLite**, and **Supabase**. The project addresses data security, accessibility, and offline usability challenges faced by senior citizens under unreliable mobile network conditions. Key features include local-first offline synchronization, AI voice dialog orchestration, active network quality probing, native audio pre-flight validation, and chunked AES encryption.
+**TimeLog** is a local-first voice diary mobile application designed for elderly users, built with **React Native (Expo SDK 54)**、**Drizzle ORM**、**SQLite**、and **Supabase**. The project addresses data security, accessibility, and offline usability challenges faced by senior citizens under unreliable mobile network conditions. Key features include local-first offline synchronization, AI voice dialog orchestration, active network quality probing, native audio pre-flight validation, and chunked AES encryption.
 
 ---
 
@@ -29,29 +53,29 @@ All architectural components below are fully implemented in this repository. Cli
 
 ```mermaid
 sequenceDiagram
-    actor User as User / Device
-    participant DB as "Local SQLite (Drizzle ORM)"
-    participant Queue as "Sync Queue Service (syncQueueService)"
-    participant Store as "State Engine (useSyncStore)"
+    actor User as "User / Device"
+    participant DB as "Local SQLite<br/>(Drizzle ORM)"
+    participant Queue as "Sync Queue Service<br/>(syncQueueService)"
+    participant Store as "State Engine<br/>(useSyncStore)"
     participant Cloud as "Supabase Cloud Storage"
 
-    User->>DB: Record completed / Edit metadata
-    DB-->>Queue: Append pending task (pending)
-    Note over Store: Listen to network state (NetInfo.isConnected)
+    User->>DB: "Record completed / Edit metadata"
+    DB-->>Queue: "Append pending task (pending)"
+    Note over Store: "Listen to network state<br/>(NetInfo.isConnected)"
     alt Offline Mode
-        Store-->>User: Play offline sound cue
+        Store-->>User: "Play offline sound cue"
     else Online Mode
-        Store-->>User: Play sync start sound cue
-        Store->>Queue: Fetch next task (peekNext)
-        Queue->>Store: Lock task state (processing)
-        Store->>Cloud: Upload audio / update cloud records
+        Store-->>User: "Play sync start sound cue"
+        Store->>Queue: "Fetch next task (peekNext)"
+        Queue->>Store: "Lock task state (processing)"
+        Store->>Cloud: "Upload audio / update cloud records"
         alt Success
-            Cloud-->>Store: Validation pass (MD5 checksum)
-            Store->>Queue: Dequeue task (dequeue)
-            Store->>DB: Mark local record as 'synced'
+            Cloud-->>Store: "Validation pass (MD5 checksum)"
+            Store->>Queue: "Dequeue task (dequeue)"
+            Store->>DB: "Mark local record as 'synced'"
         else Failure
-            Store->>Queue: Mark failed & increment retry count (markFailed)
-            Note over Queue: Calculate exponential backoff delay
+            Store->>Queue: "Mark failed & increment retry count (markFailed)"
+            Note over Queue: "Calculate exponential backoff delay"
         end
     end
 ```
@@ -67,22 +91,22 @@ sequenceDiagram
 
 *   **Design Rationale**: Guides senior citizens through personal story recollections using AI voice conversations tailored for elderly speech cadence and high-latency mobile networks.
 *   **Implementation Details**:
-    - **Voice Agent Service**: Built on LiveKit Agents 1.x. Utilizes Deepgram Nova-3 STT for multilingual recognition, Deepgram TTS for natural voice generation, and Silero VAD for pause detection. Injects `storyId`, `topicText`, and `language` into System Prompts via participant metadata.
-    - **Three-Mode Orchestrator**: Client maintains `DIALOG` (Online interaction), `DEGRADED` (Response timeout fallback), and `SILENT` (User skip/silence) modes. If AI response latency exceeds 2000ms for 3 consecutive turns, the system automatically degrades to `DEGRADED` mode.
+    - **Voice Agent Service**: Built on LiveKit Agents 1.x. Utilizes Deepgram Nova-3 STT for multilingual recognition, Deepgram TTS for natural voice generation, and Silero VAD for pause detection. Injects `storyId`、`topicText`、and `language` into System Prompts via participant metadata.
+    - **Three-Mode Orchestrator**: Client maintains `DIALOG` (Online interaction)、`DEGRADED` (Response timeout fallback)、and `SILENT` (User skip/silence) modes. If AI response latency exceeds 2000ms for 3 consecutive turns, the system automatically degrades to `DEGRADED` mode.
     - **Concurrency**: Audio capture runs on a dedicated background thread, ensuring AI timeout state transitions never disrupt local recording disk writes.
 *   **Prompt Harness**:
-    - XML Constraints: Enforces `<role>`, `<core_rules>`, and `<conversation_state_machine>` tags in `prompts.py` to prohibit markdown/emoji formatting in speech output.
+    - XML Constraints: Enforces `<role>`、`<core_rules>`、and `<conversation_state_machine>` tags in `prompts.py` to prohibit markdown/emoji formatting in speech output.
     - Self-Reflection: Includes `<quality_check_before_reply>` prompting the model to verify word count and limit output to a single open question.
 *   **Dialog State Machine Diagram**:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> DIALOG : Initial State
-    DIALOG --> SILENT : 2 Consecutive Skips (handleSkip)
-    DIALOG --> DEGRADED : 3 Consecutive Timeouts (AI > 2000ms)
-    DEGRADED --> DIALOG : AI Response Recovered (handleAiResponse)
-    DEGRADED --> SILENT : Manual Close / Skip
-    SILENT --> DIALOG : Manual Resume (handleContinue)
+    [*] --> DIALOG : "Initial State"
+    DIALOG --> SILENT : "2 Consecutive Skips<br/>(handleSkip)"
+    DIALOG --> DEGRADED : "3 Consecutive Timeouts<br/>(AI > 2000ms)"
+    DEGRADED --> DIALOG : "AI Response Recovered<br/>(handleAiResponse)"
+    DEGRADED --> SILENT : "Manual Close / Skip"
+    SILENT --> DIALOG : "Manual Resume<br/>(handleContinue)"
 ```
 
 *   **📂 Direct Source Code Links**:
@@ -97,7 +121,7 @@ stateDiagram-v2
 *   **Design Rationale**: Conventional passive network checks fail to detect "high latency / packet loss" weak networks, where initiating real-time voice sessions causes stuttering.
 *   **Implementation Details**:
     - Active Probing: Issues lightweight ping probes to Supabase Edge Functions every 650ms during active recording.
-    - Metric Calculations: Computes **RTT (Round Trip Time)**, **Packet Loss**, and **Jitter**.
+    - Metric Calculations: Computes **RTT (Round Trip Time)**、**Packet Loss**、and **Jitter**.
     - Sliding Window Filter: Marks connection as offline if 3 consecutive pings fail within 2 seconds, immediately switching to local recording mode.
 *   **📂 Direct Source Code Links**:
     - [NetworkQualityService.ts (Network Metric Probing Service)](src/features/recorder/services/NetworkQualityService.ts)
@@ -115,15 +139,15 @@ stateDiagram-v2
 
 ```mermaid
 graph TD
-    A[Start Recording] --> B{Disk Space >= 500MB}
-    B -- Insufficient Space --> C[Abort & Display Alert]
-    B -- Space OK --> D[Initialize Audio Stream]
-    D --> E[Write 16kHz WAV Chunks to Disk]
-    E --> F{VAD Silence Threshold}
-    F -- Within Threshold --> E
-    F -- Silence > 3-5 Seconds --> G[Trigger Audio Cue / Pause]
-    G --> H[Transcode to Opus & Encrypt]
-    H --> I[Commit to Local DB & Push to Sync Queue]
+    A["Start Recording"] --> B{"Disk Space >= 500MB"}
+    B -- "Insufficient Space" --> C["Abort & Display Alert"]
+    B -- "Space OK" --> D["Initialize Audio Stream"]
+    D --> E["Write 16kHz WAV Chunks to Disk"]
+    E --> F{"VAD Silence Threshold"}
+    F -- "Within Threshold" --> E
+    F -- "Silence > 3-5 Seconds" --> G["Trigger Audio Cue / Pause"]
+    G --> H["Transcode to Opus & Encrypt"]
+    H --> I["Commit to Local DB & Push to Sync Queue"]
 ```
 
 *   **📂 Direct Source Code Links**:
@@ -149,7 +173,7 @@ graph TD
 
 *   **Design Rationale**: The app embeds 36 preset senior topic prompts. Traditional localization requires refactoring underlying data array calls.
 *   **Implementation Details**:
-    - ES6 Proxy Interception: Wraps static `TOPIC_QUESTIONS` arrays using ES6 Proxies, intercepting `map`, `filter`, `find`, and index accessors.
+    - ES6 Proxy Interception: Wraps static `TOPIC_QUESTIONS` arrays using ES6 Proxies, intercepting `map`、`filter`、`find`、and index accessors.
     - Dynamic Mapping: Intercepts access calls to read current locale packs from `i18nStore` and swap `text` fields dynamically with zero caller refactoring.
 *   **📂 Direct Source Code Links**:
     - [topicQuestions.ts (Localization Proxy Wrapper)](src/features/recorder/data/topicQuestions.ts)
@@ -258,15 +282,70 @@ TimeLog
 
 Core components pass automated unit and integration test suites.
 
+### 1. Run test suite
 ```bash
-# Run test suite
 npm test
+```
 
-# Local development startup
+### 2. Local development startup
+```bash
 npm install
 npx drizzle-kit generate
 npx expo start --dev-client
 ```
+
+**Expected output**:
+```bash
+Starting Metro Bundler
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█
+█  Metro  waiting.                    █
+█  › Scan the QR code above with     █
+█    the Expo Go app                 █
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+> Waiting on http://localhost:8081
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions welcome. Quick flow:
+
+```bash
+# 1. Fork → Clone → Branch
+git checkout -b feat/your-feature
+
+# 2. Run tests
+npm test
+
+# 3. TypeScript type check passes
+npx tsc --noEmit
+
+# 4. Commit and open a PR
+git commit -m "feat: your change"
+git push origin feat/your-feature
+```
+
+**Welcome contribution directions**:
+- 🌐 Add new language packs (Japanese, Korean, Cantonese, etc.)
+- 🧪 Add React Native component unit tests and E2E tests
+- 🔌 Add new cloud sync adapters (backends other than Supabase)
+- ♿ Further polish accessibility details
+
+---
+
+## 🔒 Security
+
+| Risk Scenario | Mitigation |
+|---------|---------|
+| **Local Audio File Theft** | aes-js AES-256-CTR chunk-level encryption; versioned headers support backward-compatible algorithm upgrades |
+| **Account Switch Data Leak** | All Drizzle queries force `sessionUserId` in WHERE clause; guest users sandboxed with `userId IS NULL` |
+| **Supabase Privilege Escalation** | Device codes locked after 5 errors in 10 minutes; Service Role Key only used by Cloud Functions server-side |
+| **Export PDF Contains Sensitive Data** | `expo-print` performs local HTML→PDF conversion; after generation the app delegates to system share sheet, never uploads or persists internally |
+| **Recording Data Sync Inconsistency** | Sync queue three-phase state machine (pending/processing/processed) + MD5 checksum; failure exponential backoff retries |
+
+**Vulnerability disclosure**: Report security issues directly to **`timelog-security [at] googlegroups [dot] com`** — do not file a public issue. We commit to a **first response within 24 hours**.
 
 ---
 
