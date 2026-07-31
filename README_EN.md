@@ -1,12 +1,20 @@
 # TimeLog
 
-[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
-[![React Native](https://img.shields.io/badge/React_Native-Expo_SDK_54-61DAFB.svg?style=for-the-badge)](https://expo.dev/)
-[![SQLite](https://img.shields.io/badge/Database-SQLite_%7C_Drizzle_ORM-003B57.svg?style=for-the-badge)](https://orm.drizzle.team/)
+<p align="center">
+  [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+  [![React Native](https://img.shields.io/badge/React_Native-Expo_SDK_54-61DAFB.svg?style=for-the-badge)](https://expo.dev/)
+  [![SQLite](https://img.shields.io/badge/Database-SQLite_%7C_Drizzle_ORM-003B57.svg?style=for-the-badge)](https://orm.drizzle.team/)
+</p>
 
-[🇨🇳 中文](README.md) | [🇺🇸 English](README_EN.md)
+<p align="center">
+  <a href="README.md">🇨🇳 中文</a> &nbsp;|&nbsp; <a href="README_EN.md">🇺🇸 English</a>
+</p>
 
 ---
+
+<p align="center">
+    <strong>Local-First Voice Story Recorder · React Native Expo + SQLite + Supabase · Built for Elder Accessibility & Offline-First</strong>
+</p>
 
 ## 📑 Table of Contents
 

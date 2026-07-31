@@ -1,12 +1,20 @@
 # TimeLog
 
-[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
-[![React Native](https://img.shields.io/badge/React_Native-Expo_SDK_54-61DAFB.svg?style=for-the-badge)](https://expo.dev/)
-[![SQLite](https://img.shields.io/badge/Database-SQLite_%7C_Drizzle_ORM-003B57.svg?style=for-the-badge)](https://orm.drizzle.team/)
+<p align="center">
+  [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+  [![React Native](https://img.shields.io/badge/React_Native-Expo_SDK_54-61DAFB.svg?style=for-the-badge)](https://expo.dev/)
+  [![SQLite](https://img.shields.io/badge/Database-SQLite_%7C_Drizzle_ORM-003B57.svg?style=for-the-badge)](https://orm.drizzle.team/)
+</p>
 
-[🇨🇳 中文](README.md) | [🇺🇸 English](README_EN.md)
+<p align="center">
+  <a href="README.md">🇨🇳 中文</a> &nbsp;|&nbsp; <a href="README_EN.md">🇺🇸 English</a>
+</p>
 
 ---
+
+<p align="center">
+    <strong>本地优先语音故事记录应用 · React Native Expo + SQLite + Supabase · 专为长者无障碍与弱网环境设计</strong>
+</p>
 
 ## 📑 目录
 
@@ -205,7 +213,7 @@ graph TD
 
 ---
 
-### 9. 本地 SQLite 多账户数据物理隔离 (Multi-Account Local Data Isolation) 🛡️
+### 9. 本地 SQLite 多账户数据物理隔离 (Multi-Account Local SQLite Isolation) 🛡️
 
 *   **设计思路**：家庭共享设备场景下，多位长者可能共用一台手机。退出登录或切换账号时，需保证未同步的本地数据不发生混淆或泄漏。
 *   **实现细节**：
@@ -251,7 +259,7 @@ TimeLog
 ├── src/                           # 核心源码
 │   ├── db/                        # 本地 SQLite & Drizzle ORM Schema
 │   ├── features/                  # 业务特性模块 (Auth, Recorder, Gallery)
-│   ├── lib/                       # 底层库包装 (Sync Engine, Audio Encryption)
+│   ├── lib/                       # 底层库包装 (Sync Engine, AES)
 │   ├── components/ui/             # 共享 dumb 组件
 │   └── utils/                     # 工具类
 ├── agents/                        # LiveKit Agent 服务端 (Python)
