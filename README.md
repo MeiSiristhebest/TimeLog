@@ -1,10 +1,34 @@
 # TimeLog
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
-[![React Native](https://img.shields.io/badge/React_Native-Expo_SDK_54-61DAFB.svg?style=for-the-badge)](README.md)
-[![SQLite](https://img.shields.io/badge/Database-SQLite_%7C_Drizzle_ORM-003B57.svg?style=for-the-badge)](README.md)
+[![React Native](https://img.shields.io/badge/React_Native-Expo_SDK_54-61DAFB.svg?style=for-the-badge)](https://expo.dev/)
+[![SQLite](https://img.shields.io/badge/Database-SQLite_%7C_Drizzle_ORM-003B57.svg?style=for-the-badge)](https://orm.drizzle.team/)
 
 [🇨🇳 中文](README.md) | [🇺🇸 English](README_EN.md)
+
+---
+
+## 📑 目录
+
+- [项目简介](#-项目简介)
+- [核心架构与工程设计](#-核心架构与工程设计-architecture--design)
+  - [1. 本地优先同步引擎与离线状态管理](#1-本地优先同步引擎与离线状态管理-local-first-sync-engine--network-as-state-)
+  - [2. 语音对话代理与三模态协调引擎](#2-语音对话代理与三模态协调引擎-voice-agent--dialog-orchestrator-)
+  - [3. 弱网主动探测服务](#3-弱网主动探测服务-network-quality-probing-)
+  - [4. 原生音频录制与长者静音检测优化](#4-原生音频录制与长者静音检测优化-native-audio--vad-optimization-)
+  - [5. 口述文本 AI 润色与 PDF 本地导出](#5-口述文本-ai-润色与-pdf-本地导出-ai-polished-text--pdf-export-)
+  - [6. 基于 Proxy 的多语言数据代理](#6-基于-proxy-的多语言数据代理-proxy-based-localization-)
+  - [7. 无障碍设计与多历法时间格式化](#7-无障碍设计与多历法时间格式化-accessibility--localized-calendars-)
+  - [8. 基于活跃度检测的系统级定时提醒](#8-基于活跃度检测的系统级定时提醒-gentle-nudge--native-notifications-)
+  - [9. 本地 SQLite 多账户数据物理隔离](#9-本地-sqlite-多账户数据物理隔离-multi-account-local-data-isolation-)
+  - [10. 音频 AES-256-CTR 本地加密与版本兼容](#10-音频-aes-256-ctr-本地加密与版本兼容-audio-encryption--compatibility-)
+  - [11. 免密设备配对码与标签管理](#11-免密设备配对码与标签管理-device-code-pairing--labeling-)
+- [项目结构](#-项目结构-project-structure)
+- [技术栈选型](#-技术栈选型-technology-stack)
+- [测试与运行验证](#-测试与运行验证)
+- [参与贡献](#-参与贡献)
+- [安全说明](#-安全说明)
+- [许可证](#-许可证-license)
 
 ---
 
@@ -20,7 +44,7 @@ TimeLog 是一款基于 **React Native (Expo SDK 54)**、**Drizzle ORM**、**SQL
 
 ### 1. 本地优先同步引擎与离线状态管理 (Local-First Sync Engine & Network as State) 🚀
 
-*   **设计思路**：为应对不可靠的网络环境，应用采用“本地优先”写入策略。用户的所有操作（如音频录制、信息更新、资料修改）均先写入本地 SQLite 数据库，并向同步队列插入待执行任务。
+*   **设计思路**：为应对不可靠的网络环境，应用采用"本地优先"写入策略。用户的所有操作（如音频录制、信息更新、资料修改）均先写入本地 SQLite 数据库，并向同步队列插入待执行任务。
 *   **实现细节**：
     - 状态机监听：通过 `@react-native-community/netinfo` 与 `AppState` 实时捕获网络和前后台状态。
     - 重试机制：任务执行失败时，同步引擎通过指数退避算法进行重试；多次重试失败则标记异常，并在应用下次启动或网络恢复时重新入队执行。
@@ -29,29 +53,29 @@ TimeLog 是一款基于 **React Native (Expo SDK 54)**、**Drizzle ORM**、**SQL
 
 ```mermaid
 sequenceDiagram
-    actor User as 用户/设备
-    participant DB as "本地 SQLite (Drizzle ORM)"
-    participant Queue as "同步队列服务 (syncQueueService)"
-    participant Store as "状态引擎 (useSyncStore)"
+    actor User as "用户/设备"
+    participant DB as "本地 SQLite<br/>(Drizzle ORM)"
+    participant Queue as "同步队列服务<br/>(syncQueueService)"
+    participant Store as "状态引擎<br/>(useSyncStore)"
     participant Cloud as "Supabase 云端存储"
 
-    User->>DB: 录音完成 / 状态修改
-    DB-->>Queue: 追加待同步任务 (pending)
-    Note over Store: 监听网络状态 (NetInfo.isConnected)
+    User->>DB: "录音完成 / 状态修改"
+    DB-->>Queue: "追加待同步任务 (pending)"
+    Note over Store: "监听网络状态<br/>(NetInfo.isConnected)"
     alt 离线状态
-        Store-->>User: 播放离线状态提示音
+        Store-->>User: "播放离线状态提示音"
     else 在线状态
-        Store-->>User: 播放开始同步提示音
-        Store->>Queue: 获取待同步任务 (peekNext)
-        Queue->>Store: 锁定任务状态 (processing)
-        Store->>Cloud: 上传音频/更新云端数据
+        Store-->>User: "播放开始同步提示音"
+        Store->>Queue: "获取待同步任务 (peekNext)"
+        Queue->>Store: "锁定任务状态 (processing)"
+        Store->>Cloud: "上传音频/更新云端数据"
         alt 成功
-            Cloud-->>Store: 校验通过 (MD5)
-            Store->>Queue: 清理任务 (dequeue)
-            Store->>DB: 更新本地同步状态为 synced
+            Cloud-->>Store: "校验通过 (MD5)"
+            Store->>Queue: "清理任务 (dequeue)"
+            Store->>DB: "更新本地同步状态为 synced"
         else 失败
-            Store->>Queue: 标记失败并增加重试次数 (markFailed)
-            Note over Queue: 计算指数退避重试时间
+            Store->>Queue: "标记失败并增加重试次数 (markFailed)"
+            Note over Queue: "计算指数退避重试时间"
         end
     end
 ```
@@ -77,12 +101,12 @@ sequenceDiagram
 
 ```mermaid
 stateDiagram-v2
-    [*] --> DIALOG : 初始状态
-    DIALOG --> SILENT : 连续跳过 2 次 (handleSkip)
-    DIALOG --> DEGRADED : 连续超时 3 次 (AI 响应 > 2000ms)
-    DEGRADED --> DIALOG : AI 响应恢复 (handleAiResponse)
-    DEGRADED --> SILENT : 用户手动关闭 / 跳过
-    SILENT --> DIALOG : 用户手动开启 (handleContinue)
+    [*] --> DIALOG : "初始状态"
+    DIALOG --> SILENT : "连续跳过 2 次<br/>(handleSkip)"
+    DIALOG --> DEGRADED : "连续超时 3 次<br/>(AI 响应 > 2000ms)"
+    DEGRADED --> DIALOG : "AI 响应恢复<br/>(handleAiResponse)"
+    DEGRADED --> SILENT : "用户手动关闭 / 跳过"
+    SILENT --> DIALOG : "用户手动开启<br/>(handleContinue)"
 ```
 
 *   **📂 核心源码直链**：
@@ -94,7 +118,7 @@ stateDiagram-v2
 
 ### 3. 弱网主动探测服务 (Network Quality Probing) 📶
 
-*   **设计思路**：传统网络探测无法识别“高延迟/高丢包”的弱网环境。强行握手实时语音会导致卡顿，影响用户体验。
+*   **设计思路**：传统网络探测无法识别"高延迟/高丢包"的弱网环境。强行握手实时语音会导致卡顿，影响用户体验。
 *   **实现细节**：
     - 主动探测：录音期间客户端每 650 毫秒向 Supabase Edge Function 发送一次轻量探测请求。
     - 指标计算：计算 **RTT (往返时延)**、**Packet Loss (丢包率)** 和 **Jitter (时延抖动)**。
@@ -115,15 +139,15 @@ stateDiagram-v2
 
 ```mermaid
 graph TD
-    A[启动录音] --> B{磁盘空间 >= 500MB}
-    B -- 空间不足 --> C[拦截并提示]
-    B -- 空间充足 --> D[初始化音频流]
-    D --> E[16kHz WAV 格式分块写入磁盘]
-    E --> F{VAD 静音判定}
-    F -- 未超时 --> E
-    F -- 静音超过 3~5 秒 --> G[触发提示音 / 暂停录音]
-    G --> H["音频转码 (Opus) 并加密"]
-    H --> I[保存本地并加入同步队列]
+    A["启动录音"] --> B{"磁盘空间 >= 500MB"}
+    B -- "空间不足" --> C["拦截并提示"]
+    B -- "空间充足" --> D["初始化音频流"]
+    D --> E["16kHz WAV 格式分块写入磁盘"]
+    E --> F{"VAD 静音判定"}
+    F -- "未超时" --> E
+    F -- "静音超过 3~5 秒" --> G["触发提示音 / 暂停录音"]
+    G --> H["音频转码 Opus 并加密"]
+    H --> I["保存本地并加入同步队列"]
 ```
 
 *   **📂 核心源码直链**：
@@ -209,7 +233,7 @@ graph TD
 *   **设计思路**：长者在手机上难以完成复杂的账号密码输入。
 *   **实现细节**：
     - 配对逻辑：手机端一键向 Supabase 获取一次性 `Device Code`；家属在 PC 浏览器端录入配对码，云端建立账号配对关联并回写。
-    - 别名管理：家属可在 Web 管理端修改绑定设备的标签名称（如“外婆的话匣子”），以便于在多设备环境下进行追溯。
+    - 别名管理：家属可在 Web 管理端修改绑定设备的标签名称（如"外婆的话匣子"），以便于在多设备环境下进行追溯。
 *   **📂 核心源码直链**：
     - [deviceCodesService.ts (配对码生成及状态轮询)](src/features/auth/services/deviceCodesService.ts)
     - [anonymousAuthService.ts (隐式登录升级逻辑)](src/features/auth/services/anonymousAuthService.ts)
@@ -270,8 +294,61 @@ npx drizzle-kit generate
 npx expo start --dev-client
 ```
 
+**预期输出**：
+```bash
+Starting Metro Bundler
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█
+█  Metro  waiting.                    █
+█  › Scan the QR code above with     █
+█    the Expo Go app                 █
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+> Waiting on http://localhost:8081
+```
+
+---
+
+## 🤝 参与贡献
+
+欢迎贡献代码。简要流程：
+
+```bash
+# 1. Fork → Clone → 切分支
+git checkout -b feat/your-feature
+
+# 2. 跑通测试
+npm test
+
+# 3. TypeScript 类型检查通过
+npx tsc --noEmit
+
+# 4. Commit 并提 PR
+git commit -m "feat: your change"
+git push origin feat/your-feature
+```
+
+**欢迎贡献的方向**：
+- 🌐 新增语言包（日语、韩语、粤语等）
+- 🧪 补充 React Native 组件单元测试与 E2E 测试
+- 🔌 新增云端同步适配（除 Supabase 外的后端）
+- ♿ 进一步打磨无障碍细节
+
+---
+
+## 🔒 安全说明
+
+| 风险场景 | 防护措施 |
+|---------|---------|
+| **本地音频文件被盗读** | aes-js AES-256-CTR 块级加密；版本化头部支持向后兼容升级算法 |
+| **切换账号数据泄漏** | 所有 Drizzle 查询强制以 `sessionUserId` 过滤 WHERE；未登录游客 `userId IS NULL` 沙箱 |
+| **Supabase 身份越权** | 配对码 10 分钟 5 次错误锁定；Service Role Key 仅云函数服务端使用 |
+| **导出 PDF 包含敏感数据** | `expo-print` 本地 HTML→PDF；生成后交由系统分享面板，应用不自行上传或持久化 |
+| **录音数据同步不一致** | 同步队列三阶段状态机（pending/processing/processed）+ MD5 校验；失败指数退避重试 |
+
+**漏洞上报**：发现安全问题请直接发邮件至 **`timelog-security [at] googlegroups [dot] com`**，不要公开在 Issue 里。承诺 **24 小时内首次响应**。
+
 ---
 
 ## 📜 许可证 (License)
 
-遵循 [MIT License](LICENSE) 开源协议。
+基于 **MIT License** 开源协议。详见 [LICENSE](LICENSE) 文件。
