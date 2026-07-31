@@ -345,7 +345,7 @@ git push origin feat/your-feature
 | **导出 PDF 包含敏感数据** | `expo-print` 本地 HTML→PDF；生成后交由系统分享面板，应用不自行上传或持久化 |
 | **录音数据同步不一致** | 同步队列三阶段状态机（pending/processing/processed）+ MD5 校验；失败指数退避重试 |
 
-**漏洞上报**：发现安全问题请直接发邮件至 **`timelog-security [at] googlegroups [dot] com`**，不要公开在 Issue 里。承诺 **24 小时内首次响应**。
+**漏洞上报**：发现安全问题请直接发邮件至 **`maox_neta@foxmail.com`**，不要公开在 Issue 里。承诺 **24 小时内首次响应**。
 
 ---
 

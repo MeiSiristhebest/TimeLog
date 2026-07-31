@@ -345,7 +345,7 @@ git push origin feat/your-feature
 | **Export PDF Contains Sensitive Data** | `expo-print` performs local HTML→PDF conversion; after generation the app delegates to system share sheet, never uploads or persists internally |
 | **Recording Data Sync Inconsistency** | Sync queue three-phase state machine (pending/processing/processed) + MD5 checksum; failure exponential backoff retries |
 
-**Vulnerability disclosure**: Report security issues directly to **`timelog-security [at] googlegroups [dot] com`** — do not file a public issue. We commit to a **first response within 24 hours**.
+**Vulnerability disclosure**: Report security issues directly to **`maox_neta@foxmail.com`** — do not file a public issue. We commit to a **first response within 24 hours**.
 
 ---
 
