@@ -1,9 +1,9 @@
 # TimeLog
 
 <p align="center">
-  [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
-  [![React Native](https://img.shields.io/badge/React_Native-Expo_SDK_54-61DAFB.svg?style=for-the-badge)](https://expo.dev/)
-  [![SQLite](https://img.shields.io/badge/Database-SQLite_%7C_Drizzle_ORM-003B57.svg?style=for-the-badge)](https://orm.drizzle.team/)
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="License" /></a>
+  <a href="https://expo.dev/"><img src="https://img.shields.io/badge/React_Native-Expo_SDK_54-61DAFB.svg?style=for-the-badge" alt="React Native" /></a>
+  <a href="https://orm.drizzle.team/"><img src="https://img.shields.io/badge/Database-SQLite_%7C_Drizzle_ORM-003B57.svg?style=for-the-badge" alt="SQLite" /></a>
 </p>
 
 <p align="center">
@@ -16,9 +16,13 @@
     <strong>Local-First Voice Story Recorder · React Native Expo + SQLite + Supabase · Built for Elder Accessibility & Offline-First</strong>
 </p>
 
+---
+
 ## 📑 Table of Contents
 
 - [📖 Introduction](#-introduction)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
 - [🛠️ Core Architecture & Engineering Design](#️-core-architecture--engineering-design)
   - [1. Local-First Sync Engine & Offline State Management](#1-local-first-sync-engine--offline-state-management-)
   - [2. Voice Agent & Three-Mode Dialog Orchestrator](#2-voice-agent--three-mode-dialog-orchestrator-)
@@ -33,7 +37,6 @@
   - [11. Passwordless Device Code Pairing & Labeling](#11-passwordless-device-code-pairing--labeling-)
 - [📂 Project Structure](#-project-structure)
 - [📊 Technology Stack Matrix](#-technology-stack-matrix)
-- [📦 Testing & Verification](#-testing--verification)
 - [🤝 Contributing](#-contributing)
 - [🔒 Security](#-security)
 - [📜 License](#-license)
@@ -42,7 +45,48 @@
 
 ## 📖 Introduction
 
-**TimeLog** is a local-first voice diary mobile application designed for elderly users, built with **React Native (Expo SDK 54)**、**Drizzle ORM**、**SQLite**、and **Supabase**. The project addresses data security, accessibility, and offline usability challenges faced by senior citizens under unreliable mobile network conditions. Key features include local-first offline synchronization, AI voice dialog orchestration, active network quality probing, native audio pre-flight validation, and chunked AES encryption.
+**TimeLog** is a local-first voice diary mobile application designed for elderly users, built with **React Native (Expo SDK 54)**, **Drizzle ORM**, **SQLite**, and **Supabase**. The project addresses data security, accessibility, and offline usability challenges faced by senior citizens under unreliable mobile network conditions. Key features include local-first offline synchronization, AI voice dialog orchestration, active network quality probing, native audio pre-flight validation, and chunked AES encryption.
+
+---
+
+## Installation
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Generate Drizzle ORM migration
+npx drizzle-kit generate
+```
+
+---
+
+## Quick Start
+
+### 1. Run Test Suite
+
+```bash
+npm test
+```
+
+### 2. Start Dev Client
+
+```bash
+npx expo start --dev-client
+```
+
+**Expected output**:
+
+```bash
+Starting Metro Bundler
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█
+█  Metro  waiting.                    █
+█  › Scan the QR code above with     █
+█    the Expo Go app                 █
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+> Waiting on http://localhost:8081
+```
 
 ---
 
@@ -103,7 +147,7 @@ sequenceDiagram
     - **Three-Mode Orchestrator**: Client maintains `DIALOG` (Online interaction)、`DEGRADED` (Response timeout fallback)、and `SILENT` (User skip/silence) modes. If AI response latency exceeds 2000ms for 3 consecutive turns, the system automatically degrades to `DEGRADED` mode.
     - **Concurrency**: Audio capture runs on a dedicated background thread, ensuring AI timeout state transitions never disrupt local recording disk writes.
 *   **Prompt Harness**:
-    - XML Constraints: Enforces `<role>`、`<core_rules>`、and `<conversation_state_machine>` tags in `prompts.py` to prohibit markdown/emoji formatting in speech output.
+    - XML Constraints: Enforces `<role>`、`core_rules`、and `<conversation_state_machine>` tags in `prompts.py` to prohibit markdown/emoji formatting in speech output.
     - Self-Reflection: Includes `<quality_check_before_reply>` prompting the model to verify word count and limit output to a single open question.
 *   **Dialog State Machine Diagram**:
 
@@ -283,36 +327,6 @@ TimeLog
 | **File Encryption**| aes-js (AES-256-CTR) | Chunked Audio Encryption |
 | **Localization** | Zustand + MMKV i18n | UI Localization |
 | **Audio Stream** | @siteed/expo-audio-stream | Audio Stream Capture |
-
----
-
-## 📦 Testing & Verification
-
-Core components pass automated unit and integration test suites.
-
-### 1. Run test suite
-```bash
-npm test
-```
-
-### 2. Local development startup
-```bash
-npm install
-npx drizzle-kit generate
-npx expo start --dev-client
-```
-
-**Expected output**:
-```bash
-Starting Metro Bundler
-▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█
-█  Metro  waiting.                    █
-█  › Scan the QR code above with     █
-█    the Expo Go app                 █
-▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-> Waiting on http://localhost:8081
-```
 
 ---
 
