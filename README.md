@@ -1,9 +1,9 @@
 # TimeLog
 
 <p align="center">
-  [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
-  [![React Native](https://img.shields.io/badge/React_Native-Expo_SDK_54-61DAFB.svg?style=for-the-badge)](https://expo.dev/)
-  [![SQLite](https://img.shields.io/badge/Database-SQLite_%7C_Drizzle_ORM-003B57.svg?style=for-the-badge)](https://orm.drizzle.team/)
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="License" /></a>
+  <a href="https://expo.dev/"><img src="https://img.shields.io/badge/React_Native-Expo_SDK_54-61DAFB.svg?style=for-the-badge" alt="React Native" /></a>
+  <a href="https://orm.drizzle.team/"><img src="https://img.shields.io/badge/Database-SQLite_%7C_Drizzle_ORM-003B57.svg?style=for-the-badge" alt="SQLite" /></a>
 </p>
 
 <p align="center">
@@ -16,24 +16,27 @@
     <strong>本地优先语音故事记录应用 · React Native Expo + SQLite + Supabase · 专为长者无障碍与弱网环境设计</strong>
 </p>
 
+---
+
 ## 📑 目录
 
 - [项目简介](#-项目简介)
+- [安装](#安装-installation)
+- [快速开始](#快速开始-quick-start)
 - [核心架构与工程设计](#-核心架构与工程设计-architecture--design)
-  - [1. 本地优先同步引擎与离线状态管理](#1-本地优先同步引擎与离线状态管理-local-first-sync-engine--network-as-state-)
-  - [2. 语音对话代理与三模态协调引擎](#2-语音对话代理与三模态协调引擎-voice-agent--dialog-orchestrator-)
-  - [3. 弱网主动探测服务](#3-弱网主动探测服务-network-quality-probing-)
-  - [4. 原生音频录制与长者静音检测优化](#4-原生音频录制与长者静音检测优化-native-audio--vad-optimization-)
-  - [5. 口述文本 AI 润色与 PDF 本地导出](#5-口述文本-ai-润色与-pdf-本地导出-ai-polished-text--pdf-export-)
-  - [6. 基于 Proxy 的多语言数据代理](#6-基于-proxy-的多语言数据代理-proxy-based-localization-)
-  - [7. 无障碍设计与多历法时间格式化](#7-无障碍设计与多历法时间格式化-accessibility--localized-calendars-)
-  - [8. 基于活跃度检测的系统级定时提醒](#8-基于活跃度检测的系统级定时提醒-gentle-nudge--native-notifications-)
-  - [9. 本地 SQLite 多账户数据物理隔离](#9-本地-sqlite-多账户数据物理隔离-multi-account-local-data-isolation-)
-  - [10. 音频 AES-256-CTR 本地加密与版本兼容](#10-音频-aes-256-ctr-本地加密与版本兼容-audio-encryption--compatibility-)
-  - [11. 免密设备配对码与标签管理](#11-免密设备配对码与标签管理-device-code-pairing--labeling-)
+  - [1. 本地优先同步引擎与离线状态管理 (Local-First Sync Engine & Network as State)](#1-本地优先同步引擎与离线状态管理-local-first-sync-engine--network-as-state-)
+  - [2. 语音对话代理与三模态协调引擎 (Voice Agent & Dialog Orchestrator)](#2-语音对话代理与三模态协调引擎-voice-agent--dialog-orchestrator-)
+  - [3. 弱网主动探测服务 (Network Quality Probing)](#3-弱网主动探测服务-network-quality-probing-)
+  - [4. 原生音频录制与长者静音检测优化 (Native Audio & VAD Optimization)](#4-原生音频录制与长者静音检测优化-native-audio--vad-optimization-)
+  - [5. 口述文本 AI 润色与 PDF 本地导出 (AI-Polished Text & PDF Export)](#5-口述文本-ai-润色与-pdf-本地导出-ai-polished-text--pdf-export-)
+  - [6. 基于 Proxy 的多语言数据代理 (Proxy-Based Localization)](#6-基于-proxy-的多语言数据代理-proxy-based-localization-)
+  - [7. 无障碍设计与多历法时间格式化 (Accessibility & Localized Calendars)](#7-无障碍设计与多历法时间格式化-accessibility--localized-calendars-)
+  - [8. 基于活跃度检测的系统级定时提醒 (Gentle Nudge & Native Notifications)](#8-基于活跃度检测的系统级定时提醒-gentle-nudge--native-notifications-)
+  - [9. 本地 SQLite 多账户数据物理隔离 (Multi-Account Local Data Isolation)](#9-本地-sqlite-多账户数据物理隔离-multi-account-local-data-isolation-)
+  - [10. 音频 AES-256-CTR 本地加密与版本兼容 (Audio Encryption & Compatibility)](#10-音频-aes-256-ctr-本地加密与版本兼容-audio-encryption--compatibility-)
+  - [11. 免密设备配对码与标签管理 (Device Code Pairing & Labeling)](#11-免密设备配对码与标签管理-device-code-pairing--labeling-)
 - [项目结构](#-项目结构-project-structure)
 - [技术栈选型](#-技术栈选型-technology-stack)
-- [测试与运行验证](#-测试与运行验证)
 - [参与贡献](#-参与贡献)
 - [安全说明](#-安全说明)
 - [许可证](#-许可证-license)
@@ -43,6 +46,47 @@
 ## 📖 项目简介
 
 TimeLog 是一款基于 **React Native (Expo SDK 54)**、**Drizzle ORM**、**SQLite** 以及 **Supabase** 开发的本地优先 (Local-First) 语音故事记录应用。项目主要解决老年人群体在无障碍交互、弱网或无网环境下的数据安全与可用性问题，包含本地离线同步、智能语音对话协调、弱网主动探测、音频预检与加密等功能。
+
+---
+
+## 安装 (Installation)
+
+```bash
+# 1. 安装依赖
+npm install
+
+# 2. 生成 Drizzle ORM 数据库迁移
+npx drizzle-kit generate
+```
+
+---
+
+## 快速开始 (Quick Start)
+
+### 1. 运行测试套件
+
+```bash
+npm test
+```
+
+### 2. 启动开发客户端
+
+```bash
+npx expo start --dev-client
+```
+
+**预期输出**：
+
+```bash
+Starting Metro Bundler
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█
+█  Metro  waiting.                    █
+█  › Scan the QR code above with     █
+█    the Expo Go app                 █
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+> Waiting on http://localhost:8081
+```
 
 ---
 
@@ -213,7 +257,7 @@ graph TD
 
 ---
 
-### 9. 本地 SQLite 多账户数据物理隔离 (Multi-Account Local SQLite Isolation) 🛡️
+### 9. 本地 SQLite 多账户数据物理隔离 (Multi-Account Local Data Isolation) 🛡️
 
 *   **设计思路**：家庭共享设备场景下，多位长者可能共用一台手机。退出登录或切换账号时，需保证未同步的本地数据不发生混淆或泄漏。
 *   **实现细节**：
@@ -283,36 +327,6 @@ TimeLog
 | **文件加密** | aes-js (AES-256-CTR) | 块级音频加密 |
 | **多语言** | Zustand + MMKV i18n | 界面文本国际化 |
 | **音频流媒体**| @siteed/expo-audio-stream | 音频流捕获 |
-
----
-
-## 📦 测试与运行验证
-
-项目各核心组件均经过单元与集成测试。
-
-### 1. 运行测试套件
-```bash
-npm test
-```
-
-### 2. 本地开发运行
-```bash
-npm install
-npx drizzle-kit generate
-npx expo start --dev-client
-```
-
-**预期输出**：
-```bash
-Starting Metro Bundler
-▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█
-█  Metro  waiting.                    █
-█  › Scan the QR code above with     █
-█    the Expo Go app                 █
-▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-> Waiting on http://localhost:8081
-```
 
 ---
 
