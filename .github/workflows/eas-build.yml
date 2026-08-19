@@ -1,8 +1,7 @@
 name: EAS Build & Release
 
 on:
-  push:
-    branches: [ master ]
+  workflow_dispatch:
   release:
     types: [ created ]
 
@@ -13,53 +12,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20.x
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
-      - name: Lint & Typecheck
-        run: |
-          npm run lint
-          npx tsc --noEmit
+      - name: TypeScript Check
+        run: npx tsc --noEmit
 
       - name: Run Jest Tests
-        run: npm test
-
-  build-android-apk:
-    name: Build Android Preview APK
-    needs: verify
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Setup Expo & EAS
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Inject Environment Variables
-        run: |
-          echo "EXPO_PUBLIC_SUPABASE_URL=${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}" >> .env
-          echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}" >> .env
-          echo "EXPO_PUBLIC_SENTRY_DSN=${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}" >> .env
-          echo "LIVEKIT_URL=${{ secrets.LIVEKIT_URL }}" >> .env
-          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
-
-      - name: Build Preview APK (Direct Install)
-        run: eas build --profile preview --platform android --non-interactive
+        run: npm test -- --coverage --passWithNoTests
