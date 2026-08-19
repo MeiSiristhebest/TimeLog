@@ -79,7 +79,7 @@ export function DeleteConfirmModal({
               right: 0,
               bottom: 0,
               backgroundColor: 'rgba(0,0,0,0.6)',
-              backdropFilter: 'blur(4px)', // Note: Only works on some platforms/web, harmless on others
+              // backdropFilter web-only effect handled by background color
             },
             animatedBackdropStyle,
           ]}
