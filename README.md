@@ -2,7 +2,7 @@
   Designed & Built with ❤️ by MeiSiristhebest (https://github.com/MeiSiristhebest)
   If this repository helps your learning or engineering, please consider dropping a ⭐ Star!
 -->
-# TimeLog
+<h1 align="center">🎙️ TimeLog</h1>
 
 <p align="center">
   <b>English | <a href="./README_zh.md">简体中文</a></b>
@@ -12,15 +12,15 @@
 > 💡 **If this architecture, engineering implementation, or toolchain helps your learning or workflow, please drop a ⭐ Star!**
 > 📚 Explore the technical blueprint: [ARCHITECTURE.md](./ARCHITECTURE.md)
 
-
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="License" /></a>
-  <a href="https://expo.dev/"><img src="https://img.shields.io/badge/React_Native-Expo_SDK_54-61DAFB.svg?style=for-the-badge" alt="React Native" /></a>
-  <a href="https://orm.drizzle.team/"><img src="https://img.shields.io/badge/Database-SQLite_%7C_Drizzle_ORM-003B57.svg?style=for-the-badge" alt="SQLite" /></a>
+  <b>Local-First Voice Story Recorder & Family Memory Archive</b>
 </p>
 
 <p align="center">
-  <a href="README.md">🇨🇳 中文</a> &nbsp;|&nbsp; <a href="README_EN.md">🇺🇸 English</a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat" alt="License: MIT" /></a>
+  <a href="https://expo.dev/"><img src="https://img.shields.io/badge/React_Native-Expo_SDK_54-000020?style=flat&logo=expo&logoColor=white" alt="Expo" /></a>
+  <a href="https://sqlite.org/"><img src="https://img.shields.io/badge/SQLite-Local--First-003B57.svg?style=flat&logo=sqlite&logoColor=white" alt="SQLite" /></a>
+  <a href="https://supabase.com/"><img src="https://img.shields.io/badge/Supabase-Cloud_Sync-3ECF8E?style=flat&logo=supabase&logoColor=white" alt="Supabase" /></a>
 </p>
 
 ---
