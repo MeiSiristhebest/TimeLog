@@ -384,18 +384,19 @@ git push origin feat/your-feature
 
 ---
 
+## 📜 License
+
+Licensed under the [MIT License](LICENSE).
+
 ---
 
 ## ⭐ Star & Support
 
 If you find this project useful or inspiring, please consider giving it a ⭐ **Star** on GitHub! It helps more developers discover the work and supports continuous open-source maintenance.
 
-<p align="left">
-  <a href="https://github.com/MeiSiristhebest/TimeLog/stargazers">
-    <img src="https://img.shields.io/github/stars/MeiSiristhebest/TimeLog?style=for-the-badge&logo=apachespark&color=f59e0b" alt="Stargazers" />
-  </a>
-  <a href="https://github.com/MeiSiristhebest/TimeLog/network/members">
-    <img src="https://img.shields.io/github/forks/MeiSiristhebest/TimeLog?style=for-the-badge&color=3b82f6" alt="Forks" />
+<p align="center">
+  <a href="https://star-history.com/#MeiSiristhebest/TimeLog&Date">
+    <img src="https://api.star-history.com/svg?repos=MeiSiristhebest/TimeLog&type=Date" alt="Star History Chart" width="100%" />
   </a>
 </p>
 
@@ -403,10 +404,6 @@ If you find this project useful or inspiring, please consider giving it a ⭐ **
 <a href="https://github.com/MeiSiristhebest/TimeLog/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=MeiSiristhebest/TimeLog" alt="Contributors" />
 </a>
-
-## 📜 License
-
-Licensed under the [MIT License](LICENSE).
 
 <!-- Scarf Telemetry Pixel -->
 <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=p2L36r5iF7fAu6cd2J2Y41Cp6Z3YJHInGjzgouIZuLLHJhyoV9" />
