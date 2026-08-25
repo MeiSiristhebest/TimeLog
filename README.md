@@ -1,3 +1,7 @@
+<!-- 
+  Designed & Built with ❤️ by MeiSiristhebest (https://github.com/MeiSiristhebest)
+  If this repository helps your learning or engineering, please consider dropping a ⭐ Star!
+-->
 # TimeLog
 
 <p align="center">
@@ -374,3 +378,12 @@ git push origin feat/your-feature
 ## 📜 许可证 (License)
 
 基于 **MIT License** 开源协议。详见 [LICENSE](LICENSE) 文件。
+
+
+---
+
+## ⭐ Star & Support
+
+If you find this project useful or inspiring, please consider giving it a ⭐ **Star** on GitHub! It helps more developers discover the work and supports continuous maintenance.
+
+[![Star History Chart](https://api.star-history.com/svg?repos=MeiSiristhebest/TimeLog&type=Date)](https://star-history.com/#MeiSiristhebest/TimeLog&Date)
