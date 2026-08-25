@@ -390,10 +390,17 @@ git push origin feat/your-feature
 
 If you find this project useful or inspiring, please consider giving it a ⭐ **Star** on GitHub! It helps more developers discover the work and supports continuous open-source maintenance.
 
-[![Star History Chart](https://api.star-history.com/svg?repos=MeiSiristhebest/TimeLog&type=Date)](https://star-history.com/#MeiSiristhebest/TimeLog&Date)
-
-### 🌟 Stargazers Over Time
-[![Stargazers repo roster for @MeiSiristhebest/TimeLog](https://reporoster.com/stars/MeiSiristhebest/TimeLog)](https://github.com/MeiSiristhebest/TimeLog/stargazers)
+<p align="left">
+  <a href="https://github.com/MeiSiristhebest/TimeLog/stargazers">
+    <img src="https://img.shields.io/github/stars/MeiSiristhebest/TimeLog?style=for-the-badge&logo=apachespark&color=f59e0b" alt="Stargazers" />
+  </a>
+  <a href="https://github.com/MeiSiristhebest/TimeLog/network/members">
+    <img src="https://img.shields.io/github/forks/MeiSiristhebest/TimeLog?style=for-the-badge&color=3b82f6" alt="Forks" />
+  </a>
+  <a href="https://star-history.com/#MeiSiristhebest/TimeLog&Date">
+    <img src="https://img.shields.io/badge/Star%20History-View%20Interactive%20Chart-FF6B6B?style=for-the-badge&logo=github" alt="Star History" />
+  </a>
+</p>
 
 ### 🤝 Contributors
 <a href="https://github.com/MeiSiristhebest/TimeLog/graphs/contributors">
